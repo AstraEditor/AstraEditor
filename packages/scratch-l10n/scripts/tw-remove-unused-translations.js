@@ -1,7 +1,10 @@
 const OMIT = [
     /^gui\.howtos\./,
+    /^gui\.cards/,
     /^gui\.loader\.message/,
+    /^gui\.comingSoon/,
     'gui.gui.defaultProjectTitle',
+    'gui.tipsLibrary.tutorials',
     'gui.crashMessage.label',
     'gui.crashMessage.description',
     'gui.webglModal.back',
