@@ -43,6 +43,7 @@ import * as path from 'path';
 import {sync as mkdirpSync} from 'mkdirp';
 import defaultsDeep from 'lodash.defaultsdeep';
 import locales from '../src/supported-locales.js';
+import removeUnusedTranslations from './tw-remove-unused-translations';
 
 const MSGS_DIR = './locales/';
 mkdirpSync(MSGS_DIR);
@@ -54,6 +55,7 @@ const combineJson = (component) => {
             let langData = JSON.parse(
                 fs.readFileSync(path.resolve('editor', component, lang + '.json'), 'utf8')
             );
+            langData = removeUnusedTranslations(langData);
             collection[lang] = langData;
         } catch (e) {
             missingLocales.push(component + ':' + lang + '\n');
