@@ -4,10 +4,6 @@
     "description": "Localization for TurboWarp",
     "main": "./dist/l10n.js",
     "browser": "./src/index.js",
-    "bin": {
-        "build-i18n-src": "./scripts/build-i18n-src.js",
-        "tx-push-src": "./scripts/tx-push-src.js"
-    },
     "scripts": {
         "build:data": "babel-node scripts/build-data",
         "build": "npm run clean && npm run build:data && webpack --progress --colors --bail",
