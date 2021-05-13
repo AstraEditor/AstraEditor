@@ -1,3 +1,6 @@
+Generated translations for TurboWarp
+
+<!--
 # scratch-l10n
 
 Translation of all Scratch projects is managed on the Transifex service: https://www.transifex.com/llk/public
@@ -34,3 +37,4 @@ In general, changes that require a PR (new functionality, new language) should i
 #### Deprecations
 
 We are moving away from using the `tx` cli, so the `.tx/config` file will eventually be deprecated.
+-->
