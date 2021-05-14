@@ -10,3 +10,7 @@ npm-*
 
 # generated build files
 /dist
+
+.env
+in
+out

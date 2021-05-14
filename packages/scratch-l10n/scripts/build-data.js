@@ -99,6 +99,11 @@ components.forEach((component) => {
     defaultsDeep(editorMsgs, messages);
 });
 
+const twData = JSON.parse(fs.readFileSync(path.join(__dirname, '../out/gui.json'), 'utf8'));
+twData['es-419'] = twData.es;
+twData['pt-br'] = twData.pt;
+defaultsDeep(editorMsgs, twData);
+
 // generate combined editor-msgs file
 let editorData =
     '// GENERATED FILE:\n' +
