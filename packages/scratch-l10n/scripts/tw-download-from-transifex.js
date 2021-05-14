@@ -69,10 +69,6 @@ const writeToOutFile = (file, json) => {
 
 const processGUI = (translations) => {
     writeToOutFile('gui.json', translations);
-    if (fs.existsSync(scratchGuiPath)) {
-        console.log('Updating gui.json');
-        fs.writeFileSync(pathUtil.join(scratchGuiPath, 'src/lib/tw-translations/translations.json'), JSON.stringify(translations, null, 4));
-    }
 };
 
 const processAddons = (translations) => {

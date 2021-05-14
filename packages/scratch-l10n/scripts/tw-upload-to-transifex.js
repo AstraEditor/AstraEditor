@@ -26,20 +26,29 @@ const getAllFiles = (directory) => {
 const readMessages = (path) => {
     const content = fs.readFileSync(path, {encoding: 'utf8'});
     const parsedMessages = JSON.parse(content);
-    return parsedMessages
+    return parsedMessages;
+};
+
+const filterToLocalStrings = (messages) => {
+    return messages
         .filter((message) => message.id.startsWith('tw.'));
 };
 
 const parseGUIMessages = () => {
     const messageFiles = getAllFiles(inputDirectory).filter((file) => file.endsWith('.json'));
     const messages = {};
-  
+    const allIds = [];
+
     for (const file of messageFiles) {
         const path = pathUtil.join(inputDirectory, file);
         const processed = readMessages(path);
-  
+
         for (const message of processed) {
             const {id, defaultMessage, description} = message;
+            allIds.push(id);
+            if (!id.startsWith('tw.')) {
+                continue;
+            }
             messages[id] = {
                 string: defaultMessage,
                 context: description
@@ -47,7 +56,7 @@ const parseGUIMessages = () => {
         }
     }
 
-    return messages;
+    return {messages, allIds};
 };
 
 const parseBlocksMessages = () => {
@@ -75,11 +84,15 @@ const hardcodedMessages = {
     }
 };
 
+const guiMessages = parseGUIMessages();
+
 const guijson = {
-    ...parseGUIMessages(),
+    ...guiMessages.messages,
     ...parseBlocksMessages(),
     ...hardcodedMessages
 };
+
+fs.writeFileSync(pathUtil.resolve(__dirname, 'tw-all-ids.json'), JSON.stringify(guiMessages.allIds));
 
 uploadResource('guijson', guijson)
     .then((response) => {
