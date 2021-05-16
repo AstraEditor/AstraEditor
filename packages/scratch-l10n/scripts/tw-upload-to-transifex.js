@@ -29,11 +29,6 @@ const readMessages = (path) => {
     return parsedMessages;
 };
 
-const filterToLocalStrings = (messages) => {
-    return messages
-        .filter((message) => message.id.startsWith('tw.'));
-};
-
 const parseGUIMessages = () => {
     const messageFiles = getAllFiles(inputDirectory).filter((file) => file.endsWith('.json'));
     const messages = {};

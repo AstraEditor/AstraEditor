@@ -68,6 +68,15 @@ const writeToOutFile = (file, json) => {
 };
 
 const processGUI = (translations) => {
+    translations['es-419'] = translations.es;
+    translations['pt-br'] = translations.pt;
+    writeToOutFile('gui.json', translations);
+    for (const lang of Object.keys(translations)) {
+        if (!/^[a-z0-9_-]+$/i.test(lang)) throw new Error('invalid lang?');
+        const path = pathUtil.join(__dirname, '..', 'editor', 'tw', `${lang}.json`);
+        fs.mkdirSync(pathUtil.dirname(path), {recursive: true});
+        fs.writeFileSync(path, JSON.stringify(translations[lang], null, 4));
+    }
     writeToOutFile('gui.json', translations);
 };
 
