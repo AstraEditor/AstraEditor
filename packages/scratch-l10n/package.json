@@ -36,7 +36,7 @@
         "url": "git+https://github.com/TurboWarp/scratch-l10n.git"
     },
     "author": "Thomas Weber",
-    "license": "BSD-3-Clause",
+    "license": "GPL-3.0",
     "bugs": {
         "url": "https://github.com/TurboWarp/scratch-l10n/issues"
     },
