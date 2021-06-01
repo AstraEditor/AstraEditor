@@ -88,6 +88,15 @@ const processAddons = (translations) => {
     }
 };
 
+const semiPrettyPrintJSON = (json) => {
+    let result = '{\n';
+    for (const key of Object.keys(json)) {
+        result += `${JSON.stringify(key)}:${JSON.stringify(json[key])},\n`;
+    }
+    result += '}';
+    return result;
+};
+
 const processDesktop = (translations) => {
     writeToOutFile('desktop.json', translations);
     if (fs.existsSync(desktopPath)) {
@@ -101,7 +110,7 @@ const processDesktopWeb = (translations) => {
     if (fs.existsSync(desktopPath)) {
         const index = pathUtil.join(desktopPath, 'docs/index.html');
         const oldContent = fs.readFileSync(index, 'utf-8');
-        const newContent = oldContent.replace(/\/\*===\*\/[\s\S]+\/\*===\*\//m, `/*===*/${JSON.stringify(translations)}/*===*/`);
+        const newContent = oldContent.replace(/\/\*===\*\/[\s\S]+\/\*===\*\//m, `/*===*/${semiPrettyPrintJSON(translations)}/*===*/`);
         if (newContent !== oldContent) {
             console.log('Updating desktop-web.json');
             fs.writeFileSync(index, newContent);
