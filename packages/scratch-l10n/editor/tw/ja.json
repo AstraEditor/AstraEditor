@@ -26,7 +26,6 @@
     "tw.footer.about": "TurboWarpについて",
     "tw.footer.credits": "クレジット",
     "tw.footer.disclaimer": "TurboWarpはScratch、Scratch Team、Scratch財団と提携していません。",
-    "tw.footer.fosshost": "Fosshostにホストされています",
     "tw.footer.links": "関連リンク",
     "tw.framerateIndicatorInterpolated": "{framerate}FPS 補間機能付",
     "tw.fs.saveError": "ファイルを保存できませんでした。({error})",

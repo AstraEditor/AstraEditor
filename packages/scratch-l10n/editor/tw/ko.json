@@ -26,7 +26,6 @@
     "tw.footer.about": "TurboWarp에 대하여",
     "tw.footer.credits": "크레딧",
     "tw.footer.disclaimer": "TurboWarp는 스크래치, 스크래치 팀, 스크래치 재단에 소속되어 있지 않습니다.",
-    "tw.footer.fosshost": "Fosshost는 이 사이트를 호스팅합니다.",
     "tw.footer.links": "링크",
     "tw.framerateIndicatorInterpolated": "{framerate} FPS, 보간 활성화",
     "tw.fs.saveError": "파일을 저장하지 못했습니다. ({error})",

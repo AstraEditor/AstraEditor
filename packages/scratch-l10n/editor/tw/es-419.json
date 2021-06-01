@@ -26,7 +26,6 @@
     "tw.footer.about": "Acerca De",
     "tw.footer.credits": "Créditos",
     "tw.footer.disclaimer": "TurboWarp no está afiliado con Scratch, el equipo de Scratch o la Scratch Foundation.",
-    "tw.footer.fosshost": "Hosteado por Fosshost",
     "tw.framerateIndicatorInterpolated": "{framerate} FPS con interpolación",
     "tw.fs.saveError": "No se pudo guardar archivo. ({error})",
     "tw.gui.crashMessage.description": "Lo lamentamos, pero parece que TurboWarp falló. Por favor refresque la página para intentar de nuevo.",
