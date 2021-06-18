@@ -20,7 +20,7 @@ const locales = {
     'et': {name: 'Eesti'},
     'el': {name: 'Ελληνικά'},
     'en': {name: 'English'},
-    'es': {name: 'Español'},
+    'es': {name: 'Español (España)'},
     'es-419': {name: 'Español Latinoamericano'},
     'eu': {name: 'Euskara'},
     'fa': {name: 'فارسی'},
@@ -37,6 +37,7 @@ const locales = {
     'is': {name: 'Íslenska'},
     'it': {name: 'Italiano'},
     'ka': {name: 'ქართული ენა'},
+    'kk': {name: 'қазақша'},
     'qu': {name: 'Kichwa'},
     'sw': {name: 'Kiswahili'},
     'ht': {name: 'Kreyòl ayisyen'},
@@ -79,9 +80,9 @@ const locales = {
 const customLocales = {
     'ab': {
         locale: 'ab',
-        parentLocale: 'az'
+        parentLocale: 'ru'
     },
-    // haitian creole is not in react-intl locales
+    // haitian creole is not in locale-langData
     'ht': {
         locale: 'ht',
         parentLocale: 'fr'
@@ -90,7 +91,7 @@ const customLocales = {
         locale: 'rap',
         parentLocale: 'es'
     },
-    // TODO: replace zh-cn, zh-tw with zh-Hans and zh-Hant
+    // TODO: replace zh-cn, zh-tw with zh-Hans and zh-Hant then customLocales is unnecessary
     'zh-cn': {
         locale: 'zh-cn',
         parentLocale: 'zh'
@@ -122,4 +123,4 @@ const isRtl = locale => {
     return rtlLocales.indexOf(locale) !== -1;
 };
 
-export {locales as default, customLocales, localeMap, rtlLocales, isRtl};
+export {locales as default, customLocales, localeMap, isRtl};

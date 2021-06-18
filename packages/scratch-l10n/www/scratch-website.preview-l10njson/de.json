@@ -13,7 +13,7 @@
     "project.comments.toggleOff": "Kommentarfunktion aus",
     "project.comments.toggleOn": "Kommentarfunktion ein",
     "project.comments.turnedOff": "Es tut uns leid, die Kommentarfunktion wurde für dieses Projekt deaktiviert.",
-    "project.comments.turnedOffGlobally": "Project comments across Scratch are turned off, but don't worry, your comments are saved and will be back soon.",
+    "project.comments.turnedOffGlobally": "Projektkommentare sind auf Scratch deaktiviert, aber keine Sorge, deine Kommentare sind gespeichert und werden bald zurück sein.",
     "project.share.notShared": "Dieses Projekt ist nicht öffentlich — so kannst nur du es sehen. Klicke auf Veröffentlichen, um es jeden sehen zu lassen!",
     "project.share.sharedLong": "Gratulation zur Veröffentlichung deines Projektes! Andere Scratcher können es nun ausprobieren, kommentieren und remixen.",
     "project.share.sharedShort": "Dein Projekt ist nun öffentlich.",
@@ -46,5 +46,6 @@
     "project.cloudVariables": "Cloud-Variablen",
     "project.cloudDataLink": "Siehe Daten",
     "project.usernameBlockAlert": "Dieses Projekt kann mittels des Blocks “Benutzername” erkennen, wer es gerade verwendet. Wenn du deine Identität verbergen möchtest, melde dich ab, bevor du das Projekt verwendest.",
-    "project.inappropriateUpdate": "Hmm... Wir haben hier ein Wort entdeckt, das nicht sehr schön ist. Ändere es bitte, wir wollen doch respektvoll miteinander umgehen."
+    "project.inappropriateUpdate": "Hmm... Wir haben hier ein Wort entdeckt, das nicht sehr schön ist. Ändere es bitte, wir wollen doch respektvoll miteinander umgehen.",
+    "project.mutedAddToStudio": "You will be able to add to studios again {inDuration}."
 }

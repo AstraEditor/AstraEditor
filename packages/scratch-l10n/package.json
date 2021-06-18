@@ -1,6 +1,6 @@
 {
     "name": "@turbowarp/scratch-l10n",
-    "version": "3.11.1",
+    "version": "3.13.0",
     "description": "Localization for TurboWarp",
     "main": "./dist/l10n.js",
     "browser": "./src/index.js",
@@ -42,8 +42,7 @@
     },
     "homepage": "https://github.com/TurboWarp/scratch-l10n#readme",
     "dependencies": {
-        "babel-plugin-react-intl": "^3.0.1",
-        "react-intl": "^2.8.0"
+        "babel-plugin-react-intl": "^3.0.1"
     },
     "devDependencies": {
         "@babel/cli": "^7.1.2",
