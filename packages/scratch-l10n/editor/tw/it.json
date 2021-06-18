@@ -13,8 +13,6 @@
     "tw.code": "Codice Sorgente",
     "tw.customExtension.description": "Carica le estensioni personalizzate usando Il loro URL. Per sviluppatori. Sperimentale.",
     "tw.customExtension.name": "Estensioni Personalizzate",
-    "tw.evalModal.description": "Un'estensione del browser sta interferendo con la possibilità di TurboWarp di compilare gli script. Prova a disattivare il tuo adblocker e ad aggiornare la pagina. Questo sito non contiene pubblicità o strumenti che invadono la tua privacy.",
-    "tw.evalModal.label": "Errore di Configurazione del Browser",
     "tw.featuredProjectsStudio": "Vai alla galleria sul sito di Scratch.",
     "tw.feedback": "Feedback & Bug",
     "tw.feedbackButton": "Feedback per TurboWarp",
