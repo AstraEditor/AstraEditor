@@ -10,6 +10,7 @@ const SOURCE_LANGUAGE = 'en';
 
 const scratchGuiPath = pathUtil.resolve(__dirname, '../../scratch-gui');
 const desktopPath = pathUtil.resolve(__dirname, '../../turbowarp-desktop');
+const packagerPath = pathUtil.resolve(__dirname, '../../packager/src/locales');
 
 const outputDirectory = pathUtil.join(__dirname, '../out');
 if (!fs.existsSync(outputDirectory)) fs.mkdirSync(outputDirectory);
@@ -23,10 +24,20 @@ const limiterDone = (limiter) => new Promise((resolve, reject) => {
 const simplifyMessages = (messages, source) => {
     const result = {};
     for (const id of Object.keys(messages).sort()) {
-        const string = typeof messages[id] === 'string' ? messages[id] : messages[id].string;
-        if (string) {
-            if (string !== source[id].string) {
-                result[id] = string;
+        const value = messages[id];
+        if (value) {
+            if (typeof value === 'string') {
+                result[id] = value;
+            } else if (typeof value.string === 'string') {
+                const old = source[id] && source[id].string;
+                if (value.string && (value.string !== old || !old)) {
+                    result[id] = value.string;
+                }
+            } else {
+                const simplified = simplifyMessages(value, source[id]);
+                if (Object.keys(simplified).length) {
+                    result[id] = simplified;
+                }
             }
         }
     }
@@ -118,23 +129,45 @@ const processDesktopWeb = (translations) => {
     }
 };
 
+const processPackager = (translations) => {
+    writeToOutFile('packager.json', translations);
+    if (fs.existsSync(packagerPath)) {
+        console.log('Updating packager.json');
+        for (const key of Object.keys(translations)) {
+            const path = pathUtil.join(packagerPath, key + '.json');
+            fs.writeFileSync(path, JSON.stringify(translations[key], null, 4));
+        }
+        const index = pathUtil.join(packagerPath, 'index.js');
+        const oldContent = fs.readFileSync(index, 'utf-8');
+        const newContent = oldContent.replace(/\/\*===\*\/[\s\S]+\/\*===\*\//m, `/*===*/\n${
+            Object.keys(translations)
+                .map(i => `  ${JSON.stringify(i)}: require(${JSON.stringify(`./${i}.json`)})`)
+                .join(',\n')
+        },\n  /*===*/`);
+        fs.writeFileSync(index, newContent);
+    }
+};
+
 (async () => {
     const [
         guiMessages,
         addonMessages,
         desktopMessages,
-        desktopWebMessages
+        desktopWebMessages,
+        packagerMessages
     ] = await Promise.all([
         downloadAllLanguages('guijson'),
         downloadAllLanguages('addonsjson'),
         downloadAllLanguages('desktopjson'),
-        downloadAllLanguages('desktop-webjson')
+        downloadAllLanguages('desktop-webjson'),
+        downloadAllLanguages('packagerjson')
     ]);
 
     processGUI(guiMessages);
     processAddons(addonMessages);
     processDesktop(desktopMessages);
     processDesktopWeb(desktopWebMessages);
+    processPackager(packagerMessages);
 })().catch((err) => {
     console.error(err);
     process.exit(1);
