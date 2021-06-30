@@ -5,6 +5,6 @@ VERSION=${VERSION/%?/}$(date +%Y%m%d%H%M%S)
 
 echo $VERSION
 
-npm run build
+NODE_ENV=production npm run build
 npm --no-git-tag-version version $VERSION
 npm publish
