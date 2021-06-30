@@ -1,10 +1,7 @@
-const Limiter = require('async-limiter');
-const fs = require('fs');
-const pathUtil = require('path');
-const {
-    getTranslation,
-    getResourceLanguages
-} = require('./tw-transifex');
+import fs from 'fs';
+import pathUtil from 'path';
+import Limiter from 'async-limiter';
+import {getTranslation, getResourceLanguages} from './tw-transifex';
 
 const SOURCE_LANGUAGE = 'en';
 
