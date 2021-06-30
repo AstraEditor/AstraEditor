@@ -1,6 +1,7 @@
 import fs from 'fs';
 import pathUtil from 'path';
 import Limiter from 'async-limiter';
+import supportedLocales from '../src/supported-locales';
 import {getTranslation, getResourceLanguages} from './tw-transifex';
 
 const SOURCE_LANGUAGE = 'en';
@@ -142,6 +143,10 @@ const processPackager = (translations) => {
                 .join(',\n')
         },\n  /*===*/`);
         fs.writeFileSync(index, newContent);
+        fs.writeFileSync(
+            pathUtil.join(packagerPath, 'supported-locales.json'),
+            JSON.stringify(supportedLocales, null, 4)
+        );
     }
 };
 
