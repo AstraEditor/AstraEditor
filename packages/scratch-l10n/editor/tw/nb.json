@@ -60,7 +60,6 @@
     "tw.settingsModal.infiniteClones": "Uendelige kloner",
     "tw.settingsModal.infiniteClonesHelp": "Den slår av Scratchs 300 klon grense",
     "tw.settingsModal.interpolation": "Interpolasjon",
-    "tw.settingsModal.interpolationHelp": "Interpolering gjør at prosjektet ser ut til å kjøre ved høyere FPS ved å interpolere figur-bevegelse. I motsetning til 60 FPS-modus, vil ikke dette få prosjekter til å kjøre med dobbel hastighet. Interpolasjon bør ikke brukes på prosjekter som primært bruker penn.",
     "tw.settingsModal.removeLimits": "Fjern grenser",
     "tw.settingsModal.title": "Avansert innstillinger",
     "tw.spriteSelectorItem.rename": "endre navn",
