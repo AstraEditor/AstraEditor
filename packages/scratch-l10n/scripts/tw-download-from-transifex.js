@@ -139,7 +139,7 @@ const processPackager = (translations) => {
         const oldContent = fs.readFileSync(index, 'utf-8');
         const newContent = oldContent.replace(/\/\*===\*\/[\s\S]+\/\*===\*\//m, `/*===*/\n${
             Object.keys(translations)
-                .map(i => `  ${JSON.stringify(i)}: require(${JSON.stringify(`./${i}.json`)})`)
+                .map(i => `  ${JSON.stringify(i)}: () => require(${JSON.stringify(`./${i}.json`)})`)
                 .join(',\n')
         },\n  /*===*/`);
         fs.writeFileSync(index, newContent);
