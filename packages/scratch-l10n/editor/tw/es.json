@@ -80,6 +80,8 @@
     "tw.settingsModal.removeFencingHelp": "Permite a los objetos moverse afuera de la pantalla o hacerse tan grandes o chicos como deseen.",
     "tw.settingsModal.removeLimits": "Quitar Límites",
     "tw.settingsModal.removeMiscLimits": "Quitar Límites Varios",
+    "tw.settingsModal.storeProjectOptions": "Guardar ajustes en proyecto",
+    "tw.settingsModal.storeProjectOptionsHelp": "Guarda los ajustes seleccionados en el proyecto para que sean aplicados automáticamente cuando TurboWarp carga este proyecto. Tamaño personalizado del escenario y warp timer no serán guardados.",
     "tw.settingsModal.title": "Ajustes Avanzados",
     "tw.spriteSelectorItem.rename": "renombrar",
     "tw.studioview.authorAttribution": "por {author}",
