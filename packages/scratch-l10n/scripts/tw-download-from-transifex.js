@@ -144,7 +144,7 @@ const processPackager = (translations) => {
         },\n  /*===*/`);
         fs.writeFileSync(index, newContent);
         fs.writeFileSync(
-            pathUtil.join(packagerPath, 'supported-locales.json'),
+            pathUtil.join(packagerPath, 'locale-names.json'),
             JSON.stringify(supportedLocales, null, 4)
         );
     }
