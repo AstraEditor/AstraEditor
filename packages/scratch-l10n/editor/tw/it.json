@@ -14,6 +14,7 @@
     "tw.changeUsername.cannotChangeWhileRunning": "Non è possibile cambiare lo username mentre il progetto è in esecuzione.",
     "tw.cloudVariableBadge": "Questo progetto usa le variabili cloud. TurboWarp usa un proprio server di variabili cloud indipendente da Scratch. Nota che gli utenti potrebbero non essere chi detto dal loro username.",
     "tw.code": "Codice Sorgente",
+    "tw.confirmIncompatibleExtension": "Questa estensione non è compatibile con Scratch. I progetti che vengono creati con essa non possono essere caricati sul sito di Scratch. Sei sicuro di volerla attivare?",
     "tw.customExtension.description": "Carica le estensioni personalizzate usando Il loro URL. Per sviluppatori. Sperimentale.",
     "tw.customExtension.name": "Estensioni Personalizzate",
     "tw.featuredProjectsStudio": "Vai alla galleria sul sito di Scratch.",

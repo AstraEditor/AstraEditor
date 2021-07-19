@@ -1,6 +1,18 @@
 {
+    "tw.blocks.buttonIsDown": "[MOUSE_BUTTON]Musknappen nere?",
+    "tw.blocks.lastKeyPressed": "Sista tangenten nertryckt ",
     "tw.code": "Källkod",
+    "tw.feedback": "Respons & buggar",
+    "tw.footer.credits": "Krediter",
+    "tw.footer.translate": "Hjälp att översätta TurboWarp",
+    "tw.loader.assets.known": "Hämtar tillgångar({complete}/{total})...",
+    "tw.loader.assets.unknown": "Hämtar tillgångar...",
+    "tw.loader.generic": "Laddar projekt...",
     "tw.menuBar.advanced": "Avancerat",
+    "tw.menuBar.compileError": "{sprite}:{error}",
+    "tw.menuBar.legacyDownloadToComputer": "{saveToYourComputer} (arv)",
+    "tw.menuBar.reportError2": "Detta är en bugg. Snälla rapportera buggen. ",
+    "tw.menuBar.saveAs": "Spara som {file}",
     "tw.privacy": "Integritetspolicy",
     "tw.settingsModal.interpolation": "Interplotation",
     "tw.usernameModal.reset": "Starta om"

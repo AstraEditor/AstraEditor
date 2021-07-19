@@ -14,6 +14,7 @@
     "tw.changeUsername.cannotChangeWhileRunning": "Proje çalışırken kullanıcı adı değiştirilemez.",
     "tw.cloudVariableBadge": "Bu proje bulut değişkenleri kullanıyor. TurboWarp, Scratch'ten farklı olarak kendi bulut değişken sunucusunu kullanıyor. Kullanıcıların, kullanıcı adlarının söylediği kişi olmayabileceğini unutmayın.",
     "tw.code": "Kaynak Kodu",
+    "tw.confirmIncompatibleExtension": "Bu eklenti Scratch ile kullanamılınıyor. Bununla yapılan projeler Scratch web sitesine yüklenemez. Etkinleştirmek istediğinizden emin misiniz?",
     "tw.customExtension.description": "URL'lardan görenek eklentiler yükleyin. Geliştiriciler için. Deneysel.",
     "tw.customExtension.name": "Görenek Eklenti",
     "tw.featuredProjectsStudio": "Stüdyoyu Scratch'te görüntüleyin.",

@@ -57,6 +57,7 @@
     "tw.settingsModal.infiniteClones": "Бесконечные клоны",
     "tw.settingsModal.infiniteClonesHelp": "Отключает ограничение Scratch в 300 клонов.",
     "tw.settingsModal.interpolation": "Интерполяция",
+    "tw.settingsModal.removeFencing": "Убрать рамку",
     "tw.settingsModal.removeLimits": "Убрать ограничения",
     "tw.settingsModal.title": "Расширенные настройки",
     "tw.spriteSelectorItem.rename": "переименовать",
