@@ -12,7 +12,6 @@
     "tw.browserModal.desc": "Lütfen Google Chrome, Mozilla Firefox, Microsoft Edge veya Apple Safari'nin yeni bir sürümünü kullandığınızdan emin olun.",
     "tw.browserModal.eval": "Bir Web Tarayacı eklentisi TurboWarp'ın komut dosyalarını derleme becerisine müdahale ediyor. Lütfen adblockerını kapatın ve turbowarp'u yenile. Bu sitede reklamlar ve gizliliği ihlal eden analizler yoktur.",
     "tw.changeUsername.cannotChangeWhileRunning": "Proje çalışırken kullanıcı adı değiştirilemez.",
-    "tw.cloudVariableBadge": "Bu proje bulut değişkenleri kullanıyor. TurboWarp, Scratch'ten farklı olarak kendi bulut değişken sunucusunu kullanıyor. Kullanıcıların, kullanıcı adlarının söylediği kişi olmayabileceğini unutmayın.",
     "tw.code": "Kaynak Kodu",
     "tw.confirmIncompatibleExtension": "Bu eklenti Scratch ile kullanamılınıyor. Bununla yapılan projeler Scratch web sitesine yüklenemez. Etkinleştirmek istediğinizden emin misiniz?",
     "tw.customExtension.description": "URL'lardan görenek eklentiler yükleyin. Geliştiriciler için. Deneysel.",

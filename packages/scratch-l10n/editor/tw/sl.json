@@ -9,7 +9,6 @@
     "tw.blocks.mouseButton.secondary": "(2) sekundarna",
     "tw.blocks.openDocs": "Odpri dokumentacijo",
     "tw.browserModal.eval": "Razširitev brskalnika onemogoča prevajanje skript. Poskusite izključiti razširitev za blokiranje oglasov in znova naložiti TurboWarp. Ta stran ne vsebuje oglasov.",
-    "tw.cloudVariableBadge": "Ta projekt uporablja spremenljivke v oblaku. TurboWarp uporablja svoj strežnik za spremenljivke v oblaku, ki je neodvisen od Scratcha. Uporabniška imena morda niso resnična.",
     "tw.code": "Izvirna koda",
     "tw.customExtension.description": "Naložite razširitve z URL-jev. Za razvijalce razširitev. Poskusno.",
     "tw.customExtension.name": "Razširitev po meri",

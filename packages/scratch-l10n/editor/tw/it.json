@@ -12,7 +12,7 @@
     "tw.browserModal.desc": "Assicurati di usare una versione recente di Google Chrome, Mozilla Firefox, Microsoft Edge o Apple Safari.",
     "tw.browserModal.eval": "Un'estensione del browser sta interferendo con il compilatore di TurboWarp. Prova a disattivare il tuo adblocker e ad aggiornare la pagina. Questo sito non contiene pubblicità.",
     "tw.changeUsername.cannotChangeWhileRunning": "Non è possibile cambiare lo username mentre il progetto è in esecuzione.",
-    "tw.cloudVariableBadge": "Questo progetto usa le variabili cloud. TurboWarp usa un proprio server di variabili cloud indipendente da Scratch. Nota che gli utenti potrebbero non essere chi detto dal loro username.",
+    "tw.cloudVariableBadge": "Questo progetto usa le variabili cloud. TurboWarp usa un proprio server di variabili cloud indipendente da Scratch. Nota che gli utenti potrebbero non essere chi detto dal loro username in quanto chiunque può cambiare il proprio username in quello che preferisce. {learnMore}",
     "tw.code": "Codice Sorgente",
     "tw.confirmIncompatibleExtension": "Questa estensione non è compatibile con Scratch. I progetti che vengono creati con essa non possono essere caricati sul sito di Scratch. Sei sicuro di volerla attivare?",
     "tw.customExtension.description": "Carica le estensioni personalizzate usando Il loro URL. Per sviluppatori. Sperimentale.",
