@@ -58,8 +58,6 @@
     "tw.settingsModal.fpsHelp.customFramerate": "Нажмите, чтобы использовать частоту кадров другую, чем 30 или 60",
     "tw.settingsModal.help": "Нажмите для справки",
     "tw.settingsModal.highQualityPen": "Перо в высоком качестве",
-    "tw.settingsModal.highQualityPenHelp": "Перо Высокого Качества позволяет выполнять рендеринг проектов пера с более высоким разрешением и отключает некоторое округление координат в редакторе. Этот параметр полезен не для всех проектов, и это может повлиять на производительность. {comparison}.",
-    "tw.settingsModal.highQualityPenHelp.comparison": "Посмотреть сравнение",
     "tw.settingsModal.infiniteClones": "Бесконечные клоны",
     "tw.settingsModal.infiniteClonesHelp": "Отключает ограничение Scratch в 300 клонов.",
     "tw.settingsModal.interpolation": "Интерполяция",
