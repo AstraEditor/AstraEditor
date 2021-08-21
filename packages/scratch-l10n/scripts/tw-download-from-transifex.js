@@ -133,7 +133,12 @@ const processPackager = (translations) => {
         console.log('Updating packager.json');
         for (const key of Object.keys(translations)) {
             const path = pathUtil.join(packagerPath, key + '.json');
-            fs.writeFileSync(path, JSON.stringify(translations[key], null, 4));
+            const data = JSON.stringify(translations[key], null, 4);
+            if (data.length < 500) {
+                delete translations[key];
+                continue;
+            }
+            fs.writeFileSync(path, data);
         }
         const index = pathUtil.join(packagerPath, 'index.js');
         const oldContent = fs.readFileSync(index, 'utf-8');
