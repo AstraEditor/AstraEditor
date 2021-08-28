@@ -134,7 +134,7 @@ const processPackager = (translations) => {
         for (const key of Object.keys(translations)) {
             const path = pathUtil.join(packagerPath, key + '.json');
             const data = JSON.stringify(translations[key], null, 4);
-            if (data.length < 500) {
+            if (data.length < 750) {
                 delete translations[key];
                 continue;
             }
