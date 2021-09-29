@@ -12,7 +12,7 @@
     "tw.browserModal.desc": "Asegúrese de que esté usando una versión reciente de Google Chrome, Mozilla Firefox, Microsoft Edge o Apple Safari.",
     "tw.browserModal.eval": "Una extension de navegador está interfiriendo con la capacidad de TurboWarp de compilar código. Por favor desactive su adblocker y actualice la página. Este sitio no contiene anuncios.",
     "tw.changeUsername.cannotChangeWhileRunning": "El nombre de usuario no puede ser cambiado mientras el proyecto se está ejecutando.",
-    "tw.cloudVariableBadge": "Este proyecto utiliza variables guardadas en la nube. TurboWarp usa su propio sistema de variables en la nube independiente a Scratch. Tenga cuidado con la suplantación de identidad, ya que se admite cambiar el nombre de usuario en uso dentro de TurboWarp a cualquiera.",
+    "tw.cloudVariableBadge": "Este proyecto utiliza variables guardadas en la nube. TurboWarp usa su propio sistema de variables en la nube independiente a Scratch. Tenga cuidado con la suplantación de identidad, ya que se admite cambiar el nombre de usuario en uso dentro de TurboWarp a cualquiera. {learnMore}",
     "tw.code": "Código Fuente",
     "tw.confirmIncompatibleExtension": "Esta extensión es incompatible con Scratch. Proyectos hechos con ella no podrán ser subidos al sitio web de Scratch. ¿Está seguro de que quiere activarla?",
     "tw.customExtension.description": "Carga extensiones personalizadas desde URLs. Para desarrolladores. Experimental",
