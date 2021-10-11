@@ -97,7 +97,7 @@
     "tw.twExtension.description": "奇妙な新しいブロック。Scratchでは使えません。",
     "tw.twExtension.name": "TurboWarpのブロック",
     "tw.usernameModal.help": "この名前は、ブラウザのストレージに保存されます。クラウド変数を含むプロジェクトを見る際に記録されることがあります。",
-    "tw.usernameModal.help2": "この名前はそのままにしておくか、Scratchのユーザー名に変更することをおすすめします。他の文字はクラウド変数で使用できないことがあります。",
+    "tw.usernameModal.help2": "有効なScratchのアカウント名に対応していないと、通常はクラウド変数サーバに拒否されます。そのままにしておくか、Scratchのユーザー名に変えることをおすすめします。",
     "tw.usernameModal.mustChange": "申し訳ありません、あなたのユーザー名が安全でない可能性があります。他のユーザー名に変更するか、{resetIt}をしてください。",
     "tw.usernameModal.mustChange.resetIt": "リセット(おすすめ)",
     "tw.usernameModal.reset": "リセット",

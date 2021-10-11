@@ -101,7 +101,6 @@
     "tw.twExtension.description": "奇怪的新积木。不兼容 Scratch。",
     "tw.twExtension.name": "TurboWarp 积木",
     "tw.usernameModal.help": "此变量将存储在浏览器中。当您与包含云变量的作品交互时，它可能会被记录。",
-    "tw.usernameModal.help2": "建议保持此值不变或将其更改为你的 Scratch 用户名，因为其他值可能无法用于云变量。",
     "tw.usernameModal.mustChange": "抱歉，云变量服务器认为您的用户名可能不合适。请把它改成别的或{resetIt}。",
     "tw.usernameModal.mustChange.resetIt": "重置（推荐）",
     "tw.usernameModal.reset": "重置",

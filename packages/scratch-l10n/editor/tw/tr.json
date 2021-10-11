@@ -99,7 +99,7 @@
     "tw.twExtension.description": "İlginç ve yeni bloklar. Bu bloklar Scratch ile kullanılamaz.",
     "tw.twExtension.name": "Turbowarp Bloklar",
     "tw.usernameModal.help": "Bu kullanıcı adı web tarayıcının çerezlerinde olacak. Bulut değişkenleri olan projelerle etkileşim kurduğunuzda kaydedilebilir.",
-    "tw.usernameModal.help2": "Bu değeri olduğu gibi bırakmanız önerilir yada Scratch kullanıcı adını kullanın, çünkü diğer değerler bulut değişkenleriyle kullanılamayabilir.",
+    "tw.usernameModal.help2": "Geçerli bir Scratch hesabına karşılık gelen değerler genellikle bulut değişken sunucusu tarafından reddedilirecek. Olduğu gibi ybırakmanızı vea Scratch kullanıcı adınızı değiştirmenizi öneririz.",
     "tw.usernameModal.mustChange": "Üzgünüz, bulut değişken sunucusu kullanıcı adınızın güvensiz olabileceğini düşünüyor. Lütfen başka bir şeyle değiştirin yada {resetIt}.",
     "tw.usernameModal.mustChange.resetIt": "sıfırlayın (önerildi)",
     "tw.usernameModal.reset": "Sıfırla",

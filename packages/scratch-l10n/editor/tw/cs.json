@@ -101,7 +101,6 @@
     "tw.twExtension.description": "Zvláštní nové bloky. Nekompatibilní se Scratchem.",
     "tw.twExtension.name": "Bloky TurboWarp",
     "tw.usernameModal.help": "Tato hodnota bude uložena ve vašem prohlížeči. Může být zapsaná, když upravujete projekty které mají cloudové proměnné.",
-    "tw.usernameModal.help2": "Doporučujeme, aby jste nechali tuto hodnotu jak je, nebo ji změňte na vaše jméno Scratche, protože ostatní hodnoty nemusí být použitelné s cloudovými proměnami.",
     "tw.usernameModal.mustChange": "Omlouváme se, server cloudových proměň si myslí, že vaše jméno není bezpečné. Prosíme, změňte jméno nebo {resetIt}.",
     "tw.usernameModal.mustChange.resetIt": "obnovit (doporučeno)",
     "tw.usernameModal.reset": "Obnovit",

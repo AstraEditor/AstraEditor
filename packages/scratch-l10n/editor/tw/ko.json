@@ -99,7 +99,6 @@
     "tw.twExtension.description": "이상한 새 블럭들이죠. 스크래치와 호환되지 않습니다.",
     "tw.twExtension.name": "TurboWarp 추가 블럭",
     "tw.usernameModal.help": "이 값은 브라우저의 저장소에 저장됩니다. 클라우드 변수를 포함하는 프로젝트와 상호 작용할 때 기록될 수 있습니다.",
-    "tw.usernameModal.help2": "클라우드 변수에서는 다른 값을 사용할 수 없으므로 이 값을 그대로 두거나 스크래치 사용자 이름으로 변경하세요.",
     "tw.usernameModal.mustChange": "클라우드 변수 서버가 당신의 사용자 이름이 안전하지 않다고 생각합니다. 다른 것으로 변경하거나 {resetIt} 해 주세요.",
     "tw.usernameModal.mustChange.resetIt": "초기화하기(권장됨)",
     "tw.usernameModal.reset": "초기화하기",

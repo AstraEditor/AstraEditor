@@ -97,7 +97,7 @@
     "tw.twExtension.description": "Bloques nuevos raros. No compatibles con Scratch.",
     "tw.twExtension.name": "Bloques TurboWarp",
     "tw.usernameModal.help": "Este valor será guardado en el almacenamiento de su navegador. Es posible que sea usado cuando interactúe con proyectos que contengan variables en la nube.",
-    "tw.usernameModal.help2": "Es recomendado dejar este valor como está, o cambiarlo a su nombre de usuario de Scratch, ya que otros valores pueden no funcionar con variables en la nube.",
+    "tw.usernameModal.help2": "Valores que no corresponden a una cuenta de Scratch válida típicamente serán rechazadas por el servidor de variables en la nube. Se le recomienda dejarlo como está o cambiarlo a su nombre de usuario de Scratch.",
     "tw.usernameModal.mustChange": "Lo sentimos, el servidor de variables en la nube piensa que tu nombre de usuario puede ser inseguro. Por favor cámbielo a otra cosa o {resetIt}.",
     "tw.usernameModal.mustChange.resetIt": "resetéelo (recomendado)",
     "tw.usernameModal.reset": "Reiniciar",

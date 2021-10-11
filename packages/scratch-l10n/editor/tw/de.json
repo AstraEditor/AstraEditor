@@ -95,7 +95,7 @@
     "tw.twExtension.description": "Neue Blöcke. Nicht mit Scratch kompatibel.",
     "tw.twExtension.name": "TurboWarp-Blöcke",
     "tw.usernameModal.help": "Dieser Wert wird in deinem Browserspeicher gespeichert. Er könnte geloggt werden, wenn du mit Projekten, die Cloudvariablen enthalten, interagierst.",
-    "tw.usernameModal.help2": "Es ist empfohlen, diesen Wert so zu lassen, wie er ist, oder ihn auf deinen Scratch-Benutzernamen zu ändern, weil andere Werte unverwendbar mit Cloudvariablen sein könnten.",
+    "tw.usernameModal.help2": "Werte, die nicht mit einem gültigen Scratch-Konto entsprechen, werden normalerweise vom Cloudserver abgelehnt. Es ist empfohlen, diesen Wert so zu lassen, wie er ist, oder ihn auf deinen Scratch-Benutzernamen zu setzen.",
     "tw.usernameModal.mustChange": "Es tut uns Leid, der Cloudvariablenserver denkt, dass dein Benutzername unsicher sein könnte. Bitte ändere ihn oder {resetIt}.",
     "tw.usernameModal.mustChange.resetIt": "setze ihn zurück (empfohlen)",
     "tw.usernameModal.reset": "Zurücksetzen",
