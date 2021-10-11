@@ -106,6 +106,16 @@ const semiPrettyPrintJSON = (json) => {
     return result;
 };
 
+const removeStubs = (translations, minLength) => {
+    const result = {};
+    for (const [key, value] of Object.entries(translations)) {
+        if (JSON.stringify(value).length > minLength) {
+            result[key] = value;
+        }
+    }
+    return result;
+};
+
 const processDesktop = (translations) => {
     writeToOutFile('desktop.json', translations);
     if (fs.existsSync(desktopPath)) {
@@ -115,6 +125,7 @@ const processDesktop = (translations) => {
 };
 
 const processDesktopWeb = (translations) => {
+    translations = removeStubs(translations, 100);
     writeToOutFile('desktop-web.json', translations);
     if (fs.existsSync(desktopPath)) {
         const index = pathUtil.join(desktopPath, 'docs/index.html');
@@ -128,16 +139,13 @@ const processDesktopWeb = (translations) => {
 };
 
 const processPackager = (translations) => {
+    translations = removeStubs(translations, 750);
     writeToOutFile('packager.json', translations);
     if (fs.existsSync(packagerPath)) {
         console.log('Updating packager.json');
         for (const key of Object.keys(translations)) {
             const path = pathUtil.join(packagerPath, key + '.json');
             const data = JSON.stringify(translations[key], null, 4);
-            if (data.length < 750) {
-                delete translations[key];
-                continue;
-            }
             fs.writeFileSync(path, data);
         }
         const index = pathUtil.join(packagerPath, 'index.js');
