@@ -45,7 +45,6 @@
     "tw.menuBar.saveAs": "Salvează ca {file}",
     "tw.menuBar.seeInside": "Vezi în interior",
     "tw.privacy": "Politica de Confidențialitate",
-    "tw.restorePoint.createFail": "Nu s-a putut încărca punctul de recuperare; punctele de recuperare sunt acum dezativate. Salvările normale ala proiectelor nu sunt afectate.\n\nRepară: {error}",
     "tw.restorePoint.loadFail": "Nu s-a putut încărca punctul de recuperare.\nDepanare: {error}",
     "tw.settingsModal.disableCompiler": "Oprește Compilerul",
     "tw.studioview.authorAttribution": "de {author}",

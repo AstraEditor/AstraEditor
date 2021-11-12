@@ -69,7 +69,6 @@
     "tw.settingsModal.interpolationHelp": "在角色移動中進行運動補償以提升流暢度。你不該在 3D 專案、光線追蹤專案、畫筆專案或運算量大的專案啟用它，不僅效果低下，還會影響效能。",
     "tw.settingsModal.largeStageWarning": "不建議把舞臺調得這麼大！你應當使用同比例但較小的舞臺並讓用戶以全螢幕運行。",
     "tw.settingsModal.removeFencing": "移除屏障",
-    "tw.settingsModal.removeFencingHelp": "允許角色隨心所欲的移動及變大變小，即使超出舞臺。",
     "tw.settingsModal.removeLimits": "移除限制",
     "tw.settingsModal.removeMiscLimits": "移除各類限制",
     "tw.settingsModal.removeMiscLimitsHelp": "移除音效效果限制及畫筆大小限制。",

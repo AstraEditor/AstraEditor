@@ -59,7 +59,6 @@
     "tw.privacy": "Polityka Prywatności",
     "tw.regardingUnshared": "Jeżeli chodzi o nieudostępnione projekty",
     "tw.restorePoint.confirm": "TurboWarp rejestruje jeden automatyczny punkt przywracania na wypadek, gdyby coś poszło nie tak i zapomniałeś zapisać. Nie powinieneś na tym polegać i nie możemy zagwarantować, że odzyska Twój projekt. Spróbuj go załadować? Aby zmienić rozmiar sceny, wymagane jest ponowne załadowanie, czy na pewno chcesz załadować ponownie?",
-    "tw.restorePoint.createFail": "Nie można przywrócić punktu; punkty przywracania są teraz wyłączone. Nie ma to wpływu na zwykłe zapisy projektów.  \n\nDebuguj: {error}",
     "tw.restorePoint.loadFail": "Nie można załadować punktu przywracania.\n\nDebugowanie: {error}",
     "tw.settingsModal.confirmReload": "Aby zmienić rozmiar sceny, wymagane jest ponowne załadowanie, czy na pewno chcesz załadować ponownie?",
     "tw.settingsModal.customStageSize": "Niestandardowy Rozmiar Sceny:",

@@ -57,7 +57,6 @@
     "tw.settingsModal.infiniteClonesHelp": "Désactive la limite de 300 clones de Scratch",
     "tw.settingsModal.largeStageWarning": "Utiliser une taille de scène personnalisée plus large n'est pas recommandé. Utilisez plutôt cette option pour une taille plus petite et avec le même ration longueur/largeur pour que le projet soit facilement utilisable par n'importe quel utilisateur.",
     "tw.settingsModal.removeFencing": "Supprimer les limites",
-    "tw.settingsModal.removeFencingHelp": "Permettre aux lutins de se déplacer en dehors des limites de l'écran et de devenir aussi grands ou petits que possible.",
     "tw.settingsModal.removeLimits": "Supprimer les limites",
     "tw.settingsModal.removeMiscLimits": "Supprimer diverses limites",
     "tw.settingsModal.removeMiscLimitsHelp": "Supprime les limites des effets sonores ou celles de la taille du stylo.",

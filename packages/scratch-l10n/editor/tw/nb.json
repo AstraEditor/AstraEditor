@@ -47,7 +47,6 @@
     "tw.menuBar.seeInside": "Se inni",
     "tw.paint.alpha": "Opasitet",
     "tw.privacy": "Personvernregler",
-    "tw.restorePoint.createFail": "Kan ikke laste gjenopprettingspunkt; gjenopprettingspunkter er nå av. Vanlig prosjekt lagring er  \nupåvirket.\n\nDebug: {error}",
     "tw.restorePoint.loadFail": "Kan ikke laste gjenopprettingspunkt.\n\nDebug: {error}",
     "tw.settingsModal.customStageSize": "Bytt scene størrelse:",
     "tw.settingsModal.dangerZone": "Faresone",

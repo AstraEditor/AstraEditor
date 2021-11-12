@@ -1,0 +1,16 @@
+{
+    "tw.footer.disclaimer": "TurboWarp ніяк не пов'язаний із Scratch, командою Scratch або фондом Scratch.",
+    "tw.home.instructions": "Інструкції",
+    "tw.loader.generic": "Завантаження проєкту...",
+    "tw.menuBar.changeUsername": "Змінити ім'я користувача",
+    "tw.menuBar.legacyDownloadToComputer": "{saveToYourComputer} (завантажити)",
+    "tw.menuBar.saveAs": "Зберегти як {file}",
+    "tw.settingsModal.dangerZone": "Небезпечна зона",
+    "tw.settingsModal.infiniteClones": "Безмежна кількість клонів",
+    "tw.settingsModal.infiniteClonesHelp": "Вимикає ліміт Scratch на 300 клонів.",
+    "tw.settingsModal.interpolation": "Інтерполяція",
+    "tw.studioview.authorAttribution": "від {author}",
+    "tw.studioview.hoverText": "{title} від {author}",
+    "tw.usernameModal.reset": "Скинути",
+    "tw.usernameModal.title": "Змінити ім'я користувача"
+}
