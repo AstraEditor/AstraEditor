@@ -82,6 +82,7 @@
     "tw.settingsModal.interpolationHelp": "スプライトの動きを補間することで、プロジェクトをより滑らかに見せます。この機能は、3Dのプロジェクト、レイトレーサー、ペンを使ったプロジェクトや、重いプロジェクトには使用しないでください。スムーズではなくなり、動作が遅くなります。",
     "tw.settingsModal.largeStageWarning": "ステージのサイズを大きくすることはおすすめできません。その代わり、同じアスペクト比の小さなサイズを使用し、フルスクリーンにすることでお使いのディスプレイの大きさに合わせてください。",
     "tw.settingsModal.removeFencing": "動く範囲と大きさの制限を解除する",
+    "tw.settingsModal.removeFencingHelp": "スプライトを画面の外へ移動させたり、好きなだけ大きさを変えたり、触れたブロックを画面外で作動させたりすることができます。",
     "tw.settingsModal.removeLimits": "制限を解除する",
     "tw.settingsModal.removeMiscLimits": "その他の制限を解除",
     "tw.settingsModal.removeMiscLimitsHelp": "効果音の制限とペンの大きさの制限を解除する",

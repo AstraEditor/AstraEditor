@@ -82,6 +82,7 @@
     "tw.settingsModal.interpolationHelp": "Enterpolasyon, hareketli grafik hareketini interpolasyon yaparak, projenin davranışını değiştirmeden daha yüksek kare hızlarında çalışıyormuş gibi görünmesini sağlayan deneysel bir özelliktir. Eğer bir projeyi 60 FPS'de çalıştırdıysanız ve çok hızlı çalıştığını fark ettiyseniz, İnterpolasyon bunu çözer. Enterpolasyon 3B projelerde, raytracer ve kalem projelerde kullanmayın çünkü projeleri yavaşlatır ve daha pürüzsüz yapmaz.",
     "tw.settingsModal.largeStageWarning": "Bu büyüklükte özel bir sahne boyutu kullanılması önerilmez! Bunun yerine, aynı en boy oranına sahip daha düşük bir boyut kullanın ve tam ekran modunun kullanıcının ekranına uyacak şekilde yükseltmesine izin verin.",
     "tw.settingsModal.removeFencing": "Eskirimi çıkart",
+    "tw.settingsModal.removeFencingHelp": "Kuklaları ekran dışı yerler gitmeyi izin verir ve kuklaların istediği kadar büyük yada küçük olmasını izin verir, ve dokunma blokları ekran dışında kullanılabilir.",
     "tw.settingsModal.removeLimits": "Limitleri çıkart",
     "tw.settingsModal.removeMiscLimits": "Çeşitli Limitleri Kaldır",
     "tw.settingsModal.removeMiscLimitsHelp": "Ses efekti limitleri gibi projeleri bozmaması olmayan çeşitli limitleri kaldırır.",
