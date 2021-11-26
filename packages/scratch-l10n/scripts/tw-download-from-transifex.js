@@ -93,7 +93,7 @@ const processAddons = (translations) => {
     writeToOutFile('addons.json', translations);
     if (fs.existsSync(scratchGuiPath)) {
         console.log('Updating addons.json');
-        fs.writeFileSync(pathUtil.join(scratchGuiPath, 'src/addons/settings/l10n/translations.json'), JSON.stringify(translations, null, 4));
+        fs.writeFileSync(pathUtil.join(scratchGuiPath, 'src/addons/settings/translations.json'), JSON.stringify(translations, null, 4));
     }
 };
 
