@@ -82,6 +82,7 @@
     "tw.settingsModal.interpolationHelp": "스프라이트 동작을 보간해 동작을 더 부드럽게  만듭니다. 보간은 3D프로젝트, 레이트레이서, 펜 프로젝트, 렉이 걸리는 프로젝트에서 사용할 경우 보간은 부드럽지 않고 느려 보입니다.",
     "tw.settingsModal.largeStageWarning": "사용자 지정 무대 크기는 권장되지 않습니다! 대신, 동일한 가로 세로 비율의 더 낮은 크기를 사용하고 전체 화면 모드가 사용자 디스플레이에 맞게 업스케일되도록 합니다.",
     "tw.settingsModal.removeFencing": "무대 밖 동작 제한 풀기",
+    "tw.settingsModal.removeFencingHelp": "스프라이트가 화면 밖으로 나가도록 하거나, 사용자가 원하는 만큼 커지거나 작아지도록 하거나, 터치 블록이 화면 밖에서도 작동하도록 합니다.",
     "tw.settingsModal.removeLimits": "제한 풀기",
     "tw.settingsModal.removeMiscLimits": "기타 몇몇 제한 풀기",
     "tw.settingsModal.removeMiscLimitsHelp": "효과 제한과 펜 크기 제한을 제거합니다.",
