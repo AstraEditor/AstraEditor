@@ -1,6 +1,6 @@
 Generated translations for TurboWarp
 
-The following is the original license for scratch-gui, which we are required to retain. This is NOT the license of this project.
+The following is the original license for scratch-l10n, which we are required to retain. This is NOT the license of this project.
 
 ```
 Copyright (c) 2016, Massachusetts Institute of Technology
