@@ -5,6 +5,7 @@
     "tw.feedback": "Respons & buggar",
     "tw.footer.credits": "Krediter",
     "tw.footer.translate": "Hjälp att översätta TurboWarp",
+    "tw.interpolationEnabled": "Interplotation",
     "tw.loader.assets.known": "Hämtar tillgångar({complete}/{total})...",
     "tw.loader.assets.unknown": "Hämtar tillgångar...",
     "tw.loader.generic": "Laddar projekt...",

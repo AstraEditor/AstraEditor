@@ -1,6 +1,7 @@
 {
     "tw.footer.disclaimer": "TurboWarp ніяк не пов'язаний із Scratch, командою Scratch або фондом Scratch.",
     "tw.home.instructions": "Інструкції",
+    "tw.interpolationEnabled": "Інтерполяція",
     "tw.loader.generic": "Завантаження проєкту...",
     "tw.menuBar.changeUsername": "Змінити ім'я користувача",
     "tw.menuBar.legacyDownloadToComputer": "{saveToYourComputer} (завантажити)",
