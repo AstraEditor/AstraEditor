@@ -75,6 +75,7 @@
     "tw.settingsModal.interpolation": "ほかんきのう",
     "tw.settingsModal.interpolationHelp": "スプライトのうごきを補間(ほかん)することで、プロジェクトをよりなめらかに見(み)せます。この機能(きのう)は、3Dのプロジェクト、レイトレーサー、ペンをつかったプロジェクトや、おもいプロジェクトには使用(しよう)しないでください。動作(どうさ)がおそくなります。",
     "tw.settingsModal.removeFencing": "うごく範囲(はんい)とおおきさの制限(せいげん)を解除(かいじょ)する",
+    "tw.settingsModal.removeFencingHelp": "スプライトを画面(がめん)の外(そと)へ移動(いどう)させたり、すきなだけおおきさをかえたり、ふれたブロックを画面外(がめんがい)でうごかしたりすることができます。",
     "tw.settingsModal.removeLimits": "制限(せいげん)を解除(かいじょ)する",
     "tw.settingsModal.removeMiscLimits": "そのたの制限(せいげん)を解除(かいじょ)",
     "tw.settingsModal.removeMiscLimitsHelp": "効果音(こうかおん)の制限(せいげん)とペンのおおきさの制限(せいげん)を解除(かいじょ)する",

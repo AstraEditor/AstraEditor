@@ -10,6 +10,7 @@
     "tw.blocks.openDocs": "ドキュメントを開く",
     "tw.browserModal.audio": "このブラウザは、このアプリが必要とする機能をサポートしていません。「プライバシー」ブラウザを使用している場合は、通常のブラウザに切り替えてみてください。",
     "tw.browserModal.desc": "Google Chrome、Mozilla Firefox、Microsoft Edge、Apple Safari が最新バージョンであることを確認してください。",
+    "tw.cantUseCloud": "クラウド変数を作成することはできますが、このプロジェクトをScratchにアップロードするか、{packager}などのツールを使用しないと、動作しません。",
     "tw.changeUsername.cannotChangeWhileRunning": "ユーザー名をプロジェクトを実行中に変えることは出来ません。",
     "tw.cloudVariableBadge": "このプロジェクトはクラウド変数を使用しています。TurboWarpは独自のサーバーを使用しており、Scratchとは連携しておりません。また、ユーザー名はScratchなどのユーザーと違う可能性があることに注意してください。{learnMore}",
     "tw.code": "ソースコード",
