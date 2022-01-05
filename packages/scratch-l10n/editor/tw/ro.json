@@ -36,7 +36,6 @@
     "tw.menuBar.cloudOn": "Pornește Variabilele Cloud",
     "tw.menuBar.cloudUnavailable": "Variabilele Cloud nu sunt valabile",
     "tw.menuBar.cloudUnavailableAlert": "Nu se pot folosi variabilele cloud, cel mai probabil deoarece ai deschis editorul.",
-    "tw.menuBar.legacyDownloadToComputer": "{saveToYourComputer} (moștenire)",
     "tw.menuBar.loadRestorePoint": "Încarcă punctul de recuperare",
     "tw.menuBar.newFramerate": "Cadre Pe Secundă:",
     "tw.menuBar.reportError1": "Unele script-uri nu au putut fi compilate (transpuse)",

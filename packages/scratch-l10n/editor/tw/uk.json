@@ -4,7 +4,6 @@
     "tw.interpolationEnabled": "Інтерполяція",
     "tw.loader.generic": "Завантаження проєкту...",
     "tw.menuBar.changeUsername": "Змінити ім'я користувача",
-    "tw.menuBar.legacyDownloadToComputer": "{saveToYourComputer} (завантажити)",
     "tw.menuBar.saveAs": "Зберегти як {file}",
     "tw.settingsModal.dangerZone": "Небезпечна зона",
     "tw.settingsModal.infiniteClones": "Безмежна кількість клонів",

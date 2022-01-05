@@ -11,7 +11,6 @@
     "tw.loader.generic": "Laddar projekt...",
     "tw.menuBar.advanced": "Avancerat",
     "tw.menuBar.compileError": "{sprite}:{error}",
-    "tw.menuBar.legacyDownloadToComputer": "{saveToYourComputer} (arv)",
     "tw.menuBar.reportError2": "Detta är en bugg. Snälla rapportera buggen. ",
     "tw.menuBar.saveAs": "Spara som {file}",
     "tw.privacy": "Integritetspolicy",

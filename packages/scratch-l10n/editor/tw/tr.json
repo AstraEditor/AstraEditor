@@ -48,7 +48,6 @@
     "tw.menuBar.cloudOn": "Bulut değişkenleri aç",
     "tw.menuBar.cloudUnavailable": "Bulut Değişkenleri bulamıyoruz",
     "tw.menuBar.cloudUnavailableAlert": "Bulut değişkenleri kullanamıyoruz, büyük ihtimalle editörü açtığınız için.",
-    "tw.menuBar.legacyDownloadToComputer": "{saveToYourComputer} (eski)",
     "tw.menuBar.loadRestorePoint": "Yükleme noktasını yükle",
     "tw.menuBar.moreSettings": "Gelişmiş Ayarlar",
     "tw.menuBar.newFramerate": "Yeni karehızı:",

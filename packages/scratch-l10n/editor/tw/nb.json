@@ -38,7 +38,6 @@
     "tw.menuBar.cloudUnavailable": "Nett-variabler er ikke tilgjengelig",
     "tw.menuBar.cloudUnavailableAlert": "Kan ikke bruke nett-variabler, det er kanskje fordi du åpnet redigerer",
     "tw.menuBar.compileError": "{sprite}:{error}",
-    "tw.menuBar.legacyDownloadToComputer": "{saveToYourComputer} (gammel)",
     "tw.menuBar.moreSettings": "Avansert innstillinger",
     "tw.menuBar.newFramerate": "Nytt bildefrekvens:",
     "tw.menuBar.reportError1": "Noen skripter kunne ikke kompileres.",

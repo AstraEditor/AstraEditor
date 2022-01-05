@@ -46,6 +46,7 @@
     "tw.menuBar.seeInside": "Voir à l'intérieur",
     "tw.paint.alpha": "Opacité",
     "tw.privacy": "Politique de Confidentialité",
+    "tw.saveTo": "Sauvegarder sous {file}",
     "tw.settingsModal.customStageSize": "Taille de la scène personnalisé :",
     "tw.settingsModal.dangerZone": "Zone de danger",
     "tw.settingsModal.disableCompiler": "Désactiver le compilateur",

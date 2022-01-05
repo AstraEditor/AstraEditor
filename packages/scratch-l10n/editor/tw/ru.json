@@ -48,7 +48,6 @@
     "tw.menuBar.cloudOn": "Включить облачные переменные",
     "tw.menuBar.cloudUnavailable": "Облачные переменные не доступны",
     "tw.menuBar.cloudUnavailableAlert": "Невозможно использовать облачные переменные, скорее всего, потому, что вы открыли редактор.",
-    "tw.menuBar.legacyDownloadToComputer": "{saveToYourComputer} (скачать)",
     "tw.menuBar.loadRestorePoint": "Загрузить точку восстановления",
     "tw.menuBar.moreSettings": "Расширенные настройки",
     "tw.menuBar.newFramerate": "Новая частота кадров:",

@@ -50,7 +50,6 @@
     "tw.menuBar.cloudUnavailable": "Cloudové proměnné nejsou dostupné",
     "tw.menuBar.cloudUnavailableAlert": "Nelze použít cloudové proměnné, protože jste pravděpodobně otevřeli editor.",
     "tw.menuBar.compileError": "{sprite}:{error}",
-    "tw.menuBar.legacyDownloadToComputer": "{saveToYourComputer}(starý)",
     "tw.menuBar.loadRestorePoint": "Načíst bod obnovení",
     "tw.menuBar.moreSettings": "Pokročilé nastavení",
     "tw.menuBar.newFramerate": "Nová snímková frekvence:",

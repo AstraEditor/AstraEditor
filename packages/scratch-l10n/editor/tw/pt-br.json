@@ -47,7 +47,6 @@
     "tw.menuBar.cloudOn": "Ligar variáveis de nuvem",
     "tw.menuBar.cloudUnavailable": "Variáveis de nuvem não estão disponíveis",
     "tw.menuBar.cloudUnavailableAlert": "Não pode usar variáveis na nuvem, provavelmente porque você abriu o editor.",
-    "tw.menuBar.legacyDownloadToComputer": "{saveToYourComputer} (antigo)",
     "tw.menuBar.loadRestorePoint": "Carregar ponto de restauração",
     "tw.menuBar.moreSettings": "Configurações Avançadas",
     "tw.menuBar.newFramerate": "Novo FPS:",

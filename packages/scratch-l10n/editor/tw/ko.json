@@ -48,7 +48,6 @@
     "tw.menuBar.cloudOn": "클라우드 변수 활성화",
     "tw.menuBar.cloudUnavailable": "클라우드 변수를 이용할 수 없습니다",
     "tw.menuBar.cloudUnavailableAlert": "에디터를 열었기 때문에 클라우드 변수를 사용할 수 없습니다.",
-    "tw.menuBar.legacyDownloadToComputer": "{saveToYourComputer} (구버전)",
     "tw.menuBar.loadRestorePoint": "복원 지점 불러오기",
     "tw.menuBar.moreSettings": "고급 설정",
     "tw.menuBar.newFramerate": "사용할 FPS:",

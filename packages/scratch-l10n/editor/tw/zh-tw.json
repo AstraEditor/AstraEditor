@@ -39,7 +39,6 @@
     "tw.menuBar.cloudOn": "啟用雲端變數",
     "tw.menuBar.cloudUnavailable": "雲端變數不可用",
     "tw.menuBar.compileError": "{sprite}：{error}",
-    "tw.menuBar.legacyDownloadToComputer": "{saveToYourComputer}（傳統）",
     "tw.menuBar.loadRestorePoint": "回溯至還原點",
     "tw.menuBar.moreSettings": "進階設定",
     "tw.menuBar.reportError1": "某些程式可能沒被編譯。",
