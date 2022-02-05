@@ -53,7 +53,6 @@
     "tw.privacy": "Politika zasebnosti",
     "tw.regardingUnshared": "O nedeljenih projektih",
     "tw.restorePoint.loadFail": "Nalaganje obnovitvene različice ni uspelo.\n\nNapaka: {error}",
-    "tw.settingsModal.confirmReload": "Ste prepričani, da želite znova naložiti urejevalnik za spremembo velikosti odra?",
     "tw.settingsModal.customStageSize": "Velikost odra po meri:",
     "tw.settingsModal.dangerZone": "Nevarno območje",
     "tw.settingsModal.disableCompiler": "Onemogoči prevajalnik",

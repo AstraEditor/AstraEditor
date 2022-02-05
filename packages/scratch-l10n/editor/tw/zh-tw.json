@@ -70,7 +70,6 @@
     "tw.settingsModal.removeMiscLimits": "移除各類限制",
     "tw.settingsModal.removeMiscLimitsHelp": "移除音效效果限制及畫筆大小限制。",
     "tw.settingsModal.storeProjectOptions": "將設定存至專案內",
-    "tw.settingsModal.storeProjectOptionsHelp": "儲存上列設定至專案內，使其在載入時自動應用。自訂舞臺大小和防卡死不會被儲存。",
     "tw.settingsModal.title": "進階設定",
     "tw.settingsModal.warpTimer": "防卡死",
     "tw.settingsModal.warpTimerHelp": "程式卡在迴圈裡時會以低幀率運行，以防止卡死。這可以防止崩潰，但會影響性能，僅在編輯器預設啟用。",
