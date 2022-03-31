@@ -65,7 +65,7 @@
     "tw.settingsModal.customStageSizeHelp": "Zmienia wielkość ekranu używanego w Scratchu z 480x360 do jakiejś innej wielkości. Spróbuj 640x360 żeby zrobić ekran szerszy. Bardzo niewiele projektów poradzi sobie z tym prawidłowo.",
     "tw.settingsModal.dangerZone": "Niebezpieczna Strefa",
     "tw.settingsModal.disableCompiler": "Wyłącz Kompilator",
-    "tw.settingsModal.featured": "ecane",
+    "tw.settingsModal.featured": "Polecane",
     "tw.settingsModal.fps": "60 FPS (Niestandardowe FPS)",
     "tw.settingsModal.fpsHelp.customFramerate": "Kliknij, aby ustawić liczbę klatek na sekundę inną niż 30 lub 60",
     "tw.settingsModal.help": "Kliknij po pomoc",

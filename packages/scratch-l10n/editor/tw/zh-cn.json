@@ -83,7 +83,7 @@
     "tw.settingsModal.interpolation": "补帧",
     "tw.settingsModal.interpolationHelp": "通过在角色的运动中插入帧使角色运动看起来更平滑。此功能不应该在 3D、光线追踪、纯画笔作品等运算量大的作品中使用。这会使它们运行得更慢而没有明显的平滑效果。",
     "tw.settingsModal.largeStageWarning": "我们不推荐使用自定义舞台大小！请使用具有相同长宽比的较低尺寸，并让用户开启全屏模式将其放大以匹配显示器来代替它。",
-    "tw.settingsModal.removeFencing": "取消边缘",
+    "tw.settingsModal.removeFencing": "角色可穿过边缘",
     "tw.settingsModal.removeFencingHelp": "允许角色移到屏幕之外，根据需要变大或变小，并使触摸块在屏幕外有效。",
     "tw.settingsModal.removeLimits": "移除限制",
     "tw.settingsModal.removeMiscLimits": "移除其他限制",
