@@ -36,6 +36,7 @@
     "tw.interpolationEnabled": "Интерполяция",
     "tw.invalidParameters.clones": "Параметр \"clone\" в URL некорректен",
     "tw.invalidParameters.fps": "Параметр \"fps\" в URL некорректен",
+    "tw.loadError": "Не удалось загрузить проект: {error}",
     "tw.loader.assets.known": "Скачивание ресурсов ({complete} / {total}) ...",
     "tw.loader.assets.unknown": "Скачивание ресурсов …",
     "tw.loader.data": "Загрузка данных проекта ...",

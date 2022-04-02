@@ -35,6 +35,7 @@
     "tw.input.tooltip": "Kopiere den Link zu einem Scratch-Projekt und füge ihn hier ein!",
     "tw.invalidParameters.clones": "URL-Parameter \"clone\" ist ungültig",
     "tw.invalidParameters.fps": "URL-Parameter \"fps\" ist ungültig",
+    "tw.loadError": "Fehler beim Laden des Projekts: {error}",
     "tw.loader.assets.known": "Ressourcen werden heruntergeladen ({complete}/{total}) ...",
     "tw.loader.assets.unknown": "Ressourcen werden heruntergeladen ...",
     "tw.loader.data": "Projektdaten werden heruntergeladen ...",
