@@ -37,6 +37,7 @@
     "tw.interpolationEnabled": "补帧",
     "tw.invalidParameters.clones": "克隆体参数不合法",
     "tw.invalidParameters.fps": "帧数参数不合法",
+    "tw.loadError": "不能够加载作品:{error}",
     "tw.loader.assets.known": "下载素材中（第 {complete} 个，共 {total} 个）……",
     "tw.loader.assets.unknown": "下载素材中……",
     "tw.loader.data": "下载作品数据中……",
