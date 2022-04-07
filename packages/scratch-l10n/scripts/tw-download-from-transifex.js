@@ -106,10 +106,22 @@ const semiPrettyPrintJSON = (json) => {
     return result;
 };
 
+const countPropertiesRecursive = obj => {
+    let count = 0;
+    for (const value of Object.values(obj)) {
+        if (typeof value === 'object') {
+            count += countPropertiesRecursive(value);
+        } else {
+            count++;
+        }
+    }
+    return count;
+};
+
 const removeStubs = (translations, minLength) => {
     const result = {};
     for (const [key, value] of Object.entries(translations)) {
-        if (JSON.stringify(value).length > minLength) {
+        if (countPropertiesRecursive(value) >= minLength) {
             result[key] = value;
         }
     }
@@ -125,7 +137,7 @@ const processDesktop = (translations) => {
 };
 
 const processDesktopWeb = (translations) => {
-    translations = removeStubs(translations, 100);
+    translations = removeStubs(translations, 15);
     writeToOutFile('desktop-web.json', translations);
     if (fs.existsSync(desktopPath)) {
         const index = pathUtil.join(desktopPath, 'docs/index.html');
@@ -139,7 +151,7 @@ const processDesktopWeb = (translations) => {
 };
 
 const processPackager = (translations) => {
-    translations = removeStubs(translations, 750);
+    translations = removeStubs(translations, 50);
     writeToOutFile('packager.json', translations);
     if (fs.existsSync(packagerPath)) {
         console.log('Updating packager.json');
