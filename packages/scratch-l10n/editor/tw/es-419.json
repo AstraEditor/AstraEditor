@@ -36,6 +36,7 @@
     "tw.interpolationEnabled": "Interpolación",
     "tw.invalidParameters.clones": "Parámetro de URL \"clone\" es inválido",
     "tw.invalidParameters.fps": "Parámetro de URL \"fps\" es inválido",
+    "tw.loadError": "No se ha podido cargar el proyecto: {error}",
     "tw.loader.assets.known": "Descargando assets ({complete}/{total}) ...",
     "tw.loader.assets.unknown": "Descargando assets ...",
     "tw.loader.data": "Descargando información del proyecto...",
