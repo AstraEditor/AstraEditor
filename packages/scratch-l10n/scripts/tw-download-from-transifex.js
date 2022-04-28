@@ -168,9 +168,14 @@ const processPackager = (translations) => {
                 .join(',\n')
         },\n  /*===*/`);
         fs.writeFileSync(index, newContent);
+
+        const localeNames = {};
+        for (const code of Object.keys(supportedLocales)) {
+            localeNames[code] = supportedLocales[code].name;
+        }
         fs.writeFileSync(
             pathUtil.join(packagerPath, 'locale-names.json'),
-            JSON.stringify(supportedLocales, null, 4)
+            JSON.stringify(localeNames, null, 4)
         );
     }
 };
