@@ -36,6 +36,7 @@
     "tw.interpolationEnabled": "Enterpolasyon",
     "tw.invalidParameters.clones": "\"klon\" URL parametresi geçersizdir",
     "tw.invalidParameters.fps": "\"fps\" URL parametresi geçersizdir",
+    "tw.loadError": "Bu projeyi yükleyemiyoruz: {error}",
     "tw.loader.assets.known": "Varlıklar indiriliyor ({complete}/{total}) ...",
     "tw.loader.assets.unknown": "Varlıklar indiriliyor ...",
     "tw.loader.data": "Proje verileri indiriliyor ...",

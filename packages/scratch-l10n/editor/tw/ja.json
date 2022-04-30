@@ -36,6 +36,7 @@
     "tw.interpolationEnabled": "補完機能",
     "tw.invalidParameters.clones": "「クローン」のURLパラメーターが無効です",
     "tw.invalidParameters.fps": "「FPS」のURLパラメーターが無効です",
+    "tw.loadError": "プロジェクトを読み込めませんでした: {error}",
     "tw.loader.assets.known": "{total}個中{complete}個のダウンロードを完了…",
     "tw.loader.assets.unknown": "ダウンロード中…",
     "tw.loader.data": "プロジェクトのデータをダウンロード中…",
