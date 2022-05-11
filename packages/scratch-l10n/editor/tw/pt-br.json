@@ -58,7 +58,6 @@
     "tw.oldDownload": "Salvar como arquivo separado...",
     "tw.paint.alpha": "Opacidade",
     "tw.privacy": "Política de Privacidade",
-    "tw.regardingUnshared": "Sobre projetos não compartilhados",
     "tw.restorePoint.confirm": "O TurboWarp grava um ponto de restauração automaticamente caso algo dê errado e você esqueça de salvar. Use essa função apenas em caso de emergência pois não podemos garantir que seu projeto será recuperado. Quer tentar carregá-lo?",
     "tw.restorePoint.loadFail": "Erro ao carregar ponto de restauração.\n\nDebug: {error}",
     "tw.saveAs": "Salvar como...",

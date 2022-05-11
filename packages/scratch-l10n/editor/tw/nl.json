@@ -56,7 +56,6 @@
     "tw.oldDownload": "Opslaan naar apart bestand...",
     "tw.paint.alpha": "Doorzichtigheid",
     "tw.privacy": "Privacybeleid",
-    "tw.regardingUnshared": "Met betrekking tot niet-gedeelde projecten",
     "tw.restorePoint.confirm": "TurboWarp neemt één automatisch herstelpunt op voor het geval dat er iets misgaat en je vergeet op te slaan. Je moet hier niet op bouwen en we kunnen niet garanderen dat het je project herstelt. Wil je proberen om het te laden?",
     "tw.restorePoint.loadFail": "Kon herstelpunt niet laden.\n\nDebug: {error}",
     "tw.saveAs": "Opslaan als...",

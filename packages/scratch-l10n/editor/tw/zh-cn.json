@@ -62,7 +62,6 @@
     "tw.oldDownload": "保存到独立文件",
     "tw.paint.alpha": "不透明度",
     "tw.privacy": "隐私政策",
-    "tw.regardingUnshared": "关于非共享作品",
     "tw.restorePoint.confirm": "TurboWarp 会记录一个自动恢复点，以防出现错误而未保存作品。你不应该依赖此功能，我们也不能保证它能恢复你的作品。试试加载它？",
     "tw.restorePoint.loadFail": "不能加载还原点：\n\n调试信息：{error}",
     "tw.saveAs": "另存为",

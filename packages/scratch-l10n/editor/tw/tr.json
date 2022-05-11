@@ -60,7 +60,6 @@
     "tw.oldDownload": "Farklı dosyaya kaydet...",
     "tw.paint.alpha": "Saydamlık",
     "tw.privacy": "Gizillik Politikası",
-    "tw.regardingUnshared": "Paylaşılmayan projelerle ilgili şeyler",
     "tw.restorePoint.confirm": "Turbowarp eğer bir şeyler ters gittiyse ve kaydetmeyi unuttuysanız bir otomatik geri yükleme noktası kaydediyor. Buna güvenmemelisiniz ve projenizi kurtaracağını 100% garanti edemeyiz. yüklemeyi denemek istermi siniz?",
     "tw.restorePoint.loadFail": "Yükleme noktasını yükleyemiyoruz.\n\nHata: {error}",
     "tw.saveAs": "Farklı kaydet...",

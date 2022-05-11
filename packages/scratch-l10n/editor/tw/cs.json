@@ -59,7 +59,6 @@
     "tw.menuBar.seeInside": "Pohlédnout dovnitř",
     "tw.paint.alpha": "Průhlednost",
     "tw.privacy": "Zásady ochrany osobních údajů",
-    "tw.regardingUnshared": "Ohledně nesdílených projektech",
     "tw.restorePoint.confirm": "TurboWarp vytváří jeden automatický bod obnovení, v případě že se něco pokazí a zapomenete projekt uložit. Neměli byste na toto spoléhat a my nemůžeme garantovat, že to obnoví váš projekt. Chcete zkusit načíst automatický bod obnovení?",
     "tw.restorePoint.loadFail": "Nelze načíst bod obnovení.\n\nLadění: {error}",
     "tw.saveAs": "Uložit jako...",

@@ -57,7 +57,6 @@
     "tw.oldDownload": "Enregistrer dans un fichier séparé...",
     "tw.paint.alpha": "Opacité",
     "tw.privacy": "Politique de Confidentialité",
-    "tw.regardingUnshared": "Concernant les projets non partagés",
     "tw.restorePoint.confirm": "TurboWarp enregistre un point de restauration automatique au cas où quelque chose se passerait mal et que vous ayez oublié de sauvegarder. Vous ne devriez pas vous fier à cela et nous ne pouvons pas garantir qu'il récupérera votre projet. Essayez de le charger ?",
     "tw.restorePoint.loadFail": "Impossible de charger le point de restauration.Debug :{error}",
     "tw.saveAs": "Enregistrer sous...",
