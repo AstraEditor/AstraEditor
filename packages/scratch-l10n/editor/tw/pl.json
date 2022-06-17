@@ -1,5 +1,6 @@
 {
     "tw.alerts.autosaving": "Tworzenie punktu przywracania…",
+    "tw.alerts.lostPeripheralConnection": "Utracono połączenie do {extensionName}.",
     "tw.alerts.savedToDisk": "Zapisano na twoim komputerze.",
     "tw.backpack.rename": "Nowa nazwa:",
     "tw.blocks.buttonIsDown": "kliknięto [MOUSE_BUTTON] przycisk myszy?",
@@ -82,7 +83,6 @@
     "tw.studioview.hoverText": "{title} autorstwa {author}",
     "tw.twExtension.description": "Dziwne nowe bloki. Niekompatybilne ze Scratchem.",
     "tw.twExtension.name": "Bloki TurboWarp",
-    "tw.unshared.more": "Więcej informacji.",
     "tw.usernameModal.mustChange.resetIt": "zresetuj to (zalecane)",
     "tw.usernameModal.reset": "Resetuj",
     "tw.usernameModal.title": "Zmień Nazwę Użytkownika",
