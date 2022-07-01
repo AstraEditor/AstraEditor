@@ -9,7 +9,6 @@
     "tw.blocks.mouseButton.secondary": "(2) секундарни",
     "tw.blocks.openDocs": "Отвори документацију",
     "tw.browserModal.desc": "Проверите да ли користите најновију верзију Google Chrome, Mozilla Firefox, Microsoft Edge или Apple Safari прегледача.",
-    "tw.cantUseCloud": "Иако можете правити променљиве у облаку, оне неће радити осим ако не отпремите пројекат на Scratch или користите алат као што је {packager}.",
     "tw.changeUsername.cannotChangeWhileRunning": "Корисничко име се не може мењати док пројекат ради.",
     "tw.cloudVariableBadge": "Овај пројекат користи променљиве у облаку. TurboWarp користи сопствени сервер за ове променљиве различит од Scratch-овог. Чувајте се лажног представаљања јер свако може променити своје корисничко име у било шта. {learnMore}",
     "tw.code": "Изворни код",

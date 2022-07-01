@@ -9,7 +9,6 @@
     "tw.blocks.mouseButton.secondary": "(2) 오른쪽",
     "tw.blocks.openDocs": "문서 열기",
     "tw.browserModal.desc": "최신 버전의 크롬, Mozilla Firefox, Microsoft Edge 또는 Apple Safari를 사용하고 있는지 확인하세요.",
-    "tw.cantUseCloud": "클라우드 변수를 만들 수는 있지만, Scratch로 업로드되거나 {packager}를 쓰지 않는 한 작동하지 않습니다.",
     "tw.changeUsername.cannotChangeWhileRunning": "'사용자 이름'은 프로젝트가 실행되는 동안 변경될 수 없습니다.",
     "tw.cloudVariableBadge": "이 프로젝트는 클라우드 변수를 사용합니다. 터보워프는 스크래치와 독립적인 클라우드 변수 서버를 사용합니다. 사용자 이름은 어떤 것으로든 바꿀 수 있으니 사칭을 주의하세요. {learnMore}",
     "tw.code": "소스코드",

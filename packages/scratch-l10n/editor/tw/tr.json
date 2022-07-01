@@ -9,7 +9,6 @@
     "tw.blocks.mouseButton.secondary": "(2) ikincil",
     "tw.blocks.openDocs": "Belgeyi Aç",
     "tw.browserModal.desc": "Lütfen Google Chrome, Mozilla Firefox, Microsoft Edge veya Apple Safari'nin yeni bir sürümünü kullandığınızdan emin olun.",
-    "tw.cantUseCloud": "Bulut değişkeni oluşturabilmenize karşın, proje Scratch'e yüklenmediği sürece veya {packager} gibi bir araç kullanılmadığı sürece bu değişkenler çalışmayacaktır.",
     "tw.changeUsername.cannotChangeWhileRunning": "Proje çalışırken kullanıcı adı değiştirilemez.",
     "tw.cloudVariableBadge": "Bu proje bulut değişkenleri kullanıyor. TurboWarp, Scratch'ten farklı olarak kendi bulut değişken sunucusunu kullanıyor. Kullanıcıların, kullanıcı adlarının söylediği kişi olmayabileceğini unutmayın. Herkes kullanıcı adını herhangi bir şeyle değiştirebileceğinden kimliğe bürünmeye dikkat edin. {learnMore}",
     "tw.code": "Kaynak Kodu",

@@ -9,7 +9,6 @@
     "tw.blocks.mouseButton.secondary": "(2) secundário",
     "tw.blocks.openDocs": "Abrir Documentação",
     "tw.browserModal.desc": "Veja se você está usando uma versão recente do Google Chrome, Mozilla Firefox, Microsoft Edge ou Apple Safari.",
-    "tw.cantUseCloud": "Você pode criar variáveis na nuvem, mas não funcionarão a não ser que este projeto seja publicado no Scratch ou que você use uma ferramenta como o {packager}.",
     "tw.changeUsername.cannotChangeWhileRunning": "O nome de usuário não pode ser alterado enquanto o projeto está em execução.",
     "tw.cloudVariableBadge": "Esse projeto usa variáveis na nuvem. O TurboWarp usa seu próprio servidor de variáveis na nuvem independente e separado do Scratch. Cuidado com imitadores, já que qualquer um pode mudar o nome de usuário para qualquer coisa. {learnMore}",
     "tw.code": "Código-fonte",
