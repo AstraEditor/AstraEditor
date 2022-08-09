@@ -5,6 +5,15 @@ const {uploadResource} = require('./tw-transifex');
 const inputDirectory = pathUtil.join(__dirname, '../in');
 if (!fs.existsSync(inputDirectory)) fs.mkdirSync(inputDirectory);
 
+const makeTranslation = (sourceString, description) => ({
+    string: sourceString,
+    // We used to only set context and not developer_comment, however Transifex puts developer_comment
+    // in a much more visible spot to translators, so we'd rather use that.
+    // However we also keep setting context so that old translations don't get reset.
+    context: description,
+    developer_comment: description
+});
+
 const getAllFiles = (directory) => {
     const children = fs.readdirSync(directory);
     const result = [];
@@ -44,10 +53,7 @@ const parseGUIMessages = () => {
             if (!id.startsWith('tw.')) {
                 continue;
             }
-            messages[id] = {
-                string: defaultMessage,
-                context: description
-            };
+            messages[id] = makeTranslation(defaultMessage, description);
         }
     }
 
@@ -64,19 +70,13 @@ const parseBlocksMessages = () => {
         // I hate this.
         const parsedMessage = eval(`(${json})`);
         const {id, default: def, description} = parsedMessage;
-        messages[id] = {
-            string: def,
-            context: description
-        };
+        messages[id] = makeTranslation(def, description);
     }
     return messages;
 };
 
 const hardcodedMessages = {
-    'tw.blocks.openDocs': {
-        string: 'Open Documentation',
-        context: 'Button to open extensions docsURI'
-    }
+    'tw.blocks.openDocs': makeTranslation('Open Documentation', 'Button to open extensions docsURI')
 };
 
 const guiMessages = parseGUIMessages();
