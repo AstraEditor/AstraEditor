@@ -1,6 +1,9 @@
 {
+    "tw.alerts.autosaving": "Đang tạo điiểm khôi phục",
     "tw.alerts.lostPeripheralConnection": "Mất kết nối từ {extensionName}",
+    "tw.alerts.savedToDisk": "Đã lưu vời máy tính bạn.",
     "tw.backpack.rename": "Tên mới:",
+    "tw.blocks.openDocs": "Mở tài liệu",
     "tw.browserModal.desc": "Đảm bảo bạn đang sử dụng Google Chrome, Mozilla Firefox, Microsoft Edge, hoặc Apple Safari phiên bản mới nhất.",
     "tw.changeUsername.cannotChangeWhileRunning": "Tên người dùng không thể đổi khi dự án đang chạy.",
     "tw.feedbackButton": "Phản hồi TurboWarp",
@@ -50,6 +53,7 @@
     "tw.studioview.authorAttribution": "bởi {author}",
     "tw.studioview.error": "Hình như có một lỗi tải trang tiếp theo của dự án",
     "tw.studioview.hoverText": "{title} bởi {author}",
+    "tw.twExtension.name": "Khối TurboWarp",
     "tw.usernameModal.mustChange.resetIt": "cài lại (khuyến nghị)",
     "tw.usernameModal.reset": "Cài đặt lại",
     "tw.usernameModal.title": "Đổi tên người dùng",
