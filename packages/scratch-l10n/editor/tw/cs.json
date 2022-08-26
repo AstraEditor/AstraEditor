@@ -28,7 +28,7 @@
     "tw.gui.defaultProjectTitle": "Projekt",
     "tw.guiDefaultTitle": "Zrychlit projekty Scratch",
     "tw.home.credit": "Poznámky a příspěvky",
-    "tw.home.description": "TurboWarp je modifikace Scratche, který kompiluje projekty do JavaScriptu, aby byly rychlejší. Zkuste vložit ID projektu, odkaz projektu nebo vyberte jeden z vybraných projektů dole.",
+    "tw.home.description": "TurboWarp je modifikace Scratche, která kompiluje projekty do JavaScriptu, aby byly rychlejší. Zkuste vložit ID projektu, odkaz projektu nebo vyberte jeden z vybraných projektů dole.",
     "tw.home.instructions": "Instrukce",
     "tw.input.tooltip": "Sem zkopírujte a vložte link projektu Scratch!",
     "tw.interpolationEnabled": "Interpolace",
