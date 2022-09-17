@@ -96,7 +96,9 @@ class Effect {
         }
 
         // Call the internal implementation per this Effect.
-        this._set(value);
+        if (value !== this.value) {
+            this._set(value);
+        }
 
         // Connect or disconnect from the graph if this now applies or no longer
         // applies an effect.
