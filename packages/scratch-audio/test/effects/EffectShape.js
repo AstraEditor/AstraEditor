@@ -9,7 +9,7 @@ const AudioTarget = require('../__mocks__/AudioTarget');
 
 const testEffect = (EffectClass, effectDepth) => {
     tap.test(EffectClass.name, t1 => {
-        t1.plan(3);
+        t1.plan(4);
 
         t1.test('methods', t2 => {
             t2.plan(7);
@@ -102,6 +102,39 @@ const testEffect = (EffectClass, effectDepth) => {
             t2.ok(!target.inputNode._result(), 'message sent');
             t2.equal(engine.inputNode._result().depth, 1, 'message received');
             t2.ok(engine.inputNode.connectedFrom.length, 'engine connected');
+
+            t2.end();
+        });
+
+        t1.test('_set not called if value does not change', t2 => {
+            const engine = new AudioEngine();
+            const target = new AudioTarget();
+            const effect = new EffectClass(engine, target, null);
+
+            let setCalledTimes = 0;
+            const originalSet = effect._set;
+            effect._set = function (newValue) {
+                setCalledTimes++;
+                return originalSet.call(this, newValue);
+            };
+
+            effect.set(effect.DEFAULT_VALUE);
+            effect.set(effect.DEFAULT_VALUE);
+            effect.set(effect.DEFAULT_VALUE);
+            t2.equal(setCalledTimes, 0);
+
+            effect.set(108);
+            t2.equal(setCalledTimes, 1);
+            effect.set(108);
+            effect.set(108);
+            effect.set(108);
+            t2.equal(setCalledTimes, 1);
+
+            effect.set(-1);
+            t2.equal(setCalledTimes, 2);
+            effect.set(-1);
+            effect.set(-1);
+            t2.equal(setCalledTimes, 2);
 
             t2.end();
         });
