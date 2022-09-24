@@ -2,7 +2,7 @@
   "name": "scratch-audio",
   "version": "0.1.0",
   "description": "audio engine for scratch 3.0",
-  "main": "dist.js",
+  "main": "./src/index.js",
   "browser": "./src/index.js",
   "scripts": {
     "test": "npm run lint && npm run tap && npm run build",
