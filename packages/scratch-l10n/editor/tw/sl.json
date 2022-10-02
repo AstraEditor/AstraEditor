@@ -97,6 +97,8 @@
     "tw.studioview.hoverText": "{title} avtorja {author}",
     "tw.twExtension.description": "Čudni novi bloki. Niso združljivi s Scratchem.",
     "tw.twExtension.name": "TurboWarpovi bloki",
+    "tw.unshared.1": "Dostop do nedeljenih projektov z njihovim ID-jem nekoč v prihodnosti ne bo več mogoč zaradi načrtovanih sprememb v Scratchevem programskem vmesniku.",
+    "tw.unshared.2": "Za več informacij obiščite: {link}",
     "tw.usernameModal.help": "Ta vrednost bo shranjena v vašem brskalniku. Morda bo zapisana med uporabo projektov, ki vsebujejo spremenljivke v oblaku.",
     "tw.usernameModal.help2": "Vrednosti, ki se ne ujemajo z obstoječim računom na Scratchu, bo strežnik za spremenljivke v oblaku običajno zavrnil. Priporočamo, da te nastavitve ne spreminjate ali pa uporabite svoje uporabniško ime na Scratchu.",
     "tw.usernameModal.mustChange": "Strežnik za spremenljivke v oblaku misli, da vaše uporabniško ime morda ni varno. Prosimo, daga spremenite ali {resetIt}.",

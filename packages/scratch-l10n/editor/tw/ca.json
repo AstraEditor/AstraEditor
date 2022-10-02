@@ -99,6 +99,8 @@
     "tw.studioview.hoverText": "{title}, fet per {author}",
     "tw.twExtension.description": "Blocs estrany snous. No compatible amb l'Scratch.",
     "tw.twExtension.name": "Blocs del TurboWarp",
+    "tw.unshared.1": "Els projectes no compartits ja no seran accessibles amb el seu ID en algun moment a causa dels propers canvis a l'API de Scratch.",
+    "tw.unshared.2": "Per a més informació, visita: {link}",
     "tw.usernameModal.help": "Aquest valor s'emmagatzemarà a les del vostre explorador. Es pot registrar quan interaccionis amb projectes que contenen variables al núvol.",
     "tw.usernameModal.help2": "Els valors que no corresponen a un compte del Scratch vàlid normalment seran rebutjats pel nostre servidor de variables al núvol. Us recomanem que ho deixis tal qual o que el canvïs pel teu nom d'usuari del Scratch.",
     "tw.usernameModal.mustChange": "Ho sentim, el servidor de variables al núvol creu que el teu nom d'usuari pot ser insegur. Si us plau, canvia-ho per una altre o {resetIt}.",

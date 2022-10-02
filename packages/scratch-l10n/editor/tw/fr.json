@@ -99,6 +99,8 @@
     "tw.tooLarge": "Ce son peut être trop volumineux pour être chargé dans Scratch.",
     "tw.twExtension.description": "De nouveaux blocs étranges. Non compatible avec Scratch.",
     "tw.twExtension.name": "Blocs TurboWarp",
+    "tw.unshared.1": "Les projets non partagés ne seront plus accessibles en utilisant uniquement leur ID a cause de futurs changements de l' API de Scratch.",
+    "tw.unshared.2": "Pour plus d'informations, visitez : {link}",
     "tw.usernameModal.help": "Cette valeur sera stockée dans la mémoire de votre navigateur. Il peut être consigné lorsque vous interagissez avec des projets contenant des variables cloud.",
     "tw.usernameModal.help2": "Les valeurs qui ne correspondent pas à un compte Scratch valide seront généralement rejetées par le serveur de variables cloud. Nous vous recommandons de le laisser tel quel ou de le remplacer par votre nom d'utilisateur Scratch.",
     "tw.usernameModal.mustChange": "Désolé, le serveur de variables cloud pense que votre nom d'utilisateur n'est peut-être pas sûr. Veuillez le changer pour autre chose ou{resetIt}.",

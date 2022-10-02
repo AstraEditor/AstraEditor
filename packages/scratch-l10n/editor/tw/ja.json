@@ -98,6 +98,8 @@
     "tw.studioview.error": "プロジェクトを次のページで読み込む際にエラーが発生しました。",
     "tw.twExtension.description": "奇妙な新しいブロック。Scratchでは使えません。",
     "tw.twExtension.name": "TurboWarpのブロック",
+    "tw.unshared.1": "Scratch API の変更に伴い、非共有プロジェクトは将来的にプロジェクト ID でアクセスできなくなる予定です。",
+    "tw.unshared.2": "詳しくはこちらをご覧ください: {link}",
     "tw.usernameModal.help": "この名前は、ブラウザのストレージに保存されます。クラウド変数を含むプロジェクトを見る際に記録されることがあります。",
     "tw.usernameModal.help2": "有効なScratchのアカウント名に対応していないと、通常はクラウド変数サーバに拒否されます。そのままにしておくか、Scratchのユーザー名に変えることをおすすめします。",
     "tw.usernameModal.mustChange": "申し訳ありません、あなたのユーザー名が安全でない可能性があります。他のユーザー名に変更するか、{resetIt}をしてください。",

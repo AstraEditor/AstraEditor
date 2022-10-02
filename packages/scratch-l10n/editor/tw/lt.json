@@ -98,6 +98,8 @@
     "tw.studioview.hoverText": "{title} sukurta {author}",
     "tw.twExtension.description": "Keisti nauji blokai. Nesuderinami su Scratch.",
     "tw.twExtension.name": "TurboWarp Blokai",
+    "tw.unshared.1": "Dėl būsimų Scratch API pakeitimų ateityje nebegalėsite pasiekti nesidalijamų projektų naudodami tik jų projekto ID.",
+    "tw.unshared.2": "Dėl daugiau informacijos, aplankykite: {link}",
     "tw.usernameModal.help": "Ši vertė bus išsaugota jūsų naršyklės saugykloje. Ji turėtų būti prijungta kai naudojates projektais kurie turi debesies kintamuosius.",
     "tw.usernameModal.help2": "Vertes, kurios neatitinka galiojančios Scratch paskyros, debesies kintamųjų serveris paprastai atmeta. Rekomenduojame palikti jį tokį, koks yra, arba pakeisti į Scratch naudotojo vardą.",
     "tw.usernameModal.mustChange": "Atsiprašome, bet debesies kintamųjų serveris mano kad jūsų naudotojo vardas gali būti nesaugus. Prašome jį pakeisti arba {resetIt}.",
