@@ -1,5 +1,6 @@
 const fetch = require('node-fetch').default;
 const https = require('https');
+const YAML = require('js-yaml');
 require('dotenv').config();
 
 const API_TOKEN = process.env.TRANSIFEX_API_TOKEN;
@@ -35,7 +36,8 @@ const fetchAPI = async (path, options = {}) => {
 
 const getTranslation = async (resource, language) => {
     const raw = (await fetchAPI(`project/${PROJECT}/resource/${resource}/translation/${language}?mode=onlytranslated`)).content;
-    return JSON.parse(raw);
+    // YAML is a superset of JSON, so this will work for both JSON and YAML resources.
+    return YAML.load(raw);
 };
 
 const getStats = async (resource) => {

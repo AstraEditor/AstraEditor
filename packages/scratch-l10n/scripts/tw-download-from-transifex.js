@@ -180,19 +180,33 @@ const processPackager = (translations) => {
     }
 };
 
+const processStoreListings = (translations) => {
+    translations = removeStubs(translations, 5);
+    writeToOutFile('store-listings.json', translations);
+    if (fs.existsSync(desktopPath)) {
+        console.log('Updating store-listings');
+        fs.writeFileSync(
+            pathUtil.join(desktopPath, 'store-listings/imported.json'),
+            JSON.stringify(translations, null, 4)
+        );
+    }
+};
+
 (async () => {
     const [
         guiMessages,
         addonMessages,
         desktopMessages,
         desktopWebMessages,
-        packagerMessages
+        packagerMessages,
+        storeListingMessages
     ] = await Promise.all([
         downloadAllLanguages('guijson'),
         downloadAllLanguages('addonsjson'),
         downloadAllLanguages('desktopjson'),
         downloadAllLanguages('desktop-webjson'),
-        downloadAllLanguages('packagerjson')
+        downloadAllLanguages('packagerjson'),
+        downloadAllLanguages('store-listingsyaml')
     ]);
 
     processGUI(guiMessages);
@@ -200,6 +214,7 @@ const processPackager = (translations) => {
     processDesktop(desktopMessages);
     processDesktopWeb(desktopWebMessages);
     processPackager(packagerMessages);
+    processStoreListings(storeListingMessages);
 })().catch((err) => {
     console.error(err);
     process.exit(1);
