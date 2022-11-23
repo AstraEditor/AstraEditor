@@ -12,7 +12,7 @@
     "project.comments.header": "Opmerkingen",
     "project.comments.toggleOff": "Commentaar uit",
     "project.comments.toggleOn": "Commentaar aan",
-    "project.comments.turnedOff": "Sorry, bij dit project is de mogelijkheid opmerkingen te plaatsen uit gezet.",
+    "project.comments.turnedOff": "Reageren voor dit project is uitgeschakeld.",
     "project.comments.turnedOffGlobally": "Reacties op projecten in Scratch zijn uitgeschakeld, maar maak je geen zorgen, je reacties worden opgeslagen en komen binnenkort terug. ",
     "project.share.notShared": "Dit project is niet gedeeld, dus alleen jij kan het zien. Klik \"Deel\" als je wil dat iedereen het kan zien!",
     "project.share.sharedLong": "Gefeliciteerd! Je hebt je project gedeeld! Anderen kunnen het nu uitproberen, opmerkingen plaatsen of hergebruiken.",
@@ -47,5 +47,6 @@
     "project.cloudDataLink": "Zie Gegevens",
     "project.usernameBlockAlert": "Dit project kan detecteren wie het gebruikt, via het \"gebruikersnaam\" blok. Om je identiteit te verbergen, meld je je af voordat je het project gebruikt.",
     "project.inappropriateUpdate": "Hmm …, de detector voor verkeerde woorden denkt dat er een probleem is met je tekst. Verander het en wees respectvol.",
-    "project.mutedAddToStudio": "Je kunt weer studio's toevoegen over {inDuration}."
+    "project.mutedAddToStudio": "Je kunt weer studio's toevoegen over {inDuration}.",
+    "project.cloudDataAndVideoAlert": "For privacy reasons, cloud variables have been disabled in this project because it contains video sensing blocks."
 }

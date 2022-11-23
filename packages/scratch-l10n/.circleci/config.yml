@@ -6,7 +6,7 @@ defaults: &defaults
   working_directory: ~/project
   executor:
     name: node/default
-    tag: 'lts'
+    tag: '16.18.0'
 jobs:
   build-and-test:
     <<: *defaults
@@ -53,6 +53,7 @@ jobs:
             npm run pull:editor
             npm run pull:www
             npm run test
+          no_output_timeout: 20m
       - persist_to_workspace:
           root: ~/project
           paths: .
@@ -75,8 +76,12 @@ jobs:
             git config --global user.email $(git log --pretty=format:"%ae" -n1)
             git config --global user.name $(git log --pretty=format:"%an" -n1)
             git add .
-            git commit -m "pull new editor translations from Transifex"
-            git push $CIRCLE_REPOSITORY_URL HEAD:master
+            if git diff --cached --exit-code --quiet; then
+              echo "Nothing to commit."
+            else
+              git commit -m "pull new editor translations from Transifex"
+              git push $CIRCLE_REPOSITORY_URL HEAD:master
+            fi
   sync-help:
     <<: *defaults
     steps:

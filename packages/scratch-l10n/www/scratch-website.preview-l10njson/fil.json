@@ -12,7 +12,7 @@
     "project.comments.header": "Mga Komento",
     "project.comments.toggleOff": "Patay ang pagkokomento",
     "project.comments.toggleOn": "Bukas ang pagkokomento",
-    "project.comments.turnedOff": "Paumanhin, ang pagpo-post ng komento ay nakapatay sa proyektong ito.",
+    "project.comments.turnedOff": "Commenting for this project has been turned off.",
     "project.comments.turnedOffGlobally": "Nakapatay ngayon ang mga komentong pamproyekto sa Scratch, ngunit huwag mag-alala, naitabi ang iyong komento at maibabalik kalaunan.",
     "project.share.notShared": "Hindi nakabahagi ang proyektong ito — kaya ikaw lamang ang nakakikita. Iklik ang 'Ibahagi' upang makita ito ninuman!",
     "project.share.sharedLong": "Isang pagbati sa pagbabagi mo ng iyong proyekto! Maaari na iyang masubukan, mabigyan ng komento, at ma-remix ng ibang tao.",
@@ -47,5 +47,6 @@
     "project.cloudDataLink": "Tingnan ang Datos",
     "project.usernameBlockAlert": "Natutuklasan ang proyektong ito kung sino ang gumagamit nito, sa pamamagitan ng \"username\" na block. Upang itago ang iyong pagkakakilanlan, mag-sign out muna bago gamitin ang proyekto. ",
     "project.inappropriateUpdate": "Hmm... Tingin ng bad word detector na may problema sa iyong text. Pakibago ito and maging magalang.",
-    "project.mutedAddToStudio": "You will be able to add to studios again {inDuration}."
+    "project.mutedAddToStudio": "You will be able to add to studios again {inDuration}.",
+    "project.cloudDataAndVideoAlert": "For privacy reasons, cloud variables have been disabled in this project because it contains video sensing blocks."
 }
