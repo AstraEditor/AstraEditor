@@ -117,6 +117,7 @@
     "tw.twExtension.description": "奇怪的新积木。不兼容 Scratch。",
     "tw.twExtension.name": "TurboWarp 积木",
     "tw.unshared.2": "详见 {link}",
+    "tw.unshared.bug": "如果该作品实际上是被分享的，请报告错误。",
     "tw.unshared.cache": "如果该项目是最近共享的，几分钟内可能会出现一些错误。",
     "tw.unshared2.1": "未共享的项目不可见。",
     "tw.usernameModal.help": "此变量将存储在浏览器中。当您与包含云变量的作品交互时，它可能会被记录。",
