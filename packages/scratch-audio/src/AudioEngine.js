@@ -48,7 +48,6 @@ class AudioEngine {
          * @type {AudioContext}
          */
         this.audioContext = audioContext;
-        StartAudioContext(this.audioContext);
 
         /**
          * Master GainNode that all sounds plays through. Changing this node
@@ -75,6 +74,8 @@ class AudioEngine {
          * Left is closest to input, Right is closest to output
          */
         this.effects = [PanEffect, PitchEffect, VolumeEffect];
+
+        StartAudioContext(this.audioContext);
     }
 
     /**
