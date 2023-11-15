@@ -315,12 +315,33 @@ const pullDesktop = async () => {
     );
 };
 
+const pullExtensions = async () => {
+    const extensions = pathUtil.join(__dirname, '../../extensions');
+    if (!isDirectorySync(extensions)) {
+        console.log('Skipping extensions; could not find extensions.');
+        return;
+    }
+
+    const metadataTranslations = await pullResource('extension-metadata', 0);
+    fs.writeFileSync(
+        pathUtil.join(extensions, 'translations/extension-metadata.json'),
+        JSON.stringify(metadataTranslations, null, 4)
+    );
+
+    const runtimeTranslations = await pullResource('extensions', 0);
+    fs.writeFileSync(
+        pathUtil.join(extensions, 'translations/extension-runtime.json'),
+        JSON.stringify(runtimeTranslations, null, 4)
+    );
+};
+
 const pullEverything = async () => {
     try {
         console.log('DOWNLOADING from Transifex...');
         await pullGui();
         await pullPackager();
         await pullDesktop();
+        await pullExtensions();
     } catch (e) {
         console.error(e);
         process.exit(1);
