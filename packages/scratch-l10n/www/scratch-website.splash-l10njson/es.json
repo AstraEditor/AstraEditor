@@ -49,5 +49,8 @@
     "welcome.tryOut": "Prueba los proyectos de inicio",
     "welcome.connect": "Conéctate con otros Scratchers",
     "activity.seeUpdates": "Aquí es donde verás las novedades de los Scratchers a los que sigues",
-    "activity.checkOutScratchers": "Échale un vistazo a algunos Scratchers que te podría interesar seguir"
+    "activity.checkOutScratchers": "Échale un vistazo a algunos Scratchers que te podría interesar seguir",
+    "featurebanner.highContrast.comingSoon": "PRÓXIMAMENTE: ¡Contraste de color en Scratch!",
+    "featurebanner.highContrast.forumTitle": "Configuración de bloques de color y actualizaciones de el sitio",
+    "featurebanner.highContrast.learnMore": "Aprende más"
 }

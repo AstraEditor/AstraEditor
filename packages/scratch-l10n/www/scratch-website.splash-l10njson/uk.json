@@ -49,5 +49,8 @@
     "welcome.tryOut": "Спробувати прості проекти",
     "welcome.connect": "Спілкуватися з іншими скретчерами",
     "activity.seeUpdates": "Тут ви будете бачити оновлення від скретчерів яким слідуєте",
-    "activity.checkOutScratchers": "Check out some Scratchers you might like to follow"
+    "activity.checkOutScratchers": "Check out some Scratchers you might like to follow",
+    "featurebanner.highContrast.comingSoon": "НЕЗАБАРОМ: Кольоровий контраст в Scratch!",
+    "featurebanner.highContrast.forumTitle": "Налаштування кольорової гами блоків та сайту",
+    "featurebanner.highContrast.learnMore": "Дізнатись більше"
 }

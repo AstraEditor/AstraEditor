@@ -3,7 +3,7 @@
     "splash.featuredStudios": "Gallerie in Primo Piano",
     "splash.projectsCuratedBy": "Progetti selezionati da {curatorId}",
     "splash.scratchDesignStudioTitle": "Studio di Progettazione di Scratch",
-    "splash.visitTheStudio": "Visita lo studio",
+    "splash.visitTheStudio": "Visita la galleria",
     "splash.projectsByScratchersFollowing": "Progetti di Utenti che sto seguendo",
     "splash.projectsLovedByScratchersFollowing": "Progetti che piacciono agli Utenti che sto seguendo",
     "splash.projectsInStudiosFollowing": "Progetti nelle Gallerie che sto seguendo",
@@ -49,5 +49,8 @@
     "welcome.tryOut": "Prova i progetti \"Per Iniziare\"",
     "welcome.connect": "Entra in contatto con altri membri delle comunità di Scratch",
     "activity.seeUpdates": "Qui è dove vedrai gli aggiornamenti dei membri della comunità che segui",
-    "activity.checkOutScratchers": "Vedi se ci sono membri della comunità che potresti voler seguire"
+    "activity.checkOutScratchers": "Vedi se ci sono membri della comunità che potresti voler seguire",
+    "featurebanner.highContrast.comingSoon": "IN ARRIVO: Colori Contrastati in Scratch!",
+    "featurebanner.highContrast.forumTitle": "Aggiornamenti al sito e alle Impostazioni del Colore dei Blocchi",
+    "featurebanner.highContrast.learnMore": "Per Saperne di Più"
 }

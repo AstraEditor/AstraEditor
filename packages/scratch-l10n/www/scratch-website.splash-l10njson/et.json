@@ -24,7 +24,7 @@
     "intro.startCreating": "Start Creating",
     "intro.tagLine1": "Lugude, mängude ja animatsioonide loomine",
     "intro.tagLine2": "ning jagamine teistega üle maailma",
-    "intro.watchVideo": "Watch Video",
+    "intro.watchVideo": "Vaata videot",
     "news.scratchNews": "Scratchi uudised",
     "donatebanner.askSupport": "Scratch is the world's largest free coding community for kids. Your support makes a difference.",
     "donatebanner.scratchWeek": "May 19-20 is Scratch’s 15th Anniversary! {celebrationLink}. Donate to support creative coding worldwide.",
@@ -49,5 +49,8 @@
     "welcome.tryOut": "Proovi stardiprojekte",
     "welcome.connect": "Võta ühendust teiste scratchijatega",
     "activity.seeUpdates": "Siin näed uuendusi scratchijatelt, keda jälgid",
-    "activity.checkOutScratchers": "Check out some Scratchers you might like to follow"
+    "activity.checkOutScratchers": "Check out some Scratchers you might like to follow",
+    "featurebanner.highContrast.comingSoon": "VARSTI TULEB: värvikontrastsus Scratchis!",
+    "featurebanner.highContrast.forumTitle": "Plokki värvisätted ja saidi värskendused",
+    "featurebanner.highContrast.learnMore": "Loe veel"
 }

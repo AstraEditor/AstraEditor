@@ -49,5 +49,8 @@
     "welcome.tryOut": "Preizkusi projekte za začetnike",
     "welcome.connect": "Poveži se z ostalimi Scratcherji",
     "activity.seeUpdates": "Tu boš videl-a, kaj so počeli Scratcherji, ki jim slediš ",
-    "activity.checkOutScratchers": "Preveri nekaj Scratcherjev, ki bi jim morda hotel slediti"
+    "activity.checkOutScratchers": "Preveri nekaj Scratcherjev, ki bi jim morda hotel slediti",
+    "featurebanner.highContrast.comingSoon": "KMALU: barvni kontrast v Scratchu!",
+    "featurebanner.highContrast.forumTitle": "Nastavitve barv blokov in posodobitve strani",
+    "featurebanner.highContrast.learnMore": "Več o tem"
 }

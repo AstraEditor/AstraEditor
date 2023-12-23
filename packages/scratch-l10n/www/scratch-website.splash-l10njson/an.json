@@ -34,7 +34,7 @@
     "teacherbanner.classesButton": "As mías clases",
     "teacherbanner.faqButton": "Preguntas freqüents (FAQs) de Cuenta de profesor",
     "hocbanner.title": "Está creativo con a codificación!",
-    "hocbanner.titleTellStory": "Tell Your Story with Scratch!",
+    "hocbanner.titleTellStory": "Cuenta la tuya historia con Scratch!",
     "hocbanner.moreActivities": "Veyer mas actividatz",
     "hocbanner.imagine": "Imachina un mundo",
     "hocbanner.codeACartoon": "Programar uns dibuixos animaus",
@@ -49,5 +49,8 @@
     "welcome.tryOut": "Prebar os prochectos d'iniciación",
     "welcome.connect": "Connectar con atros Scratchers",
     "activity.seeUpdates": "Aquí ye an que veyerás as actualizacions d'os Scratchers que sigues",
-    "activity.checkOutScratchers": "Veye qualques Scratchers que te fería goyo de seguir"
+    "activity.checkOutScratchers": "Veye qualques Scratchers que te fería goyo de seguir",
+    "featurebanner.highContrast.comingSoon": "MUITO LUEGO: Contraste de color en Scratch!",
+    "featurebanner.highContrast.forumTitle": "Blocar configuración de color y actualización de puestos",
+    "featurebanner.highContrast.learnMore": "Mas información"
 }

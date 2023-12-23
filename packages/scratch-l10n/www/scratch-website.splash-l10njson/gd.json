@@ -34,12 +34,12 @@
     "teacherbanner.classesButton": "Na clasaichean agam",
     "teacherbanner.faqButton": "CÀBHA mu chunntasan tidseir",
     "hocbanner.title": "Dèan còdachadh cruthachail!",
-    "hocbanner.titleTellStory": "Tell Your Story with Scratch!",
+    "hocbanner.titleTellStory": "Innis do sgeul le Scratch!",
     "hocbanner.moreActivities": "Seall barrachd gnìomhan",
     "hocbanner.imagine": "Cruthaich saoghal",
     "hocbanner.codeACartoon": "Beòthaich cartùn",
     "hocbanner.talking": "Sgeulachdan a bhruidhneas",
-    "hocbanner.makeItFly": "Air sgiath",
+    "hocbanner.makeItFly": "Air sgèith",
     "hocbanner.makeMusic": "Cluich ceòl",
     "hocbanner.chaseGame": "Cruthaich geama seilg",
     "hocbanner.createAStory": "Cruthaich sgeulachd",
@@ -49,5 +49,8 @@
     "welcome.tryOut": "Feuch ri pròiseact tòiseachaidh",
     "welcome.connect": "Ceangail ri Luchd-Scratch eile",
     "activity.seeUpdates": "Chì thu na tha ùr leis an Luchd-Scratch air a leanas tu an seo",
-    "activity.checkOutScratchers": "Coimhead air Luchd-Scratch air am bu toigh leat leantainn ’s dòcha"
+    "activity.checkOutScratchers": "Coimhead air Luchd-Scratch air am bu toigh leat leantainn ’s dòcha",
+    "featurebanner.highContrast.comingSoon": "RI THIGHINN: Iomsgaradh nan dath ann an Scratch!",
+    "featurebanner.highContrast.forumTitle": "Roghainnean dath nam blocaichean is ùrachaidhean na làraich",
+    "featurebanner.highContrast.learnMore": "Barrachd fiosrachaidh"
 }
