@@ -43,11 +43,14 @@
     "hocbanner.makeMusic": "Создай музыку",
     "hocbanner.chaseGame": "Создай игру в охоту",
     "hocbanner.createAStory": "Расскажи историю",
-    "hocbanner.animateACharacter": "Оживи персонаж",
+    "hocbanner.animateACharacter": "Оживите персонажа",
     "welcome.welcomeToScratch": "Добро пожаловать в Scratch!",
     "welcome.learn": "Научись создавать проекты в Scratch",
     "welcome.tryOut": "Попробуй стартовые проекты",
     "welcome.connect": "Связаться со скретчерами",
     "activity.seeUpdates": "Здесь вы увидите обновления от скретчеров, за которыми вы следите",
-    "activity.checkOutScratchers": "Посмотри на Скретчеров, на которых ты можешь подписаться"
+    "activity.checkOutScratchers": "Посмотрите скретчеров, на которых Вы можете подписаться",
+    "featurebanner.highContrast.comingSoon": "СКОРО: цветовой контраст в Скретче!",
+    "featurebanner.highContrast.forumTitle": "Настройки цвета блоков и обновления сайта",
+    "featurebanner.highContrast.learnMore": "Подробнее"
 }

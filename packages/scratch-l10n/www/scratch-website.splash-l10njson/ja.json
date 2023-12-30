@@ -49,5 +49,8 @@
     "welcome.tryOut": "初心者向けプロジェクトを試す",
     "welcome.connect": "他のScratcherと交流する",
     "activity.seeUpdates": "フォローしているScratcherからの更新情報がここに表示されます",
-    "activity.checkOutScratchers": "フォローしたいかもしれないScratcherを確認してみましょう"
+    "activity.checkOutScratchers": "フォローしたいかもしれないScratcherを確認してみましょう",
+    "featurebanner.highContrast.comingSoon": "近日公開: Scratchのカラーコントラスト！",
+    "featurebanner.highContrast.forumTitle": "ブロック色設定とサイトアップデート",
+    "featurebanner.highContrast.learnMore": "もっと詳しく"
 }
