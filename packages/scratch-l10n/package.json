@@ -9,33 +9,33 @@
         "tx-push-src": "./scripts/tx-push-src.js"
     },
     "scripts": {
-        "tw:pull": "babel-node scripts/tw-pull",
-        "tw:push": "babel-node scripts/tw-push",
-        "tw:publish": "./scripts/tw-publish.sh",
-        "build:data": "babel-node scripts/build-data",
         "build": "npm run clean && npm run build:data && webpack --progress --colors --bail",
+        "build:data": "babel-node scripts/build-data",
         "clean": "rimraf ./dist ./locales && mkdirp dist locales",
+        "lint": "npm run lint:js && npm run lint:json",
         "lint:js": "eslint . --ext .js",
         "lint:json": "jshint -e .json www editor/blocks editor/extensions editor/interface editor/paint-editor",
-        "lint": "npm run lint:js && npm run lint:json",
-        "pull:interface": "babel-node scripts/tx-pull-editor scratch-editor interface ./editor/interface/",
-        "pull:paint": "babel-node scripts/tx-pull-editor scratch-editor paint-editor ./editor/paint-editor/",
-        "pull:extensions": "babel-node scripts/tx-pull-editor scratch-editor extensions ./editor/extensions/",
         "pull:blocks": "babel-node scripts/tx-pull-editor scratch-editor blocks ./editor/blocks/",
         "pull:editor": "npm run pull:blocks && npm run pull:extensions && npm run pull:paint && npm run pull:interface",
-        "pull:www": "babel-node scripts/tx-pull-www ./www",
-        "pull:help:names": "./scripts/tx-pull-help-names.js",
-        "pull:help:articles": "./scripts/tx-pull-help-articles.js",
+        "pull:extensions": "babel-node scripts/tx-pull-editor scratch-editor extensions ./editor/extensions/",
         "pull:help": "npm run pull:help:names && npm run pull:help:articles",
+        "pull:help:articles": "./scripts/tx-pull-help-articles.js",
+        "pull:help:names": "./scripts/tx-pull-help-names.js",
+        "pull:interface": "babel-node scripts/tx-pull-editor scratch-editor interface ./editor/interface/",
+        "pull:paint": "babel-node scripts/tx-pull-editor scratch-editor paint-editor ./editor/paint-editor/",
+        "pull:www": "babel-node scripts/tx-pull-www ./www",
         "push:help": "./scripts/tx-push-help.js",
         "sync:help": "npm run push:help && npm run pull:help",
         "test": "npm run lint:js && npm run validate:editor && npm run validate:www && npm run build && npm run lint:json",
+        "tw:pull": "babel-node scripts/tw-pull",
+        "tw:push": "babel-node scripts/tw-push",
+        "tw:publish": "./scripts/tw-publish.sh",
         "update": "scripts/update-translations.sh",
         "validate:blocks": "babel-node scripts/validate-translations ./editor/blocks/",
+        "validate:editor": "npm run validate:blocks && npm run validate:extensions && npm run validate:interface && npm run validate:paint",
         "validate:extensions": "babel-node scripts/validate-translations ./editor/extensions/ && babel-node scripts/validate-extension-inputs",
         "validate:interface": "babel-node scripts/validate-translations ./editor/interface/",
         "validate:paint": "babel-node scripts/validate-translations ./editor/paint-editor/",
-        "validate:editor": "npm run validate:blocks && npm run validate:extensions && npm run validate:interface && npm run validate:paint",
         "validate:www": "babel-node scripts/validate-www ./www"
     },
     "repository": {
@@ -85,7 +85,6 @@
         "rimraf": "^2.6.2",
         "webpack": "^4.6.0",
         "webpack-cli": "^3.1.2",
-        "yaml": "^2.2.1"
+        "yaml": "^2.3.4"
     }
-  }
 }
