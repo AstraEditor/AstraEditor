@@ -174,11 +174,19 @@ Blockly.Block = function(workspace, prototypeName, opt_id) {
     /** @type {string} */
     this.type = prototypeName;
     var prototype = Blockly.Blocks[prototypeName];
+    
+    // If the block type is not defined, use the error block instead
+    if (!prototype) {
+      console.warn('Unknown block type: "' + prototypeName + '". Using error block.');
+      prototype = Blockly.Blocks['error'];
+      // Store the original opcode for display
+      this._unknownOpcode = prototypeName;
+    }
+    
     goog.asserts.assertObject(prototype,
         'Error: Unknown block type "%s".', prototypeName);
     goog.mixin(this, prototype);
   }
-
   workspace.addTopBlock(this);
 
   // Call an initialization function, if it exists.

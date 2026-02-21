@@ -1350,5 +1350,24 @@ Blockly.Css.CONTENT = [
   '.scratchCategoryMenuItem:hover {',
     'color: $colour_toolboxHover !important;',
   '}',
+
+  /* Flyout Resize Handle Styles */
+  '.blocklyFlyoutResizeHandle {',
+    'cursor: col-resize;',
+    'transition: fill 0.2s ease;',
+  '}',
+
+  '.blocklyFlyoutResizeHandle:hover {',
+    'fill: #cccccc66 !important;',
+  '}',
+
+  '.blocklyFlyoutResizeHandle:active {',
+    'fill: rgba(110, 110, 110, 0.23) !important;',
+  '}',
+
+  /* RTL support */
+  '.blocklyFlyout.RTL .blocklyFlyoutResizeHandle {',
+    'cursor: col-resize;',
+  '}',
   ''
 ];

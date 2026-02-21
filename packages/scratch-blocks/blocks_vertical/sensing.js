@@ -36,6 +36,7 @@ Blockly.Blocks['sensing_touchingobject'] = {
   init: function() {
     this.jsonInit({
       "message0": Blockly.Msg.SENSING_TOUCHINGOBJECT,
+      "checkboxInFlyout": true,
       "args0": [
         {
           "type": "input_value",
@@ -79,6 +80,7 @@ Blockly.Blocks['sensing_touchingcolor'] = {
   init: function() {
     this.jsonInit({
       "message0": Blockly.Msg.SENSING_TOUCHINGCOLOR,
+      "checkboxInFlyout": true,
       "args0": [
         {
           "type": "input_value",
@@ -99,6 +101,7 @@ Blockly.Blocks['sensing_coloristouchingcolor'] = {
   init: function() {
     this.jsonInit({
       "message0": Blockly.Msg.SENSING_COLORISTOUCHINGCOLOR,
+      "checkboxInFlyout": true,
       "args0": [
         {
           "type": "input_value",
@@ -123,6 +126,7 @@ Blockly.Blocks['sensing_distanceto'] = {
   init: function() {
     this.jsonInit({
       "message0": Blockly.Msg.SENSING_DISTANCETO,
+      "checkboxInFlyout": true,
       "args0": [
         {
           "type": "input_value",
@@ -200,6 +204,7 @@ Blockly.Blocks['sensing_keypressed'] = {
   init: function() {
     this.jsonInit({
       "message0": Blockly.Msg.SENSING_KEYPRESSED,
+      "checkboxInFlyout": true,
       "args0": [
         {
           "type": "input_value",
@@ -412,6 +417,7 @@ Blockly.Blocks['sensing_of_object_menu'] = {
   init: function() {
     this.jsonInit({
       "message0": "%1",
+      "checkboxInFlyout": true,
       "args0": [
         {
           "type": "field_dropdown",
@@ -437,6 +443,7 @@ Blockly.Blocks['sensing_of'] = {
   init: function() {
     this.jsonInit({
       "message0": Blockly.Msg.SENSING_OF,
+      "checkboxInFlyout": true,
       "args0": [
         {
           "type": "field_dropdown",
@@ -545,8 +552,7 @@ Blockly.Blocks['sensing_userid'] = {
 Blockly.Blocks['sensing_online'] = {
   init: function() {
     this.jsonInit({
-      // TODO: we need infrastructure to translate new blockly strings
-      "message0": "online?",
+      "message0": Blockly.Msg.SENSING_ONLINE,
       "category": Blockly.Categories.sensing,
       "checkboxInFlyout": true,
       "extensions": ["colours_sensing", "output_boolean"]

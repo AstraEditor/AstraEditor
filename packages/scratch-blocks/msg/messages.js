@@ -270,6 +270,7 @@ Blockly.Msg.SENSING_CURRENT_SECOND = 'second';
 Blockly.Msg.SENSING_DAYSSINCE2000 = 'days since 2000';
 Blockly.Msg.SENSING_USERNAME = 'username';
 Blockly.Msg.SENSING_USERID = 'user id';
+Blockly.Msg.SENSING_ONLINE = 'online?';
 
 // Sound blocks
 Blockly.Msg.SOUND_PLAY = 'start sound %1';
@@ -357,3 +358,5 @@ Blockly.Msg.NEW_BROADCAST_MESSAGE = 'New message';
 Blockly.Msg.NEW_BROADCAST_MESSAGE_TITLE = 'New message name:';
 Blockly.Msg.BROADCAST_MODAL_TITLE = 'New Message';
 Blockly.Msg.DEFAULT_BROADCAST_MESSAGE_NAME = 'message1';
+
+// AstraEditor

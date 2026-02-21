@@ -146,6 +146,41 @@ Blockly.Flyout = function(workspaceOptions) {
    */
   this.recycleBlocks_ = [];
 
+  /**
+   * Current width of the flyout (can be changed by dragging).
+   * @type {number}
+   * @private
+   */
+  this.currentWidth_ = null;
+
+  /**
+   * Whether the flyout width is currently being dragged.
+   * @type {boolean}
+   * @private
+   */
+  this.isDraggingWidth_ = false;
+
+  /**
+   * Starting X position when dragging width.
+   * @type {number}
+   * @private
+   */
+  this.dragStartX_ = 0;
+
+  /**
+   * Starting width when dragging width.
+   * @type {number}
+   * @private
+   */
+  this.dragStartWidth_ = 0;
+
+  /**
+   * Whether the transform has been set (to prevent it from being updated during resize).
+   * @type {boolean}
+   * @private
+   */
+  this.transformSet_ = false;
+
 };
 
 /**
@@ -203,7 +238,7 @@ Blockly.Flyout.prototype.GAP_Y = Blockly.Flyout.prototype.MARGIN;
  * @type {number}
  * @const
  */
-Blockly.Flyout.prototype.SCROLLBAR_PADDING = 2;
+Blockly.Flyout.prototype.SCROLLBAR_PADDING = 7;
 
 /**
  * Width of flyout.
@@ -232,6 +267,27 @@ Blockly.Flyout.prototype.contentWidth_ = 0;
  * @private
  */
 Blockly.Flyout.prototype.contentHeight_ = 0;
+
+/**
+ * Minimum width of the flyout in pixels.
+ * @type {number}
+ * @const
+ */
+Blockly.Flyout.prototype.MIN_WIDTH = 30;
+
+/**
+ * Maximum width of the flyout in pixels.
+ * @type {number}
+ * @const
+ */
+Blockly.Flyout.prototype.MAX_WIDTH = 800;
+
+/**
+ * Width of the resize handle in pixels.
+ * @type {number}
+ * @const
+ */
+Blockly.Flyout.prototype.RESIZE_HANDLE_WIDTH = 5;
 
 /**
  * Vertical offset of flyout.
@@ -368,7 +424,136 @@ Blockly.Flyout.prototype.setParentToolbox = function(toolbox) {
  * @return {number} The width of the flyout.
  */
 Blockly.Flyout.prototype.getWidth = function() {
+  // Return the current width if it has been set by dragging
+  if (this.currentWidth_ !== null) {
+    return this.currentWidth_;
+  }
   return this.DEFAULT_WIDTH;
+};
+
+/**
+ * Set the width of the flyout.
+ * @param {number} width The new width in pixels.
+ * @public
+ */
+Blockly.Flyout.prototype.setWidth = function(width) {
+  // Clamp the width to the min/max bounds
+  width = Math.max(this.MIN_WIDTH, Math.min(this.MAX_WIDTH, width));
+
+  this.currentWidth_ = width;
+
+  // Update the flyout position and layout
+  if (this.isVisible()) {
+    this.position();
+    this.reflow();
+  }
+};
+
+/**
+ * Reset the flyout width to the default value.
+ * @public
+ */
+Blockly.Flyout.prototype.resetWidth = function() {
+  this.currentWidth_ = null;
+  if (this.isVisible()) {
+    this.position();
+    this.reflow();
+  }
+};
+
+/**
+ * Handle mouse down on the resize handle.
+ * @param {!Event} e The mouse down event.
+ * @private
+ */
+Blockly.Flyout.prototype.onResizeHandleMouseDown_ = function(e) {
+
+  // Prevent default behavior and stop propagation
+  e.preventDefault();
+  e.stopPropagation();
+
+  this.isDraggingWidth_ = true;
+  this.dragStartX_ = e.clientX;
+  this.dragStartWidth_ = this.getWidth();
+
+  // Add event listeners for mouse move and mouse up
+  // 直接使用原生事件监听器绕过Blockly的事件系统
+  this.resizeMouseMoveWrapper_ = function(e) {
+    this.onResizeHandleMouseMove_(e);
+  }.bind(this);
+
+  this.resizeMouseUpWrapper_ = function(e) {
+    this.onResizeHandleMouseUp_(e);
+  }.bind(this);
+
+  document.addEventListener('mousemove', this.resizeMouseMoveWrapper_, false);
+  document.addEventListener('mouseup', this.resizeMouseUpWrapper_, false);
+
+  // Change cursor
+  document.body.style.cursor = 'col-resize';
+};
+
+/**
+ * Handle mouse move while dragging the resize handle.
+ * @param {!Event} e The mouse move event.
+ * @private
+ */
+Blockly.Flyout.prototype.onResizeHandleMouseMove_ = function(e) {
+  if (!this.isDraggingWidth_) {
+    return;
+  }
+
+  e.preventDefault();
+
+  // Calculate the new width based on the mouse movement
+  var deltaX = e.clientX - this.dragStartX_;
+
+  // For RTL, the direction is reversed
+  if (this.RTL) {
+    deltaX = -deltaX;
+  }
+
+  var newWidth = this.dragStartWidth_ + deltaX;
+
+  // Use requestAnimationFrame for smooth updates
+  if (!this.resizeAnimationFrame_) {
+    this.resizeAnimationFrame_ = requestAnimationFrame(function() {
+      this.setWidth(newWidth);
+      this.resizeAnimationFrame_ = null;
+    }.bind(this));
+  }
+};
+
+/**
+ * Handle mouse up after dragging the resize handle.
+ * @param {!Event} e The mouse up event.
+ * @private
+ */
+Blockly.Flyout.prototype.onResizeHandleMouseUp_ = function(e) {
+  if (!this.isDraggingWidth_) {
+    return;
+  }
+
+  e.preventDefault();
+  e.stopPropagation();
+
+  this.isDraggingWidth_ = false;
+
+  // Clear transformSet_ flag so transform will be recalculated on next position() call
+  this.transformSet_ = false;
+
+  // Remove event listeners using native removeEventListener
+  if (this.resizeMouseMoveWrapper_) {
+    document.removeEventListener('mousemove', this.resizeMouseMoveWrapper_, false);
+    this.resizeMouseMoveWrapper_ = null;
+  }
+  if (this.resizeMouseUpWrapper_) {
+    document.removeEventListener('mouseup', this.resizeMouseUpWrapper_, false);
+    this.resizeMouseUpWrapper_ = null;
+  }
+
+  // Reset cursor
+  document.body.style.cursor = '';
 };
 
 /**

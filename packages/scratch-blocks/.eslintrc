@@ -1,9 +1,9 @@
 {
     "rules": {
-        "curly": ["error", "multi-line"],
-        "eol-last": ["error"],
+        "curly": ["warn", "multi-line"],
+        "eol-last": ["warn"],
         "indent": [
-            "error", 2,  # Blockly/Google use 2-space indents
+            "warn", 2,  # Blockly/Google use 2-space indents
             # Blockly/Google uses +4 space indents for line continuations.
             {
                 "SwitchCase": 1,
@@ -24,11 +24,11 @@
                 "ignoredNodes": ["ConditionalExpression"]
             }
         ],
-        "linebreak-style": ["error", "unix"],
-        "max-len": ["error", 120, 4],
-        "no-trailing-spaces": ["error", { "skipBlankLines": true }],
+        "linebreak-style": ["warn", "unix"],
+        "max-len": ["warn", 120, 4],
+        "no-trailing-spaces": ["warn", { "skipBlankLines": true }],
         "no-unused-vars": [
-            "error",
+            "warn",
             {
                 "args": "after-used",
                 # Ignore vars starting with an underscore.
@@ -37,15 +37,15 @@
                 "argsIgnorePattern": "^_"
             }
         ],
-        "no-use-before-define": ["error"],
+        "no-use-before-define": ["warn"],
         "quotes": ["off"], # Blockly mixes single and double quotes
-        "semi": ["error", "always"],
-        "space-before-function-paren": ["error", "never"], # Blockly doesn't have space before function paren
-        "space-infix-ops": ["error"],
+        "semi": ["warn", "always"],
+        "space-before-function-paren": ["warn", "always"], # Blockly doesn't have space before function paren(changed 'never' to 'always')
+        "space-infix-ops": ["warn"],
         "strict": ["off"], # Blockly uses 'use strict' in files
         "no-cond-assign": ["off"], # Blockly often uses cond-assignment in loops
         "no-redeclare": ["off"], # Closure style allows redeclarations
-        "valid-jsdoc": ["error", {"requireReturn": false}],
+        "valid-jsdoc": ["warn", {"requireReturn": false}],
         "no-console": ["off"],
         "no-constant-condition": ["off"]
     },

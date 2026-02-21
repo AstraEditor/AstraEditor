@@ -173,6 +173,38 @@ Blockly.VerticalFlyout.prototype.createDom = function(tagName) {
   this.workspace_.svgGroup_.setAttribute(
       'clip-path', 'url(#blocklyBlockMenuClipPath)');
 
+  // Create the resize handle
+  this.resizeHandle_ = Blockly.utils.createSvgElement('rect',
+      {
+        'class': 'blocklyFlyoutResizeHandle',
+        'width': this.RESIZE_HANDLE_WIDTH,
+        'height': '0',  // Will be set in position()
+        'fill': 'transparent',
+        'style': 'cursor: col-resize; pointer-events: all;',
+        'z-index': '31'
+      },
+      this.svgGroup_);
+
+  // Bind event to the resize handle immediately after creation
+  // 直接使用addEventListener绕过Blockly的事件系统
+  // 使用事件捕获阶段（useCapture = true）来确保事件能够被捕获
+  var directHandler = function(e) {
+    this.onResizeHandleMouseDown_(e);
+  }.bind(this);
+
+  // 使用事件捕获阶段
+  this.resizeHandle_.addEventListener('mousedown', directHandler, true);
+
+  // 同时也绑定到冒泡阶段作为备用
+  this.resizeHandle_.addEventListener('mousedown', directHandler, false);
+
+  // 保存引用以便清理
+  this.resizeHandleMouseDownWrapper_ = [
+    [this.resizeHandle_, 'mousedown', directHandler, true],
+    [this.resizeHandle_, 'mousedown', directHandler, false]
+  ];
+  this.listeners_.push(this.resizeHandleMouseDownWrapper_);
+
   return this.svgGroup_;
 };
 
@@ -324,10 +356,19 @@ Blockly.VerticalFlyout.prototype.position = function() {
   // This version of the flyout does not change width to fit its contents.
   // Instead it matches the width of its parent or uses a default value.
   this.width_ = this.getWidth();
-
   if (this.parentToolbox_) {
     var toolboxWidth = this.parentToolbox_.getWidth();
-    var categoryWidth = toolboxWidth - this.width_;
+    var categoryWidth = toolboxWidth - this.DEFAULT_WIDTH //this.width_;
+    /**
+     * 是的，categoryWidth实际上是关于积木栏的宽度
+     * 但是这涉及到this.width_的计算
+     * 由于flyout的宽度修改是要修改它的
+     * 导致categoryWidth会发生变化
+     * 从而导致flyout会出现位移这个致命的问题
+     * 我们可以直接改成默认值（DEFAULT_WIDTH）
+     * 如果现在无插件进行修改宽度
+     * 我认为这是最简单的修复方案
+     */
     var x = this.toolboxPosition_ == Blockly.TOOLBOX_AT_RIGHT ?
         targetWorkspaceMetrics.viewWidth : categoryWidth;
     var y = 0;
@@ -344,8 +385,14 @@ Blockly.VerticalFlyout.prototype.position = function() {
 
   this.svgGroup_.setAttribute("width", this.width_);
   this.svgGroup_.setAttribute("height", this.height_);
-  var transform = 'translate(' + x + 'px,' + y + 'px)';
-  Blockly.utils.setCssTransform(this.svgGroup_, transform);
+
+  // Only set transform on first call, never update it during resize or zoom
+  // This prevents the flyout from moving when width changes or page zooms
+  if (!this.transformSet_) {
+    var transform = 'translate(' + x + 'px,' + y + 'px)';
+    Blockly.utils.setCssTransform(this.svgGroup_, transform);
+    this.transformSet_ = true;
+  }
 
   // Update the scrollbar (if one exists).
   if (this.scrollbar_) {
@@ -353,6 +400,22 @@ Blockly.VerticalFlyout.prototype.position = function() {
     this.scrollbar_.setOrigin(x, y);
     this.scrollbar_.resize();
   }
+
+  // Update the resize handle position
+  if (this.resizeHandle_) {
+    this.resizeHandle_.setAttribute('height', this.height_);
+    // Position the handle at the right edge of the flyout
+    if (this.toolboxPosition_ == Blockly.TOOLBOX_AT_RIGHT) {
+      // Flyout is on the right, handle is on the left edge
+      this.resizeHandle_.setAttribute('x', 0);
+    } else {
+      // Flyout is on the left, handle is on the right edge
+      var handleX = this.width_ - this.RESIZE_HANDLE_WIDTH;
+      this.resizeHandle_.setAttribute('x', handleX);
+    }
+    this.resizeHandle_.setAttribute('y', 0);
+  }
+
   // The blocks need to be visible in order to be laid out and measured
   // correctly, but we don't want the flyout to show up until it's properly
   // sized.  Opacity is set to zero in show().

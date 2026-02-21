@@ -22543,7 +22543,7 @@ Blockly.ScratchMsgs.locales["zh-cn"] =
     "OPERATORS_AND": "%1 与 %2",
     "OPERATORS_OR": "%1 或 %2",
     "OPERATORS_NOT": "%1 不成立",
-    "OPERATORS_JOIN": "连接 %1 和 %2",
+    "OPERATORS_JOIN": "%1 , %2",
     "OPERATORS_JOIN_APPLE": "苹果",
     "OPERATORS_JOIN_BANANA": "香蕉",
     "OPERATORS_LETTEROF": "%2 的第 %1 个字符",
@@ -22677,7 +22677,10 @@ Blockly.ScratchMsgs.locales["zh-cn"] =
     "NEW_BROADCAST_MESSAGE": "新消息",
     "NEW_BROADCAST_MESSAGE_TITLE": "新消息的名称：",
     "BROADCAST_MODAL_TITLE": "新消息",
-    "DEFAULT_BROADCAST_MESSAGE_NAME": "消息1"
+    "DEFAULT_BROADCAST_MESSAGE_NAME": "消息1",
+    "HIDDENBLOCKS_TITLE": "隐藏的积木",
+    "HIDDENBLOCKS_INTRO": "这些默认是不显示的。",
+    "SENSING_ONLINE": "在线?"
 };
 
 Blockly.ScratchMsgs.locales["zh-tw"] =

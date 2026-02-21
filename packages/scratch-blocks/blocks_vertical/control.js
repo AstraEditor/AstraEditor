@@ -377,6 +377,38 @@ Blockly.Blocks['control_for_each'] = {
       "category": Blockly.Categories.control,
       "extensions": ["colours_control", "shape_statement"]
     });
+
+    // TW: Prefer an existing variable instead of creating a new one (usually "i").
+    // This matches how the Variables category chooses the first variable by name.
+    var field = this.getField('VARIABLE');
+    var workspace = this.workspace;
+    if (field && workspace) {
+      var targetWorkspace = (workspace.isFlyout && workspace.targetWorkspace) ? workspace.targetWorkspace : workspace;
+      var variableModelList = targetWorkspace.getVariablesOfType('');
+      var filteredVariables = [];
+      for (var i = 0; i < variableModelList.length; i++) {
+        var model = variableModelList[i];
+        if (model && typeof model.name === 'string' && model.name.trim()) {
+          filteredVariables.push(model);
+        }
+      }
+      if (filteredVariables.length > 0) {
+        filteredVariables.sort(Blockly.VariableModel.compareByName);
+        var firstVariable = filteredVariables[0];
+        var variable = Blockly.Variables.getOrCreateVariablePackage(
+          workspace,
+          firstVariable.getId(),
+          firstVariable.name,
+          firstVariable.type
+        );
+        Blockly.Events.disable();
+        try {
+          field.setValue(variable.getId());
+        } finally {
+          Blockly.Events.enable();
+        }
+      }
+    }
   }
 };
 
@@ -464,6 +496,8 @@ Blockly.Blocks['control_get_counter'] = {
    */
   init: function() {
     this.jsonInit({
+      "id":"control_get_counter",
+      "checkboxInFlyout": true,
       "message0": Blockly.Msg.CONTROL_COUNTER,
       "category": Blockly.Categories.control,
       "extensions": ["colours_control", "output_number"]
