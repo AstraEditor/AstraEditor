@@ -619,9 +619,9 @@ const styleShape = function (path, options) {
     for (const colorKey of ['fillColor', 'strokeColor']) {
         if (options[colorKey] === null) {
             path[colorKey] = null;
-        } else if (options[colorKey].gradientType === GradientTypes.SOLID) {
+        } else if (options[colorKey] && options[colorKey].gradientType === GradientTypes.SOLID) {
             path[colorKey] = options[colorKey].primary;
-        } else {
+        } else if (options[colorKey] && options[colorKey].gradientType) {
             const {primary, secondary, gradientType} = options[colorKey];
             path[colorKey] = createGradientObject(
                 primary,

@@ -18,7 +18,8 @@ const PADDING_PERCENT = 25; // Padding as a percent of the max of width/height o
 const BUFFER = 50; // Number of pixels of allowance around objects at the edges of the workspace
 const MIN_RATIO = .125; // Zoom in to at least 1/8 of the screen. This way you don't end up incredibly
 //                         zoomed in for tiny costumes.
-const OUTERMOST_ZOOM_LEVEL = 0.333;
+const OUTERMOST_ZOOM_LEVEL = 0.1;
+const EXTEND_SIZE = 2;
 let ART_BOARD_BOUNDS;
 let MAX_WORKSPACE_BOUNDS;
 /* eslint-enable import/no-mutable-exports */
@@ -30,11 +31,17 @@ const resizeView = (width, height) => {
     ART_BOARD_HEIGHT = SVG_ART_BOARD_HEIGHT * 2;
     CENTER = new paper.Point(ART_BOARD_WIDTH / 2, ART_BOARD_HEIGHT / 2);
     ART_BOARD_BOUNDS = new paper.Rectangle(0, 0, ART_BOARD_WIDTH, ART_BOARD_HEIGHT);
+    // Expand MAX_WORKSPACE_BOUNDS evenly around ART_BOARD_BOUNDS center
+    // This ensures scrolling works correctly regardless of the expand amount
+    const expandAmount = 1900; // Total pixels to add to each dimension (can be changed to any value)
+    const expandedWidth = ART_BOARD_WIDTH + expandAmount;
+    const expandedHeight = ART_BOARD_HEIGHT + expandAmount;
+    // Center the expanded bounds around ART_BOARD_BOUNDS
     MAX_WORKSPACE_BOUNDS = new paper.Rectangle(
-        -ART_BOARD_WIDTH / 4,
-        -ART_BOARD_HEIGHT / 4,
-        ART_BOARD_WIDTH * 1.5,
-        ART_BOARD_HEIGHT * 1.5);
+        (ART_BOARD_WIDTH - expandedWidth) / 2,
+        (ART_BOARD_HEIGHT - expandedHeight) / 2,
+        expandedWidth,
+        expandedHeight);
 };
 resizeView(480, 360);
 
@@ -54,38 +61,8 @@ const getWorkspaceBounds = () => _workspaceBounds;
 * (such as in a zoom button click)
 */
 const setWorkspaceBounds = clipEmpty => {
-    const items = getAllRootItems();
-    // Include the artboard and what's visible in the viewport
-    let bounds = ART_BOARD_BOUNDS;
-    if (!clipEmpty) {
-        bounds = bounds.unite(paper.view.bounds);
-    }
-    // Include everything the user has drawn and a buffer around it
-    for (const item of items) {
-        bounds = bounds.unite(item.bounds.expand(BUFFER));
-    }
-    // Limit to max workspace bounds
-    bounds = bounds.intersect(MAX_WORKSPACE_BOUNDS.expand(BUFFER));
-    let top = bounds.top;
-    let left = bounds.left;
-    let bottom = bounds.bottom;
-    let right = bounds.right;
-
-    // Center in view if viewport is larger than workspace
-    let hDiff = 0;
-    let vDiff = 0;
-    if (bounds.width < paper.view.bounds.width) {
-        hDiff = (paper.view.bounds.width - bounds.width) / 2;
-        left -= hDiff;
-        right += hDiff;
-    }
-    if (bounds.height < paper.view.bounds.height) {
-        vDiff = (paper.view.bounds.height - bounds.height) / 2;
-        top -= vDiff;
-        bottom += vDiff;
-    }
-
-    _workspaceBounds = new paper.Rectangle(left, top, right - left, bottom - top);
+    // Always use MAX_WORKSPACE_BOUNDS to allow scrolling in both directions
+    _workspaceBounds = MAX_WORKSPACE_BOUNDS;
 };
 
 const clampViewBounds = () => {

@@ -82,6 +82,17 @@ class PaperCanvas extends React.Component {
             updateTheme(newProps.theme);
         }
     }
+    componentDidUpdate (prevProps) {
+        // Some tools show different controls, which can change layout width/height of the canvas container.
+        // Recalibrate Paper's internal view size after mode changes to avoid temporary stretching.
+        if (this.props.mode !== prevProps.mode) {
+            setWorkspaceBounds(true /* clipEmpty */);
+            clampViewBounds();
+            this.recalibrateSize(() => {
+                this.props.updateViewBounds(paper.view.matrix);
+            });
+        }
+    }
     componentWillUnmount () {
         this.clearQueuedImport();
         // shouldZoomToFit means the zoom level hasn't been initialized yet
@@ -376,6 +387,7 @@ PaperCanvas.propTypes = {
     ]),
     imageFormat: PropTypes.string, // The incoming image's data format, used during import. The user could switch this.
     imageId: PropTypes.string,
+    mode: PropTypes.string,
     rotationCenterX: PropTypes.number,
     rotationCenterY: PropTypes.number,
     saveZoomLevel: PropTypes.func.isRequired,

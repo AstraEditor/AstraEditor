@@ -18,12 +18,14 @@ import {
 import {HANDLE_RATIO, ensureClockwise} from '../helper/math';
 import {getRaster} from '../helper/layer';
 import {flipBitmapHorizontal, flipBitmapVertical, selectAllBitmap} from '../helper/bitmap';
+import {performBooleanOperation} from '../helper/boolean-operations';
 import Formats, {isBitmap} from '../lib/format';
 import Modes from '../lib/modes';
 
 class ModeTools extends React.Component {
     constructor (props) {
         super(props);
+        this._prevRotation = 0; // 跟踪上一次的旋转角度
         bindAll(this, [
             '_getSelectedUncurvedPoints',
             '_getSelectedUnpointedPoints',
@@ -34,7 +36,13 @@ class ModeTools extends React.Component {
             'handleFlipVertical',
             'handleDelete',
             'handlePasteFromClipboard',
-            'handlePointPoints'
+            'handlePointPoints',
+            'handleUniteShapes',
+            'handleIntersectShapes',
+            'handleSubtractShapes',
+            'handleSplitShapes',
+            'handleRotationChange',
+            'getRotation'
         ]);
     }
     _getSelectedUncurvedPoints () {
@@ -209,6 +217,101 @@ class ModeTools extends React.Component {
             this.props.setSelectedItems(this.props.format);
         }
     }
+    handleUniteShapes () {
+        const selectedItems = getSelectedLeafItems();
+        const result = performBooleanOperation('unite', selectedItems);
+        if (result) {
+            result.selected = true;
+            this.props.setSelectedItems(this.props.format);
+            this.props.onUpdateImage();
+        }
+    }
+    handleIntersectShapes () {
+        const selectedItems = getSelectedLeafItems();
+        const result = performBooleanOperation('intersect', selectedItems);
+        if (result) {
+            result.selected = true;
+            this.props.setSelectedItems(this.props.format);
+            this.props.onUpdateImage();
+        }
+    }
+    handleSubtractShapes () {
+        const selectedItems = getSelectedLeafItems();
+        const result = performBooleanOperation('subtract', selectedItems);
+        if (result) {
+            result.selected = true;
+            this.props.setSelectedItems(this.props.format);
+            this.props.onUpdateImage();
+        }
+    }
+    handleSplitShapes () {
+        const selectedItems = getSelectedLeafItems();
+        const result = performBooleanOperation('split', selectedItems);
+        if (result) {
+            if (result instanceof paper.Group) {
+                const children = result.children.slice();
+                children.forEach(child => {
+                    child.insertBelow(result);
+                });
+                result.remove();
+                children.forEach(item => {
+                    item.selected = true;
+                });
+            } else {
+                result.selected = true;
+            }
+            this.props.setSelectedItems(this.props.format);
+            this.props.onUpdateImage();
+        }
+    }
+    getRotation () {
+        const selectedItems = getSelectedRootItems();
+        if (selectedItems.length === 0) return 0;
+
+        const firstItem = selectedItems[0];
+        const matrix = firstItem.matrix;
+
+        let rotation = Math.atan2(matrix.b, matrix.a) * 180 / Math.PI;
+
+        rotation = rotation % 360;
+        if (rotation < 0) rotation += 360;
+
+        rotation = Math.round(rotation);
+
+        this._prevRotation = rotation;
+
+        return rotation;
+    }
+    handleRotationChange (targetRotation) {
+        const selectedItems = getSelectedRootItems();
+        if (selectedItems.length === 0) return;
+
+        // 计算旋转中心（所有选中项的边界中心）
+        const bounds = selectedItems[0].bounds;
+        selectedItems.forEach(item => {
+            bounds.unite(item.bounds);
+        });
+        const center = bounds.center;
+
+        // 使用跟踪的上一次旋转角度计算差值
+        const currentRotation = this._prevRotation;
+        let rotationDelta = targetRotation - currentRotation;
+
+        // 标准化角度差值到 -180 到 180 之间，选择最短旋转路径
+        rotationDelta = rotationDelta % 360;
+        if (rotationDelta > 180) rotationDelta -= 360;
+        if (rotationDelta < -180) rotationDelta += 360;
+
+        // 对每个选中项应用相对旋转
+        selectedItems.forEach(item => {
+            item.rotate(rotationDelta, center);
+        });
+
+        // 更新跟踪的旋转角度
+        this._prevRotation = targetRotation;
+
+        this.props.onUpdateImage();
+    }
     render () {
         return (
             <ModeToolsComponent
@@ -219,10 +322,16 @@ class ModeTools extends React.Component {
                 onDelete={this.handleDelete}
                 onFlipHorizontal={this.handleFlipHorizontal}
                 onFlipVertical={this.handleFlipVertical}
+                onIntersectShapes={this.handleIntersectShapes}
                 onManageFonts={this.props.onManageFonts}
                 onPasteFromClipboard={this.handlePasteFromClipboard}
                 onPointPoints={this.handlePointPoints}
+                onRotationChange={this.handleRotationChange}
+                onSplitShapes={this.handleSplitShapes}
+                onSubtractShapes={this.handleSubtractShapes}
+                onUniteShapes={this.handleUniteShapes}
                 onUpdateImage={this.props.onUpdateImage}
+                rotation={this.getRotation()}
             />
         );
     }

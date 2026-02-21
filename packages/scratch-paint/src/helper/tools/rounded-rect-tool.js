@@ -1,10 +1,18 @@
 import paper from '@turbowarp/paper';
-import log from '../../log/log';
+import Modes from '../../lib/modes';
+import {styleShape} from '../style-path';
+import {clearSelection} from '../selection';
+import {getSquareDimensions} from '../math';
+import BoundingBoxTool from '../selection-tools/bounding-box-tool';
+import NudgeTool from '../selection-tools/nudge-tool';
 
 /**
- * Tool for drawing rounded rectangles
+ * Tool for drawing rounded rectangles.
  */
 class RoundedRectTool extends paper.Tool {
+    static get TOLERANCE () {
+        return 2;
+    }
     /**
      * @param {function} setHoveredItem Callback to set the hovered item
      * @param {function} clearHoveredItem Callback to clear the hovered item
@@ -20,34 +28,152 @@ class RoundedRectTool extends paper.Tool {
         this.clearSelectedItems = clearSelectedItems;
         this.onUpdateImage = onUpdateImage;
         this.prevHoveredItemId = null;
-        
+
+        // Initialize bounding box tool for editing existing shapes
+        this.boundingBoxTool = new BoundingBoxTool(
+            Modes.ROUNDED_RECT,
+            setSelectedItems,
+            clearSelectedItems,
+            () => {}, // setCursor - not needed for now
+            onUpdateImage
+        );
+        const nudgeTool = new NudgeTool(Modes.ROUNDED_RECT, this.boundingBoxTool, onUpdateImage);
+
         // We have to set these functions instead of just declaring them because
         // paper.js tools hook up the listeners in the setter functions.
         this.onMouseDown = this.handleMouseDown;
         this.onMouseMove = this.handleMouseMove;
         this.onMouseDrag = this.handleMouseDrag;
         this.onMouseUp = this.handleMouseUp;
+        this.onKeyUp = nudgeTool.onKeyUp;
+        this.onKeyDown = nudgeTool.onKeyDown;
+
+        this.rect = null;
+        this.colorState = null;
+        this.cornerRadius = 10;
+        this.isBoundingBoxMode = null;
+        this.active = false;
     }
+    
+    getHitOptions () {
+        return {
+            segments: true,
+            stroke: true,
+            curves: true,
+            fill: true,
+            guide: false,
+            match: hitResult =>
+                (hitResult.item.data && (hitResult.item.data.isScaleHandle || hitResult.item.data.isRotHandle)) ||
+                hitResult.item.selected,
+            tolerance: RoundedRectTool.TOLERANCE / paper.view.zoom
+        };
+    }
+    
     /**
-     * To be called when the hovered item changes. When the select tool hovers over a
-     * new item, it compares against this to see if a hover item change event needs to
-     * be fired.
-     * @param {paper.Item} prevHoveredItemId ID of the highlight item that indicates the mouse is
-     *     over a given item currently
+     * Should be called if the selection changes to update the bounds of the bounding box.
+     * @param {Array<paper.Item>} selectedItems Array of selected items.
+     */
+    onSelectionChanged (selectedItems) {
+        this.boundingBoxTool.onSelectionChanged(selectedItems);
+    }
+    
+    setColorState (colorState) {
+        this.colorState = colorState;
+    }
+
+    setCornerRadius (cornerRadius) {
+        this.cornerRadius = cornerRadius;
+    }
+
+    /**
+     * To be called when the hovered item changes.
+     * @param {paper.Item} prevHoveredItemId ID of the highlight item
      */
     setPrevHoveredItemId (prevHoveredItemId) {
         this.prevHoveredItemId = prevHoveredItemId;
     }
-    handleMouseDown () {
-        log.warn('Rounded Rectangle tool not yet implemented');
+
+    handleMouseDown (event) {
+        if (event.event.button > 0) return; // only first mouse button
+        this.active = true;
+
+        if (this.boundingBoxTool.onMouseDown(
+            event, false, false, false, this.getHitOptions())) {
+            this.isBoundingBoxMode = true;
+        } else {
+            this.isBoundingBoxMode = false;
+            clearSelection(this.clearSelectedItems);
+        }
     }
-    handleMouseMove () {
+    
+    handleMouseDrag (event) {
+        if (event.event.button > 0 || !this.active) return;
+
+        if (this.isBoundingBoxMode) {
+            this.boundingBoxTool.onMouseDrag(event);
+            return;
+        }
+
+        if (this.rect) {
+            this.rect.remove();
+        }
+
+        const rect = new paper.Rectangle(event.downPoint, event.point);
+        const squareDimensions = getSquareDimensions(event.downPoint, event.point);
+
+        if (event.modifiers.shift) {
+            rect.size = squareDimensions.size.abs();
+        }
+
+        // Create rounded rectangle with fixed corner radius
+        this.rect = new paper.Path.Rectangle(rect, this.cornerRadius);
+
+        if (event.modifiers.alt) {
+            this.rect.position = event.downPoint;
+        } else if (event.modifiers.shift) {
+            this.rect.position = squareDimensions.position;
+        } else {
+            const dimensions = event.point.subtract(event.downPoint);
+            this.rect.position = event.downPoint.add(dimensions.multiply(0.5));
+        }
+
+        styleShape(this.rect, this.colorState);
     }
-    handleMouseDrag () {
+    
+    handleMouseUp (event) {
+        if (event.event.button > 0 || !this.active) return;
+
+        if (this.isBoundingBoxMode) {
+            this.boundingBoxTool.onMouseUp(event);
+            this.isBoundingBoxMode = null;
+            return;
+        }
+
+        if (this.rect) {
+            if (this.rect.area < RoundedRectTool.TOLERANCE / paper.view.zoom) {
+                // Tiny rectangle created unintentionally?
+                this.rect.remove();
+                this.rect = null;
+            } else {
+                this.rect.selected = true;
+                this.setSelectedItems();
+                this.onUpdateImage();
+                this.rect = null;
+            }
+        }
+        this.active = false;
     }
-    handleMouseUp () {
+    
+    handleMouseMove (event) {
+        this.boundingBoxTool.onMouseMove(event, this.getHitOptions());
     }
+    
     deactivateTool () {
+        this.boundingBoxTool.deactivateTool();
+        if (this.rect) {
+            this.rect.remove();
+            this.rect = null;
+        }
     }
 }
 
