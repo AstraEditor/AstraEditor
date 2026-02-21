@@ -523,5 +523,14 @@
     "gui.theme.default": "Original",
     "gui.theme.dark": "Dark",
     "gui.theme.highContrast": "고대비",
-    "gui.gui.defaultProjectTitle": "스크래치 프로젝트"
+    "gui.gui.defaultProjectTitle": "스크래치 프로젝트",
+    "gui.opcodeLabels.touchingobject_mouse": "마우스 포인터에 닿았는가?",
+    "gui.opcodeLabels.touchingobject_edge": "무대에 닿았는가?",
+    "gui.opcodeLabels.touchingobject": "에 닿았는가 ",
+    "gui.opcodeLabels.touchingcolor": "색에 닿았는가 ",
+    "gui.opcodeLabels.coloristouchingcolor": "  색이  색에 닿았는가  ",
+    "gui.opcodeLabels.sensing_distancetomouse": "마우스 포인터까지의 거리",
+    "gui.opcodeLabels.sensing_distanceto": "까지",
+    "gui.opcodeLabels.keypressed": " 키가 눌렸는가?",
+    "gui.opcodeLabels.counter": "카운터"
 }

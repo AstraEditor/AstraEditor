@@ -523,5 +523,14 @@
     "gui.theme.default": "オリジナル",
     "gui.theme.dark": "ダーク",
     "gui.theme.highContrast": "ハイコントラスト",
-    "gui.gui.defaultProjectTitle": "Scratchのプロジェクト"
+    "gui.gui.defaultProjectTitle": "Scratchのプロジェクト",
+    "gui.opcodeLabels.touchingobject_mouse": "マウスポインターに触れた？",
+    "gui.opcodeLabels.touchingobject_edge": "端に触れた？",
+    "gui.opcodeLabels.touchingobject": "に触れた ",
+    "gui.opcodeLabels.touchingcolor": "色に触れた ",
+    "gui.opcodeLabels.coloristouchingcolor": "  が色に触れた  ",
+    "gui.opcodeLabels.sensing_distancetomouse": "マウスポインターまでの距離",
+    "gui.opcodeLabels.sensing_distanceto": "距離",
+    "gui.opcodeLabels.keypressed": " キーが押された？",
+    "gui.opcodeLabels.counter": "カウンター"
 }

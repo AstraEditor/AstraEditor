@@ -41,5 +41,10 @@
     "paint.roundedRectMode.roundedRect": "圆角矩形",
     "paint.selectMode.select": "选择",
     "paint.textMode.text": "文本",
-    "paint.colorPicker.swap": "交换"
+    "paint.colorPicker.swap": "交换",
+    "paint.modeTools.rotation": "旋转",
+    "paint.modeTools.intersect": "相交",
+    "paint.modeTools.unite": "结合",
+    "paint.modeTools.subtract": "剪除",
+    "paint.modeTools.split": "拆分"
 }

@@ -523,5 +523,14 @@
     "gui.theme.default": "Original",
     "gui.theme.dark": "Dark",
     "gui.theme.highContrast": "High Contrast",
-    "gui.gui.defaultProjectTitle": "Scratch 專案"
+    "gui.gui.defaultProjectTitle": "Scratch 專案",
+    "gui.opcodeLabels.touchingobject_mouse": "碰到滑鼠指標？",
+    "gui.opcodeLabels.touchingobject_edge": "碰到舞台邊緣？",
+    "gui.opcodeLabels.touchingobject": "碰到 ",
+    "gui.opcodeLabels.touchingcolor": "碰到顏色 ",
+    "gui.opcodeLabels.coloristouchingcolor": "  碰到顏色  ",
+    "gui.opcodeLabels.sensing_distancetomouse": "到滑鼠指標的距離",
+    "gui.opcodeLabels.sensing_distanceto": "距 ",
+    "gui.opcodeLabels.keypressed": " 鍵被按下？",
+    "gui.opcodeLabels.counter": "計數器"
 }

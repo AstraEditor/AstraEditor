@@ -523,5 +523,14 @@
     "gui.theme.default": "Original",
     "gui.theme.dark": "Dunkel",
     "gui.theme.highContrast": "Hoher Kontrast",
-    "gui.gui.defaultProjectTitle": "Scratch-Projekt"
+    "gui.gui.defaultProjectTitle": "Scratch-Projekt",
+    "gui.opcodeLabels.touchingobject_mouse": "Mauszeiger berührt?",
+    "gui.opcodeLabels.touchingobject_edge": "Rand berührt?",
+    "gui.opcodeLabels.touchingobject": "berührt ",
+    "gui.opcodeLabels.touchingcolor": "Farbe berührt ",
+    "gui.opcodeLabels.coloristouchingcolor": "  berührt Farbe  ",
+    "gui.opcodeLabels.sensing_distancetomouse": "Entfernung zum Mauszeiger",
+    "gui.opcodeLabels.sensing_distanceto": "Entfernung zu ",
+    "gui.opcodeLabels.keypressed": " Taste gedrückt?",
+    "gui.opcodeLabels.counter": "Zähler"
 }

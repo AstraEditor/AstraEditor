@@ -523,5 +523,14 @@
     "gui.theme.default": "Original",
     "gui.theme.dark": "Dark",
     "gui.theme.highContrast": "High Contrast",
-    "gui.gui.defaultProjectTitle": "Проект Scratch"
+    "gui.gui.defaultProjectTitle": "Проект Scratch",
+    "gui.opcodeLabels.touchingobject_mouse": "касается курсора?",
+    "gui.opcodeLabels.touchingobject_edge": "касается края?",
+    "gui.opcodeLabels.touchingobject": "касается ",
+    "gui.opcodeLabels.touchingcolor": "касается цвета ",
+    "gui.opcodeLabels.coloristouchingcolor": "  касается цвета  ",
+    "gui.opcodeLabels.sensing_distancetomouse": "расстояние до курсора",
+    "gui.opcodeLabels.sensing_distanceto": "расстояние до ",
+    "gui.opcodeLabels.keypressed": " клавиша нажата?",
+    "gui.opcodeLabels.counter": "счётчик"
 }

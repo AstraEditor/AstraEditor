@@ -523,5 +523,14 @@
     "gui.theme.default": "Original",
     "gui.theme.dark": "Dark",
     "gui.theme.highContrast": "High Contrast",
-    "gui.gui.defaultProjectTitle": "Proyecto de Scratch"
+    "gui.gui.defaultProjectTitle": "Proyecto de Scratch",
+    "gui.opcodeLabels.touchingobject_mouse": "tocando el puntero?",
+    "gui.opcodeLabels.touchingobject_edge": "tocando el borde?",
+    "gui.opcodeLabels.touchingobject": "tocando ",
+    "gui.opcodeLabels.touchingcolor": "tocando el color ",
+    "gui.opcodeLabels.coloristouchingcolor": "  tocando el color  ",
+    "gui.opcodeLabels.sensing_distancetomouse": "distancia al puntero",
+    "gui.opcodeLabels.sensing_distanceto": "distancia a ",
+    "gui.opcodeLabels.keypressed": " tecla presionada?",
+    "gui.opcodeLabels.counter": "contador"
 }
