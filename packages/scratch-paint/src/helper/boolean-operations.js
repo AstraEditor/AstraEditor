@@ -117,7 +117,7 @@ export const splitShapes = items => {
     const extractPathsToGroup = item => {
         if (!item) return;
 
-        if (item instanceof paper.Path && !(item instanceof paper.CompoundPath)) {
+        if (item instanceof paper.PathItem) {
             addPathToGroup(item);
             return;
         }
@@ -125,11 +125,13 @@ export const splitShapes = items => {
         if (item.children && item.children.length) {
             const children = item.children.slice();
             for (const child of children) {
-                extractPathsToGroup(child.remove());
+                extractPathsToGroup(child);
             }
         }
 
-        item.remove();
+        if (typeof item.remove === 'function') {
+            item.remove();
+        }
     };
 
     const itemCount = items.length;
@@ -246,7 +248,7 @@ export const performBooleanOperation = (operation, selectedItems) => {
         result = splitShapes(items);
         break;
     default:
-        return null;
+        return items;
     }
 
     if (!result) return null;
