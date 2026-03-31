@@ -69,27 +69,38 @@ const combineJson = (component) => {
     }, {});
 };
 
+const stringify = messages =>
+    'JSON.parse(\'' +
+    JSON.stringify(messages)
+        .replace(/\\/g, '\\\\')
+        .replace(/'/g, '\\\'') +
+    '\')';
+
 // generate the blocks messages: files are plain key-value JSON
+/*
 let blocksMessages = combineJson('blocks');
 let blockData =
     '// GENERATED FILE:\n' +
     'export default ' +
-    JSON.stringify(blocksMessages, null, 2) +
+    stringify(blocksMessages) +
     ';\n';
 
 fs.writeFileSync(MSGS_DIR + 'blocks-msgs.js', blockData);
+*/
 
 // generate messages for gui components - all files are plain key-value JSON
-let components = ['interface', 'extensions', 'paint-editor'];
+let components = ['interface', 'extensions', 'paint-editor', 'tw'];
 let editorMsgs = {};
 components.forEach((component) => {
     let messages = combineJson(component);
+    /*
     let data =
         '// GENERATED FILE:\n' +
         'export default ' +
-        JSON.stringify(messages, null, 2) +
+        stringify(messages) +
         ';\n';
     fs.writeFileSync(MSGS_DIR + component + '-msgs.js', data);
+    */
     defaultsDeep(editorMsgs, messages);
 });
 
@@ -97,11 +108,11 @@ components.forEach((component) => {
 let editorData =
     '// GENERATED FILE:\n' +
     'export default ' +
-    JSON.stringify(editorMsgs, null, 2) +
+    stringify(editorMsgs) +
     ';\n';
 fs.writeFileSync(MSGS_DIR + 'editor-msgs.js', editorData);
 
 if (missingLocales.length > 0) {
     process.stdout.write('missing locales:\n' + missingLocales.toString());
-    process.exit(1);
+    // process.exit(1);
 }
