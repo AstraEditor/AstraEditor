@@ -77,7 +77,6 @@ const stringify = messages =>
     '\')';
 
 // generate the blocks messages: files are plain key-value JSON
-/*
 let blocksMessages = combineJson('blocks');
 let blockData =
     '// GENERATED FILE:\n' +
@@ -86,21 +85,18 @@ let blockData =
     ';\n';
 
 fs.writeFileSync(MSGS_DIR + 'blocks-msgs.js', blockData);
-*/
 
 // generate messages for gui components - all files are plain key-value JSON
 let components = ['interface', 'extensions', 'paint-editor', 'tw'];
 let editorMsgs = {};
 components.forEach((component) => {
     let messages = combineJson(component);
-    /*
     let data =
         '// GENERATED FILE:\n' +
         'export default ' +
         stringify(messages) +
         ';\n';
     fs.writeFileSync(MSGS_DIR + component + '-msgs.js', data);
-    */
     defaultsDeep(editorMsgs, messages);
 });
 

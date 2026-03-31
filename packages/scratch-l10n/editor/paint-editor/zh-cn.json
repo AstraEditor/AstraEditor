@@ -46,5 +46,6 @@
     "paint.modeTools.intersect": "相交",
     "paint.modeTools.unite": "结合",
     "paint.modeTools.subtract": "剪除",
-    "paint.modeTools.split": "拆分"
+    "paint.modeTools.split": "拆分",
+    "paint.modeTools.proportional": "标准化"
 }
