@@ -46,7 +46,11 @@ class OvalTool extends paper.Tool {
 
         this.oval = null;
         this.color = null;
+        this.proportional = false;
         this.active = false;
+    }
+    setProportional (proportional) {
+        this.proportional = proportional;
     }
     getHitOptions () {
         return {
@@ -145,7 +149,8 @@ class OvalTool extends paper.Tool {
         const downPoint = new paper.Point(event.downPoint.x, event.downPoint.y);
         const point = new paper.Point(event.point.x, event.point.y);
         const squareDimensions = getSquareDimensions(event.downPoint, event.point);
-        if (event.modifiers.shift) {
+        const isProportional = event.modifiers.shift || this.proportional;
+        if (isProportional) {
             this.oval.size = squareDimensions.size.abs();
         } else {
             this.oval.size = downPoint.subtract(point);
@@ -153,7 +158,7 @@ class OvalTool extends paper.Tool {
 
         if (event.modifiers.alt) {
             this.oval.position = downPoint;
-        } else if (event.modifiers.shift) {
+        } else if (isProportional) {
             this.oval.position = squareDimensions.position;
         } else {
             this.oval.position = downPoint.subtract(this.oval.size.multiply(0.5));

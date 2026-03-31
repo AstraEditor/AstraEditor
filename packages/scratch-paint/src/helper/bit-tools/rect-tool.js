@@ -46,7 +46,11 @@ class RectTool extends paper.Tool {
 
         this.rect = null;
         this.color = null;
+        this.proportional = false;
         this.active = false;
+    }
+    setProportional (proportional) {
+        this.proportional = proportional;
     }
     getHitOptions () {
         return {
@@ -136,7 +140,8 @@ class RectTool extends paper.Tool {
         const dimensions = event.point.subtract(event.downPoint);
         const baseRect = new paper.Rectangle(event.downPoint, event.point);
         const squareDimensions = getSquareDimensions(event.downPoint, event.point);
-        if (event.modifiers.shift) {
+        const isProportional = event.modifiers.shift || this.proportional;
+        if (isProportional) {
             baseRect.size = squareDimensions.size.abs();
         }
 
@@ -149,7 +154,7 @@ class RectTool extends paper.Tool {
 
         if (event.modifiers.alt) {
             this.rect.position = event.downPoint;
-        } else if (event.modifiers.shift) {
+        } else if (isProportional) {
             this.rect.position = squareDimensions.position;
         } else {
             this.rect.position = event.downPoint.add(dimensions.multiply(.5));

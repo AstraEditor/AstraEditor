@@ -9,6 +9,7 @@ import { changeBitBrushSize } from '../../reducers/bit-brush-size';
 import { changeBitEraserSize } from '../../reducers/bit-eraser-size';
 import { changeCornerRadius } from '../../reducers/rounded-rect-mode';
 import { setShapesFilled } from '../../reducers/fill-bitmap-shapes';
+import { toggleProportionalShape } from '../../reducers/proportional-shape';
 
 import FontDropdown from '../../containers/font-dropdown.jsx';
 import LiveInputHOC from '../forms/live-input-hoc.jsx';
@@ -47,6 +48,8 @@ import uniteIcon from '!../../tw-recolor/build!./icons/unite.svg'
 import intersectIcon from '!../../tw-recolor/build!./icons/intersect.svg'
 import subtractIcon from '!../../tw-recolor/build!./icons/subtract.svg'
 import splitIcon from '!../../tw-recolor/build!./icons/split.svg'
+import proportionalIcon from '!../../tw-recolor/build!./icons/proportional.svg'
+
 
 import { MAX_STROKE_WIDTH } from '../../reducers/stroke-width';
 
@@ -142,6 +145,11 @@ const ModeToolsComponent = props => {
             defaultMessage: 'Rotation',
             description: 'Label for the rotation input',
             id: 'paint.modeTools.rotation'
+        },
+        proportional: {
+            defaultMessage: 'Proportional',
+            description: 'Label for the button that toggles proportional shape drawing',
+            id: 'paint.modeTools.proportional'
         }
     });
 
@@ -384,6 +392,14 @@ const ModeToolsComponent = props => {
                                 </Label>
                             </InputGroup>)
                         }
+                        <InputGroup>
+                            <LabeledIconButton
+                                highlighted={props.proportional}
+                                imgSrc={proportionalIcon}
+                                title={props.intl.formatMessage(messages.proportional)}
+                                onClick={props.onToggleProportional}
+                            />
+                        </InputGroup>
                     </div>
                 );
             }
@@ -391,23 +407,49 @@ const ModeToolsComponent = props => {
             {
                 return (
                     <div className={classNames(props.className, styles.modeTools)}>
-                        <div>
-                            <img
-                                alt={props.intl.formatMessage(messages.cornerRadius)}
-                                className={styles.modeToolsIcon}
-                                draggable={false}
-                                src={roundIcon}
+                        <InputGroup>
+                            <div>
+                                <img
+                                    alt={props.intl.formatMessage(messages.cornerRadius)}
+                                    className={styles.modeToolsIcon}
+                                    draggable={false}
+                                    src={roundIcon}
+                                />
+                            </div>
+                            <LiveInput
+                                range
+                                small
+                                max="100"
+                                min="0"
+                                type="number"
+                                value={props.cornerRadius}
+                                onSubmit={props.onCornerRadiusChange}
                             />
-                        </div>
-                        <LiveInput
-                            range
-                            small
-                            max="100"
-                            min="0"
-                            type="number"
-                            value={props.cornerRadius}
-                            onSubmit={props.onCornerRadiusChange}
-                        />
+                        </InputGroup>
+                        <InputGroup>
+                            <LabeledIconButton
+                                highlighted={props.proportional}
+                                imgSrc={proportionalIcon}
+                                title={props.intl.formatMessage(messages.proportional)}
+                                onClick={props.onToggleProportional}
+                            />
+                        </InputGroup>
+                    </div>
+                );
+            }
+        case Modes.RECT:
+        case Modes.OVAL:
+            {
+                return (
+                    <div className={classNames(props.className, styles.modeTools)}>
+                        <InputGroup>
+                            <LabeledIconButton
+                                highlighted={props.proportional}
+                                imgSrc={proportionalIcon}
+                                title={props.intl.formatMessage(messages.proportional)}
+                                onClick={props.onToggleProportional}
+                            />
+                        </InputGroup>
                     </div>
                 );
             }
@@ -452,8 +494,10 @@ ModeToolsComponent.propTypes = {
     onRotationChange: PropTypes.func.isRequired,
     onSplitShapes: PropTypes.func.isRequired,
     onSubtractShapes: PropTypes.func.isRequired,
+    onToggleProportional: PropTypes.func.isRequired,
     onUniteShapes: PropTypes.func.isRequired,
     onUpdateImage: PropTypes.func.isRequired,
+    proportional: PropTypes.bool,
     rotation: PropTypes.number,
     selectedItems: PropTypes.array
 };
@@ -468,6 +512,7 @@ const mapStateToProps = state => ({
     clipboardItems: state.scratchPaint.clipboard.items,
     eraserValue: state.scratchPaint.eraserMode.brushSize,
     cornerRadius: state.scratchPaint.roundedRectMode.cornerRadius,
+    proportional: state.scratchPaint.proportionalShape,
     selectedItems: state.scratchPaint.selectedItems || []
 });
 const mapDispatchToProps = dispatch => ({
@@ -491,6 +536,9 @@ const mapDispatchToProps = dispatch => ({
     },
     onOutlineShapes: () => {
         dispatch(setShapesFilled(false));
+    },
+    onToggleProportional: () => {
+        dispatch(toggleProportionalShape());
     }
 });
 

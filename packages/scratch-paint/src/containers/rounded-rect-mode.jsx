@@ -47,11 +47,19 @@ class RoundedRectMode extends React.Component {
         if (this.tool && nextProps.cornerRadius !== this.props.cornerRadius) {
             this.tool.setCornerRadius(nextProps.cornerRadius);
         }
+        if (this.tool && nextProps.proportional !== this.props.proportional) {
+            this.tool.setProportional(nextProps.proportional);
+        }
 
         if (nextProps.isRoundedRectModeActive && !this.props.isRoundedRectModeActive) {
             this.activateTool();
         } else if (!nextProps.isRoundedRectModeActive && this.props.isRoundedRectModeActive) {
             this.deactivateTool();
+        }
+    }
+    componentDidUpdate (prevProps) {
+        if (this.tool && this.props.proportional !== prevProps.proportional) {
+            this.tool.setProportional(this.props.proportional);
         }
     }
     shouldComponentUpdate (nextProps) {
@@ -75,6 +83,7 @@ class RoundedRectMode extends React.Component {
         );
         this.tool.setColorState(this.props.colorState);
         this.tool.setCornerRadius(this.props.cornerRadius);
+        this.tool.setProportional(this.props.proportional);
         this.tool.activate();
     }
     validateColorState () {
@@ -154,6 +163,7 @@ RoundedRectMode.propTypes = {
     onChangeFillColor: PropTypes.func.isRequired,
     onChangeStrokeColor: PropTypes.func.isRequired,
     onUpdateImage: PropTypes.func.isRequired,
+    proportional: PropTypes.bool,
     selectedItems: PropTypes.arrayOf(PropTypes.instanceOf(paper.Item)),
     setCursor: PropTypes.func.isRequired,
     setHoveredItem: PropTypes.func.isRequired,
@@ -164,6 +174,7 @@ const mapStateToProps = state => ({
     colorState: state.scratchPaint.color,
     isRoundedRectModeActive: state.scratchPaint.mode === Modes.ROUNDED_RECT,
     hoveredItemId: state.scratchPaint.hoveredItemId,
+    proportional: state.scratchPaint.proportionalShape,
     selectedItems: state.scratchPaint.selectedItems,
     cornerRadius: state.scratchPaint.roundedRectMode.cornerRadius
 });

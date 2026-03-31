@@ -39,11 +39,19 @@ class OvalMode extends React.Component {
         if (this.tool && nextProps.selectedItems !== this.props.selectedItems) {
             this.tool.onSelectionChanged(nextProps.selectedItems);
         }
+        if (this.tool && nextProps.proportional !== this.props.proportional) {
+            this.tool.setProportional(nextProps.proportional);
+        }
 
         if (nextProps.isOvalModeActive && !this.props.isOvalModeActive) {
             this.activateTool();
         } else if (!nextProps.isOvalModeActive && this.props.isOvalModeActive) {
             this.deactivateTool();
+        }
+    }
+    componentDidUpdate (prevProps) {
+        if (this.tool && this.props.proportional !== prevProps.proportional) {
+            this.tool.setProportional(this.props.proportional);
         }
     }
     shouldComponentUpdate (nextProps) {
@@ -65,6 +73,7 @@ class OvalMode extends React.Component {
             this.props.onUpdateImage
         );
         this.tool.setColorState(this.props.colorState);
+        this.tool.setProportional(this.props.proportional);
         this.tool.activate();
     }
     deactivateTool () {
@@ -141,6 +150,7 @@ OvalMode.propTypes = {
     onChangeFillColor: PropTypes.func.isRequired,
     onChangeStrokeColor: PropTypes.func.isRequired,
     onUpdateImage: PropTypes.func.isRequired,
+    proportional: PropTypes.bool,
     selectedItems: PropTypes.arrayOf(PropTypes.instanceOf(paper.Item)),
     setCursor: PropTypes.func.isRequired,
     setSelectedItems: PropTypes.func.isRequired
@@ -149,6 +159,7 @@ OvalMode.propTypes = {
 const mapStateToProps = state => ({
     colorState: state.scratchPaint.color,
     isOvalModeActive: state.scratchPaint.mode === Modes.OVAL,
+    proportional: state.scratchPaint.proportionalShape,
     selectedItems: state.scratchPaint.selectedItems
 });
 const mapDispatchToProps = dispatch => ({

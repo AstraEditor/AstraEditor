@@ -44,12 +44,20 @@ class BitRectMode extends React.Component {
                     nextProps.zoom !== this.props.zoom) {
                 this.tool.setThickness(nextProps.thickness);
             }
+            if (nextProps.proportional !== this.props.proportional) {
+                this.tool.setProportional(nextProps.proportional);
+            }
         }
 
         if (nextProps.isRectModeActive && !this.props.isRectModeActive) {
             this.activateTool();
         } else if (!nextProps.isRectModeActive && this.props.isRectModeActive) {
             this.deactivateTool();
+        }
+    }
+    componentDidUpdate (prevProps) {
+        if (this.tool && this.props.proportional !== prevProps.proportional) {
+            this.tool.setProportional(this.props.proportional);
         }
     }
     shouldComponentUpdate (nextProps) {
@@ -76,6 +84,7 @@ class BitRectMode extends React.Component {
         this.tool.setColor(this.props.color);
         this.tool.setFilled(this.props.filled);
         this.tool.setThickness(this.props.thickness);
+        this.tool.setProportional(this.props.proportional);
         this.tool.activate();
     }
     deactivateTool () {
@@ -101,6 +110,7 @@ BitRectMode.propTypes = {
     isRectModeActive: PropTypes.bool.isRequired,
     onChangeFillColor: PropTypes.func.isRequired,
     onUpdateImage: PropTypes.func.isRequired,
+    proportional: PropTypes.bool,
     selectedItems: PropTypes.arrayOf(PropTypes.instanceOf(paper.Item)),
     setCursor: PropTypes.func.isRequired,
     setSelectedItems: PropTypes.func.isRequired,
@@ -112,6 +122,7 @@ const mapStateToProps = state => ({
     color: state.scratchPaint.color.fillColor,
     filled: state.scratchPaint.fillBitmapShapes,
     isRectModeActive: state.scratchPaint.mode === Modes.BIT_RECT,
+    proportional: state.scratchPaint.proportionalShape,
     selectedItems: state.scratchPaint.selectedItems,
     thickness: state.scratchPaint.bitBrushSize,
     zoom: state.scratchPaint.viewBounds.scaling.x
