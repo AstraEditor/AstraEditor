@@ -823,5 +823,6 @@
     "paint.modeTools.proportional",
     "gui.menuBar.tools",
     "gui.menuBar.exportImage",
-    "gui.menuBar.exportImageAllAsPng"
+    "gui.menuBar.exportImageAllAsPng",
+    "gui.crashMessage.saveproject"
 ]

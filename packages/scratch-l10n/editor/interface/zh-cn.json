@@ -67,6 +67,7 @@
     "gui.crashMessage.description": "很抱歉，Scratch出故障了。这个问题已经自动报告给Scratch开发团队。请刷新页面再试试。",
     "gui.crashMessage.errorNumber": "该错误已记录，编号{errorId}",
     "gui.crashMessage.reload": "重新载入",
+    "gui.crashMessage.saveproject": "尝试保存项目",
     "gui.customProcedures.myblockModalTitle": "制作新的积木",
     "gui.customProcedures.addAnInputNumberText": "添加输入项",
     "gui.customProcedures.numberTextType": "数字或文本",
