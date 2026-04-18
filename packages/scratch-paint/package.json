@@ -42,8 +42,7 @@
     "react-responsive": "^5",
     "react-style-proptype": "^3",
     "react-tooltip": "^3",
-    "redux": "^3",
-    "scratch-render-fonts": "^1.0.0-prerelease.20210401210003"
+    "redux": "^3"
   },
   "devDependencies": {
     "@babel/cli": "^7.23.0",

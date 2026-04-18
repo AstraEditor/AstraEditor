@@ -9,7 +9,7 @@ import {intlInitialState, IntlProvider} from './reducers/intl.js';
 import styles from './playground.css';
 // scratch-render-fonts is a playground-only dep. Fonts are expected to be imported
 // as a peer dependency, otherwise there will be two copies of them.
-import {FONTS} from 'scratch-render-fonts';
+// import {FONTS} from 'scratch-render-fonts';
 
 const appTarget = document.createElement('div');
 appTarget.setAttribute('class', styles.playgroundContainer);

@@ -85,7 +85,7 @@ module.exports = [
         },
         output: {
             path: path.resolve(__dirname, 'playground'),
-            filename: '[name].js'
+            filename: '[name].html'
         },
         plugins: base.plugins.concat([
             new HtmlWebpackPlugin({
