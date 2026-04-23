@@ -64,8 +64,8 @@ class ShaderManager {
         const definesText = `${defines.join('\n')}\n`;
 
         /* eslint-disable global-require */
-        const vsFullText = definesText + require('raw-loader!./shaders/sprite.vert');
-        const fsFullText = definesText + require('raw-loader!./shaders/sprite.frag');
+        const vsFullText = definesText + require('./shaders/sprite.vert');
+        const fsFullText = definesText + require('./shaders/sprite.frag');
         /* eslint-enable global-require */
 
         let errorMessage = null;

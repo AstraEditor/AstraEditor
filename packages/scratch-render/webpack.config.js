@@ -1,15 +1,25 @@
 const CopyWebpackPlugin = require('copy-webpack-plugin');
 const path = require('path');
-const UglifyJsPlugin = require('uglifyjs-webpack-plugin');
+const TerserPlugin = require('terser-webpack-plugin');
+const webpack = require('webpack');
 
 const base = {
     mode: process.env.NODE_ENV === 'production' ? 'production' : 'development',
     devServer: {
-        contentBase: false,
+        static: false,
         host: '0.0.0.0',
-        port: process.env.PORT || 8361
+        port: process.env.PORT || 8361,
+        hot: true,
+        allowedHosts: 'all'
     },
     devtool: 'cheap-module-source-map',
+    resolve: {
+        fallback: {
+            "buffer": require.resolve("buffer/"),
+            "process": require.resolve("process/browser"),
+            "events": require.resolve("events/"),
+        }
+    },
     module: {
         rules: [
             {
@@ -19,24 +29,43 @@ const base = {
                 test: /\.js$/,
                 loader: 'babel-loader',
                 options: {
-                    presets: [['env', {targets: {browsers: ['last 3 versions', 'Safari >= 8', 'iOS >= 8']}}]]
+                    presets: [['@babel/preset-env', { targets: { browsers: ['last 3 versions', 'Safari >= 8', 'iOS >= 8'] } }]]
                 }
+            },
+            {
+                test: /\.(vert|frag|glsl)$/,
+                use: [
+                    {
+                        loader: 'raw-loader',
+                        options: {
+                            esModule: false
+                        }
+                    }
+                ]
             }
         ]
     },
     optimization: {
+        minimize: process.env.NODE_ENV === 'production',
         minimizer: [
-            new UglifyJsPlugin({
+            new TerserPlugin({
                 include: /\.min\.js$/
             })
         ]
     },
-    plugins: []
+    plugins: [
+        new webpack.ProvidePlugin({
+            Buffer: ['buffer', 'Buffer'],
+            process: 'process/browser'
+        })
+    ]
 };
 
 module.exports = [
     // Playground
-    Object.assign({}, base, {
+    {
+        ...base,
+        name: 'playground',
         target: 'web',
         entry: {
             playground: './src/playground/playground.js',
@@ -48,16 +77,20 @@ module.exports = [
             filename: '[name].js'
         },
         plugins: base.plugins.concat([
-            new CopyWebpackPlugin([
-                {
-                    context: 'src/playground',
-                    from: '*.+(html|css)'
-                }
-            ])
+            new CopyWebpackPlugin({
+                patterns: [
+                    {
+                        context: 'src/playground',
+                        from: '*.+(html|css)'
+                    }
+                ]
+            })
         ])
-    }),
+    },
     // Web-compatible
-    Object.assign({}, base, {
+    {
+        ...base,
+        name: 'web',
         target: 'web',
         entry: {
             'scratch-render': './src/index.js',
@@ -67,11 +100,14 @@ module.exports = [
             library: 'ScratchRender',
             libraryTarget: 'umd',
             path: path.resolve('dist', 'web'),
-            filename: '[name].js'
+            filename: '[name].js',
+            globalObject: 'this'
         }
-    }),
+    },
     // Node-compatible
-    Object.assign({}, base, {
+    {
+        ...base,
+        name: 'node',
         target: 'node',
         entry: {
             'scratch-render': './src/index.js'
@@ -89,6 +125,10 @@ module.exports = [
             '@turbowarp/scratch-svg-renderer': true,
             'twgl.js': true,
             'xml-escape': true
-        }
-    })
+        },
+        resolve: {
+            fallback: {}
+        },
+        plugins: [] 
+    }
 ];
