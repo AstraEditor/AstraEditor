@@ -180,7 +180,7 @@ Blockly.VerticalFlyout.prototype.createDom = function(tagName) {
         'width': this.RESIZE_HANDLE_WIDTH,
         'height': '0',  // Will be set in position()
         'fill': 'transparent',
-        'style': 'cursor: col-resize; pointer-events: all;',
+        'style': 'cursor: ew-resize; pointer-events: all;',
         'z-index': '31'
       },
       this.svgGroup_);

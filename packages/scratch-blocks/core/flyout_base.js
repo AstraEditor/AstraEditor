@@ -490,7 +490,7 @@ Blockly.Flyout.prototype.onResizeHandleMouseDown_ = function(e) {
   document.addEventListener('mouseup', this.resizeMouseUpWrapper_, false);
 
   // Change cursor
-  document.body.style.cursor = 'col-resize';
+  document.body.style.cursor = 'ew-resize';
 };
 
 /**
@@ -554,6 +554,9 @@ Blockly.Flyout.prototype.onResizeHandleMouseUp_ = function(e) {
 
   // Reset cursor
   document.body.style.cursor = '';
+
+  // Update cached delete areas after resize
+  this.workspace_.recordCachedAreas();
 };
 
 /**

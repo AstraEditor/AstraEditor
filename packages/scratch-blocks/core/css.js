@@ -1353,21 +1353,21 @@ Blockly.Css.CONTENT = [
 
   /* Flyout Resize Handle Styles */
   '.blocklyFlyoutResizeHandle {',
-    'cursor: col-resize;',
+    'cursor: ew-resize;',
     'transition: fill 0.2s ease;',
   '}',
 
   '.blocklyFlyoutResizeHandle:hover {',
-    'fill: #cccccc66 !important;',
+    'fill: var(--looks-secondary) !important;',
   '}',
 
   '.blocklyFlyoutResizeHandle:active {',
-    'fill: rgba(110, 110, 110, 0.23) !important;',
+    'filter: brightness(0.8) !important;',
   '}',
 
   /* RTL support */
   '.blocklyFlyout.RTL .blocklyFlyoutResizeHandle {',
-    'cursor: col-resize;',
+    'cursor: ew-resize;',
   '}',
   ''
 ];
