@@ -79,6 +79,7 @@ class RoundedRectMode extends React.Component {
             this.props.clearHoveredItem,
             this.props.setSelectedItems,
             this.props.clearSelectedItems,
+            this.props.setCursor,
             this.props.onUpdateImage
         );
         this.tool.setColorState(this.props.colorState);

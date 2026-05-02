@@ -66,19 +66,35 @@ const setWorkspaceBounds = clipEmpty => {
 };
 
 const clampViewBounds = () => {
-    const {left, right, top, bottom} = paper.project.view.bounds;
-    if (left < _workspaceBounds.left) {
-        paper.project.view.scrollBy(new paper.Point(_workspaceBounds.left - left, 0));
+    const {left, right, top, bottom, width, height} = paper.project.view.bounds;
+
+    // When the viewport is larger than the workspace in a dimension,
+    // center it instead of clamping individual edges — the latter causes
+    // the opposite edges to fight each other and produce visible jitter.
+    if (width >= _workspaceBounds.width) {
+        const centerX = _workspaceBounds.center.x;
+        paper.project.view.scrollBy(new paper.Point(centerX - (left + right) / 2, 0));
+    } else {
+        if (left < _workspaceBounds.left) {
+            paper.project.view.scrollBy(new paper.Point(_workspaceBounds.left - left, 0));
+        }
+        if (right > _workspaceBounds.right) {
+            paper.project.view.scrollBy(new paper.Point(_workspaceBounds.right - right, 0));
+        }
     }
-    if (top < _workspaceBounds.top) {
-        paper.project.view.scrollBy(new paper.Point(0, _workspaceBounds.top - top));
+
+    if (height >= _workspaceBounds.height) {
+        const centerY = _workspaceBounds.center.y;
+        paper.project.view.scrollBy(new paper.Point(0, centerY - (top + bottom) / 2));
+    } else {
+        if (top < _workspaceBounds.top) {
+            paper.project.view.scrollBy(new paper.Point(0, _workspaceBounds.top - top));
+        }
+        if (bottom > _workspaceBounds.bottom) {
+            paper.project.view.scrollBy(new paper.Point(0, _workspaceBounds.bottom - bottom));
+        }
     }
-    if (bottom > _workspaceBounds.bottom) {
-        paper.project.view.scrollBy(new paper.Point(0, _workspaceBounds.bottom - bottom));
-    }
-    if (right > _workspaceBounds.right) {
-        paper.project.view.scrollBy(new paper.Point(_workspaceBounds.right - right, 0));
-    }
+
     setWorkspaceBounds();
 };
 

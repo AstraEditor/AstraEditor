@@ -24,8 +24,56 @@ const CopyPasteHOC = function (WrappedComponent) {
             super(props);
             bindAll(this, [
                 'handleCopy',
-                'handlePaste'
+                'handlePaste',
+                'handleSystemPaste'
             ]);
+            this._systemPasteHandled = false;
+        }
+        componentDidMount () {
+            document.addEventListener('paste', this.handleSystemPaste);
+        }
+        componentWillUnmount () {
+            document.removeEventListener('paste', this.handleSystemPaste);
+        }
+
+        // Handle paste event from system clipboard (for external images etc.)
+        // Only intercepts when the internal clipboard is empty — so internal
+        // copy/paste within scratch-paint takes priority.
+        handleSystemPaste (event) {
+            // Always reset — in case previous paste didn't reach handlePaste
+            this._systemPasteHandled = false;
+
+            // If internal clipboard has items, let the regular handler process it
+            if (this.props.clipboardItems && this.props.clipboardItems.length > 0) {
+                return;
+            }
+
+            const clipboardData = event.clipboardData;
+            if (!clipboardData || !clipboardData.items) return;
+
+            // Look for image data in the system clipboard
+            for (let i = 0; i < clipboardData.items.length; i++) {
+                const item = clipboardData.items[i];
+                if (item.type.startsWith('image/')) {
+                    event.preventDefault();
+                    const blob = item.getAsFile();
+                    const url = URL.createObjectURL(blob);
+                    const raster = new paper.Raster(url);
+                    raster.onLoad = () => {
+                        URL.revokeObjectURL(url);
+                        clearSelection(this.props.clearSelectedItems);
+                        const placedItem = paper.project.getActiveLayer().addChild(raster);
+                        placedItem.selected = true;
+                        placedItem.position.x += 10 * this.props.pasteOffset;
+                        placedItem.position.y += 10 * this.props.pasteOffset;
+                        this.props.incrementPasteOffset();
+                        this.props.setSelectedItems(this.props.format);
+                        this.props.onUpdateImage();
+                    };
+                    this._systemPasteHandled = true;
+                    return;
+                }
+            }
         }
         handleCopy () {
             let selectedItems = [];
@@ -59,6 +107,13 @@ const CopyPasteHOC = function (WrappedComponent) {
             this.props.setClipboardItems(clipboardItems);
         }
         handlePaste () {
+            // If system paste already handled the clipboard (e.g. external image),
+            // skip the internal clipboard paste.
+            if (this._systemPasteHandled) {
+                this._systemPasteHandled = false;
+                return;
+            }
+
             clearSelection(this.props.clearSelectedItems);
 
             if (this.props.clipboardItems.length === 0) return;

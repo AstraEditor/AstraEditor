@@ -358,6 +358,7 @@ class PaintEditor extends React.Component {
                 onZoomIn={this.handleZoomIn}
                 onZoomOut={this.handleZoomOut}
                 onZoomReset={this.handleZoomReset}
+                setSelectedItems={this.props.setSelectedItems}
             />
         );
     }
