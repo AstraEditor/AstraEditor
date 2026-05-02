@@ -239,6 +239,8 @@
     "DUPLICATE": "Duplicate",
     "DELETE": "Delete",
     "ADD_COMMENT": "Add Comment",
+    "ADD_README": "Add README",
+    "ADD_README_TITLE": "title",
     "REMOVE_COMMENT": "Remove Comment",
     "DELETE_BLOCK": "Delete Block",
     "DELETE_X_BLOCKS": "Delete %1 Blocks",

@@ -98,6 +98,14 @@ Blockly.WorkspaceCommentSvg = function(workspace, content, height, width, minimi
 Blockly.WorkspaceCommentSvg.DEFAULT_SIZE = 200;
 
 /**
+ * The width and height to use to size a workspace comment when it is first
+ * added, before it has been edited by the user.
+ * @type {number}
+ * @package
+ */
+Blockly.WorkspaceCommentSvg.README_DEFAULT_SIZE = 300;
+
+/**
  * Dispose of this comment.
  * @package
  */

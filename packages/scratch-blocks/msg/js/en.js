@@ -245,6 +245,7 @@ Blockly.Msg["CATEGORY_MYBLOCKS"] = "My Blocks";
 Blockly.Msg["DUPLICATE"] = "Duplicate";
 Blockly.Msg["DELETE"] = "Delete";
 Blockly.Msg["ADD_COMMENT"] = "Add Comment";
+Blockly.Msg["ADD_README"] = "Add README";
 Blockly.Msg["REMOVE_COMMENT"] = "Remove Comment";
 Blockly.Msg["DELETE_BLOCK"] = "Delete Block";
 Blockly.Msg["DELETE_X_BLOCKS"] = "Delete %1 Blocks";

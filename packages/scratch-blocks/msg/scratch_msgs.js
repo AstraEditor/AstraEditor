@@ -22635,6 +22635,8 @@ Blockly.ScratchMsgs.locales["zh-cn"] =
     "DUPLICATE": "复制",
     "DELETE": "删除",
     "ADD_COMMENT": "添加注释",
+    "ADD_README": "添加 README",
+    "ADD_README_TITLE": "标题",
     "REMOVE_COMMENT": "删除注释",
     "DELETE_BLOCK": "删除",
     "DELETE_X_BLOCKS": "删除 %1 积木",
@@ -22967,6 +22969,8 @@ Blockly.ScratchMsgs.locales["zh-tw"] =
     "NEW_BROADCAST_MESSAGE": "新的訊息",
     "NEW_BROADCAST_MESSAGE_TITLE": "新訊息的名稱",
     "BROADCAST_MODAL_TITLE": "新的訊息",
-    "DEFAULT_BROADCAST_MESSAGE_NAME": "message1"
+    "DEFAULT_BROADCAST_MESSAGE_NAME": "message1",
+    "ADD_README": "新增 README",
+    "ADD_README_TITLE": "標題"
 };
 // End of combined translations
