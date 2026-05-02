@@ -2092,8 +2092,15 @@ Blockly.WorkspaceSvg.getTopLevelWorkspaceMetrics_ = function() {
 
   var toolboxDimensions =
       Blockly.WorkspaceSvg.getDimensionsPx_(this.toolbox_);
+  // getFlyout() returns the flyout whether it's owned by the workspace or toolbox
+  var flyout = this.getFlyout();
   var flyoutDimensions =
-      Blockly.WorkspaceSvg.getDimensionsPx_(this.flyout_);
+      Blockly.WorkspaceSvg.getDimensionsPx_(flyout);
+
+  // toolbox width (310) = category (60) + default flyout width (250).
+  // If the flyout is dynamically resized wider, subtract the extra from viewport.
+  var defaultFlyoutWidth = flyout ? (flyout.DEFAULT_WIDTH || 250) : 250;
+  var extraFlyoutWidth = Math.max(0, flyoutDimensions.width - defaultFlyoutWidth);
 
   // Contains height and width in CSS pixels.
   // svgSize is equivalent to the size of the injectionDiv at this point.
@@ -2105,17 +2112,18 @@ Blockly.WorkspaceSvg.getTopLevelWorkspaceMetrics_ = function() {
     } else if (this.toolboxPosition == Blockly.TOOLBOX_AT_LEFT ||
         this.toolboxPosition == Blockly.TOOLBOX_AT_RIGHT) {
       svgSize.width -= toolboxDimensions.width;
+      svgSize.width -= extraFlyoutWidth;
     }
   }
 
   // svgSize is now the space taken up by the Blockly workspace, not including
-  // the toolbox.
+  // the toolbox and any extra flyout width.
   var contentDimensions =
       Blockly.WorkspaceSvg.getContentDimensions_(this, svgSize);
 
   var absoluteLeft = 0;
   if (this.toolbox_ && this.toolboxPosition == Blockly.TOOLBOX_AT_LEFT) {
-    absoluteLeft = toolboxDimensions.width;
+    absoluteLeft = toolboxDimensions.width + extraFlyoutWidth;
   }
   var absoluteTop = 0;
   if (this.toolbox_ && this.toolboxPosition == Blockly.TOOLBOX_AT_TOP) {

@@ -446,6 +446,9 @@ Blockly.Flyout.prototype.setWidth = function(width) {
   if (this.isVisible()) {
     this.position();
     this.reflow();
+    if (this.targetWorkspace_) {
+      this.targetWorkspace_.resize();
+    }
   }
 };
 
@@ -458,6 +461,9 @@ Blockly.Flyout.prototype.resetWidth = function() {
   if (this.isVisible()) {
     this.position();
     this.reflow();
+    if (this.targetWorkspace_) {
+      this.targetWorkspace_.resize();
+    }
   }
 };
 
