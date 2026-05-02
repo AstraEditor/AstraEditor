@@ -47,5 +47,8 @@
     "paint.modeTools.unite": "结合",
     "paint.modeTools.subtract": "剪除",
     "paint.modeTools.split": "拆分",
-    "paint.modeTools.proportional": "标准化"
+    "paint.modeTools.proportional": "标准化",
+    "paint.paintEditor.importImage": "导入图片",
+    "paint.paintEditor.copyImage": "保存复制的图片为{value}",
+    "paint.paintEditor.pasteFromClipboard":"从剪切板粘贴图片"
 }
