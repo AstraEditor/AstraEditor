@@ -239,6 +239,8 @@
     "DUPLICATE": "复制",
     "DELETE": "删除",
     "ADD_COMMENT": "添加注释",
+    "ADD_README": "添加 README",
+    "ADD_README_TITLE": "README 标题",
     "REMOVE_COMMENT": "删除注释",
     "DELETE_BLOCK": "删除",
     "DELETE_X_BLOCKS": "删除 %1 积木",
