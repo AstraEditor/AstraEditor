@@ -556,7 +556,7 @@ Blockly.ContextMenu.workspaceREADMEOption = function (ws, e) {
       disabled = true;
     }
     var README = new Blockly.WorkspaceCommentSvg(
-      ws, `#README #${Blockly.Msg.ADD_README_TITLE}\n`, Blockly.WorkspaceCommentSvg.DEFAULT_SIZE,
+      ws, `#README #${Blockly.Msg.ADD_README_TITLE}\n\n`, Blockly.WorkspaceCommentSvg.DEFAULT_SIZE,
       Blockly.WorkspaceCommentSvg.README_DEFAULT_SIZE, false);
 
     var injectionDiv = ws.getInjectionDiv();
