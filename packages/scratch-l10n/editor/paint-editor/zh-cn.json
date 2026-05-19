@@ -49,6 +49,6 @@
     "paint.modeTools.split": "拆分",
     "paint.modeTools.proportional": "标准化",
     "paint.paintEditor.importImage": "导入图片",
-    "paint.paintEditor.copyImage": "保存复制的图片为{value}",
+    "paint.paintEditor.copyImage": "复制选中的的元素为{value}",
     "paint.paintEditor.pasteFromClipboard":"从剪切板粘贴图片"
 }
