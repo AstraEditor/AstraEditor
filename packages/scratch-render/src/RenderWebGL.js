@@ -105,7 +105,7 @@ const loadStyles = () => {
     if (!_stylesheet) {
         _stylesheet = document.createElement('style');
         // eslint-disable-next-line global-require
-        _stylesheet.textContent = require('!raw-loader!./renderer.css');
+        _stylesheet.textContent = require('!raw-loader?esModule=false!./renderer.css');
         _stylesheet.className = 'scratch-render-styles';
         document.head.appendChild(_stylesheet);
     }
