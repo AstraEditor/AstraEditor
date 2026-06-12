@@ -657,13 +657,19 @@ Blockly.Xml.domToVariables = function(xmlVariables, workspace) {
  * @return {!Blockly.Block} The root block created.
  * @private
  */
-Blockly.Xml.domToBlockHeadless_ = function(xmlBlock, workspace) {
+Blockly.Xml.domToBlockHeadless_ = function(xmlBlock, workspace, opt_connectionType,
+    opt_connectionCheck) {
   var block = null;
   var prototypeName = xmlBlock.getAttribute('type');
   goog.asserts.assert(
       prototypeName, 'Block type unspecified: %s', xmlBlock.outerHTML);
   var id = xmlBlock.getAttribute('id');
   block = workspace.newBlock(prototypeName, id);
+
+  if (block._unknownOpcode) {
+    Blockly.Xml.configureUnknownOpcodeBlock_(block, xmlBlock,
+        opt_connectionType, opt_connectionCheck);
+  }
 
   var blockChild = null;
   for (var i = 0, xmlChild; xmlChild = xmlBlock.childNodes[i]; i++) {
@@ -755,11 +761,20 @@ Blockly.Xml.domToBlockHeadless_ = function(xmlBlock, workspace) {
           input.connection.setShadowDom(childShadowElement);
         }
         if (childBlockElement) {
+          var childConnectionType = Blockly.Xml.getConnectionTypeForInput_(
+              input);
           blockChild = Blockly.Xml.domToBlockHeadless_(childBlockElement,
-              workspace);
-          if (blockChild.outputConnection) {
+              workspace, childConnectionType,
+              input.connection && input.connection.check_);
+
+          if (childConnectionType == 'statement' &&
+              blockChild.previousConnection) {
+            input.connection.connect(blockChild.previousConnection);
+          } else if (childConnectionType == 'value' &&
+              blockChild.outputConnection) {
             input.connection.connect(blockChild.outputConnection);
-          } else if (blockChild.previousConnection) {
+          } else if (childConnectionType == 'value' &&
+              blockChild.previousConnection) {
             input.connection.connect(blockChild.previousConnection);
           } else {
             goog.asserts.fail(
@@ -778,7 +793,7 @@ Blockly.Xml.domToBlockHeadless_ = function(xmlBlock, workspace) {
           goog.asserts.assert(!block.nextConnection.isConnected(),
               'Next statement is already connected.');
           blockChild = Blockly.Xml.domToBlockHeadless_(childBlockElement,
-              workspace);
+              workspace, 'statement', null);
           goog.asserts.assert(blockChild.previousConnection,
               'Next block does not have previous statement.');
           block.nextConnection.connect(blockChild.previousConnection);
@@ -824,6 +839,54 @@ Blockly.Xml.domToBlockHeadless_ = function(xmlBlock, workspace) {
     block.setShadow(true);
   }
   return block;
+};
+
+/**
+ * Get the unknown-opcode fallback shape to use for a child inside an input.
+ * The XML tag is not reliable here because VM XML serializes branch inputs as
+ * <value name="SUBSTACK">, even though Blockly needs them as statement inputs.
+ * @param {!Blockly.Input} input Parent input that will receive the child.
+ * @return {'statement'|'value'} Connection context for the child block.
+ * @private
+ */
+Blockly.Xml.getConnectionTypeForInput_ = function(input) {
+  return input.type == Blockly.NEXT_STATEMENT ? 'statement' : 'value';
+};
+
+/**
+ * Configure a fallback block for an unknown opcode before its XML children are
+ * connected. This preserves inputs and lets unknown reporters connect to value
+ * inputs instead of always becoming plain stack blocks.
+ * @param {!Blockly.Block} block Unknown-opcode fallback block.
+ * @param {!Element} xmlBlock XML block element being loaded.
+ * @param {?string=} opt_connectionType XML parent container type.
+ * @param {?(string|Array.<string>)=} opt_connectionCheck Expected value type.
+ * @private
+ */
+Blockly.Xml.configureUnknownOpcodeBlock_ = function(block, xmlBlock,
+    opt_connectionType, opt_connectionCheck) {
+  if (block.setUnknownOpcodeShape) {
+    block.setUnknownOpcodeShape(
+        opt_connectionType == 'value' ? 'value' : 'statement',
+        opt_connectionCheck);
+  }
+
+  for (var i = 0, xmlChild; xmlChild = xmlBlock.childNodes[i]; i++) {
+    if (xmlChild.nodeType == 3) {
+      continue;
+    }
+
+    var nodeName = xmlChild.nodeName.toLowerCase();
+    var name = xmlChild.getAttribute('name');
+    if ((nodeName == 'value' || nodeName == 'statement') &&
+        block.appendUnknownOpcodeInput) {
+      var inputType = nodeName == 'statement' ||
+          (name && name.indexOf('SUBSTACK') === 0) ? 'statement' : 'value';
+      block.appendUnknownOpcodeInput(name, inputType, null);
+    } else if (nodeName == 'field' && block.appendUnknownOpcodeField) {
+      block.appendUnknownOpcodeField(name, xmlChild.textContent);
+    }
+  }
 };
 
 /**

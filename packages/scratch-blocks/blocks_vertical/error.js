@@ -22,9 +22,10 @@ Blockly.Blocks['error'] = {
         if (unknownOpcode === 'error') {
             unknownOpcode = this._unknownOpcode || 'unknown';
         }
+        this._unknownOpcode = unknownOpcode;
         
         this.jsonInit({
-            "message0": "UNKNOWN OPCODE: %1",
+            "message0": Blockly.Msg.ERROR_UNKNOWN_OPCODE,
             "args0": [
                 {
                     "type": "field_label",
@@ -38,5 +39,67 @@ Blockly.Blocks['error'] = {
         
         // Disable the error block so it cannot be executed
         this.setDisabled(true);
+    },
+
+    /**
+     * Adapt this block to the connection context where the unknown block appears.
+     * @param {'statement'|'value'} shape Shape to use for the fallback block.
+     * @param {?(string|Array.<string>)} optCheck Expected value type.
+     * @this Blockly.Block
+     */
+    setUnknownOpcodeShape: function(shape, optCheck) {
+        if (shape === 'value') {
+            this.setPreviousStatement(false);
+            this.setNextStatement(false);
+            this.setInputsInline(true);
+            this.setOutputShape(
+                optCheck && optCheck.indexOf &&
+                    optCheck.indexOf('Boolean') !== -1 ?
+                    Blockly.OUTPUT_SHAPE_HEXAGONAL :
+                    Blockly.OUTPUT_SHAPE_ROUND
+            );
+            this.setOutput(true, optCheck || null);
+            return;
+        }
+
+        this.setOutput(false);
+        this.setPreviousStatement(true, null);
+        this.setNextStatement(true, null);
+        this.setInputsInline(true);
+    },
+
+    /**
+     * Add a placeholder input so nested blocks connected to an unknown opcode are
+     * still visible and attached to the fallback block.
+     * @param {string} name Input name from XML.
+     * @param {'statement'|'value'} inputType Input kind.
+     * @param {?(string|Array.<string>)} optCheck Expected value type.
+     * @this Blockly.Block
+     */
+    appendUnknownOpcodeInput: function(name, inputType, optCheck) {
+        if (!name || this.getInput(name)) return;
+
+        var input = inputType === 'statement' ?
+            this.appendStatementInput(name) :
+            this.appendValueInput(name);
+        if (input.connection && optCheck) {
+            input.connection.setCheck(optCheck);
+        }
+        input.appendField(name);
+    },
+
+    /**
+     * Add a placeholder field so field-only unknown blocks expose their stored
+     * values instead of collapsing to just the opcode text.
+     * @param {string} name Field name from XML.
+     * @param {string} value Field value from XML.
+     * @this Blockly.Block
+     */
+    appendUnknownOpcodeField: function(name, value) {
+        if (!name || this.getField(name)) return;
+
+        this.appendDummyInput('FIELD_' + name)
+            .appendField(name + ':')
+            .appendField(value || '', name);
     }
 };
