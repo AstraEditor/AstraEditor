@@ -39,7 +39,7 @@
     "playwright-chromium": "1.13.0",
     "raw-loader": "^4.0.2",
     "scratch-render-fonts": "github:TurboWarp/scratch-render-fonts#master",
-    "scratch-vm": "0.2.0-prerelease.20201125065300",
+    "scratch-vm": "github:AstraEditor/scratch-vm#master",
     "tap": "16.2.0",
     "terser-webpack-plugin": "5.3.14",
     "travis-after-all": "1.4.5",
