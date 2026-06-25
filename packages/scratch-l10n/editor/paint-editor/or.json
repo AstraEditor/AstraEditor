@@ -41,5 +41,11 @@
     "paint.roundedRectMode.roundedRect": "ବୃତ୍ତାକାର କୋଣ ବିଶିଷ୍ଟ ଆୟତକାର ",
     "paint.selectMode.select": "ବାଛ",
     "paint.textMode.text": "ଲେଖା",
-    "paint.colorPicker.swap": "ପରସ୍ପର ମଧ୍ୟରେ ବଦଳେଇଦିଅ "
+    "paint.colorPicker.swap": "ପରସ୍ପର ମଧ୍ୟରେ ବଦଳେଇଦିଅ ",
+    "paint.modeTools.boolean": "Boolean",
+    "paint.modeTools.more": "More",
+    "paint.modeTools.unite": "Unite",
+    "paint.modeTools.intersect": "Intersect",
+    "paint.modeTools.subtract": "Subtract",
+    "paint.modeTools.split": "Split"
 }

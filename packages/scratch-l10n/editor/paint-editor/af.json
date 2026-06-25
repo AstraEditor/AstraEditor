@@ -41,5 +41,11 @@
     "paint.roundedRectMode.roundedRect": "Geronde Reghoek",
     "paint.selectMode.select": "Kies",
     "paint.textMode.text": "Teks",
-    "paint.colorPicker.swap": "Ruil om"
+    "paint.colorPicker.swap": "Ruil om",
+    "paint.modeTools.boolean": "Boolean",
+    "paint.modeTools.more": "More",
+    "paint.modeTools.unite": "Unite",
+    "paint.modeTools.intersect": "Intersect",
+    "paint.modeTools.subtract": "Subtract",
+    "paint.modeTools.split": "Split"
 }

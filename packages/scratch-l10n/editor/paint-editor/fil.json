@@ -41,5 +41,11 @@
     "paint.roundedRectMode.roundedRect": "Parihabang pabilog",
     "paint.selectMode.select": "Pumili",
     "paint.textMode.text": "Teksto",
-    "paint.colorPicker.swap": "Magpalitan"
+    "paint.colorPicker.swap": "Magpalitan",
+    "paint.modeTools.boolean": "Boolean",
+    "paint.modeTools.more": "More",
+    "paint.modeTools.unite": "Unite",
+    "paint.modeTools.intersect": "Intersect",
+    "paint.modeTools.subtract": "Subtract",
+    "paint.modeTools.split": "Split"
 }

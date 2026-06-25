@@ -41,5 +41,11 @@
     "paint.roundedRectMode.roundedRect": "Kerekített téglalap",
     "paint.selectMode.select": "Kijelölés",
     "paint.textMode.text": "Szöveg",
-    "paint.colorPicker.swap": "Csere"
+    "paint.colorPicker.swap": "Csere",
+    "paint.modeTools.boolean": "Boolean",
+    "paint.modeTools.more": "More",
+    "paint.modeTools.unite": "Unite",
+    "paint.modeTools.intersect": "Intersect",
+    "paint.modeTools.subtract": "Subtract",
+    "paint.modeTools.split": "Split"
 }

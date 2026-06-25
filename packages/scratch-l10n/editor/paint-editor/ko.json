@@ -41,5 +41,11 @@
     "paint.roundedRectMode.roundedRect": "모서리가 둥근 직사각형",
     "paint.selectMode.select": "선택",
     "paint.textMode.text": "텍스트",
-    "paint.colorPicker.swap": "바꾸기"
+    "paint.colorPicker.swap": "바꾸기",
+    "paint.modeTools.boolean": "Boolean",
+    "paint.modeTools.more": "More",
+    "paint.modeTools.unite": "Unite",
+    "paint.modeTools.intersect": "Intersect",
+    "paint.modeTools.subtract": "Subtract",
+    "paint.modeTools.split": "Split"
 }

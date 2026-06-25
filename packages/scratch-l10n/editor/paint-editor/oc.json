@@ -41,5 +41,11 @@
     "paint.roundedRectMode.roundedRect": "Rectangle arredondit",
     "paint.selectMode.select": "Seleccionar",
     "paint.textMode.text": "Tèxt",
-    "paint.colorPicker.swap": "Escambiar"
+    "paint.colorPicker.swap": "Escambiar",
+    "paint.modeTools.boolean": "Boolean",
+    "paint.modeTools.more": "More",
+    "paint.modeTools.unite": "Unite",
+    "paint.modeTools.intersect": "Intersect",
+    "paint.modeTools.subtract": "Subtract",
+    "paint.modeTools.split": "Split"
 }

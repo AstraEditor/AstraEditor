@@ -41,5 +41,11 @@
     "paint.roundedRectMode.roundedRect": "Çarqoziya Çerxkirî",
     "paint.selectMode.select": "Hilbijêre",
     "paint.textMode.text": "Nivîs",
-    "paint.colorPicker.swap": "Pev Biguherîne"
+    "paint.colorPicker.swap": "Pev Biguherîne",
+    "paint.modeTools.boolean": "Boolean",
+    "paint.modeTools.more": "More",
+    "paint.modeTools.unite": "Unite",
+    "paint.modeTools.intersect": "Intersect",
+    "paint.modeTools.subtract": "Subtract",
+    "paint.modeTools.split": "Split"
 }

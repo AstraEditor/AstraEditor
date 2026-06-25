@@ -41,5 +41,11 @@
     "paint.roundedRectMode.roundedRect": "Pyöristetty suorakulmio",
     "paint.selectMode.select": "Valitse",
     "paint.textMode.text": "Teksti",
-    "paint.colorPicker.swap": "Vaihda"
+    "paint.colorPicker.swap": "Vaihda",
+    "paint.modeTools.boolean": "Boolean",
+    "paint.modeTools.more": "More",
+    "paint.modeTools.unite": "Unite",
+    "paint.modeTools.intersect": "Intersect",
+    "paint.modeTools.subtract": "Subtract",
+    "paint.modeTools.split": "Split"
 }

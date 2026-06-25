@@ -41,5 +41,11 @@
     "paint.roundedRectMode.roundedRect": "Rektangel rundade hörn",
     "paint.selectMode.select": "Välj",
     "paint.textMode.text": "Text",
-    "paint.colorPicker.swap": "Växla färg"
+    "paint.colorPicker.swap": "Växla färg",
+    "paint.modeTools.boolean": "Boolean",
+    "paint.modeTools.more": "More",
+    "paint.modeTools.unite": "Unite",
+    "paint.modeTools.intersect": "Intersect",
+    "paint.modeTools.subtract": "Subtract",
+    "paint.modeTools.split": "Split"
 }

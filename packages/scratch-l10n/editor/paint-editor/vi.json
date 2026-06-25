@@ -41,5 +41,11 @@
     "paint.roundedRectMode.roundedRect": "Hình vuông góc tròn",
     "paint.selectMode.select": "Chọn",
     "paint.textMode.text": "Văn bản",
-    "paint.colorPicker.swap": "Đổi màu"
+    "paint.colorPicker.swap": "Đổi màu",
+    "paint.modeTools.boolean": "Boolean",
+    "paint.modeTools.more": "More",
+    "paint.modeTools.unite": "Unite",
+    "paint.modeTools.intersect": "Intersect",
+    "paint.modeTools.subtract": "Subtract",
+    "paint.modeTools.split": "Split"
 }

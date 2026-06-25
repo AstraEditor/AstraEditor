@@ -41,5 +41,11 @@
     "paint.roundedRectMode.roundedRect": "Dikhutlonnetsepa tse di golokang",
     "paint.selectMode.select": "Tlhopha",
     "paint.textMode.text": "Mokwalo",
-    "paint.colorPicker.swap": "Refosana"
+    "paint.colorPicker.swap": "Refosana",
+    "paint.modeTools.boolean": "Boolean",
+    "paint.modeTools.more": "More",
+    "paint.modeTools.unite": "Unite",
+    "paint.modeTools.intersect": "Intersect",
+    "paint.modeTools.subtract": "Subtract",
+    "paint.modeTools.split": "Split"
 }

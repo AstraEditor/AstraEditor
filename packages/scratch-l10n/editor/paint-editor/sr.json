@@ -41,5 +41,11 @@
     "paint.roundedRectMode.roundedRect": "Заобљени правоугаоник",
     "paint.selectMode.select": "Изабери",
     "paint.textMode.text": "Текст",
-    "paint.colorPicker.swap": "Замени"
+    "paint.colorPicker.swap": "Замени",
+    "paint.modeTools.boolean": "Boolean",
+    "paint.modeTools.more": "More",
+    "paint.modeTools.unite": "Unite",
+    "paint.modeTools.intersect": "Intersect",
+    "paint.modeTools.subtract": "Subtract",
+    "paint.modeTools.split": "Split"
 }

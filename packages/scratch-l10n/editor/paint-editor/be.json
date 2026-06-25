@@ -41,5 +41,11 @@
     "paint.roundedRectMode.roundedRect": "Скруглёны прамавугольнік",
     "paint.selectMode.select": "Выбраць",
     "paint.textMode.text": "Тэкст",
-    "paint.colorPicker.swap": "Замяніць"
+    "paint.colorPicker.swap": "Замяніць",
+    "paint.modeTools.boolean": "Boolean",
+    "paint.modeTools.more": "More",
+    "paint.modeTools.unite": "Unite",
+    "paint.modeTools.intersect": "Intersect",
+    "paint.modeTools.subtract": "Subtract",
+    "paint.modeTools.split": "Split"
 }

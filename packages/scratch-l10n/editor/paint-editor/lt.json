@@ -41,5 +41,11 @@
     "paint.roundedRectMode.roundedRect": "Užapvalintas stačiakampis",
     "paint.selectMode.select": "Pažymėti",
     "paint.textMode.text": "Tekstas",
-    "paint.colorPicker.swap": "Sukeisti"
+    "paint.colorPicker.swap": "Sukeisti",
+    "paint.modeTools.boolean": "Boolean",
+    "paint.modeTools.more": "More",
+    "paint.modeTools.unite": "Unite",
+    "paint.modeTools.intersect": "Intersect",
+    "paint.modeTools.subtract": "Subtract",
+    "paint.modeTools.split": "Split"
 }

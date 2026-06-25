@@ -41,5 +41,11 @@
     "paint.roundedRectMode.roundedRect": "ចតុកោណកែងជ្រុងមូល",
     "paint.selectMode.select": "ជ្រើសរើស",
     "paint.textMode.text": "អត្ថបទ",
-    "paint.colorPicker.swap": "ប្តូរពណ៌"
+    "paint.colorPicker.swap": "ប្តូរពណ៌",
+    "paint.modeTools.boolean": "Boolean",
+    "paint.modeTools.more": "More",
+    "paint.modeTools.unite": "Unite",
+    "paint.modeTools.intersect": "Intersect",
+    "paint.modeTools.subtract": "Subtract",
+    "paint.modeTools.split": "Split"
 }

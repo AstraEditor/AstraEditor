@@ -41,5 +41,11 @@
     "paint.roundedRectMode.roundedRect": "Indingiliza yerectangle",
     "paint.selectMode.select": "Khetha",
     "paint.textMode.text": "Umbhalo",
-    "paint.colorPicker.swap": "Shitsha "
+    "paint.colorPicker.swap": "Shitsha ",
+    "paint.modeTools.boolean": "Boolean",
+    "paint.modeTools.more": "More",
+    "paint.modeTools.unite": "Unite",
+    "paint.modeTools.intersect": "Intersect",
+    "paint.modeTools.subtract": "Subtract",
+    "paint.modeTools.split": "Split"
 }

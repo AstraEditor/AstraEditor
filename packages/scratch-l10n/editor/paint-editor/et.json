@@ -41,5 +41,11 @@
     "paint.roundedRectMode.roundedRect": "Ümarate nurkadega ristkülik",
     "paint.selectMode.select": "Vali",
     "paint.textMode.text": "Tekst",
-    "paint.colorPicker.swap": "Vaheta"
+    "paint.colorPicker.swap": "Vaheta",
+    "paint.modeTools.boolean": "Boolean",
+    "paint.modeTools.more": "More",
+    "paint.modeTools.unite": "Unite",
+    "paint.modeTools.intersect": "Intersect",
+    "paint.modeTools.subtract": "Subtract",
+    "paint.modeTools.split": "Split"
 }

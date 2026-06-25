@@ -41,5 +41,11 @@
     "paint.roundedRectMode.roundedRect": "Στρογγυλεμένο Ορθογώνιο",
     "paint.selectMode.select": "Επιλογή",
     "paint.textMode.text": "Κείμενο",
-    "paint.colorPicker.swap": "Αντιμετάθεση"
+    "paint.colorPicker.swap": "Αντιμετάθεση",
+    "paint.modeTools.boolean": "Boolean",
+    "paint.modeTools.more": "More",
+    "paint.modeTools.unite": "Unite",
+    "paint.modeTools.intersect": "Intersect",
+    "paint.modeTools.subtract": "Subtract",
+    "paint.modeTools.split": "Split"
 }

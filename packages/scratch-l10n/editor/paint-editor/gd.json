@@ -41,5 +41,11 @@
     "paint.roundedRectMode.roundedRect": "Ceart-cheàrnach cruinnte",
     "paint.selectMode.select": "Tagh",
     "paint.textMode.text": "Teacsa",
-    "paint.colorPicker.swap": "Suaip"
+    "paint.colorPicker.swap": "Suaip",
+    "paint.modeTools.boolean": "Boolean",
+    "paint.modeTools.more": "More",
+    "paint.modeTools.unite": "Unite",
+    "paint.modeTools.intersect": "Intersect",
+    "paint.modeTools.subtract": "Subtract",
+    "paint.modeTools.split": "Split"
 }

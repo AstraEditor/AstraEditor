@@ -41,5 +41,11 @@
     "paint.roundedRectMode.roundedRect": "Persegi Bulat",
     "paint.selectMode.select": "Pilih",
     "paint.textMode.text": "Teks",
-    "paint.colorPicker.swap": "Tukar"
+    "paint.colorPicker.swap": "Tukar",
+    "paint.modeTools.boolean": "Boolean",
+    "paint.modeTools.more": "More",
+    "paint.modeTools.unite": "Unite",
+    "paint.modeTools.intersect": "Intersect",
+    "paint.modeTools.subtract": "Subtract",
+    "paint.modeTools.split": "Split"
 }

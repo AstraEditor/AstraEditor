@@ -41,5 +41,11 @@
     "paint.roundedRectMode.roundedRect": "Lanƙwasasshen murabba'i mai dari ",
     "paint.selectMode.select": "Zaɓa",
     "paint.textMode.text": "rubutu",
-    "paint.colorPicker.swap": "musanya"
+    "paint.colorPicker.swap": "musanya",
+    "paint.modeTools.boolean": "Boolean",
+    "paint.modeTools.more": "More",
+    "paint.modeTools.unite": "Unite",
+    "paint.modeTools.intersect": "Intersect",
+    "paint.modeTools.subtract": "Subtract",
+    "paint.modeTools.split": "Split"
 }

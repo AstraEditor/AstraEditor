@@ -41,5 +41,11 @@
     "paint.roundedRectMode.roundedRect": "कोनो पर मुड़े हुए आयताकार ",
     "paint.selectMode.select": "चुनें ",
     "paint.textMode.text": "अक्षर ",
-    "paint.colorPicker.swap": "आपस में बदलें "
+    "paint.colorPicker.swap": "आपस में बदलें ",
+    "paint.modeTools.boolean": "Boolean",
+    "paint.modeTools.more": "More",
+    "paint.modeTools.unite": "Unite",
+    "paint.modeTools.intersect": "Intersect",
+    "paint.modeTools.subtract": "Subtract",
+    "paint.modeTools.split": "Split"
 }

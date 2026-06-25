@@ -41,5 +41,11 @@
     "paint.roundedRectMode.roundedRect": "مستطيل مستدير الزوايا",
     "paint.selectMode.select": "تحديد",
     "paint.textMode.text": "نص",
-    "paint.colorPicker.swap": "تبديل"
+    "paint.colorPicker.swap": "تبديل",
+    "paint.modeTools.boolean": "Boolean",
+    "paint.modeTools.more": "More",
+    "paint.modeTools.unite": "Unite",
+    "paint.modeTools.intersect": "Intersect",
+    "paint.modeTools.subtract": "Subtract",
+    "paint.modeTools.split": "Split"
 }

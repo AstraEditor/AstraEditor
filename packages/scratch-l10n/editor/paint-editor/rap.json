@@ -41,5 +41,11 @@
     "paint.roundedRectMode.roundedRect": "avahata poto roa hai titi taka taka",
     "paint.selectMode.select": "tuhi",
     "paint.textMode.text": "papaʾi",
-    "paint.colorPicker.swap": "rori"
+    "paint.colorPicker.swap": "rori",
+    "paint.modeTools.boolean": "Boolean",
+    "paint.modeTools.more": "More",
+    "paint.modeTools.unite": "Unite",
+    "paint.modeTools.intersect": "Intersect",
+    "paint.modeTools.subtract": "Subtract",
+    "paint.modeTools.split": "Split"
 }

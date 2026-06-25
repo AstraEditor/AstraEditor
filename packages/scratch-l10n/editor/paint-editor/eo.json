@@ -41,5 +41,11 @@
     "paint.roundedRectMode.roundedRect": "Rondigita rektangulo",
     "paint.selectMode.select": "Elekti",
     "paint.textMode.text": "Teksto",
-    "paint.colorPicker.swap": "Interŝanĝi"
+    "paint.colorPicker.swap": "Interŝanĝi",
+    "paint.modeTools.boolean": "Boolean",
+    "paint.modeTools.more": "More",
+    "paint.modeTools.unite": "Unite",
+    "paint.modeTools.intersect": "Intersect",
+    "paint.modeTools.subtract": "Subtract",
+    "paint.modeTools.split": "Split"
 }

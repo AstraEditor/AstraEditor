@@ -41,5 +41,11 @@
     "paint.roundedRectMode.roundedRect": "Tapawhā Roa Tōpuku",
     "paint.selectMode.select": "Kōwhiria",
     "paint.textMode.text": "Kuputuhi",
-    "paint.colorPicker.swap": "Whakawhitia"
+    "paint.colorPicker.swap": "Whakawhitia",
+    "paint.modeTools.boolean": "Boolean",
+    "paint.modeTools.more": "More",
+    "paint.modeTools.unite": "Unite",
+    "paint.modeTools.intersect": "Intersect",
+    "paint.modeTools.subtract": "Subtract",
+    "paint.modeTools.split": "Split"
 }

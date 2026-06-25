@@ -41,5 +41,11 @@
     "paint.roundedRectMode.roundedRect": "গোলাকার আয়তক্ষেত্র",
     "paint.selectMode.select": "নির্বাচন কর",
     "paint.textMode.text": "পাঠ",
-    "paint.colorPicker.swap": "বিনিময়"
+    "paint.colorPicker.swap": "বিনিময়",
+    "paint.modeTools.boolean": "Boolean",
+    "paint.modeTools.more": "More",
+    "paint.modeTools.unite": "Unite",
+    "paint.modeTools.intersect": "Intersect",
+    "paint.modeTools.subtract": "Subtract",
+    "paint.modeTools.split": "Split"
 }

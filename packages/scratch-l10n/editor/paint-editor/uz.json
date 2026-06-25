@@ -41,5 +41,11 @@
     "paint.roundedRectMode.roundedRect": "Aval shakl berish",
     "paint.selectMode.select": "Tanlash",
     "paint.textMode.text": "Yozuv",
-    "paint.colorPicker.swap": "Almashtirish"
+    "paint.colorPicker.swap": "Almashtirish",
+    "paint.modeTools.boolean": "Boolean",
+    "paint.modeTools.more": "More",
+    "paint.modeTools.unite": "Unite",
+    "paint.modeTools.intersect": "Intersect",
+    "paint.modeTools.subtract": "Subtract",
+    "paint.modeTools.split": "Split"
 }

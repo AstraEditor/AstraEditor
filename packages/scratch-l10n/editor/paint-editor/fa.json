@@ -41,5 +41,11 @@
     "paint.roundedRectMode.roundedRect": "مستطیل دور گرد",
     "paint.selectMode.select": "انتخاب",
     "paint.textMode.text": "متن",
-    "paint.colorPicker.swap": "جابه‌جا"
+    "paint.colorPicker.swap": "جابه‌جا",
+    "paint.modeTools.boolean": "Boolean",
+    "paint.modeTools.more": "More",
+    "paint.modeTools.unite": "Unite",
+    "paint.modeTools.intersect": "Intersect",
+    "paint.modeTools.subtract": "Subtract",
+    "paint.modeTools.split": "Split"
 }

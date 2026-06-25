@@ -41,5 +41,11 @@
     "paint.roundedRectMode.roundedRect": "Мөлгөр дөрвөлжин",
     "paint.selectMode.select": "Сонгох",
     "paint.textMode.text": "Текст",
-    "paint.colorPicker.swap": "Сэлгэх"
+    "paint.colorPicker.swap": "Сэлгэх",
+    "paint.modeTools.boolean": "Boolean",
+    "paint.modeTools.more": "More",
+    "paint.modeTools.unite": "Unite",
+    "paint.modeTools.intersect": "Intersect",
+    "paint.modeTools.subtract": "Subtract",
+    "paint.modeTools.split": "Split"
 }

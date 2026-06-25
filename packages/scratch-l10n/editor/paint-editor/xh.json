@@ -41,5 +41,11 @@
     "paint.roundedRectMode.roundedRect": "Unxantathu owenziwe ronte",
     "paint.selectMode.select": "Khetha",
     "paint.textMode.text": "Umbhalo",
-    "paint.colorPicker.swap": "Tshintsha"
+    "paint.colorPicker.swap": "Tshintsha",
+    "paint.modeTools.boolean": "Boolean",
+    "paint.modeTools.more": "More",
+    "paint.modeTools.unite": "Unite",
+    "paint.modeTools.intersect": "Intersect",
+    "paint.modeTools.subtract": "Subtract",
+    "paint.modeTools.split": "Split"
 }

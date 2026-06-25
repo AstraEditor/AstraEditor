@@ -41,5 +41,11 @@
     "paint.roundedRectMode.roundedRect": "Rectángulu arrondiáu",
     "paint.selectMode.select": "Escoyer",
     "paint.textMode.text": "Testu",
-    "paint.colorPicker.swap": "Intercambiar"
+    "paint.colorPicker.swap": "Intercambiar",
+    "paint.modeTools.boolean": "Boolean",
+    "paint.modeTools.more": "More",
+    "paint.modeTools.unite": "Unite",
+    "paint.modeTools.intersect": "Intersect",
+    "paint.modeTools.subtract": "Subtract",
+    "paint.modeTools.split": "Split"
 }

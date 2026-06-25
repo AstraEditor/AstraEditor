@@ -41,5 +41,11 @@
     "paint.roundedRectMode.roundedRect": "Dronuilleog Chruinn",
     "paint.selectMode.select": "Roghnaigh",
     "paint.textMode.text": "Téacs",
-    "paint.colorPicker.swap": "Babhtáil"
+    "paint.colorPicker.swap": "Babhtáil",
+    "paint.modeTools.boolean": "Boolean",
+    "paint.modeTools.more": "More",
+    "paint.modeTools.unite": "Unite",
+    "paint.modeTools.intersect": "Intersect",
+    "paint.modeTools.subtract": "Subtract",
+    "paint.modeTools.split": "Split"
 }

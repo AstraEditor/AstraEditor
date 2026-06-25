@@ -41,5 +41,11 @@
     "paint.roundedRectMode.roundedRect": "Abgerundetes Rechteck ",
     "paint.selectMode.select": "Auswählen",
     "paint.textMode.text": "Text",
-    "paint.colorPicker.swap": "Tauschen"
+    "paint.colorPicker.swap": "Tauschen",
+    "paint.modeTools.boolean": "Boolean",
+    "paint.modeTools.more": "More",
+    "paint.modeTools.unite": "Unite",
+    "paint.modeTools.intersect": "Intersect",
+    "paint.modeTools.subtract": "Subtract",
+    "paint.modeTools.split": "Split"
 }

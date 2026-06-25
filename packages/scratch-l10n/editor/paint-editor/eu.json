@@ -41,5 +41,11 @@
     "paint.roundedRectMode.roundedRect": "Laukizuzen biribildua",
     "paint.selectMode.select": "Hautatu",
     "paint.textMode.text": "Testua",
-    "paint.colorPicker.swap": "Trukatu"
+    "paint.colorPicker.swap": "Trukatu",
+    "paint.modeTools.boolean": "Boolean",
+    "paint.modeTools.more": "More",
+    "paint.modeTools.unite": "Unite",
+    "paint.modeTools.intersect": "Intersect",
+    "paint.modeTools.subtract": "Subtract",
+    "paint.modeTools.split": "Split"
 }

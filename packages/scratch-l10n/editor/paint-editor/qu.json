@@ -41,5 +41,11 @@
     "paint.roundedRectMode.roundedRect": "Muyuq hina Tawa Kuchu",
     "paint.selectMode.select": "Akllasqa",
     "paint.textMode.text": "Qillqay",
-    "paint.colorPicker.swap": "Hukniraqchay"
+    "paint.colorPicker.swap": "Hukniraqchay",
+    "paint.modeTools.boolean": "Boolean",
+    "paint.modeTools.more": "More",
+    "paint.modeTools.unite": "Unite",
+    "paint.modeTools.intersect": "Intersect",
+    "paint.modeTools.subtract": "Subtract",
+    "paint.modeTools.split": "Split"
 }

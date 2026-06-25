@@ -41,5 +41,11 @@
     "paint.roundedRectMode.roundedRect": "დამრგვალებული მართკუთხედი",
     "paint.selectMode.select": "არჩევა",
     "paint.textMode.text": "ტექსტი",
-    "paint.colorPicker.swap": "შეცვლა"
+    "paint.colorPicker.swap": "შეცვლა",
+    "paint.modeTools.boolean": "Boolean",
+    "paint.modeTools.more": "More",
+    "paint.modeTools.unite": "Unite",
+    "paint.modeTools.intersect": "Intersect",
+    "paint.modeTools.subtract": "Subtract",
+    "paint.modeTools.split": "Split"
 }

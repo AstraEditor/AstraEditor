@@ -41,5 +41,11 @@
     "paint.roundedRectMode.roundedRect": "zaoblený obdĺžnik",
     "paint.selectMode.select": "označ",
     "paint.textMode.text": "text",
-    "paint.colorPicker.swap": "zameň farby"
+    "paint.colorPicker.swap": "zameň farby",
+    "paint.modeTools.boolean": "Boolean",
+    "paint.modeTools.more": "More",
+    "paint.modeTools.unite": "Unite",
+    "paint.modeTools.intersect": "Intersect",
+    "paint.modeTools.subtract": "Subtract",
+    "paint.modeTools.split": "Split"
 }

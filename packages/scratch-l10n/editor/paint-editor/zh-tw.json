@@ -41,5 +41,11 @@
     "paint.roundedRectMode.roundedRect": "圓角方形",
     "paint.selectMode.select": "選取",
     "paint.textMode.text": "文字",
-    "paint.colorPicker.swap": "交換"
+    "paint.colorPicker.swap": "交換",
+    "paint.modeTools.boolean": "布林",
+    "paint.modeTools.more": "更多",
+    "paint.modeTools.unite": "Unite",
+    "paint.modeTools.intersect": "Intersect",
+    "paint.modeTools.subtract": "Subtract",
+    "paint.modeTools.split": "Split"
 }

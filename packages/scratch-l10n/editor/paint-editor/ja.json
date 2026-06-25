@@ -41,5 +41,11 @@
     "paint.roundedRectMode.roundedRect": "角丸の長方形",
     "paint.selectMode.select": "選択",
     "paint.textMode.text": "テキスト",
-    "paint.colorPicker.swap": "入れ替え"
+    "paint.colorPicker.swap": "入れ替え",
+    "paint.modeTools.boolean": "Boolean",
+    "paint.modeTools.more": "More",
+    "paint.modeTools.unite": "Unite",
+    "paint.modeTools.intersect": "Intersect",
+    "paint.modeTools.subtract": "Subtract",
+    "paint.modeTools.split": "Split"
 }

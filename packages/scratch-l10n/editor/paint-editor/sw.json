@@ -41,5 +41,11 @@
     "paint.roundedRectMode.roundedRect": "Mstatili Uilo Na Pembe Za Mviringo",
     "paint.selectMode.select": "Chagua",
     "paint.textMode.text": "Maandishi",
-    "paint.colorPicker.swap": "Badilisha"
+    "paint.colorPicker.swap": "Badilisha",
+    "paint.modeTools.boolean": "Boolean",
+    "paint.modeTools.more": "More",
+    "paint.modeTools.unite": "Unite",
+    "paint.modeTools.intersect": "Intersect",
+    "paint.modeTools.subtract": "Subtract",
+    "paint.modeTools.split": "Split"
 }

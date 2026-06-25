@@ -41,5 +41,11 @@
     "paint.roundedRectMode.roundedRect": "מלבן מעוגל",
     "paint.selectMode.select": "בחר",
     "paint.textMode.text": "טקסט",
-    "paint.colorPicker.swap": "החלף"
+    "paint.colorPicker.swap": "החלף",
+    "paint.modeTools.boolean": "Boolean",
+    "paint.modeTools.more": "More",
+    "paint.modeTools.unite": "Unite",
+    "paint.modeTools.intersect": "Intersect",
+    "paint.modeTools.subtract": "Subtract",
+    "paint.modeTools.split": "Split"
 }

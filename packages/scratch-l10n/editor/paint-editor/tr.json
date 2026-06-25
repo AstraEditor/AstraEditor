@@ -41,5 +41,11 @@
     "paint.roundedRectMode.roundedRect": "Yuvarlatılmış dikdörtgen",
     "paint.selectMode.select": "Seç",
     "paint.textMode.text": "Metin",
-    "paint.colorPicker.swap": "Değiştir"
+    "paint.colorPicker.swap": "Değiştir",
+    "paint.modeTools.boolean": "Boolean",
+    "paint.modeTools.more": "More",
+    "paint.modeTools.unite": "Unite",
+    "paint.modeTools.intersect": "Intersect",
+    "paint.modeTools.subtract": "Subtract",
+    "paint.modeTools.split": "Split"
 }

@@ -50,5 +50,7 @@
     "paint.modeTools.proportional": "标准化",
     "paint.paintEditor.importImage": "导入图片",
     "paint.paintEditor.copyImage": "复制选中的的元素为{value}",
-    "paint.paintEditor.pasteFromClipboard":"从剪切板粘贴图片"
+    "paint.paintEditor.pasteFromClipboard": "从剪切板粘贴图片",
+    "paint.modeTools.boolean": "布尔",
+    "paint.modeTools.more": "更多"
 }

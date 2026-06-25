@@ -41,5 +41,11 @@
     "paint.roundedRectMode.roundedRect": "Avrundet rektangel",
     "paint.selectMode.select": "Velg",
     "paint.textMode.text": "Tekst",
-    "paint.colorPicker.swap": "Bytt"
+    "paint.colorPicker.swap": "Bytt",
+    "paint.modeTools.boolean": "Boolean",
+    "paint.modeTools.more": "More",
+    "paint.modeTools.unite": "Unite",
+    "paint.modeTools.intersect": "Intersect",
+    "paint.modeTools.subtract": "Subtract",
+    "paint.modeTools.split": "Split"
 }

@@ -41,5 +41,11 @@
     "paint.roundedRectMode.roundedRect": "Կլորացված ուղղանկյուն",
     "paint.selectMode.select": "Ընտրել",
     "paint.textMode.text": "Տեքստ",
-    "paint.colorPicker.swap": "Փոխարինում"
+    "paint.colorPicker.swap": "Փոխարինում",
+    "paint.modeTools.boolean": "Boolean",
+    "paint.modeTools.more": "More",
+    "paint.modeTools.unite": "Unite",
+    "paint.modeTools.intersect": "Intersect",
+    "paint.modeTools.subtract": "Subtract",
+    "paint.modeTools.split": "Split"
 }
