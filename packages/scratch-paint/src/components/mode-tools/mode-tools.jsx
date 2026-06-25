@@ -2,6 +2,7 @@ import classNames from 'classnames';
 import { connect } from 'react-redux';
 import PropTypes from 'prop-types';
 import React from 'react';
+import MediaQuery from 'react-responsive';
 
 import { changeBrushSize } from '../../reducers/brush-mode';
 import { changeBrushSize as changeEraserSize } from '../../reducers/eraser-mode';
@@ -18,9 +19,12 @@ import { defineMessages, injectIntl, intlShape } from 'react-intl';
 import Input from '../forms/input.jsx';
 import InputGroup from '../input-group/input-group.jsx';
 import LabeledIconButton from '../labeled-icon-button/labeled-icon-button.jsx';
+import Button from '../button/button.jsx';
+import Dropdown from '../dropdown/dropdown.jsx';
 import Modes from '../../lib/modes';
 import Formats, { isBitmap, isVector } from '../../lib/format';
 import { hideLabel } from '../../lib/hide-label';
+import layout from '../../lib/layout-constants';
 import styles from './mode-tools.css';
 
 import copyIcon from '!../../tw-recolor/build!./icons/copy.svg';
@@ -50,6 +54,8 @@ import subtractIcon from '!../../tw-recolor/build!./icons/subtract.svg'
 import splitIcon from '!../../tw-recolor/build!./icons/split.svg'
 import proportionalIcon from '!../../tw-recolor/build!./icons/proportional.svg'
 
+import TWRenderRecoloredImage from '../../tw-recolor/render.jsx';
+
 
 import { MAX_STROKE_WIDTH } from '../../reducers/stroke-width';
 
@@ -70,6 +76,11 @@ const ModeToolsComponent = props => {
             defaultMessage: 'Corner Radius',
             description: 'Label for the corner radius input',
             id: 'paint.modeTools.cornerRadius'
+        },
+        boolean: {
+            defaultMessage: 'Boolean',
+            description: 'Label for the dropdown to access boolean operation buttons',
+            id: 'paint.modeTools.boolean'
         },
         unite: {
             defaultMessage: 'Unite',
@@ -105,6 +116,11 @@ const ModeToolsComponent = props => {
             defaultMessage: 'Delete',
             description: 'Label for the delete button',
             id: 'paint.modeTools.delete'
+        },
+        more: {
+            defaultMessage: 'More',
+            description: 'Label for the dropdown to access copy/paste/delete buttons',
+            id: 'paint.modeTools.more'
         },
         curved: {
             defaultMessage: 'Curved',
@@ -247,7 +263,8 @@ const ModeToolsComponent = props => {
             );
         case Modes.BIT_SELECT:
         /* falls through */
-        case Modes.SELECT:
+        case Modes.SELECT: {
+            const booleanDisabled = !props.selectedItems || props.selectedItems.length < 2;
             return (
                 <div className={classNames(props.className, styles.modeTools)}>
                     <InputGroup>
@@ -267,29 +284,84 @@ const ModeToolsComponent = props => {
                         />
 
                     </InputGroup>
-                    <InputGroup className={classNames(styles.modDashedBorder, styles.modLabeledIconHeight)}>
-                        <LabeledIconButton
-                            hideLabel={hideLabel(props.intl.locale)}
-                            imgSrc={copyIcon}
-                            title={props.intl.formatMessage(messages.copy)}
-                            onClick={props.onCopyToClipboard}
-                        />
-                        <LabeledIconButton
-                            disabled={!(props.clipboardItems.length > 0)}
-                            hideLabel={hideLabel(props.intl.locale)}
-                            imgSrc={pasteIcon}
-                            title={props.intl.formatMessage(messages.paste)}
-                            onClick={props.onPasteFromClipboard}
-                        />
-                    </InputGroup>
-                    <InputGroup className={classNames(styles.modDashedBorder, styles.modLabeledIconHeight)}>
-                        <LabeledIconButton
-                            hideLabel={hideLabel(props.intl.locale)}
-                            imgSrc={deleteIcon}
-                            title={props.intl.formatMessage(messages.delete)}
-                            onClick={props.onDelete}
-                        />
-                    </InputGroup>
+                    {/* Copy/Paste/Delete — wide screen (width >= 1550): direct buttons */}
+                    <MediaQuery minWidth={1550}>
+                        <InputGroup className={classNames(styles.modDashedBorder, styles.modLabeledIconHeight)}>
+                            <LabeledIconButton
+                                hideLabel={hideLabel(props.intl.locale)}
+                                imgSrc={copyIcon}
+                                title={props.intl.formatMessage(messages.copy)}
+                                onClick={props.onCopyToClipboard}
+                            />
+                            <LabeledIconButton
+                                disabled={!(props.clipboardItems.length > 0)}
+                                hideLabel={hideLabel(props.intl.locale)}
+                                imgSrc={pasteIcon}
+                                title={props.intl.formatMessage(messages.paste)}
+                                onClick={props.onPasteFromClipboard}
+                            />
+                        </InputGroup>
+                        <InputGroup className={classNames(styles.modDashedBorder, styles.modLabeledIconHeight)}>
+                            <LabeledIconButton
+                                hideLabel={hideLabel(props.intl.locale)}
+                                imgSrc={deleteIcon}
+                                title={props.intl.formatMessage(messages.delete)}
+                                onClick={props.onDelete}
+                            />
+                        </InputGroup>
+                    </MediaQuery>
+                    {/* Copy/Paste/Delete — narrow screen (width <= 1549): dropdown */}
+                    <MediaQuery maxWidth={1549}>
+                        <InputGroup className={classNames(styles.modDashedBorder, styles.modLabeledIconHeight)}>
+                            <Dropdown
+                                className={styles.modUnselect}
+                                enterExitTransitionDurationMs={20}
+                                popoverContent={
+                                    <InputGroup className={styles.modContextMenu}>
+                                        <Button
+                                            className={styles.modMenuItem}
+                                            onClick={props.onCopyToClipboard}
+                                        >
+                                            <TWRenderRecoloredImage
+                                                className={styles.menuItemIcon}
+                                                draggable={false}
+                                                src={copyIcon}
+                                            />
+                                            <span>{props.intl.formatMessage(messages.copy)}</span>
+                                        </Button>
+                                        <Button
+                                            className={classNames(styles.modMenuItem, {
+                                                [styles.modDisabled]: !(props.clipboardItems.length > 0)
+                                            })}
+                                            disabled={!(props.clipboardItems.length > 0)}
+                                            onClick={props.onPasteFromClipboard}
+                                        >
+                                            <TWRenderRecoloredImage
+                                                className={styles.menuItemIcon}
+                                                draggable={false}
+                                                src={pasteIcon}
+                                            />
+                                            <span>{props.intl.formatMessage(messages.paste)}</span>
+                                        </Button>
+                                        <Button
+                                            className={styles.modMenuItem}
+                                            onClick={props.onDelete}
+                                        >
+                                            <TWRenderRecoloredImage
+                                                className={styles.menuItemIcon}
+                                                draggable={false}
+                                                src={deleteIcon}
+                                            />
+                                            <span>{props.intl.formatMessage(messages.delete)}</span>
+                                        </Button>
+                                    </InputGroup>
+                                }
+                                tipSize={.01}
+                            >
+                                {props.intl.formatMessage(messages.more)}
+                            </Dropdown>
+                        </InputGroup>
+                    </MediaQuery>
                     <InputGroup className={classNames(styles.modDashedBorder, styles.modLabeledIconHeight)}>
                         <LabeledIconButton
                             hideLabel={props.intl.locale !== 'en'}
@@ -304,40 +376,116 @@ const ModeToolsComponent = props => {
                             onClick={props.onFlipVertical}
                         />
                     </InputGroup>
-                    <InputGroup className={classNames(styles.modLabeledIconHeight)}>
-                        <LabeledIconButton
-                            disabled={!props.selectedItems || props.selectedItems.length < 2}
-                            hideLabel={hideLabel(props.intl.locale)}
-                            imgSrc={uniteIcon}
-                            title={props.intl.formatMessage(messages.unite)}
-                            onClick={props.onUniteShapes}
-                        />
-                        <LabeledIconButton
-                            disabled={!props.selectedItems || props.selectedItems.length < 2}
-                            hideLabel={hideLabel(props.intl.locale)}
-                            imgSrc={intersectIcon}
-                            title={props.intl.formatMessage(messages.intersect)}
-                            onClick={props.onIntersectShapes}
-                        />
-                    </InputGroup>
-                    <InputGroup className={classNames(styles.modDashedBorder, styles.modLabeledIconHeight)}>
-                        <LabeledIconButton
-                            disabled={!props.selectedItems || props.selectedItems.length < 2}
-                            hideLabel={hideLabel(props.intl.locale)}
-                            imgSrc={subtractIcon}
-                            title={props.intl.formatMessage(messages.subtract)}
-                            onClick={props.onSubtractShapes}
-                        />
-                        <LabeledIconButton
-                            disabled={!props.selectedItems || props.selectedItems.length < 2}
-                            hideLabel={hideLabel(props.intl.locale)}
-                            imgSrc={splitIcon}
-                            title={props.intl.formatMessage(messages.split)}
-                            onClick={props.onSplitShapes}
-                        />
-                    </InputGroup>
+                    {/* Boolean operations — wide screen (width >= 1550): direct buttons */}
+                    <MediaQuery minWidth={1550}>
+                        <InputGroup className={classNames(styles.modLabeledIconHeight)}>
+                            <LabeledIconButton
+                                disabled={booleanDisabled}
+                                hideLabel={hideLabel(props.intl.locale)}
+                                imgSrc={uniteIcon}
+                                title={props.intl.formatMessage(messages.unite)}
+                                onClick={props.onUniteShapes}
+                            />
+                            <LabeledIconButton
+                                disabled={booleanDisabled}
+                                hideLabel={hideLabel(props.intl.locale)}
+                                imgSrc={intersectIcon}
+                                title={props.intl.formatMessage(messages.intersect)}
+                                onClick={props.onIntersectShapes}
+                            />
+                        </InputGroup>
+                        <InputGroup className={classNames(styles.modDashedBorder, styles.modLabeledIconHeight)}>
+                            <LabeledIconButton
+                                disabled={booleanDisabled}
+                                hideLabel={hideLabel(props.intl.locale)}
+                                imgSrc={subtractIcon}
+                                title={props.intl.formatMessage(messages.subtract)}
+                                onClick={props.onSubtractShapes}
+                            />
+                            <LabeledIconButton
+                                disabled={booleanDisabled}
+                                hideLabel={hideLabel(props.intl.locale)}
+                                imgSrc={splitIcon}
+                                title={props.intl.formatMessage(messages.split)}
+                                onClick={props.onSplitShapes}
+                            />
+                        </InputGroup>
+                    </MediaQuery>
+                    {/* Boolean operations — narrow screen (width <= 1549): dropdown */}
+                    <MediaQuery maxWidth={1549}>
+                        <InputGroup className={classNames(styles.modDashedBorder, styles.modLabeledIconHeight)}>
+                            <Dropdown
+                                className={styles.modUnselect}
+                                enterExitTransitionDurationMs={20}
+                                popoverContent={
+                                    <InputGroup className={styles.modContextMenu}>
+                                        <Button
+                                            className={classNames(styles.modMenuItem, {
+                                                [styles.modDisabled]: booleanDisabled
+                                            })}
+                                            disabled={booleanDisabled}
+                                            onClick={props.onUniteShapes}
+                                        >
+                                            <TWRenderRecoloredImage
+                                                className={styles.menuItemIcon}
+                                                draggable={false}
+                                                src={uniteIcon}
+                                            />
+                                            <span>{props.intl.formatMessage(messages.unite)}</span>
+                                        </Button>
+                                        <Button
+                                            className={classNames(styles.modMenuItem, {
+                                                [styles.modDisabled]: booleanDisabled
+                                            })}
+                                            disabled={booleanDisabled}
+                                            onClick={props.onIntersectShapes}
+                                        >
+                                            <TWRenderRecoloredImage
+                                                className={styles.menuItemIcon}
+                                                draggable={false}
+                                                src={intersectIcon}
+                                            />
+                                            <span>{props.intl.formatMessage(messages.intersect)}</span>
+                                        </Button>
+                                        <Button
+                                            className={classNames(styles.modMenuItem, {
+                                                [styles.modDisabled]: booleanDisabled
+                                            })}
+                                            disabled={booleanDisabled}
+                                            onClick={props.onSubtractShapes}
+                                        >
+                                            <TWRenderRecoloredImage
+                                                className={styles.menuItemIcon}
+                                                draggable={false}
+                                                src={subtractIcon}
+                                            />
+                                            <span>{props.intl.formatMessage(messages.subtract)}</span>
+                                        </Button>
+                                        <Button
+                                            className={classNames(styles.modMenuItem, {
+                                                [styles.modDisabled]: booleanDisabled
+                                            })}
+                                            disabled={booleanDisabled}
+                                            onClick={props.onSplitShapes}
+                                        >
+                                            <TWRenderRecoloredImage
+                                                className={styles.menuItemIcon}
+                                                draggable={false}
+                                                src={splitIcon}
+                                            />
+                                            <span>{props.intl.formatMessage(messages.split)}</span>
+                                        </Button>
+                                    </InputGroup>
+                                }
+                                tipSize={.01}
+                            >
+                                {props.intl.formatMessage(messages.boolean)}
+                            </Dropdown>
+                        </InputGroup>
+                    </MediaQuery>
                 </div>
             );
+        }
         case Modes.BIT_TEXT:
         /* falls through */
         case Modes.TEXT:
