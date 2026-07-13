@@ -1,0 +1,21 @@
+packages:
+  - '.'
+
+blockExoticSubdeps: false
+shamefullyHoist: true
+allowBuilds:
+  chromedriver: false
+  core-js: false
+  scratch-blocks: true
+  scratch-blocks@https://codeload.github.com/AstraEditor/scratch-blocks/tar.gz/37f3d4892e0cc6fad2f62f503269e35f5de21931: true
+
+ignoredBuiltDependencies:
+  - chromedriver
+  - core-js
+onlyBuiltDependencies:
+  - '@parcel/watcher'
+  - core-js-pure
+  - react-markdown
+  - scratch-blocks
+  - scratch-extension-editor
+  - scratch-vm

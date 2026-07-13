@@ -1,0 +1,423 @@
+@import url("../editor-theme3/compatibility.css");
+
+[dir="ltr"] .sa-debugger-container {
+  margin-right: 0.2rem;
+}
+
+[dir="rtl"] .sa-debugger-container {
+  margin-left: 0.2rem;
+}
+
+.sa-small-stage [class*="gui_body-wrapper_"]:not(.sa-stage-hidden) .sa-debugger-container {
+  display: none !important;
+}
+
+.sa-debugger-container [class*="button_content_"] {
+  position: relative;
+}
+
+.sa-debugger-unread::after {
+  content: "";
+  position: absolute;
+  top: 1px;
+  right: 0;
+  display: block;
+  width: 6px;
+  height: 6px;
+  background-color: var(--editorDarkMode-highlightText, #855cd6);
+  border-radius: 50%;
+
+}
+
+.sa-debugger-interface {
+  display: none;
+  position: absolute;
+  z-index: 492;
+  background-color: var(--ui-modal-background);
+  color: var(--ui-modal-foreground);
+  width: 705px;
+  height: 25rem;
+  top: calc(50% - 12.5rem); /* 25rem / 2 */
+  left: calc(50% - 352.5px); /* 705px / 2 */
+  resize: both;
+  padding-bottom: 10px;
+  min-width: 350px;
+  min-height: 120px;
+}
+
+.sa-debugger-interface [class*="card_header-buttons_"] {
+  background-color: var(--looks-secondary);
+  border-color:var(--looks-transparent);
+}
+
+.sa-debugger-interface h1 {
+  padding: 10px;
+  z-index: 10;
+  width: calc(100% - 20px);
+  font-size: 20px;
+}
+
+.sa-debugger-tabs {
+  margin: 0;
+  display: flex;
+  align-items: center;
+  padding: 0 15px;
+  font-size: 0.75rem;
+}
+.sa-debugger-tabs li {
+  margin: 0;
+  display: flex;
+  align-items: center;
+  padding: 0.5em 1em;
+  background-color: rgba(0, 0, 0, 0.1);
+  border: 1px solid rgba(0, 0, 0, 0.15);
+  border-radius: 1rem;
+  color: white;
+  cursor: pointer;
+}
+.sa-debugger-tabs li + li {
+  margin-inline-start: 10px;
+}
+.sa-debugger-tabs li:hover {
+  background-color: rgba(0, 0, 0, 0.15);
+}
+.sa-debugger-tabs li.sa-debugger-tab-selected {
+  background-color: white;
+  background-clip: padding-box;
+  border-color: rgba(0, 0, 0, 0.25);
+  color: var(--looks-secondary);
+}
+.sa-debugger-tabs li img {
+  margin: 0;
+  margin-right: 0.25rem;
+  width: 1rem;
+  filter: brightness(0) invert(1);
+}
+.sa-debugger-tabs li.sa-debugger-tab-selected img {
+  filter: none;
+}
+
+.sa-debugger-header-buttons img {
+  width: 20px;
+  height: 20px;
+}
+
+.sa-debugger-unpause {
+  animation: saDebuggerUnpause 2s infinite alternate;
+}
+
+@keyframes saDebuggerUnpause {
+  0% {
+    background-color: rgba(0, 0, 0, 0.15);
+  }
+  100% {
+    background-color: rgba(0, 0, 0, 0);
+  }
+}
+
+.sa-debugger-tab-content {
+  width: 100%;
+  height: 100%;
+  overflow: auto;
+  cursor: auto;
+}
+
+.sa-debugger-chart {
+  width: 100%;
+  height: 100%;
+}
+
+.sa-performance-tab-content {
+  padding: 15px;
+}
+
+.sa-debugger-log-outer {
+  height: 100%;
+}
+
+.sa-debugger-log-inner {
+  position: relative;
+  overflow-y: auto;
+  font-size: 12px;
+  line-height: 1.2;
+  height: 100%;
+  contain: strict;
+}
+
+.sa-debugger-log-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  font-size: 20px;
+  font-style: italic;
+}
+
+.sa-debugger-log-end {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 1px;
+  height: 1px;
+}
+
+.sa-debugger-log {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 20px;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  border-bottom: 1px solid var(--ui-black-transparent);
+  padding-left: 4px;
+  font-family: monospace;
+}
+.sa-debugger-log[data-type="warn"] {
+  border-color: hsla(56deg, 100%, 69%, 0.5);
+  background-color: hsla(56deg, 100%, 69%, 0.3);
+}
+.sa-debugger-log[data-type="error"] {
+  border-color: hsla(0deg, 100%, 69%, 0.5);
+  color: red;
+  background-color: hsla(0deg, 100%, 69%, 0.3);
+}
+
+.sa-debugger-log-repeats {
+  background-color: hsla(163, 85%, 40%, 1);
+  color: white;
+  border-radius: 100px;
+  padding: 1px 6px;
+  margin-right: 4px;
+}
+
+.sa-debugger-log-icon {
+  width: 16px;
+  height: 16px;
+  margin-right: 4px;
+}
+[data-type="warn"] .sa-debugger-log-icon {
+  background-image: url(./icons/warning.svg);
+}
+[data-type="error"] .sa-debugger-log-icon {
+  background-image: url(./icons/error.svg);
+}
+.sa-debugger-threads .sa-debugger-log-icon {
+  background-image: url(./icons/subthread.svg);
+}
+
+.sa-debugger-log-link {
+  color: inherit;
+  cursor: pointer;
+  opacity: 0.5;
+  text-decoration: underline;
+  float: right;
+  text-align: right;
+  max-width: 100%;
+  padding-left: 4px;
+  margin-right: 4px;
+  margin-left: auto;
+}
+.sa-debugger-log-link:hover {
+  text-decoration: underline;
+  color: var(--looks-secondary);
+  opacity: 1;
+}
+.sa-debugger-log-link-unknown {
+  pointer-events: none;
+}
+
+.sa-debugger-log-text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: pre;
+}
+.sa-debugger-log-text-empty {
+  font-style: italic;
+}
+.sa-debugger-log-internal .sa-debugger-log-text {
+  font-style: italic;
+}
+
+.sa-debugger-thread-indent {
+  width: calc(16px * var(--level));
+  margin-right: 4px;
+}
+.sa-debugger-thread-title .sa-debugger-thread-indent {
+  margin: 0;
+}
+.sa-debugger-thread-target-name {
+  font-weight: bold;
+  margin-right: 8px;
+}
+.sa-debugger-thread-running {
+  background-color: rgba(255, 187, 0, 0.233);
+  font-weight: bold;
+}
+
+.sa-debugger-block-preview {
+  padding: 1px 6px;
+  margin-right: 4px;
+  background-color: var(--sa-block-colored-background);
+  color: var(--sa-block-text);
+}
+.sa-debugger-block-preview[data-shape="round"] {
+  border-radius: 100px;
+}
+.sa-debugger-block-preview[data-shape="stacked"] {
+  border-radius: 3px;
+}
+
+.sa-debugger-thread-compiled {
+  font-style: italic;
+}
+
+.sa-debugger-compiler-warning {
+  position: relative;
+  display: block;
+  text-align: center;
+  height: 24px;
+  color: var(--link-color);
+}
+.sa-debugger-compiler-warning[hidden] {
+  display: none;
+}
+
+.sa-debugger-variables {
+  display: block;
+  padding: 10px;
+}
+
+.sa-debugger-variables-searchbox {
+  background-image: url(./icons/search.svg);
+  width: calc(100% - 40px);
+  margin-bottom: 8px;
+  padding: 8px;
+  padding-right: 32px;
+  border-radius: 4px;
+  border: 1px solid var(--ui-black-transparent);
+  background-repeat: no-repeat;
+  background-size: 18px 18px;
+  background-position: calc(100% - 7px) center;
+  font-size: 0.75rem;
+}
+
+[dir="rtl"] .sa-debugger-variables-searchbox {
+  padding-right: 8px;
+  padding-left: 32px;
+  background-position: 7px center;
+}
+
+.sa-debugger-variables.freeze .sa-debugger-variables-value *,
+.sa-debugger-variables.freeze .sa-debugger-variables-name * {
+  opacity: 0.5;
+}
+
+.sa-debugger-variables.freeze input:focus,
+.sa-debugger-variables.freeze textarea:focus {
+  opacity: 1;
+}
+
+.sa-debugger-variables-heading {
+  display: block;
+  font-weight: bold;
+  font-size: 14px;
+  margin-top: 6px;
+  margin-bottom: 6px;
+}
+
+.sa-debugger-variables-name {
+  word-break: break-word;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.sa-debugger-variables .sa-debugger-variables-value {
+  width: 75%;
+}
+
+.sa-debugger-variables * > input {
+  background: none;
+  border: none;
+  padding: 4px;
+  width: 100%;
+  height: 100%;
+}
+
+.sa-debugger-variables-value > textarea {
+  background: none;
+  border: none;
+  padding: 4px;
+  width: 100%;
+  height: 100%;
+  line-height: 1.5em;
+  resize: none;
+  font-family: monospace;
+}
+
+.sa-debugger-variables-too-big {
+  display: none;
+  cursor: pointer;
+  font: inherit;
+  font-style: italic;
+  color: inherit;
+  background: none;
+  border: none;
+  margin: 0;
+  padding: 4px;
+  opacity: 0.8;
+  width: 100%;
+  text-align: left;
+}
+.sa-debugger-variables-too-big:hover {
+  text-decoration: underline;
+}
+[data-too-big="true"] .sa-debugger-variables-too-big {
+  display: block;
+}
+[data-too-big="true"] .sa-debugger-variables-value-input {
+  display: none;
+}
+
+.sa-debugger-variables table {
+  border-radius: 5px;
+  border-collapse: collapse;
+  width: 100%;
+  margin-bottom: 10px;
+}
+
+.sa-debugger-variables td {
+  border: 1px solid var(--ui-black-transparent);
+  text-align: left;
+  padding: 2px;
+}
+
+.sa-debugger-variables-favorite {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  margin: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  vertical-align: middle;
+  margin-right: 4px;
+  opacity: 0.6;
+  transition: opacity 0.15s ease;
+}
+
+.sa-debugger-variables-favorite:hover {
+  opacity: 1;
+}
+
+.sa-debugger-variables-favorite-icon {
+  width: 16px;
+  height: 16px;
+  display: block;
+}

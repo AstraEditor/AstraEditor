@@ -1,0 +1,801 @@
+import classNames from 'classnames';
+import omit from 'lodash.omit';
+import PropTypes from 'prop-types';
+import React, { useLayoutEffect, useState, useEffect, useRef } from 'react';
+import { defineMessages, FormattedMessage, injectIntl, intlShape } from 'react-intl';
+import { connect, dispatch } from 'react-redux';
+import MediaQuery from 'react-responsive';
+import { Tab, Tabs, TabList, TabPanel } from 'react-tabs';
+import tabStyles from 'react-tabs/style/react-tabs.css';
+import VM from 'scratch-vm';
+
+import Blocks from '../../containers/blocks.jsx';
+import CostumeTab from '../../containers/costume-tab.jsx';
+import TargetPane from '../../containers/target-pane.jsx';
+import SoundTab from '../../containers/sound-tab.jsx';
+import StageWrapper from '../../containers/stage-wrapper.jsx';
+import Loader from '../loader/loader.jsx';
+import Box from '../box/box.jsx';
+import MenuBar from '../menu-bar/menu-bar.jsx';
+import CostumeLibrary from '../../containers/costume-library.jsx';
+import BackdropLibrary from '../../containers/backdrop-library.jsx';
+import Watermark from '../../containers/watermark.jsx';
+import MonacoEditor from '../../containers/monaco-editor.jsx';
+
+import Backpack from '../../containers/backpack.jsx';
+import BrowserModal from '../browser-modal/browser-modal.jsx';
+import TipsLibrary from '../../containers/tips-library.jsx';
+import Cards from '../../containers/cards.jsx';
+import Alerts from '../../containers/alerts.jsx';
+import DragLayer from '../../containers/drag-layer.jsx';
+import ConnectionModal from '../../containers/connection-modal.jsx';
+import TelemetryModal from '../telemetry-modal/telemetry-modal.jsx';
+import TWUsernameModal from '../../containers/tw-username-modal.jsx';
+import TWSettingsModal from '../../containers/tw-settings-modal.jsx';
+import TWSecurityManager from '../../containers/tw-security-manager.jsx';
+import TWCustomExtensionModal from '../../containers/tw-custom-extension-modal.jsx';
+import TWRestorePointManager from '../../containers/tw-restore-point-manager.jsx';
+import TWFontsModal from '../../containers/tw-fonts-modal.jsx';
+import TWUnknownPlatformModal from '../../containers/tw-unknown-platform-modal.jsx';
+import TWInvalidProjectModal from '../../containers/tw-invalid-project-modal.jsx';
+import TWWindChimeSubmitter from '../../containers/tw-windchime-submitter.jsx';
+import CustomThemeModal from '../../containers/tw-custom-theme-modal.jsx';
+import AEReadMe from '../../containers/ae-readme.jsx'
+import AeFeaturesModal from '../../containers/ae-features-modal.jsx';
+import version from '../../lib/ae-version.js';
+import { loadData } from '../ae-readme/ae-readme.jsx'
+
+import { openAeFeaturesModal } from '../../reducers/modals.js';
+
+import ExtensionManager from '../extension-chooser/extension-chooser.jsx';
+import PreviewExt from '../../containers/ae-preview-ext.jsx';
+
+import { STAGE_SIZE_MODES, FIXED_WIDTH, UNCONSTRAINED_NON_STAGE_WIDTH } from '../../lib/layout-constants';
+import { getStageDimensions, resolveStageSize } from '../../lib/screen-utils';
+import { Theme } from '../../lib/themes';
+import { MONACO_EDITOR_TAB_INDEX } from '../../reducers/editor-tab';
+
+import { isRendererSupported, isBrowserSupported } from '../../lib/tw-environment-support-prober';
+
+import styles from './gui.css';
+import addExtensionIcon from './icon--extensions.svg';
+import codeIcon from '!../../lib/tw-recolor/build!./icon--code.svg';
+import costumesIcon from '!../../lib/tw-recolor/build!./icon--costumes.svg';
+import soundsIcon from '!../../lib/tw-recolor/build!./icon--sounds.svg';
+import monacoIcon from '!../../lib/tw-recolor/build!./icon--monaco.svg';
+import readmeIcon from '!../../lib/tw-recolor/build!./readme.svg'
+import { openReadme } from '../../reducers/modals.js';
+
+import { get, reset, STORAGE_KEY } from '../../lib/settings.js'
+/* 检测设置 */
+
+if (localStorage.getItem(STORAGE_KEY) === 'undefined' || localStorage.getItem(STORAGE_KEY) === undefined) {
+    reset()
+}
+const storedSettings = localStorage.getItem(STORAGE_KEY);
+let vscodeLayoutRef = false;
+try {
+    vscodeLayoutRef = JSON.parse(storedSettings).EnableVSCodeLayout;
+} catch (e) {
+    vscodeLayoutRef = false;
+}
+
+const getFullscreenBackgroundColor = () => {
+    const params = new URLSearchParams(location.search);
+    if (params.has('fullscreen-background')) {
+        return params.get('fullscreen-background');
+    }
+    if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+        return '#111';
+    }
+    return 'white';
+};
+
+const fullscreenBackgroundColor = getFullscreenBackgroundColor();
+
+const GUIComponent = props => {
+    const {
+        accountNavOpen,
+        activeTabIndex,
+        alertsVisible,
+        authorId,
+        authorThumbnailUrl,
+        authorUsername,
+        basePath,
+        backdropLibraryVisible,
+        backpackHost,
+        backpackVisible,
+        blocksId,
+        blocksTabVisible,
+        cardsVisible,
+        canChangeLanguage,
+        canChangeTheme,
+        canCreateNew,
+        canEditTitle,
+        canManageFiles,
+        canRemix,
+        canSave,
+        canCreateCopy,
+        canShare,
+        canUseCloud,
+        children,
+        connectionModalVisible,
+        costumeLibraryVisible,
+        costumesTabVisible,
+        customStageSize,
+        enableCommunity,
+        intl,
+        isCreating,
+        isEmbedded,
+        isFullScreen,
+        isPlayerOnly,
+        isRtl,
+        isShared,
+        isWindowFullScreen,
+        isTelemetryEnabled,
+        isTotallyNormal,
+        loading,
+        logo,
+        renderLogin,
+        onClickAbout,
+        onClickAccountNav,
+        onCloseAccountNav,
+        onClickAddonSettings,
+        onClickDesktopSettings,
+        onClickMinimize,
+        onClickMaximize,
+        isMaximize,
+        onClickClose,
+        onClickNewWindow,
+        onClickPackager,
+        onLogOut,
+        onOpenRegistration,
+        onToggleLoginOpen,
+        onActivateCostumesTab,
+        onActivateSoundsTab,
+        onActivateTab,
+        onClickLogo,
+        onExtensionButtonClick,
+        onOpenExtensionEditor,
+        onOpenCustomExtensionModal,
+        onProjectTelemetryEvent,
+        onRequestCloseBackdropLibrary,
+        onRequestCloseCostumeLibrary,
+        onRequestCloseTelemetryModal,
+        onSeeCommunity,
+        onShare,
+        onShowPrivacyPolicy,
+        onStartSelectingFileUpload,
+        onTelemetryModalCancel,
+        onTelemetryModalOptIn,
+        onTelemetryModalOptOut,
+        securityManager,
+        showComingSoon,
+        showOpenFilePicker,
+        showSaveFilePicker,
+        soundsTabVisible,
+        stageSizeMode,
+        targetIsStage,
+        telemetryModalVisible,
+        theme,
+        tipsLibraryVisible,
+        usernameModalVisible,
+        settingsModalVisible,
+        customExtensionModalVisible,
+        fontsModalVisible,
+        unknownPlatformModalVisible,
+        invalidProjectModalVisible,
+        vm,
+        customThemeVisible,
+        readmeModalVisible,
+        onOpenReadme,
+        extensionManagerVisible,
+        onRequestCloseExtensionManager,
+        onOpenExtensionLibrary,
+        previewExtVisible,
+        dispatch,
+        aeFeaturesModalVisible,
+        ...componentProps
+    } = omit(props, '');
+    const updateCanShowReadme = () => {
+        if (!vm.editingTarget || !vm.editingTarget.comments) {
+            setCanShowReadme(false);
+            return;
+        }
+        const comments = Object.values(vm.editingTarget.comments);
+        const readMe = [];
+        comments.forEach(comment => {
+            if (comment.text && comment.text.slice(0, 7) === "#README") {
+                readMe.push(comment.text.slice(8, comment.text.length));
+            }
+        });
+        return readMe.length != 0;
+    };
+
+
+    const [canShowReadme, setCanShowReadme] = useState(() => { updateCanShowReadme })
+    const [loaderExiting, setLoaderExiting] = useState(false)
+    useEffect(() => {
+        if (!vm) return;
+
+        const handleCommentEvent = (e) => {
+            setCanShowReadme(updateCanShowReadme)
+        };
+        const showReadmeDefault = (e) => {
+            if (!get('enableREADMEAutoDisplay')) return
+            for (const target of vm.runtime.targets) {
+                if (target.sprite.name == "README") {
+                    loadData(target.comments);
+                    onOpenReadme()
+                    break
+                }
+            }
+        }
+
+        vm.runtime.on('PROJECT_CHANGED', handleCommentEvent);
+        vm.runtime.on('PROJECT_LOADED', handleCommentEvent);
+        vm.runtime.on('PROJECT_LOADED', showReadmeDefault);
+        return () => {
+            vm.runtime.off('PROJECT_CHANGED', handleCommentEvent);
+            vm.runtime.off('PROJECT_LOADED', handleCommentEvent);
+            vm.runtime.off('PROJECT_LOADED', showReadmeDefault);
+        };
+    }, [vm]);
+
+    const prevLoadingRef = useRef(Boolean(loading));
+    const loaderExitTimeoutRef = useRef(null);
+
+    // Use a layout effect so we don't "unmount then remount" the loader for one frame.
+    useLayoutEffect(() => {
+        const isLoadingNow = Boolean(loading);
+        const wasLoading = prevLoadingRef.current;
+        prevLoadingRef.current = isLoadingNow;
+
+        // When loading starts again, cancel any pending fade-out.
+        if (isLoadingNow) {
+            if (loaderExitTimeoutRef.current) {
+                clearTimeout(loaderExitTimeoutRef.current);
+                loaderExitTimeoutRef.current = null;
+            }
+            if (loaderExiting) setLoaderExiting(false);
+            return;
+        }
+
+        // Trigger fade-out only on the true -> false transition.
+        if (wasLoading && !isLoadingNow) {
+            setLoaderExiting(true);
+            if (loaderExitTimeoutRef.current) clearTimeout(loaderExitTimeoutRef.current);
+            // 500ms matches loader.css animation-duration
+            loaderExitTimeoutRef.current = setTimeout(() => {
+                setLoaderExiting(false);
+                loaderExitTimeoutRef.current = null;
+            }, 500);
+        }
+    }, [loading, loaderExiting]);
+
+    useEffect(() => () => {
+        if (loaderExitTimeoutRef.current) {
+            clearTimeout(loaderExitTimeoutRef.current);
+            loaderExitTimeoutRef.current = null;
+        }
+    }, []);
+
+    if (children) {
+        return <Box {...componentProps}>{children}</Box>;
+    }
+
+    // 显示AE特性MODAL
+    useEffect(() => {
+        if (!localStorage.getItem('ae:firstEnter') || localStorage.getItem('ae:lastVersion') !== version.version || localStorage.getItem('ae:webBuild') !== version.webBuild) {
+            try {
+                dispatch(openAeFeaturesModal());
+            } catch (e) {
+                // ingore
+            }
+        }
+    }, [])
+    const tabClassNames = {
+        tabs: styles.tabs,
+        tab: classNames(tabStyles.reactTabsTab, styles.tab),
+        tabList: classNames(tabStyles.reactTabsTabList, styles.tabList),
+        tabPanel: classNames(tabStyles.reactTabsTabPanel, styles.tabPanel),
+        tabPanelSelected: classNames(tabStyles.reactTabsTabPanelSelected, styles.isSelected),
+        tabSelected: classNames(tabStyles.reactTabsTabSelected, styles.isSelected),
+        vscode: styles.vscode,
+        vscodeList: styles.vscodeList
+    };
+
+    const unconstrainedWidth = (
+        UNCONSTRAINED_NON_STAGE_WIDTH +
+        FIXED_WIDTH +
+        Math.max(0, customStageSize.width - FIXED_WIDTH)
+    );
+
+
+    return (<MediaQuery minWidth={unconstrainedWidth}>{isUnconstrained => {
+        const stageSize = resolveStageSize(stageSizeMode, isUnconstrained);
+        const stageDimensions = getStageDimensions(stageSize, customStageSize, false);
+        const stageColumnWidth = stageDimensions.width + 2;
+
+        const alwaysEnabledModals = (
+            <React.Fragment>
+                <TWSecurityManager securityManager={securityManager} />
+                <TWRestorePointManager />
+                {usernameModalVisible && <TWUsernameModal />}
+                {settingsModalVisible && <TWSettingsModal />}
+                {customExtensionModalVisible && <TWCustomExtensionModal />}
+                {fontsModalVisible && <TWFontsModal />}
+                {unknownPlatformModalVisible && <TWUnknownPlatformModal />}
+                {invalidProjectModalVisible && <TWInvalidProjectModal />}
+                {customThemeVisible && <CustomThemeModal />}
+                {readmeModalVisible && <AEReadMe />}
+                {extensionManagerVisible && (
+                    <ExtensionManager
+                        vm={vm}
+                        onRequestClose={onRequestCloseExtensionManager}
+                        onOpenExtensionLibrary={onOpenExtensionLibrary}
+                        onOpenCodeLibrary={onOpenExtensionEditor}
+                        onOpenCustomExtensionModal={onOpenCustomExtensionModal}
+                        dispatch={dispatch}
+                    />
+                )}
+                {previewExtVisible && <PreviewExt />}
+                {aeFeaturesModalVisible && <AeFeaturesModal />}
+            </React.Fragment>
+        );
+
+        return isPlayerOnly ? (
+            <React.Fragment>
+                {/* TW: When the window is fullscreen, use an element to display the background color */}
+                {/* The default color for transparency is inconsistent between browsers and there isn't an existing */}
+                {/* element for us to style that fills the entire screen. */}
+                {isWindowFullScreen ? (
+                    <div
+                        className={styles.fullscreenBackground}
+                        style={{
+                            backgroundColor: fullscreenBackgroundColor
+                        }}
+                    />
+                ) : null}
+                <StageWrapper
+                    isFullScreen={isFullScreen}
+                    isEmbedded={isEmbedded}
+                    isRendererSupported={isRendererSupported()}
+                    isRtl={isRtl}
+                    loading={loading}
+                    stageSize={STAGE_SIZE_MODES.full}
+                    vm={vm}
+                >
+                    {alertsVisible ? (
+                        <Alerts className={styles.alertsContainer} />
+                    ) : null}
+                </StageWrapper>
+                {alwaysEnabledModals}
+            </React.Fragment>
+        ) : (
+            <Box
+                className={styles.pageWrapper}
+                dir={isRtl ? 'rtl' : 'ltr'}
+                style={{
+                    minWidth: 1024 + Math.max(0, customStageSize.width - 480),
+                    minHeight: 640 + Math.max(0, customStageSize.height - 360)
+                }}
+                {...componentProps}
+            >
+                {alwaysEnabledModals}
+                {telemetryModalVisible ? (
+                    <TelemetryModal
+                        isRtl={isRtl}
+                        isTelemetryEnabled={isTelemetryEnabled}
+                        onCancel={onTelemetryModalCancel}
+                        onOptIn={onTelemetryModalOptIn}
+                        onOptOut={onTelemetryModalOptOut}
+                        onRequestClose={onRequestCloseTelemetryModal}
+                        onShowPrivacyPolicy={onShowPrivacyPolicy}
+                    />
+                ) : null}
+                {(loading || loaderExiting) ? (
+                    <Loader isFullScreen isExiting={loaderExiting} />
+                ) : isCreating ? (
+                    <Loader
+                        isFullScreen
+                        messageId="gui.loader.creating"
+                    />
+                ) : null}
+                {isBrowserSupported() ? null : (
+                    <BrowserModal
+                        isRtl={isRtl}
+                        onClickDesktopSettings={onClickDesktopSettings}
+                    />
+                )}
+                {tipsLibraryVisible ? (
+                    <TipsLibrary />
+                ) : null}
+                {cardsVisible ? (
+                    <Cards />
+                ) : null}
+                {alertsVisible ? (
+                    <Alerts className={styles.alertsContainer} />
+                ) : null}
+                {connectionModalVisible ? (
+                    <ConnectionModal
+                        vm={vm}
+                    />
+                ) : null}
+                {costumeLibraryVisible ? (
+                    <CostumeLibrary
+                        vm={vm}
+                        onRequestClose={onRequestCloseCostumeLibrary}
+                    />
+                ) : null}
+                {backdropLibraryVisible ? (
+                    <BackdropLibrary
+                        vm={vm}
+                        onRequestClose={onRequestCloseBackdropLibrary}
+                    />
+                ) : null}
+                <MenuBar
+                    accountNavOpen={accountNavOpen}
+                    authorId={authorId}
+                    authorThumbnailUrl={authorThumbnailUrl}
+                    authorUsername={authorUsername}
+                    canChangeLanguage={canChangeLanguage}
+                    canChangeTheme={canChangeTheme}
+                    canCreateCopy={canCreateCopy}
+                    canCreateNew={canCreateNew}
+                    canEditTitle={canEditTitle}
+                    canManageFiles={canManageFiles}
+                    canRemix={canRemix}
+                    canSave={canSave}
+                    canShare={canShare}
+                    className={styles.menuBarPosition}
+                    enableCommunity={enableCommunity}
+                    isShared={isShared}
+                    isTotallyNormal={isTotallyNormal}
+                    logo={logo}
+                    renderLogin={renderLogin}
+                    showComingSoon={showComingSoon}
+                    showOpenFilePicker={showOpenFilePicker}
+                    showSaveFilePicker={showSaveFilePicker}
+                    onClickAbout={onClickAbout}
+                    onClickAccountNav={onClickAccountNav}
+                    onClickAddonSettings={onClickAddonSettings}
+                    onClickDesktopSettings={onClickDesktopSettings}
+                    onClickMinimize={onClickMinimize}
+                    onClickMaximize={onClickMaximize}
+                    isMaximize={isMaximize}
+                    onClickClose={onClickClose}
+                    onClickNewWindow={onClickNewWindow}
+                    onClickPackager={onClickPackager}
+                    onClickLogo={onClickLogo}
+                    onCloseAccountNav={onCloseAccountNav}
+                    onLogOut={onLogOut}
+                    onOpenRegistration={onOpenRegistration}
+                    onProjectTelemetryEvent={onProjectTelemetryEvent}
+                    onSeeCommunity={onSeeCommunity}
+                    onShare={onShare}
+                    onStartSelectingFileUpload={onStartSelectingFileUpload}
+                    onToggleLoginOpen={onToggleLoginOpen}
+                    onOpenExtensionEditor={onOpenExtensionEditor}
+                />
+                <Box className={styles.bodyWrapper}>
+                    <Box className={styles.flexWrapper} style={get('EnableMobileLayout') ? {
+                        flexDirection: 'column-reverse'
+                    } : {
+                        flexDirection: 'row'
+                    }}>
+                        <Box className={styles.editorWrapper}>
+                            <Tabs
+                                forceRenderTabPanel
+                                className={
+                                    vscodeLayoutRef
+                                        ? `${tabClassNames.tabs} ${tabClassNames.vscodeList}`
+                                        : tabClassNames.tabs
+                                }
+                                selectedIndex={activeTabIndex}
+                                selectedTabClassName={tabClassNames.tabSelected}
+                                selectedTabPanelClassName={tabClassNames.tabPanelSelected}
+                                onSelect={onActivateTab}
+                            >
+                                <TabList className={
+                                    vscodeLayoutRef
+                                        ? `${tabClassNames.tabList} ${tabClassNames.vscode}`
+                                        : tabClassNames.tabList
+                                }>
+                                    <Tab className={tabClassNames.tab}>
+                                        <img
+                                            draggable={false}
+                                            src={codeIcon()}
+                                        />
+                                        <FormattedMessage
+                                            defaultMessage="Code"
+                                            description="Button to get to the code panel"
+                                            id="gui.gui.codeTab"
+                                        />
+                                    </Tab>
+                                    <Tab
+                                        className={tabClassNames.tab}
+                                    >
+                                        <img
+                                            draggable={false}
+                                            src={costumesIcon()}
+                                        />
+                                        {targetIsStage ? (
+                                            <FormattedMessage
+                                                defaultMessage="Backdrops"
+                                                description="Button to get to the backdrops panel"
+                                                id="gui.gui.backdropsTab"
+                                            />
+                                        ) : (
+                                            <FormattedMessage
+                                                defaultMessage="Costumes"
+                                                description="Button to get to the costumes panel"
+                                                id="gui.gui.costumesTab"
+                                            />
+                                        )}
+                                    </Tab>
+                                    <Tab
+                                        className={tabClassNames.tab}
+                                    >
+                                        <img
+                                            draggable={false}
+                                            src={soundsIcon()}
+                                        />
+                                        <FormattedMessage
+                                            defaultMessage="Sounds"
+                                            description="Button to get to the sounds panel"
+                                            id="gui.gui.soundsTab"
+                                        />
+                                    </Tab>
+                                    <Tab
+                                        className={tabClassNames.tab}
+                                    >
+                                        <img
+                                            draggable={false}
+                                            src={monacoIcon()}
+                                        />
+                                        <FormattedMessage
+                                            defaultMessage="Editor"
+                                            description="Button to get to the monaco editor panel"
+                                            id="gui.gui.monacoEditorTab"
+                                        />
+                                    </Tab>
+                                    {canShowReadme &&
+                                        <button
+                                            className={styles.readmeButton}
+                                            data-sa-readme-tab
+                                            onClick={onOpenReadme}
+                                        >
+                                            {vscodeLayoutRef ? (
+                                                <img src={readmeIcon()} draggable={false} alt="readme" style={{
+                                                    width: "24px",
+                                                }} />
+                                            ) : (
+                                                "README"
+                                            )}
+                                        </button>}
+                                </TabList>
+                                <TabPanel className={tabClassNames.tabPanel}>
+                                    <Box className={styles.blocksWrapper}>
+                                        <Blocks
+                                            key={`${blocksId}/${theme.id}`}
+                                            canUseCloud={canUseCloud}
+                                            grow={1}
+                                            isVisible={blocksTabVisible}
+                                            options={{
+                                                media: `${basePath}static/${theme.getBlocksMediaFolder()}/`
+                                            }}
+                                            stageSize={stageSize}
+                                            onOpenCustomExtensionModal={onOpenCustomExtensionModal}
+                                            theme={theme}
+                                            vm={vm}
+                                        />
+                                    </Box>
+                                    <Box className={styles.extensionButtonContainer}>
+                                        <button
+                                            className={styles.extensionButton}
+                                            onClick={onExtensionButtonClick}
+                                        >
+                                            <img
+                                                className={styles.extensionButtonIcon}
+                                                draggable={false}
+                                                src={addExtensionIcon}
+                                            />
+                                        </button>
+                                    </Box>
+                                    <Box className={styles.watermark}>
+                                        <Watermark />
+                                    </Box>
+                                </TabPanel>
+                                <TabPanel className={tabClassNames.tabPanel}>
+                                    {costumesTabVisible ? <CostumeTab
+                                        vm={vm}
+                                    /> : null}
+                                </TabPanel>
+                                <TabPanel className={tabClassNames.tabPanel}>
+                                    {soundsTabVisible ? <SoundTab vm={vm} /> : null}
+                                </TabPanel>
+                                <TabPanel className={tabClassNames.tabPanel}>
+                                    <Box className={styles.monacoEditorWrapper}>
+                                        <MonacoEditor vm={vm} />
+                                    </Box>
+                                </TabPanel>
+                            </Tabs>
+                            {backpackVisible ? (
+                                <Backpack host={backpackHost} />
+                            ) : null}
+                        </Box>
+
+                        <Box className={classNames(styles.stageAndTargetWrapper, styles[stageSize])}
+                            style={activeTabIndex === MONACO_EDITOR_TAB_INDEX ? {
+                                display: 'none'
+                            } : {}}
+                        >
+                            <StageWrapper
+                                isFullScreen={isFullScreen}
+                                isRendererSupported={isRendererSupported()}
+                                isRtl={isRtl}
+                                stageSize={stageSize}
+                                vm={vm}
+                            />
+                            <Box className={styles.targetWrapper}>
+                                <TargetPane
+                                    stageSize={stageSize}
+                                    vm={vm}
+                                />
+                            </Box>
+                        </Box>
+
+
+                    </Box>
+                </Box>
+                <DragLayer />
+            </Box>
+        );
+    }}</MediaQuery>);
+};
+const mapDispatchToProps = dispatch => ({
+    onOpenReadme: () => dispatch(openReadme()),
+    dispatch
+})
+GUIComponent.propTypes = {
+    accountNavOpen: PropTypes.bool,
+    activeTabIndex: PropTypes.number,
+    authorId: PropTypes.oneOfType([PropTypes.string, PropTypes.bool]), // can be false
+    authorThumbnailUrl: PropTypes.string,
+    authorUsername: PropTypes.oneOfType([PropTypes.string, PropTypes.bool]), // can be false
+    backdropLibraryVisible: PropTypes.bool,
+    backpackHost: PropTypes.string,
+    backpackVisible: PropTypes.bool,
+    basePath: PropTypes.string,
+    blocksTabVisible: PropTypes.bool,
+    blocksId: PropTypes.string,
+    canChangeLanguage: PropTypes.bool,
+    canChangeTheme: PropTypes.bool,
+    canCreateCopy: PropTypes.bool,
+    canCreateNew: PropTypes.bool,
+    canEditTitle: PropTypes.bool,
+    canManageFiles: PropTypes.bool,
+    canRemix: PropTypes.bool,
+    canSave: PropTypes.bool,
+    canShare: PropTypes.bool,
+    canUseCloud: PropTypes.bool,
+    cardsVisible: PropTypes.bool,
+    children: PropTypes.node,
+    costumeLibraryVisible: PropTypes.bool,
+    costumesTabVisible: PropTypes.bool,
+    customStageSize: PropTypes.shape({
+        width: PropTypes.number,
+        height: PropTypes.number
+    }),
+    enableCommunity: PropTypes.bool,
+    intl: intlShape.isRequired,
+    isCreating: PropTypes.bool,
+    isEmbedded: PropTypes.bool,
+    isFullScreen: PropTypes.bool,
+    isPlayerOnly: PropTypes.bool,
+    isRtl: PropTypes.bool,
+    isShared: PropTypes.bool,
+    isWindowFullScreen: PropTypes.bool,
+    isTotallyNormal: PropTypes.bool,
+    loading: PropTypes.bool,
+    logo: PropTypes.string,
+    onActivateCostumesTab: PropTypes.func,
+    onActivateSoundsTab: PropTypes.func,
+    onActivateTab: PropTypes.func,
+    onClickAccountNav: PropTypes.func,
+    onClickAddonSettings: PropTypes.func,
+    onClickDesktopSettings: PropTypes.func,
+    onClickMinimize: PropTypes.func,
+    onClickMaximize: PropTypes.func,
+    isMaximize: PropTypes.func,
+    onClickClose: PropTypes.func,
+    onClickNewWindow: PropTypes.func,
+    onClickPackager: PropTypes.func,
+    onClickLogo: PropTypes.func,
+    onCloseAccountNav: PropTypes.func,
+    onExtensionButtonClick: PropTypes.func,
+    onOpenExtensionEditor: PropTypes.func,
+    onOpenCustomExtensionModal: PropTypes.func,
+    onLogOut: PropTypes.func,
+    onOpenRegistration: PropTypes.func,
+    onRequestCloseBackdropLibrary: PropTypes.func,
+    onRequestCloseCostumeLibrary: PropTypes.func,
+    onRequestCloseTelemetryModal: PropTypes.func,
+    onSeeCommunity: PropTypes.func,
+    onShare: PropTypes.func,
+    onShowPrivacyPolicy: PropTypes.func,
+    onStartSelectingFileUpload: PropTypes.func,
+    onTabSelect: PropTypes.func,
+    onTelemetryModalCancel: PropTypes.func,
+    onTelemetryModalOptIn: PropTypes.func,
+    onTelemetryModalOptOut: PropTypes.func,
+    onToggleLoginOpen: PropTypes.func,
+    renderLogin: PropTypes.func,
+    securityManager: PropTypes.shape({}),
+    showComingSoon: PropTypes.bool,
+    showOpenFilePicker: PropTypes.func,
+    showSaveFilePicker: PropTypes.func,
+    soundsTabVisible: PropTypes.bool,
+    stageSizeMode: PropTypes.oneOf(Object.keys(STAGE_SIZE_MODES)),
+    targetIsStage: PropTypes.bool,
+    telemetryModalVisible: PropTypes.bool,
+    theme: PropTypes.instanceOf(Theme),
+    tipsLibraryVisible: PropTypes.bool,
+    usernameModalVisible: PropTypes.bool,
+    settingsModalVisible: PropTypes.bool,
+    customExtensionModalVisible: PropTypes.bool,
+    fontsModalVisible: PropTypes.bool,
+    unknownPlatformModalVisible: PropTypes.bool,
+    invalidProjectModalVisible: PropTypes.bool,
+    vm: PropTypes.instanceOf(VM).isRequired,
+    customThemeVisible: PropTypes.bool,
+    readmeModalVisible: PropTypes.bool,
+    onOpenReadme: PropTypes.func,
+    extensionManagerVisible: PropTypes.bool,
+    onRequestCloseExtensionManager: PropTypes.func,
+    onOpenExtensionLibrary: PropTypes.func,
+    previewExtVisible: PropTypes.bool,
+    aeFeaturesModalVisible: PropTypes.bool
+};
+GUIComponent.defaultProps = {
+    backpackHost: null,
+    backpackVisible: false,
+    basePath: './',
+    blocksId: 'original',
+    canChangeLanguage: true,
+    canChangeTheme: true,
+    canCreateNew: false,
+    canEditTitle: false,
+    canManageFiles: true,
+    canRemix: false,
+    canSave: false,
+    canCreateCopy: false,
+    canShare: false,
+    canUseCloud: false,
+    enableCommunity: false,
+    isCreating: false,
+    isShared: false,
+    isTotallyNormal: false,
+    loading: false,
+    showComingSoon: false,
+    stageSizeMode: STAGE_SIZE_MODES.large
+};
+
+const mapStateToProps = state => ({
+    customStageSize: state.scratchGui.customStageSize,
+    isWindowFullScreen: state.scratchGui.tw.isWindowFullScreen,
+    // This is the button's mode, as opposed to the actual current state
+    blocksId: state.scratchGui.timeTravel.year.toString(),
+    stageSizeMode: state.scratchGui.stageSize.stageSize,
+    theme: state.scratchGui.theme.theme,
+    customThemeVisible: state.scratchGui.modals.customtheme,
+    readmeModalVisible: state.scratchGui.modals.readme,
+    previewExtVisible: state.scratchGui.modals.previewExt,
+    aeFeaturesModalVisible: state.scratchGui.modals.aeFeaturesModal
+});
+
+export default injectIntl(connect(
+    mapStateToProps,
+    mapDispatchToProps
+)(GUIComponent));

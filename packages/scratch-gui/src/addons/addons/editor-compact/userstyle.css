@@ -1,0 +1,87 @@
+:root[data-is-scratch-desktop='true'] {
+  --stage-fullscreen-top: 2rem;
+}
+
+[class*="menu-bar_Icon"]:not([id*="error"]),
+[class*="settings-menu_SettingIcon"],
+[class*="menu-bar_help-icon"] {
+  width: 0;
+}
+
+[class*="menu-bar_collapsible-label_"],
+[dir="rtl"] [class*="menu-bar_collapsible-label_"],
+[class*="settings-menu_dropdown-label_"],
+[dir="rtl"] [class*="settings-menu_dropdown-label_"] {
+  margin: 0;
+}
+
+@media (max-width: 1024px) {
+  [class*="menu-bar_file-group_"] [class*="menu-bar_hoverable_"]>img:first-child {
+    display: inline;
+  }
+}
+
+[class*="gui_menu-bar-position"][class*="menu-bar_menu-bar"][class*="box_box"],
+[class*="menu-bar_menu-bar-item"],
+[class*="menu-bar_control-bar"],
+[class*="menu-bar_controlBarInner"] {
+  height: 2rem;
+}
+
+/* 桌面端金刚键跟随紧凑菜单栏高度 */
+#window-controls {
+  height: 2rem;
+}
+
+[class*="menu-bar_file-group_"] [class*="menu-bar_menu-bar-item_"],
+[class*="menu-bar_account-info-group_"] [class*="menu-bar_menu-bar-item_"] {
+  margin: 0;
+  padding: 0 0.5rem;
+}
+
+[class*="SettingIcon"],
+[class*="dropdownCaret"] {
+  margin-left: 3px !important;
+}
+
+[class*="menu-bar_menu-bar-menu"] {
+  margin-top: 2rem;
+}
+
+[class*="menu_menu-item"] {
+  line-height: 1.75rem;
+  padding: 0 0.5rem;
+}
+
+[class*="menu-bar_menu-bar-button"],
+[class*="menu-bar_feedback-button_"] {
+  height: 1.5rem;
+  padding-left: 0.5rem;
+  padding-right: 0.5rem;
+}
+
+[class*="menu-bar_growable"] {
+  padding-inline-start: 0.5rem;
+}
+
+[class*="menu-bar_growable"] [class*="input_input-form"] {
+  height: 1.5rem;
+  box-sizing: border-box;
+  padding: 0.25rem;
+  font-size: 0.75rem;
+}
+
+[class*="menu-bar_growable"] [class*="input_input-form"]:focus {
+  box-shadow: 0 0 0 calc(0.5rem * 0.25) hsla(0, 100%, 100%, 0.25);
+}
+
+.sa-editormessages-count {
+  top: 0.15rem;
+  right: 0.4rem;
+}
+
+[class*="account-nav_user-info"] [class*="account-nav_avatar"] {
+  width: 1.5rem;
+  height: 1.5rem;
+  margin-inline-start: 0.25rem;
+}

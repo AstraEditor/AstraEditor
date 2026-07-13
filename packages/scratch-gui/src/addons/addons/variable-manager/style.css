@@ -1,0 +1,195 @@
+/* Change z-indexes to allow more than 3 tabs */
+[class*="gui_tab_"][class*="gui_is-selected_"] {
+  z-index: 10 !important;
+}
+[class*="gui_tab_"]:nth-of-type(1) {
+  z-index: 9;
+}
+[class*="gui_tab_"]:nth-of-type(2) {
+  z-index: 8;
+}
+[class*="gui_tab_"]:nth-of-type(3) {
+  z-index: 7;
+}
+[class*="gui_tab_"]:nth-of-type(4) {
+  z-index: 6;
+}
+
+/* 变量管理器 Tab 激活状态样式 - 参考 .tab.is-selected */
+#react-tabs-sa-variable-manager.sa-var-manager-active {
+  height: 90%;
+  color: var(--looks-secondary);
+  background-color: var(--ui-white, white);
+  z-index: 10 !important;
+}
+
+#react-tabs-sa-variable-manager.sa-var-manager-active img {
+  filter: none;
+}
+
+/* VSCode 布局样式 */
+#react-tabs-sa-variable-manager.vscode-tab {
+  width: 40px !important;
+  height: 30px !important;
+  flex-grow: 0 !important;
+  border-radius: 0 !important;
+  margin: 0 !important;
+  padding: 20px 0 !important;
+  flex-direction: column !important;
+  justify-content: center !important;
+  align-items: center !important;
+  font-size: 0 !important;
+  background-color: #00000000 !important;
+  border: 0 !important;
+}
+
+#react-tabs-sa-variable-manager.vscode-tab img {
+  width: 1.8rem !important;
+  height: 2rem !important;
+  margin: 0 !important;
+}
+
+#react-tabs-sa-variable-manager.vscode-tab span {
+  display: none !important;
+}
+
+#react-tabs-sa-variable-manager.vscode-tab.sa-var-manager-active,
+#react-tabs-sa-variable-manager.vscode-tab.is-selected {
+  background-color: var(--ui-white) !important;
+  box-shadow: inset 3px 0px 0px 0px var(--looks-secondary) !important;
+}
+
+[dir="rtl"] #react-tabs-sa-variable-manager.vscode-tab img {
+  margin: 0 0 0.25rem 0 !important;
+  transform: none;
+}
+
+.sa-var-manager {
+  display: block;
+  padding: 18px;
+  /* weird hack to fix scrolling??? */
+  height: 50px; /*lol, it's strange*/
+  overflow-y: auto;
+}
+
+/* 侧边栏中的变量管理器使用全高度 */
+.addons-side-bar .sa-var-manager {
+  max-height: calc(100vh - 80px);
+  height: 100% !important;
+  overflow-y: auto;
+  box-sizing: border-box;
+}
+
+/* VSCode layout: allow variable manager to use full height */
+[class*="tabs"][class*="vscodeList"] .sa-var-manager,
+.tab-panel .sa-var-manager {
+  height: 100% !important;
+}
+
+/* 搜索框样式 - 在侧边栏中为100%，在Tab中为25% */
+.sa-var-manager-searchbox {
+  background-image: url("search.svg");
+  width: 100%;
+  margin-bottom: 4px;
+  padding: 8px;
+  padding-right: 32px; /* for the text to not overlap the image */
+  border-radius: 4px;
+  background-repeat: no-repeat;
+  background-size: 18px 18px;
+  background-position: calc(100% - 7px) center;
+  font-size: 0.75rem;
+}
+
+/* Tab面板中的搜索框宽度 */
+.tab-panel .sa-var-manager-searchbox {
+  width: 25%;
+}
+
+[dir="rtl"] .sa-var-manager-searchbox {
+  padding-right: 8px;
+  padding-left: 32px;
+  background-position: 7px center;
+}
+
+.sa-var-manager.freeze .sa-var-manager-value *,
+.sa-var-manager.freeze .sa-var-manager-name * {
+  opacity: 0.5;
+}
+
+.sa-var-manager.freeze input:focus,
+.sa-var-manager.freeze textarea:focus {
+  opacity: 1;
+}
+
+.sa-var-manager-heading {
+  display: block;
+  font-weight: bold;
+  font-size: large;
+  margin-top: 6px;
+  margin-bottom: 6px;
+}
+
+.sa-var-manager-name {
+  word-break: break-word;
+}
+
+.sa-var-manager .sa-var-manager-value {
+  width: 75%;
+}
+
+.sa-var-manager * > input {
+  background: none;
+  border: none;
+  padding: 8px;
+  width: 100%;
+  height: 100%;
+}
+
+.sa-var-manager-value > textarea {
+  background: none;
+  border: none;
+  padding: 8px;
+  width: 100%;
+  height: 100%;
+  line-height: 2em;
+  resize: none;
+}
+
+.sa-var-manager-too-big {
+  display: none;
+  cursor: pointer;
+  font: inherit;
+  font-style: italic;
+  color: inherit;
+  background: none;
+  border: none;
+  margin: 0;
+  padding: 8px;
+  opacity: 0.8;
+  width: 100%;
+  text-align: left;
+}
+.sa-var-manager-too-big:hover {
+  text-decoration: underline;
+}
+[data-too-big="true"] .sa-var-manager-too-big {
+  display: block;
+}
+[data-too-big="true"] .sa-var-manager-value-input {
+  display: none;
+}
+
+.sa-var-manager table {
+  border-radius: 5px;
+  border-collapse: collapse;
+  width: 100%;
+}
+
+.sa-var-manager td {
+  border: 1px solid var(--ui-black-transparent);
+  text-align: left;
+}
+
+/* tr:nth-child(even) {
+    background-color: #dddddd;
+} */

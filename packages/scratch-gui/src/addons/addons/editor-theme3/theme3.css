@@ -1,0 +1,24 @@
+.blocklyDropDownDiv .goog-menuitem-highlight,
+.blocklyDropDownDiv .goog-menuitem-hover,
+.sa-contextmenu-colored .blocklyContextMenu .goog-menuitem-highlight {
+  background-color: var(--editorTheme3-hoveredItem, rgba(0, 0, 0, 0.2));
+}
+
+.scratchCommentRect {
+  /* If the addon CSS loads before its CSS variables are initialized, SVG defaults to black. */
+  fill: var(--editorTheme3-commentColor, #fef49c);
+}
+.scratchCommentBody,
+.scratchCommentTextarea {
+  background-color: var(--editorTheme3-commentColor, #fef49c);
+}
+.scratchWorkspaceCommentBorder {
+  stroke: var(--editorTheme3-commentBorder, #bca903);
+}
+.scratchCommentTextarea::placeholder {
+  color: var(--editorTheme3-commentTextTransparent, rgba(0, 0, 0, 0.5));
+}
+.scratchCommentText {
+  fill: var(--editorTheme3-commentText, black);
+  color: var(--editorTheme3-commentText, black);
+}

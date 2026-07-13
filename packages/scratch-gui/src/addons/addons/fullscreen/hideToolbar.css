@@ -1,0 +1,25 @@
+:root {
+  --stage-fullscreen-toolbar-height: 0rem;
+}
+
+[class*="stage-header_stage-header-wrapper-overlay"] {
+  display: block;
+  top: var(--stage-fullscreen-top, 0rem);
+  transform: translateY(-101%);
+  transition: transform 0.3s;
+}
+
+.phantom-header {
+  position: absolute;
+  top: var(--stage-fullscreen-top, 0rem);
+  left: 0px;
+  right: 0px;
+  height: 8px;
+  display: block;
+  z-index: 5000;
+}
+
+.stage-header-hover {
+  transform: translateY(0%);
+  transition: transform 0.3s 0.25s;
+}
