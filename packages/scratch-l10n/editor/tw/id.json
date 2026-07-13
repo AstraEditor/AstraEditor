@@ -1,0 +1,23 @@
+{
+    "tw.alerts.savedToDisk": "Telah disimpan di komputer",
+    "tw.footer.donate": "Donasi",
+    "tw.footer.translate": "Bantu Translate TurboWarp",
+    "tw.gui.crashMessage.description": "Kami minta maaf, sepertinya halaman anda crash.Tolong untuk coba ulang lagi dan memperbarui halaman anda.",
+    "tw.gui.defaultProjectTitle": "Proyek",
+    "tw.home.credit": "Catatan dan Kredit",
+    "tw.home.instructions": "Instruksi",
+    "tw.loader.data": "Mendownload Data Proyek",
+    "tw.loader.generic": "Memuat Proyek",
+    "tw.menuBar.60off": "Matikan Mode FPS 60",
+    "tw.menuBar.changeUsername": "Ganti Username",
+    "tw.menuBar.reportError2": "Ini adalah Bug.Tolong Laporkan Ini",
+    "tw.menuBar.saveAs": "Simpan Sebagai {file}",
+    "tw.menuBar.seeInside": "Lihat Didalam",
+    "tw.oldDownload": "Simpan di fIle pisahan ",
+    "tw.saveAs": "Simpan Sebagai",
+    "tw.saveTo": "Simpan Ke {file}",
+    "tw.spriteSelectorItem.rename": "ganti nama",
+    "tw.studioview.authorAttribution": "dari {author}",
+    "tw.usernameModal.reset": "Mengatur Ulang ",
+    "tw.usernameModal.title": "Ganti Username"
+}

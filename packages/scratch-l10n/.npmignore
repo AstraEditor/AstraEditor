@@ -1,0 +1,16 @@
+# transifex
+/.tx
+# dotfiles
+.babelrc
+.eslint*
+.jshintrc
+.npmignore
+.travis.yml
+webpack.config.js
+
+# TW: Unused when published
+www
+editor
+images
+.github
+.tx_token

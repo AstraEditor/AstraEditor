@@ -1,0 +1,12 @@
+# Mac OS
+.DS_Store
+
+# NPM
+/node_modules
+npm-*
+
+# generated build files
+/dist
+
+# TW: secret API token
+.tx_token
