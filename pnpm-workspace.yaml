@@ -1,0 +1,20 @@
+packages:
+  - 'packages/*'
+
+blockExoticSubdeps: false
+shamefullyHoist: true
+strictPeerDependencies: false
+autoInstallPeers: false
+publicHoistPattern:
+  - '*react*'
+  - '*react-dom*'
+  - '*scratch-render-fonts*'
+  - 'refractor'
+  - 'prismjs'
+  - 'highlightjs*'
+  - 'lowlight'
+allowBuilds:
+  chromedriver: true
+  core-js: true
+  es5-ext: true
+  playwright-chromium: true

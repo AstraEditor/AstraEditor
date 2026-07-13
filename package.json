@@ -1,0 +1,21 @@
+{
+  "name": "astraeditor",
+  "private": true,
+  "packageManager": "pnpm@11.12.0",
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "build:l10n": "pnpm --filter @turbowarp/scratch-l10n build",
+    "build:audio": "pnpm --filter scratch-audio build",
+    "build:blocks": "pnpm --filter scratch-blocks build",
+    "build:render": "pnpm --filter scratch-render build",
+    "build:vm": "pnpm --filter scratch-vm build",
+    "build:paint": "pnpm --filter scratch-paint build",
+    "build:gui": "pnpm --filter scratch-gui build",
+    "build": "pnpm build:l10n && pnpm build:audio && pnpm build:blocks && pnpm build:render && pnpm build:vm && pnpm build:paint && pnpm build:gui",
+    "dev": "pnpm --filter scratch-gui start",
+    "clean": "pnpm -r exec rimraf dist build node_modules",
+    "fetch": "node packages/scratch-gui/scripts/prepublish.mjs"
+  }
+}
