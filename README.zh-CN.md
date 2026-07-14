@@ -15,7 +15,7 @@
 
 ### 如何使用
 
-你可以访问 [网站](editors.astras.top) 使用 **AstraEditor**，也可以在那里下载桌面版。
+你可以访问 [网站](https://editors.astras.top) 使用 **AstraEditor**，也可以在那里下载桌面版。
 
 ## 功能
 

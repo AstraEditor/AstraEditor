@@ -15,7 +15,7 @@
 
 ### How to Use
 
-You can access [Website](editors.astras.top) to use **AstraEditor**, you can also download Desktop in there
+You can access [Website](https://editors.astras.top) to use **AstraEditor**, you can also download Desktop in there
 
 ## Features
 
