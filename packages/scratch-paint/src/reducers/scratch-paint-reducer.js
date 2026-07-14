@@ -1,4 +1,4 @@
-import {combineReducers} from 'redux';
+import { combineReducers } from 'redux';
 import modeReducer from './modes';
 import bitBrushSizeReducer from './bit-brush-size';
 import bitEraserSizeReducer from './bit-eraser-size';
@@ -25,28 +25,28 @@ import undoReducer from './undo';
 import zoomLevelsReducer from './zoom-levels';
 
 export default combineReducers({
-    mode: modeReducer,
-    bitBrushSize: bitBrushSizeReducer,
-    bitEraserSize: bitEraserSizeReducer,
-    brushMode: brushModeReducer,
-    color: colorReducer,
-    clipboard: clipboardReducer,
-    cursor: cursorReducer,
-    customFonts: customFontsReducer,
-    eraserMode: eraserModeReducer,
-    fillBitmapShapes: fillBitmapShapesReducer,
-    fillMode: fillModeReducer,
-    font: fontReducer,
-    format: formatReducer,
-    hoveredItemId: hoverReducer,
-    layout: layoutReducer,
-    modals: modalsReducer,
-    proportionalShape: proportionalShapeReducer,
-    roundedRectMode: roundedRectModeReducer,
-    selectedItems: selectedItemReducer,
-    textEditTarget: textEditTargetReducer,
-    theme: themeReducer,
-    undo: undoReducer,
-    viewBounds: viewBoundsReducer,
-    zoomLevels: zoomLevelsReducer
+  mode: modeReducer,
+  bitBrushSize: bitBrushSizeReducer,
+  bitEraserSize: bitEraserSizeReducer,
+  brushMode: brushModeReducer,
+  color: colorReducer,
+  clipboard: clipboardReducer,
+  cursor: cursorReducer,
+  customFonts: customFontsReducer,
+  eraserMode: eraserModeReducer,
+  fillBitmapShapes: fillBitmapShapesReducer,
+  fillMode: fillModeReducer,
+  font: fontReducer,
+  format: formatReducer,
+  hoveredItemId: hoverReducer,
+  layout: layoutReducer,
+  modals: modalsReducer,
+  proportionalShape: proportionalShapeReducer,
+  roundedRectMode: roundedRectModeReducer,
+  selectedItems: selectedItemReducer,
+  textEditTarget: textEditTargetReducer,
+  theme: themeReducer,
+  undo: undoReducer,
+  viewBounds: viewBoundsReducer,
+  zoomLevels: zoomLevelsReducer
 });

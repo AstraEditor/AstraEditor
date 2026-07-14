@@ -12,7 +12,7 @@ export default async function ({ addon, console }) {
     // 查找所有注释元素
     const commentElements = document.querySelectorAll('.blocklyBubbleCanvas > g');
 
-    commentElements.forEach(commentEl => {
+    commentElements.forEach((commentEl) => {
       // 检查是否已经处理过
       if (commentEl.dataset.markdownProcessed) return;
 
@@ -21,7 +21,10 @@ export default async function ({ addon, console }) {
       if (!textarea) return;
 
       // 查找顶部栏（拖动栏）
-      const topBar = commentEl.querySelector('.scratchCommentBody') || commentEl.querySelector('[class*="TopBar"]') || commentEl.firstElementChild;
+      const topBar =
+        commentEl.querySelector('.scratchCommentBody') ||
+        commentEl.querySelector('[class*="TopBar"]') ||
+        commentEl.firstElementChild;
       if (!topBar) return;
 
       // 标记为已处理
@@ -75,10 +78,9 @@ export default async function ({ addon, console }) {
         if ((e.ctrlKey || e.metaKey) && e.key === 'm') {
           // 检查是否有活动的注释编辑 - 通过焦点元素或当前模式
           const activeElement = document.activeElement;
-          const isEditingComment = activeElement && (
-            activeElement === textarea ||
-            activeElement.closest('[data-markdown-processed]') === commentEl
-          );
+          const isEditingComment =
+            activeElement &&
+            (activeElement === textarea || activeElement.closest('[data-markdown-processed]') === commentEl);
 
           // 如果在编辑此注释，或者当前处于预览模式，都允许切换
           const isInPreviewMode = toggleButton.dataset.mode === 'preview';
@@ -152,7 +154,10 @@ export default async function ({ addon, console }) {
       // 行内代码
       .replace(/`(.*?)`/gm, '<code>$1</code>')
       // 图片
-      .replace(/!\[([^\]]*)\]\(([^)]+)\)/gm, '<img src="$2" alt="$1" style="max-width: 100%; height: auto; border-radius: 4px; margin: 8px 0;">')
+      .replace(
+        /!\[([^\]]*)\]\(([^)]+)\)/gm,
+        '<img src="$2" alt="$1" style="max-width: 100%; height: auto; border-radius: 4px; margin: 8px 0;">'
+      )
       // 链接
       .replace(/\[([^\]]+)\]\(([^)]+)\)/gm, '<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>')
       // 列表项
@@ -170,8 +175,8 @@ export default async function ({ addon, console }) {
   // 监听DOM变化，处理新添加的注释
   const observer = new MutationObserver((mutations) => {
     let shouldProcess = false;
-    mutations.forEach(mutation => {
-      mutation.addedNodes.forEach(node => {
+    mutations.forEach((mutation) => {
+      mutation.addedNodes.forEach((node) => {
         if (node.nodeType === Node.ELEMENT_NODE) {
           if (node.matches && node.matches('.blocklyBubbleCanvas > g')) {
             shouldProcess = true;
@@ -205,12 +210,12 @@ export default async function ({ addon, console }) {
     const toggleContainers = document.querySelectorAll('.tw-md-toggle-container');
     const previewContainers = document.querySelectorAll('.tw-md-preview-container');
 
-    toggleContainers.forEach(container => container.remove());
-    previewContainers.forEach(container => container.remove());
+    toggleContainers.forEach((container) => container.remove());
+    previewContainers.forEach((container) => container.remove());
 
     // 重置所有注释元素的处理状态
     const processedElements = document.querySelectorAll('[data-markdown-processed]');
-    processedElements.forEach(el => {
+    processedElements.forEach((el) => {
       delete el.dataset.markdownProcessed;
       // 显示所有textarea
       const textarea = el.querySelector('textarea');

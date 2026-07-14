@@ -3,7 +3,7 @@ function parseHex(hex) {
     r: parseInt(hex.substring(1, 3), 16),
     g: parseInt(hex.substring(3, 5), 16),
     b: parseInt(hex.substring(5, 7), 16),
-    a: hex.length >= 9 ? parseInt(hex.substring(7, 9), 16) / 255 : 1,
+    a: hex.length >= 9 ? parseInt(hex.substring(7, 9), 16) / 255 : 1
   };
 }
 
@@ -17,7 +17,7 @@ function convertToHex(obj) {
   const r = convertComponentToHex(obj.r);
   const g = convertComponentToHex(obj.g);
   const b = convertComponentToHex(obj.b);
-  const a = obj.a !== undefined ? convertComponentToHex(255 * obj.a) : "";
+  const a = obj.a !== undefined ? convertComponentToHex(255 * obj.a) : '';
   return `#${r}${g}${b}${a}`;
 }
 
@@ -72,12 +72,12 @@ function brightness(hex) {
 
 function textColor(hex, black, white, threshold) {
   threshold = threshold !== undefined ? threshold : 170;
-  if (typeof threshold !== "number") threshold = brightness(threshold);
+  if (typeof threshold !== 'number') threshold = brightness(threshold);
   if (brightness(hex) > threshold) {
     // https://stackoverflow.com/a/3943023
-    return black !== undefined ? black : "#575e75";
+    return black !== undefined ? black : '#575e75';
   } else {
-    return white !== undefined ? white : "#ffffff";
+    return white !== undefined ? white : '#ffffff';
   }
 }
 
@@ -100,7 +100,7 @@ function brighten(hex, c) {
     r: (1 - c.r) * 255 + c.r * r,
     g: (1 - c.g) * 255 + c.g * g,
     b: (1 - c.b) * 255 + c.b * b,
-    a: 1 - c.a + c.a * a,
+    a: 1 - c.a + c.a * a
   });
 }
 
@@ -110,7 +110,7 @@ function alphaBlend(opaqueHex, transparentHex) {
   return convertToHex({
     r: (1 - a) * r1 + a * r2,
     g: (1 - a) * g1 + a * g2,
-    b: (1 - a) * b1 + a * b2,
+    b: (1 - a) * b1 + a * b2
   });
 }
 
@@ -119,14 +119,14 @@ function removeAlpha(hex) {
 }
 
 function makeHsv(hSource, sSource, vSource) {
-  const h = typeof hSource === "number" ? hSource : convertToHsv(parseHex(hSource)).h;
+  const h = typeof hSource === 'number' ? hSource : convertToHsv(parseHex(hSource)).h;
   const s =
-    typeof hSource !== "number" && convertToHsv(parseHex(hSource)).s === 0
+    typeof hSource !== 'number' && convertToHsv(parseHex(hSource)).s === 0
       ? 0
-      : typeof sSource === "number"
-      ? sSource
-      : convertToHsv(parseHex(sSource)).s;
-  const v = typeof vSource === "number" ? vSource : convertToHsv(parseHex(vSource)).v;
+      : typeof sSource === 'number'
+        ? sSource
+        : convertToHsv(parseHex(sSource)).s;
+  const v = typeof vSource === 'number' ? vSource : convertToHsv(parseHex(vSource)).v;
   return convertToHex(convertFromHsv({ h, s, v }));
 }
 
@@ -144,8 +144,8 @@ function recolorFilter(hex) {
       </filter>
     </svg>#recolor
   ")`
-    .split("\n")
-    .join("");
+    .split('\n')
+    .join('');
 }
 
 export {
@@ -160,5 +160,5 @@ export {
   alphaBlend,
   removeAlpha,
   makeHsv,
-  recolorFilter,
+  recolorFilter
 };

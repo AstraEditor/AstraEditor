@@ -16,8 +16,8 @@ import {
   BlockShape,
   BlockTypeInfo,
   BlockInputEnum,
-  BlockInputString,
-} from "./BlockTypeInfo.js";
+  BlockInputString
+} from './BlockTypeInfo.js';
 
 /**
  *
@@ -161,7 +161,7 @@ class TokenProvider {
    */
   // eslint-disable-next-line require-yield
   *parseTokens(query, idx, depth) {
-    throw new Error("Sub-class must override abstract method.");
+    throw new Error('Sub-class must override abstract method.');
   }
 }
 
@@ -380,7 +380,7 @@ class TokenType extends TokenProvider {
    * @returns {string}
    */
   createText(token, query, endOnly) {
-    throw new Error("Sub-class must override abstract method.");
+    throw new Error('Sub-class must override abstract method.');
   }
 
   /**
@@ -419,7 +419,7 @@ class TokenTypeBlank extends TokenType {
   }
 
   createText(token, query) {
-    return "";
+    return '';
   }
 }
 
@@ -507,7 +507,7 @@ class TokenTypeStringEnum extends TokenType {
  * The token type for a literal string, like 'Hello World' in the query `say Hello World`
  */
 class TokenTypeStringLiteral extends TokenType {
-  static TERMINATORS = [undefined, " ", "+", "-", "*", "/", "=", "<", ">", ")"];
+  static TERMINATORS = [undefined, ' ', '+', '-', '*', '/', '=', '<', '>', ')'];
 
   static isTerminator(char) {
     return this.TERMINATORS.includes(char);
@@ -527,10 +527,10 @@ class TokenTypeStringLiteral extends TokenType {
     let quoteEnd = -1;
     if (query.str[idx] === '"' || query.str[idx] === "'") {
       const quote = query.str[idx];
-      let value = "";
+      let value = '';
       let valueStart = idx + 1;
       for (let i = idx + 1; i <= query.length; i++) {
-        if (query.str[i] === "\\") {
+        if (query.str[i] === '\\') {
           value += query.str.substring(valueStart, i);
           valueStart = ++i;
         } else if (query.str[i] === quote) {
@@ -592,10 +592,10 @@ class TokenTypeNumberLiteral extends TokenType {
  */
 class TokenTypeColor extends TokenType {
   static INSTANCE = new TokenProviderOptional(new TokenTypeColor());
-  static HEX_CHARS = ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "a", "b", "c", "d", "e", "f"];
+  static HEX_CHARS = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f'];
 
   *parseTokens(query, idx, depth) {
-    if (!query.str.startsWith("#", idx)) return;
+    if (!query.str.startsWith('#', idx)) return;
     for (let i = 0; i < 6; i++) {
       if (TokenTypeColor.HEX_CHARS.indexOf(query.lowercase[idx + i + 1]) === -1) return;
     }
@@ -622,7 +622,7 @@ class TokenTypeBrackets extends TokenType {
 
   *parseTokens(query, idx, depth) {
     const start = idx;
-    if (query.str[idx++] !== "(") return;
+    if (query.str[idx++] !== '(') return;
     idx = query.skipIgnorable(idx);
     for (const token of this.tokenProvider.parseTokens(query, idx, depth)) {
       if (token.type instanceof TokenTypeBlank) continue; // Do not allow empty brackets like '()'
@@ -630,14 +630,14 @@ class TokenTypeBrackets extends TokenType {
       let isTruncated = token.isTruncated;
       if (!isTruncated) {
         if (tokenEnd === query.length) isTruncated = true;
-        else if (query.str[tokenEnd] === ")") ++tokenEnd;
+        else if (query.str[tokenEnd] === ')') ++tokenEnd;
         else continue;
       }
       // Note that for bracket tokens, precedence = 0
       const newToken = new Token(start, tokenEnd, this, token.value, {
         precedence: 0,
         isTruncated,
-        isLegal: token.isLegal,
+        isLegal: token.isLegal
       });
       newToken.innerToken = token;
       yield newToken;
@@ -649,11 +649,11 @@ class TokenTypeBrackets extends TokenType {
   }
 
   createText(token, query, endOnly) {
-    let text = "(";
+    let text = '(';
     text += query.str.substring(token.start + 1, token.innerToken.start);
     text += token.innerToken.type.createText(token.innerToken, query, endOnly);
     if (token.innerToken.end !== token.end) text += query.str.substring(token.innerToken.end, token.end - 1);
-    text += ")";
+    text += ')';
     return text;
   }
 
@@ -688,7 +688,7 @@ class TokenTypeBlock extends TokenType {
 
     for (const blockPart of block.parts) {
       let fullTokenProvider;
-      if (typeof blockPart === "string") {
+      if (typeof blockPart === 'string') {
         fullTokenProvider = new TokenTypeStringEnum([{ value: null, string: blockPart }]);
       } else {
         switch (blockPart.type) {
@@ -728,16 +728,16 @@ class TokenTypeBlock extends TokenType {
     const enumerateStringForms = (partIdx = 0, strings = [], inputs = [], length = 0) => {
       for (; partIdx < block.parts.length; partIdx++) {
         let blockPart = block.parts[partIdx];
-        if (typeof blockPart === "string") {
+        if (typeof blockPart === 'string') {
           length += blockPart.length;
-          strings.push(...blockPart.toLowerCase().split(" "));
+          strings.push(...blockPart.toLowerCase().split(' '));
         } else if (blockPart.type === BlockInputType.ENUM) {
           for (const enumValue of blockPart.values) {
             if (this.stringForms.length >= WorkspaceQuerier.MAX_RESULTS) return;
 
             enumerateStringForms(
               partIdx + 1,
-              [...strings, ...enumValue.string.toLowerCase().split(" ")],
+              [...strings, ...enumValue.string.toLowerCase().split(' ')],
               [...inputs, enumValue],
               length + enumValue.string.length
             );
@@ -884,7 +884,7 @@ class TokenTypeBlock extends TokenType {
           //  before us not afterward.
           token.precedence > this.block.precedence &&
           // See https://github.com/ScratchAddons/ScratchAddons/issues/5981
-          (tokenProviderIdx === 0 || !(token.type instanceof TokenTypeBlock) || token.type.block.id !== "operator_not")
+          (tokenProviderIdx === 0 || !(token.type instanceof TokenTypeBlock) || token.type.block.id !== 'operator_not')
         )
           continue;
         /**
@@ -918,7 +918,7 @@ class TokenTypeBlock extends TokenType {
   }
 
   createBlockValue(token, query) {
-    if (!token.isLegal) throw new Error("Cannot create a block from an illegal token.");
+    if (!token.isLegal) throw new Error('Cannot create a block from an illegal token.');
     let blockInputs;
 
     if (token.value.stringForm) {
@@ -928,7 +928,7 @@ class TokenTypeBlock extends TokenType {
       blockInputs = [];
       for (let i = 0; i < subtokens.length; i++) {
         const blockPart = this.block.parts[i];
-        if (typeof blockPart !== "string") blockInputs.push(subtokens[i].createBlockValue(query));
+        if (typeof blockPart !== 'string') blockInputs.push(subtokens[i].createBlockValue(query));
       }
       while (blockInputs.length < this.block.inputs.length) blockInputs.push(null);
     }
@@ -945,17 +945,17 @@ class TokenTypeBlock extends TokenType {
           return (
             query.str.substring(token.start, token.end) +
             token.value.stringForm.strings[token.value.lastPartIdx].substring(token.end - token.value.i) +
-            " " +
-            token.value.stringForm.strings.slice(token.value.lastPartIdx + 1).join(" ")
+            ' ' +
+            token.value.stringForm.strings.slice(token.value.lastPartIdx + 1).join(' ')
           );
         }
       }
 
-      return token.value.stringForm.strings.join(" ");
+      return token.value.stringForm.strings.join(' ');
     }
     if (!token.isTruncated && endOnly) return query.str.substring(token.start, token.end);
     const subtokens = token.value.subtokens;
-    let text = "";
+    let text = '';
     if (token.start !== subtokens[0].start) {
       text += query.str.substring(token.start, subtokens[0].start);
     }
@@ -963,7 +963,7 @@ class TokenTypeBlock extends TokenType {
     for (i = 0; i < subtokens.length; i++) {
       const subtoken = subtokens[i];
       if (!token.isLegal && subtoken.start >= query.length) break;
-      const subtokenText = subtoken.type.createText(subtoken, query, endOnly) ?? "";
+      const subtokenText = subtoken.type.createText(subtoken, query, endOnly) ?? '';
       text += subtokenText;
       if (i !== subtokens.length - 1) {
         const next = subtokens[i + 1];
@@ -976,7 +976,7 @@ class TokenTypeBlock extends TokenType {
             subtokenText.length !== 0 &&
             QueryInfo.IGNORABLE_CHARS.indexOf(subtokenText.at(-1)) === -1
           )
-            text += " ";
+            text += ' ';
         }
       }
     }
@@ -1016,7 +1016,7 @@ export class QueryResult {
    * @returns {string}
    */
   toText(endOnly) {
-    return this.token.type.createText(this.token, this.query, endOnly) ?? "";
+    return this.token.type.createText(this.token, this.query, endOnly) ?? '';
   }
 
   /**
@@ -1043,7 +1043,7 @@ export class QueryResult {
       for (const part of block.typeInfo.parts) {
         ++tokenLength;
 
-        if (typeof part === "string") {
+        if (typeof part === 'string') {
           stringLength += part.length;
         } else {
           const input = block.inputs[inputIdx++];
@@ -1053,9 +1053,9 @@ export class QueryResult {
             stringLength += input.string.length;
           } else if (part instanceof BlockInputString && input !== part.defaultValue) {
             // Make string inputs 100x their real length so they appear at the bottom
-            stringLength += ("" + input).length * 100;
+            stringLength += ('' + input).length * 100;
           } else if (input != null) {
-            stringLength += ("" + input).length;
+            stringLength += ('' + input).length;
           }
         }
       }
@@ -1075,13 +1075,13 @@ export class QueryResult {
  */
 class QueryInfo {
   /** Characters that can be safely skipped over. */
-  static IGNORABLE_CHARS = [" "];
+  static IGNORABLE_CHARS = [' '];
 
   constructor(querier, query, id) {
     /** @type {WorkspaceQuerier} */
     this.querier = querier;
     /** @type {string} The query */
-    this.str = query.replace(/\u00a0/g, " ");
+    this.str = query.replace(/\u00a0/g, ' ');
     /** @type {string} A lowercase version of the query. Used for case insensitive comparisons. */
     this.lowercase = this.str.toLowerCase();
     /** @type {number} A unique identifier for this query */
@@ -1149,20 +1149,20 @@ class QueryInfo {
 export default class WorkspaceQuerier {
   static ORDER_OF_OPERATIONS = [
     null, // brackets
-    "operator_join",
-    "operator_round",
-    "operator_mathop",
-    "operator_mod",
-    "operator_divide",
-    "operator_multiply",
-    "operator_subtract",
-    "operator_add",
-    "operator_equals",
-    "operator_lt",
-    "operator_gt",
-    "operator_or",
-    "operator_and",
-    "operator_not",
+    'operator_join',
+    'operator_round',
+    'operator_mathop',
+    'operator_mod',
+    'operator_divide',
+    'operator_multiply',
+    'operator_subtract',
+    'operator_add',
+    'operator_equals',
+    'operator_lt',
+    'operator_gt',
+    'operator_or',
+    'operator_and',
+    'operator_not'
   ];
 
   /**
@@ -1197,7 +1197,7 @@ export default class WorkspaceQuerier {
    * @returns {{results: QueryResult[], illegalResult: QueryResult | null, limited: boolean}} A list of the results of the query, sorted by their relevance.
    */
   queryWorkspace(queryStr) {
-    if (!this.workspaceIndexed) throw new Error("A workspace must be indexed before it can be queried!");
+    if (!this.workspaceIndexed) throw new Error('A workspace must be indexed before it can be queried!');
     if (queryStr.trim().length === 0) return { results: [], illegalResult: null, limited: false };
 
     const query = new QueryInfo(this, queryStr, this._queryCounter++);
@@ -1206,7 +1206,7 @@ export default class WorkspaceQuerier {
     let limited = false;
 
     let bestIllegalResult = null;
-    let bestIllegalResultText = "";
+    let bestIllegalResultText = '';
 
     for (const option of this.tokenGroupBlocks.parseTokens(query, 0, 0)) {
       if (option.end >= queryStr.length) {
@@ -1222,12 +1222,12 @@ export default class WorkspaceQuerier {
       }
       ++query.resultCount;
       if (!limited && query.resultCount >= WorkspaceQuerier.MAX_RESULTS) {
-        console.warn("Warning: Workspace query exceeded maximum result count.");
+        console.warn('Warning: Workspace query exceeded maximum result count.');
         limited = true;
       }
 
       if (!query.canCreateMoreTokens()) {
-        console.warn("Warning: Workspace query exceeded maximum token count.");
+        console.warn('Warning: Workspace query exceeded maximum token count.');
         limited = true;
         break;
       }
@@ -1269,7 +1269,7 @@ export default class WorkspaceQuerier {
     return {
       results: validResults,
       illegalResult: validResults.length === 0 ? bestIllegalResult : null,
-      limited,
+      limited
     };
   }
 
@@ -1326,7 +1326,7 @@ export default class WorkspaceQuerier {
     this.tokenGroupBoolean = new TokenProviderOptional(new TokenProviderGroup());
     this.tokenGroupBoolean.inner.pushProviders([
       this.tokenGroupBooleanBlocks,
-      new TokenTypeBrackets(this.tokenGroupBoolean),
+      new TokenTypeBrackets(this.tokenGroupBoolean)
     ]);
     this.tokenGroupBoolean.inner.pushProviders([this.tokenGroupRoundBlocks], false);
 
@@ -1336,7 +1336,7 @@ export default class WorkspaceQuerier {
       this.tokenTypeNumberLiteral,
       this.tokenGroupRoundBlocks,
       this.tokenGroupBooleanBlocks,
-      new TokenTypeBrackets(this.tokenGroupNumber),
+      new TokenTypeBrackets(this.tokenGroupNumber)
     ]);
 
     // Anything that fits into a string hole (Round blocks + Boolean blocks + String Literals + Brackets)
@@ -1345,7 +1345,7 @@ export default class WorkspaceQuerier {
       this.tokenTypeStringLiteral,
       this.tokenGroupRoundBlocks,
       this.tokenGroupBooleanBlocks,
-      new TokenTypeBrackets(this.tokenGroupString),
+      new TokenTypeBrackets(this.tokenGroupString)
     ]);
 
     // Anything that fits into a c shaped hole (Stackable blocks)
@@ -1357,7 +1357,7 @@ export default class WorkspaceQuerier {
       this.tokenGroupStackBlocks,
       this.tokenGroupBooleanBlocks,
       this.tokenGroupRoundBlocks,
-      this.tokenGroupHatBlocks,
+      this.tokenGroupHatBlocks
     ]);
   }
 

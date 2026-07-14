@@ -13,31 +13,31 @@ const CONCURRENCY_LIMIT = 4;
 
 // Processing task
 const work = function (uri, callback) {
-    fs.readFile(uri, function (err, body) {
-      const name = path.parse(uri).name;
-      if (err) return callback(err);
+  fs.readFile(uri, function (err, body) {
+    const name = path.parse(uri).name;
+    if (err) return callback(err);
 
-        // Convert file body into an object (let this throw if invalid JSON)
-        body = JSON.parse(body);
+    // Convert file body into an object (let this throw if invalid JSON)
+    body = JSON.parse(body);
 
-        // File storage object and preamble
-        let file = '';
-        file += '// This file was automatically generated.  Do not modify.\n';
-        file += '\n';
-        file += '\'use strict\';\n';
-        file += '\n';
-        file += `goog.provide(\'Blockly.Msg.${name}\');\n`;
-        file += 'goog.require(\'Blockly.Msg\');\n';
-        file += '\n';
+    // File storage object and preamble
+    let file = '';
+    file += '// This file was automatically generated.  Do not modify.\n';
+    file += '\n';
+    file += "'use strict';\n";
+    file += '\n';
+    file += `goog.provide(\'Blockly.Msg.${name}\');\n`;
+    file += "goog.require('Blockly.Msg');\n";
+    file += '\n';
 
-        // Iterate over object and build up file
-        for (let i in body) {
-            file += `Blockly.Msg["${i}"] = "${body[i].replace(/"/g, '\\"')}";\n`
-        }
+    // Iterate over object and build up file
+    for (let i in body) {
+      file += `Blockly.Msg["${i}"] = "${body[i].replace(/"/g, '\\"')}";\n`;
+    }
 
-        // Write file to disk
-        fs.writeFile(`${PATH_OUTPUT}/${name}.js`, file, callback);
-    });
+    // Write file to disk
+    fs.writeFile(`${PATH_OUTPUT}/${name}.js`, file, callback);
+  });
 };
 
 // Create async processing queue
@@ -45,7 +45,7 @@ const q = async.queue(work, CONCURRENCY_LIMIT);
 
 // Handle errors
 q.error = function (err) {
-    throw new Error(err);
+  throw new Error(err);
 };
 
 // Get all JSON files in input directory and add to queue

@@ -3,12 +3,12 @@ export default async ({ addon, console }) => {
 
   let shiftKeyPressed = false;
   document.addEventListener(
-    "mousedown",
+    'mousedown',
     function (e) {
       shiftKeyPressed = e.shiftKey;
     },
     {
-      capture: true,
+      capture: true
     }
   );
 
@@ -17,7 +17,7 @@ export default async ({ addon, console }) => {
   vm.stopDrag = function (...args) {
     const allowDrag =
       shiftKeyPressed ||
-      (addon.settings.get("drag_while_stopped") && !addon.tab.redux.state.scratchGui.vmStatus.running);
+      (addon.settings.get('drag_while_stopped') && !addon.tab.redux.state.scratchGui.vmStatus.running);
     if (allowDrag || addon.self.disabled) return oldStopDrag.call(this, ...args);
     const setEditingTarget = this.setEditingTarget;
     this.setEditingTarget = () => {};
@@ -31,7 +31,7 @@ export default async ({ addon, console }) => {
   vm.getTargetIdForDrawableId = function (...args) {
     const allowDrag =
       shiftKeyPressed ||
-      (addon.settings.get("drag_while_stopped") && !addon.tab.redux.state.scratchGui.vmStatus.running);
+      (addon.settings.get('drag_while_stopped') && !addon.tab.redux.state.scratchGui.vmStatus.running);
     const targetId = oldGetTargetIdForDrawableId.call(this, ...args);
     if (allowDrag || addon.self.disabled) return targetId;
     if (targetId !== null) {

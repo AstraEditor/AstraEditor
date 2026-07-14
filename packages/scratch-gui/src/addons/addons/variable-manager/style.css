@@ -1,17 +1,17 @@
 /* Change z-indexes to allow more than 3 tabs */
-[class*="gui_tab_"][class*="gui_is-selected_"] {
+[class*='gui_tab_'][class*='gui_is-selected_'] {
   z-index: 10 !important;
 }
-[class*="gui_tab_"]:nth-of-type(1) {
+[class*='gui_tab_']:nth-of-type(1) {
   z-index: 9;
 }
-[class*="gui_tab_"]:nth-of-type(2) {
+[class*='gui_tab_']:nth-of-type(2) {
   z-index: 8;
 }
-[class*="gui_tab_"]:nth-of-type(3) {
+[class*='gui_tab_']:nth-of-type(3) {
   z-index: 7;
 }
-[class*="gui_tab_"]:nth-of-type(4) {
+[class*='gui_tab_']:nth-of-type(4) {
   z-index: 6;
 }
 
@@ -59,7 +59,7 @@
   box-shadow: inset 3px 0px 0px 0px var(--looks-secondary) !important;
 }
 
-[dir="rtl"] #react-tabs-sa-variable-manager.vscode-tab img {
+[dir='rtl'] #react-tabs-sa-variable-manager.vscode-tab img {
   margin: 0 0 0.25rem 0 !important;
   transform: none;
 }
@@ -81,14 +81,14 @@
 }
 
 /* VSCode layout: allow variable manager to use full height */
-[class*="tabs"][class*="vscodeList"] .sa-var-manager,
+[class*='tabs'][class*='vscodeList'] .sa-var-manager,
 .tab-panel .sa-var-manager {
   height: 100% !important;
 }
 
 /* 搜索框样式 - 在侧边栏中为100%，在Tab中为25% */
 .sa-var-manager-searchbox {
-  background-image: url("search.svg");
+  background-image: url('search.svg');
   width: 100%;
   margin-bottom: 4px;
   padding: 8px;
@@ -105,7 +105,7 @@
   width: 25%;
 }
 
-[dir="rtl"] .sa-var-manager-searchbox {
+[dir='rtl'] .sa-var-manager-searchbox {
   padding-right: 8px;
   padding-left: 32px;
   background-position: 7px center;
@@ -172,10 +172,10 @@
 .sa-var-manager-too-big:hover {
   text-decoration: underline;
 }
-[data-too-big="true"] .sa-var-manager-too-big {
+[data-too-big='true'] .sa-var-manager-too-big {
   display: block;
 }
-[data-too-big="true"] .sa-var-manager-value-input {
+[data-too-big='true'] .sa-var-manager-value-input {
   display: none;
 }
 

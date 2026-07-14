@@ -1,8 +1,8 @@
-import createScalePoints from "./genScalePoints.js";
-import { loadModules, Modes, BitmapModes } from "./helpers.js";
-import { addons, initialize } from "./compatibility.js";
+import createScalePoints from './genScalePoints.js';
+import { loadModules, Modes, BitmapModes } from './helpers.js';
+import { addons, initialize } from './compatibility.js';
 
-import { snapOn, threshold, guideColor } from "./state.js";
+import { snapOn, threshold, guideColor } from './state.js';
 
 const getScaleTool = (tool) => {
   return tool.boundingBoxTool._modeMap.SCALE;
@@ -12,7 +12,7 @@ export const updateScaleTool = (paper, tool, vm) => {
   const lib = loadModules(paper, vm);
   const {
     view: { getActionBounds },
-    layer: { getLayer },
+    layer: { getLayer }
   } = lib;
 
   const scaleTool = getScaleTool(tool);
@@ -31,9 +31,9 @@ export const updateScaleTool = (paper, tool, vm) => {
         isHelperItem: true,
         noSelect: true,
         noHover: true,
-        saPaintSnapGuide: true,
+        saPaintSnapGuide: true
       },
-      selected: false,
+      selected: false
     }),
     endRight: new paper.Path.Line({
       from: [0, 0],
@@ -45,9 +45,9 @@ export const updateScaleTool = (paper, tool, vm) => {
         isHelperItem: true,
         noSelect: true,
         noHover: true,
-        saPaintSnapGuide: true,
+        saPaintSnapGuide: true
       },
-      selected: false,
+      selected: false
     }),
     line: new paper.Path.Line({
       from: [0, 0],
@@ -59,11 +59,11 @@ export const updateScaleTool = (paper, tool, vm) => {
         isHelperItem: true,
         noSelect: true,
         noHover: true,
-        saPaintSnapGuide: true,
+        saPaintSnapGuide: true
       },
-      selected: false,
+      selected: false
     }),
-    group: new paper.Group({ children: [], visible: false }),
+    group: new paper.Group({ children: [], visible: false })
   };
   const matchingSizeGuide = {
     endLeft: new paper.Path.Line({
@@ -76,9 +76,9 @@ export const updateScaleTool = (paper, tool, vm) => {
         isHelperItem: true,
         noSelect: true,
         noHover: true,
-        saPaintSnapGuide: true,
+        saPaintSnapGuide: true
       },
-      selected: false,
+      selected: false
     }),
     endRight: new paper.Path.Line({
       from: [0, 0],
@@ -90,9 +90,9 @@ export const updateScaleTool = (paper, tool, vm) => {
         isHelperItem: true,
         noSelect: true,
         noHover: true,
-        saPaintSnapGuide: true,
+        saPaintSnapGuide: true
       },
-      selected: false,
+      selected: false
     }),
     line: new paper.Path.Line({
       from: [0, 0],
@@ -104,11 +104,11 @@ export const updateScaleTool = (paper, tool, vm) => {
         isHelperItem: true,
         noSelect: true,
         noHover: true,
-        saPaintSnapGuide: true,
+        saPaintSnapGuide: true
       },
-      selected: false,
+      selected: false
     }),
-    group: new paper.Group({ children: [], visible: false }),
+    group: new paper.Group({ children: [], visible: false })
   };
 
   selectionSizeGuide.endLeft.remove();
@@ -123,7 +123,7 @@ export const updateScaleTool = (paper, tool, vm) => {
   selectionSizeGuide.group.addChildren([
     selectionSizeGuide.endLeft,
     selectionSizeGuide.line,
-    selectionSizeGuide.endRight,
+    selectionSizeGuide.endRight
   ]);
   matchingSizeGuide.group.addChildren([matchingSizeGuide.endLeft, matchingSizeGuide.line, matchingSizeGuide.endRight]);
 
@@ -138,9 +138,9 @@ export const updateScaleTool = (paper, tool, vm) => {
       noSelect: true,
       noHover: true,
       saPaintSnapGuide: true,
-      axis: "x",
+      axis: 'x'
     },
-    selected: false,
+    selected: false
   });
   let axisLineY = new paper.Path.Line({
     from: [0, 0],
@@ -153,9 +153,9 @@ export const updateScaleTool = (paper, tool, vm) => {
       noSelect: true,
       noHover: true,
       saPaintSnapGuide: true,
-      axis: "y",
+      axis: 'y'
     },
-    selected: false,
+    selected: false
   });
   axisLineX.remove();
   axisLineY.remove();
@@ -182,10 +182,10 @@ export const updateScaleTool = (paper, tool, vm) => {
 
     axisLineX.bringToFront();
     axisLineY.bringToFront();
-    getLayer("isGuideLayer").addChildren([axisLineY, axisLineX, selectionSizeGuide.group, matchingSizeGuide.group]);
+    getLayer('isGuideLayer').addChildren([axisLineY, axisLineX, selectionSizeGuide.group, matchingSizeGuide.group]);
   };
 
-  const priority = ["width", "height", "itemSideVert", "itemSideHoriz", "xcoord", "ycoord", "generated", undefined];
+  const priority = ['width', 'height', 'itemSideVert', 'itemSideHoriz', 'xcoord', 'ycoord', 'generated', undefined];
 
   const removeGuides = () => {
     selectionSizeGuide.group.remove();
@@ -249,7 +249,7 @@ export const updateScaleTool = (paper, tool, vm) => {
       if (prioDiff) return prioDiff;
       return a.distance - b.distance;
     };
-    const paintLayer = getLayer("isPaintingLayer");
+    const paintLayer = getLayer('isPaintingLayer');
 
     const doesSx = snapOn && ((this.isCorner && !event.modifiers.shift) || Math.abs(this.origSize.x) > 0.0000001);
     const doesSy = snapOn && ((this.isCorner && !event.modifiers.shift) || Math.abs(this.origSize.y) > 0.0000001);
@@ -262,18 +262,18 @@ export const updateScaleTool = (paper, tool, vm) => {
       type: coord.type,
       distance: (() => {
         switch (coord.type) {
-          case "width": {
+          case 'width': {
             return Math.abs(Math.abs(size.x) - Math.abs(coord.clamp.max - coord.clamp.min));
           }
-          case "height": {
+          case 'height': {
             return Math.abs(Math.abs(size.y) - Math.abs(coord.clamp.max - coord.clamp.min));
           }
-          case "xcoord":
-          case "itemSideVert": {
+          case 'xcoord':
+          case 'itemSideVert': {
             return Math.abs(this.corner.x - coord.value);
           }
-          case "ycoord":
-          case "itemSideHoriz": {
+          case 'ycoord':
+          case 'itemSideHoriz': {
             return Math.abs(this.corner.y - coord.value);
           }
           default:
@@ -281,7 +281,7 @@ export const updateScaleTool = (paper, tool, vm) => {
         }
       })(),
       name: coordName,
-      coord: coord,
+      coord: coord
     });
 
     const snapXCoords = createScalePoints(paper, lib, paintLayer.children, doesSx, false);
@@ -300,7 +300,7 @@ export const updateScaleTool = (paper, tool, vm) => {
     // TODO: show correct guides
     if (closestSnapX) {
       switch (closestSnapX.type) {
-        case "width": {
+        case 'width': {
           const newSize = new paper.Point(
             Math.abs(closestSnapX.coord.clamp.max - closestSnapX.coord.clamp.min),
             this.corner.y
@@ -308,8 +308,8 @@ export const updateScaleTool = (paper, tool, vm) => {
           sx = newSize.x / this.origSize.x;
           break;
         }
-        case "xcoord":
-        case "itemSideVert": {
+        case 'xcoord':
+        case 'itemSideVert': {
           const newSize = new paper.Point(closestSnapX.coord.value, this.corner.y).subtract(this.pivot);
           sx = newSize.x / this.origSize.x;
           if (event.modifiers.alt) sx *= 2;
@@ -321,7 +321,7 @@ export const updateScaleTool = (paper, tool, vm) => {
     }
     if (closestSnapY) {
       switch (closestSnapY.type) {
-        case "height": {
+        case 'height': {
           const newSize = new paper.Point(
             this.corner.x,
             Math.abs(closestSnapY.coord.clamp.max - closestSnapY.coord.clamp.min)
@@ -329,8 +329,8 @@ export const updateScaleTool = (paper, tool, vm) => {
           sy = newSize.y / this.origSize.y;
           break;
         }
-        case "ycoord":
-        case "itemSideHoriz": {
+        case 'ycoord':
+        case 'itemSideHoriz': {
           const newSize = new paper.Point(this.corner.x, closestSnapY.coord.value).subtract(this.pivot);
           sy = newSize.y / this.origSize.y;
           if (event.modifiers.alt) sy *= 2;
@@ -365,7 +365,7 @@ export const updateScaleTool = (paper, tool, vm) => {
 
     if (Math.abs(oldSX) === Math.abs(sx) && closestSnapX) {
       switch (closestSnapX.type) {
-        case "width": {
+        case 'width': {
           const matchy = closestSnapX.coord.value;
           const selectiony = this.itemGroup.bounds.bottom;
 
@@ -418,8 +418,8 @@ export const updateScaleTool = (paper, tool, vm) => {
           selectionSizeGuide.group.bringToFront();
           break;
         }
-        case "xcoord":
-        case "itemSideVert": {
+        case 'xcoord':
+        case 'itemSideVert': {
           axisLineX.firstSegment.point = new paper.Point(closestSnapX.coord.value, bounds.top);
           axisLineX.lastSegment.point = new paper.Point(closestSnapX.coord.value, bounds.bottom);
           axisLineX.visible = true;
@@ -432,7 +432,7 @@ export const updateScaleTool = (paper, tool, vm) => {
     }
     if (Math.abs(oldSY) === Math.abs(sy) && closestSnapY) {
       switch (closestSnapY.type) {
-        case "height": {
+        case 'height': {
           const matchx = closestSnapY.coord.value;
           const selectionx = this.itemGroup.bounds.left;
 
@@ -485,8 +485,8 @@ export const updateScaleTool = (paper, tool, vm) => {
           selectionSizeGuide.group.bringToFront();
           break;
         }
-        case "ycoord":
-        case "itemSideHoriz": {
+        case 'ycoord':
+        case 'itemSideHoriz': {
           axisLineY.firstSegment.point = new paper.Point(bounds.left, closestSnapY.coord.value);
           axisLineY.lastSegment.point = new paper.Point(bounds.right, closestSnapY.coord.value);
           axisLineY.visible = true;

@@ -11,9 +11,9 @@ const tap = require('tap');
 const md5 = require('js-md5');
 const makeTestStorage = require('../fixtures/make-test-storage');
 const FakeRenderer = require('../fixtures/fake-renderer');
-const {extractAsset, readFileToBuffer} = require('../fixtures/readProjectFile');
+const { extractAsset, readFileToBuffer } = require('../fixtures/readProjectFile');
 const VirtualMachine = require('../../src/index');
-const {serializeCostumes} = require('../../src/serialization/serialize-assets');
+const { serializeCostumes } = require('../../src/serialization/serialize-assets');
 
 const projectUri = path.resolve(__dirname, '../fixtures/corrupt_svg.sb3');
 const project = readFileToBuffer(projectUri);
@@ -28,79 +28,79 @@ let vm;
 let defaultVectorAssetId;
 
 tap.beforeEach(() => {
-    const storage = makeTestStorage();
+  const storage = makeTestStorage();
 
-    vm = new VirtualMachine();
-    vm.attachStorage(storage);
-    defaultVectorAssetId = vm.runtime.storage.defaultAssetId.ImageVector;
+  vm = new VirtualMachine();
+  vm.attachStorage(storage);
+  defaultVectorAssetId = vm.runtime.storage.defaultAssetId.ImageVector;
 
-    // Mock renderer breaking on loading a corrupt costume
-    FakeRenderer.prototype.createSVGSkin = function (svgString) {
-        // Look for text added to costume to make it a corrupt svg
-        if (svgString.includes('<here is some')) {
-            throw new Error('mock createSVGSkin broke');
-        }
-        return FakeRenderer._nextSkinId++;
-    };
+  // Mock renderer breaking on loading a corrupt costume
+  FakeRenderer.prototype.createSVGSkin = function (svgString) {
+    // Look for text added to costume to make it a corrupt svg
+    if (svgString.includes('<here is some')) {
+      throw new Error('mock createSVGSkin broke');
+    }
+    return FakeRenderer._nextSkinId++;
+  };
 
-    vm.attachRenderer(new FakeRenderer());
+  vm.attachRenderer(new FakeRenderer());
 
-    return vm.loadProject(project);
+  return vm.loadProject(project);
 });
 
 const test = tap.test;
 
-test('load sb3 project with corrupted vector costume file', t => {
-    t.equal(vm.runtime.targets.length, 2);
+test('load sb3 project with corrupted vector costume file', (t) => {
+  t.equal(vm.runtime.targets.length, 2);
 
-    const stage = vm.runtime.targets[0];
-    t.ok(stage.isStage);
+  const stage = vm.runtime.targets[0];
+  t.ok(stage.isStage);
 
-    const blueGuySprite = vm.runtime.targets[1];
-    t.equal(blueGuySprite.getName(), 'Blue Square Guy');
-    t.equal(blueGuySprite.getCostumes().length, 1);
+  const blueGuySprite = vm.runtime.targets[1];
+  t.equal(blueGuySprite.getName(), 'Blue Square Guy');
+  t.equal(blueGuySprite.getCostumes().length, 1);
 
-    const corruptedCostume = blueGuySprite.getCostumes()[0];
-    t.equal(corruptedCostume.name, 'costume1');
-    t.equal(corruptedCostume.assetId, defaultVectorAssetId);
-    t.equal(corruptedCostume.dataFormat, 'svg');
-    // Runtime should have info about broken asset
-    t.ok(corruptedCostume.broken);
-    t.equal(corruptedCostume.broken.assetId, brokenCostumeMd5);
-    // Verify that we saved the original asset data
-    t.equal(md5(corruptedCostume.broken.asset.data), brokenCostumeMd5);
+  const corruptedCostume = blueGuySprite.getCostumes()[0];
+  t.equal(corruptedCostume.name, 'costume1');
+  t.equal(corruptedCostume.assetId, defaultVectorAssetId);
+  t.equal(corruptedCostume.dataFormat, 'svg');
+  // Runtime should have info about broken asset
+  t.ok(corruptedCostume.broken);
+  t.equal(corruptedCostume.broken.assetId, brokenCostumeMd5);
+  // Verify that we saved the original asset data
+  t.equal(md5(corruptedCostume.broken.asset.data), brokenCostumeMd5);
 
-    t.end();
+  t.end();
 });
 
-test('load and then save project with corrupted vector costume file', t => {
-    const resavedProject = JSON.parse(vm.toJSON());
+test('load and then save project with corrupted vector costume file', (t) => {
+  const resavedProject = JSON.parse(vm.toJSON());
 
-    t.equal(resavedProject.targets.length, 2);
+  t.equal(resavedProject.targets.length, 2);
 
-    const stage = resavedProject.targets[0];
-    t.ok(stage.isStage);
+  const stage = resavedProject.targets[0];
+  t.ok(stage.isStage);
 
-    const blueGuySprite = resavedProject.targets[1];
-    t.equal(blueGuySprite.name, 'Blue Square Guy');
-    t.equal(blueGuySprite.costumes.length, 1);
+  const blueGuySprite = resavedProject.targets[1];
+  t.equal(blueGuySprite.name, 'Blue Square Guy');
+  t.equal(blueGuySprite.costumes.length, 1);
 
-    const corruptedCostume = blueGuySprite.costumes[0];
-    t.equal(corruptedCostume.name, 'costume1');
-    // Resaved project costume should have the metadata that corresponds to the original broken costume
-    t.equal(corruptedCostume.assetId, brokenCostumeMd5);
-    t.equal(corruptedCostume.dataFormat, 'svg');
-    // Test that we didn't save any data about the costume being broken
-    t.notOk(corruptedCostume.broken);
+  const corruptedCostume = blueGuySprite.costumes[0];
+  t.equal(corruptedCostume.name, 'costume1');
+  // Resaved project costume should have the metadata that corresponds to the original broken costume
+  t.equal(corruptedCostume.assetId, brokenCostumeMd5);
+  t.equal(corruptedCostume.dataFormat, 'svg');
+  // Test that we didn't save any data about the costume being broken
+  t.notOk(corruptedCostume.broken);
 
-    t.end();
+  t.end();
 });
 
-test('serializeCostume saves orignal broken costume', t => {
-    const costumeDescs = serializeCostumes(vm.runtime, vm.runtime.targets[1].id);
-    t.equal(costumeDescs.length, 1);
-    const costume = costumeDescs[0];
-    t.equal(costume.fileName, `${brokenCostumeMd5}.svg`);
-    t.equal(md5(costume.fileContent), brokenCostumeMd5);
-    t.end();
+test('serializeCostume saves orignal broken costume', (t) => {
+  const costumeDescs = serializeCostumes(vm.runtime, vm.runtime.targets[1].id);
+  t.equal(costumeDescs.length, 1);
+  const costume = costumeDescs[0];
+  t.equal(costume.fileName, `${brokenCostumeMd5}.svg`);
+  t.equal(md5(costume.fileContent), brokenCostumeMd5);
+  t.end();
 });

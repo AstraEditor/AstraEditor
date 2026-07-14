@@ -2,7 +2,7 @@
   --stage-fullscreen-toolbar-height: 0rem;
 }
 
-[class*="stage-header_stage-header-wrapper-overlay"] {
+[class*='stage-header_stage-header-wrapper-overlay'] {
   display: block;
   top: var(--stage-fullscreen-top, 0rem);
   transform: translateY(-101%);

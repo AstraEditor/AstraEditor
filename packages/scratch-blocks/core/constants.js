@@ -26,7 +26,6 @@
 
 goog.provide('Blockly.constants');
 
-
 /**
  * Number of pixels the mouse must move before a drag starts.
  */
@@ -259,18 +258,18 @@ Blockly.OUTPUT_SHAPE_SQUARE = 3;
  * @const
  */
 Blockly.Categories = {
-  "motion": "motion",
-  "looks": "looks",
-  "sound": "sounds",
-  "pen": "pen",
-  "data": "data",
-  "dataLists": "data-lists",
-  "event": "events",
-  "control": "control",
-  "sensing": "sensing",
-  "operators": "operators",
-  "more": "more",
-  "error": "error"
+  motion: 'motion',
+  looks: 'looks',
+  sound: 'sounds',
+  pen: 'pen',
+  data: 'data',
+  dataLists: 'data-lists',
+  event: 'events',
+  control: 'control',
+  sensing: 'sensing',
+  operators: 'operators',
+  more: 'more',
+  error: 'error'
 };
 
 /**
@@ -404,6 +403,6 @@ Blockly.PROCEDURES_RETURN_BLOCK_TYPE = 'procedures_return';
  * @const
  */
 Blockly.StatusButtonState = {
-  "READY": "ready",
-  "NOT_READY": "not ready",
+  READY: 'ready',
+  NOT_READY: 'not ready'
 };

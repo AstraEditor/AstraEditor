@@ -1,7 +1,7 @@
-<!DOCTYPE html>
+<!doctype html>
 <html>
   <head>
-    <meta charset="utf-8">
+    <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
 
     <title>Horizontal Playground</title>
@@ -28,7 +28,7 @@
           if (soundsEnabled === null) {
             soundsEnabled = true;
           } else {
-            soundsEnabled = (soundsEnabled === 'true');
+            soundsEnabled = soundsEnabled === 'true';
           }
         } else {
           soundsEnabled = true;
@@ -41,8 +41,7 @@
         var rtl = match && match[1] == 'rtl';
         document.forms.options.elements.dir.selectedIndex = Number(rtl);
         var toolbox = getToolboxElement();
-        document.forms.options.elements.toolbox.selectedIndex =
-          toolbox ? 1: 0;
+        document.forms.options.elements.toolbox.selectedIndex = toolbox ? 1 : 0;
 
         match = location.search.match(/side=([^&]+)/);
 
@@ -63,11 +62,7 @@
           horizontalLayout: side == 'top' || side == 'bottom',
           toolboxPosition: side == 'top' || side == 'start' ? 'start' : 'end',
           sounds: soundsEnabled,
-          grid: {spacing: 16,
-            length: 1,
-            colour: '#2C344A',
-            snap: false
-          },
+          grid: { spacing: 16, length: 1, colour: '#2C344A', snap: false },
           zoom: {
             controls: true,
             wheel: true,
@@ -81,7 +76,7 @@
             dragShadowOpacity: 0.6
           }
         });
-        
+
         if (sessionStorage) {
           // Restore previously displayed text.
           var text = sessionStorage.getItem('textarea');
@@ -156,8 +151,7 @@
         if (sessionStorage) {
           sessionStorage.setItem('logFlyoutEvents', state ? 'checked' : '');
         }
-        var flyoutWorkspace = (workspace.flyout_) ? workspace.flyout_.workspace_ :
-          workspace.toolbox_.flyout_.workspace_;
+        var flyoutWorkspace = workspace.flyout_ ? workspace.flyout_.workspace_ : workspace.toolbox_.flyout_.workspace_;
         if (state) {
           flyoutWorkspace.addChangeListener(logger);
         } else {
@@ -205,18 +199,14 @@
           var blockXML = blocks[Math.floor(Math.random() * blocks.length)];
           var block = Blockly.Xml.domToBlock(blockXML, workspace);
           block.initSvg();
-          block.moveBy(
-            Math.round(Math.random() * 450 + 40),
-            Math.round(Math.random() * 600 + 40)
-          );
+          block.moveBy(Math.round(Math.random() * 450 + 40), Math.round(Math.random() * 600 + 40));
         }
       }
 
       function spaghetti(n) {
         var xml = spaghettiXml;
-        for(var i = 0; i < n; i++) {
-          xml = xml.replace(/(<(statement|next)( name="SUBSTACK")?>)<\//g,
-          '$1' + spaghettiXml + '</');
+        for (var i = 0; i < n; i++) {
+          xml = xml.replace(/(<(statement|next)( name="SUBSTACK")?>)<\//g, '$1' + spaghettiXml + '</');
         }
         xml = '<xml xmlns="http://www.w3.org/1999/xhtml">' + xml + '</xml>';
         var dom = Blockly.Xml.textToDom(xml);
@@ -239,7 +229,7 @@
 
       function setSoundsEnabled(state) {
         var checkbox = document.getElementById('soundsEnabled');
-        checkbox.checked = (state) ? 'checked' : '';
+        checkbox.checked = state ? 'checked' : '';
         if (sessionStorage) {
           sessionStorage.setItem('soundsEnabled', state);
         }
@@ -256,30 +246,23 @@
         var blockLeft = blockToDrag.svgGroup_.getBoundingClientRect().left;
 
         // Click somewhere on the block.
-        var mouseDownEvent = new MouseEvent('mousedown',
-            {clientX: blockLeft + 5, clientY: blockTop + 5});
+        var mouseDownEvent = new MouseEvent('mousedown', { clientX: blockLeft + 5, clientY: blockTop + 5 });
         blockToDrag.onMouseDown_(mouseDownEvent);
 
         // Throw in a move for good measure.
-        setTimeout(
-          function() {
-            var mouseMoveEvent = new MouseEvent('mousemove',
-                {clientX: blockLeft + dx,
-                clientY: blockTop + dy});
-            blockToDrag.onMouseMove_(mouseMoveEvent);
+        setTimeout(function () {
+          var mouseMoveEvent = new MouseEvent('mousemove', { clientX: blockLeft + dx, clientY: blockTop + dy });
+          blockToDrag.onMouseMove_(mouseMoveEvent);
 
-            // Drop at dx, dy.
-            setTimeout(
-              function() {
-                var mouseUpEvent = new MouseEvent('mouseup',
-                    {clientX: blockLeft + dx,
-                    clientY: blockTop + dy});
-                blockToDrag.onMouseUp_(mouseUpEvent);
+          // Drop at dx, dy.
+          setTimeout(function () {
+            var mouseUpEvent = new MouseEvent('mouseup', { clientX: blockLeft + dx, clientY: blockTop + dy });
+            blockToDrag.onMouseUp_(mouseUpEvent);
 
-                setTimeout(fakeDragWrapper(), 100);
-              }, 30);
+            setTimeout(fakeDragWrapper(), 100);
           }, 30);
-      };
+        }, 30);
+      }
 
       function fakeDragWrapper() {
         var dragInfo = fakeDragStack.pop();
@@ -291,21 +274,21 @@
       function fakeManyDrags() {
         var blockList = workspace.getAllBlocks();
         for (var i = 0; i < 2 * blockList.length; i++) {
-          fakeDragStack.push(
-            {
-              id: blockList[Math.round(Math.random() * (blockList.length - 1))].id,
-              // Move some blocks up and to the left, but mostly down and to the right.
-              dx: Math.round((Math.random() - 0.25) * 200),
-              dy: Math.round((Math.random() - 0.25) * 200),
-              workspace: workspace
-            });
+          fakeDragStack.push({
+            id: blockList[Math.round(Math.random() * (blockList.length - 1))].id,
+            // Move some blocks up and to the left, but mostly down and to the right.
+            dx: Math.round((Math.random() - 0.25) * 200),
+            dy: Math.round((Math.random() - 0.25) * 200),
+            workspace: workspace
+          });
         }
         fakeDragWrapper();
       }
     </script>
 
     <style>
-      html, body {
+      html,
+      body {
         height: 100%;
       }
 
@@ -358,51 +341,55 @@
     </p>
 
     <form id="options">
-        <select name="dir" onchange="document.forms.options.submit()">
-          <option value="ltr">LTR</option>
-          <option value="rtl">RTL</option>
-        </select>
-        <select name="toolbox" onchange="document.forms.options.submit()">
-          <option value="categories">Categories</option>
-          <option value="simple">Simple</option>
-        </select>
-        <select name="side" onchange="document.forms.options.submit()">
-          <option value="start">Start</option>
-          <option value="end">End</option>
-          <option value="top">Top</option>
-          <option value="bottom">Bottom</option>
-        </select>
-      </form>
+      <select name="dir" onchange="document.forms.options.submit()">
+        <option value="ltr">LTR</option>
+        <option value="rtl">RTL</option>
+      </select>
+      <select name="toolbox" onchange="document.forms.options.submit()">
+        <option value="categories">Categories</option>
+        <option value="simple">Simple</option>
+      </select>
+      <select name="side" onchange="document.forms.options.submit()">
+        <option value="start">Start</option>
+        <option value="end">End</option>
+        <option value="top">Top</option>
+        <option value="bottom">Bottom</option>
+      </select>
+    </form>
 
     <p>
-      <input type="button" value="Export to XML" onclick="toXml()">
+      <input type="button" value="Export to XML" onclick="toXml()" />
       &nbsp;
-      <input type="button" value="Import from XML" onclick="fromXml()" id="import">
-      <br>
-      <textarea id="importExport" style="width: 26%; height: 12em"
-        onchange="taChange();" onkeyup="taChange()"></textarea>
+      <input type="button" value="Import from XML" onclick="fromXml()" id="import" />
+      <br />
+      <textarea
+        id="importExport"
+        style="width: 26%; height: 12em"
+        onchange="taChange()"
+        onkeyup="taChange()"
+      ></textarea>
     </p>
 
     <p>
       Log events: &nbsp;
-      <input type="checkbox" onclick="logEvents(this.checked)" id="logCheck">
+      <input type="checkbox" onclick="logEvents(this.checked)" id="logCheck" />
     </p>
 
     <p>
       Log flyout events: &nbsp;
-      <input type="checkbox" onclick="logFlyoutEvents(this.checked)" id="logFlyoutCheck">
+      <input type="checkbox" onclick="logFlyoutEvents(this.checked)" id="logFlyoutCheck" />
     </p>
 
     <p>
       Enable sounds (after refresh): &nbsp;
-      <input type="checkbox" onclick="setSoundsEnabled(this.checked)" id="soundsEnabled">
+      <input type="checkbox" onclick="setSoundsEnabled(this.checked)" id="soundsEnabled" />
     </p>
 
     <p>
       Stress test: &nbsp;
-      <input type="button" value="Sprinkles!" onclick="sprinkles(100)">
-      <input type="button" value="Spaghetti!" onclick="spaghetti(10)">
-      <input type="button" value="Fake some drags!" onclick="fakeManyDrags()">
+      <input type="button" value="Sprinkles!" onclick="sprinkles(100)" />
+      <input type="button" value="Spaghetti!" onclick="spaghetti(10)" />
+      <input type="button" value="Fake some drags!" onclick="fakeManyDrags()" />
     </p>
 
     <p>

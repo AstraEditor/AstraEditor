@@ -1,9 +1,9 @@
 import paper from '@turbowarp/paper';
-import {getRootItem, isGroupItem} from './item';
-import {clearSelection, getSelectedRootItems, setItemSelection} from './selection';
+import { getRootItem, isGroupItem } from './item';
+import { clearSelection, getSelectedRootItems, setItemSelection } from './selection';
 
 const isGroup = function (item) {
-    return isGroupItem(item);
+  return isGroupItem(item);
 };
 
 /**
@@ -15,18 +15,18 @@ const isGroup = function (item) {
  * @return {paper.Group} the group if one is created, otherwise false.
  */
 const groupItems = function (items, clearSelectedItems, setSelectedItems, onUpdateImage) {
-    if (items.length > 0) {
-        const group = new paper.Group(items);
-        clearSelection(clearSelectedItems);
-        setItemSelection(group, true);
-        for (let i = 0; i < group.children.length; i++) {
-            group.children[i].selected = true;
-        }
-        setSelectedItems();
-        onUpdateImage();
-        return group;
+  if (items.length > 0) {
+    const group = new paper.Group(items);
+    clearSelection(clearSelectedItems);
+    setItemSelection(group, true);
+    for (let i = 0; i < group.children.length; i++) {
+      group.children[i].selected = true;
     }
-    return false;
+    setSelectedItems();
+    onUpdateImage();
+    return group;
+  }
+  return false;
 };
 
 /**
@@ -37,36 +37,36 @@ const groupItems = function (items, clearSelectedItems, setSelectedItems, onUpda
  * @return {paper.Group} the group if one is created, otherwise false.
  */
 const groupSelection = function (clearSelectedItems, setSelectedItems, onUpdateImage) {
-    const items = getSelectedRootItems();
-    return groupItems(items, clearSelectedItems, setSelectedItems, onUpdateImage);
+  const items = getSelectedRootItems();
+  return groupItems(items, clearSelectedItems, setSelectedItems, onUpdateImage);
 };
 
 const _ungroupLoop = function (group, recursive, setSelectedItems) {
-    // Can't ungroup items that are not groups
-    if (!group || !group.children || !isGroup(group)) return;
-            
-    group.applyMatrix = true;
-    // iterate over group children recursively
-    for (let i = 0; i < group.children.length; i++) {
-        let groupChild = group.children[i];
-        if (groupChild instanceof paper.Group && groupChild.hasChildren()) {
-            // recursion (groups can contain groups, ie. from SVG import)
-            if (recursive) {
-                _ungroupLoop(groupChild, recursive, setSelectedItems);
-                continue;
-            }
-            if (groupChild.children.length === 1) {
-                groupChild = groupChild.reduce();
-            }
-        }
-        groupChild.applyMatrix = true;
-        // move items from the group to the activeLayer (ungrouping)
-        groupChild.insertBelow(group);
-        if (setSelectedItems) {
-            groupChild.selected = true;
-        }
-        i--;
+  // Can't ungroup items that are not groups
+  if (!group || !group.children || !isGroup(group)) return;
+
+  group.applyMatrix = true;
+  // iterate over group children recursively
+  for (let i = 0; i < group.children.length; i++) {
+    let groupChild = group.children[i];
+    if (groupChild instanceof paper.Group && groupChild.hasChildren()) {
+      // recursion (groups can contain groups, ie. from SVG import)
+      if (recursive) {
+        _ungroupLoop(groupChild, recursive, setSelectedItems);
+        continue;
+      }
+      if (groupChild.children.length === 1) {
+        groupChild = groupChild.reduce();
+      }
     }
+    groupChild.applyMatrix = true;
+    // move items from the group to the activeLayer (ungrouping)
+    groupChild.insertBelow(group);
+    if (setSelectedItems) {
+      groupChild.selected = true;
+    }
+    i--;
+  }
 };
 
 /**
@@ -80,33 +80,33 @@ const _ungroupLoop = function (group, recursive, setSelectedItems) {
  * @param {?function} onUpdateImage Function to let listeners know that SVG has changed.
  */
 const ungroupItems = function (items, setSelectedItems, onUpdateImage) {
-    if (items.length === 0) {
-        return;
-    }
-    const emptyGroups = [];
-    for (let i = 0; i < items.length; i++) {
-        const item = items[i];
-        if (isGroup(item) && !item.data.isPGTextItem) {
-            _ungroupLoop(item, false /* recursive */, setSelectedItems);
+  if (items.length === 0) {
+    return;
+  }
+  const emptyGroups = [];
+  for (let i = 0; i < items.length; i++) {
+    const item = items[i];
+    if (isGroup(item) && !item.data.isPGTextItem) {
+      _ungroupLoop(item, false /* recursive */, setSelectedItems);
 
-            if (!item.hasChildren()) {
-                emptyGroups.push(item);
-            }
-        } else if (setSelectedItems) {
-            item.selected = true;
-        }
+      if (!item.hasChildren()) {
+        emptyGroups.push(item);
+      }
+    } else if (setSelectedItems) {
+      item.selected = true;
     }
-    if (setSelectedItems) {
-        setSelectedItems();
-    }
-    // remove all empty groups after ungrouping
-    for (let j = 0; j < emptyGroups.length; j++) {
-        emptyGroups[j].remove();
-    }
-    // @todo: enable/disable grouping icons
-    if (onUpdateImage) {
-        onUpdateImage();
-    }
+  }
+  if (setSelectedItems) {
+    setSelectedItems();
+  }
+  // remove all empty groups after ungrouping
+  for (let j = 0; j < emptyGroups.length; j++) {
+    emptyGroups[j].remove();
+  }
+  // @todo: enable/disable grouping icons
+  if (onUpdateImage) {
+    onUpdateImage();
+  }
 };
 
 /**
@@ -117,49 +117,49 @@ const ungroupItems = function (items, setSelectedItems, onUpdateImage) {
  * @param {!function} onUpdateImage Function to let listeners know that SVG has changed.
  */
 const ungroupSelection = function (clearSelectedItems, setSelectedItems, onUpdateImage) {
-    const items = getSelectedRootItems();
-    clearSelection(clearSelectedItems);
-    ungroupItems(items, setSelectedItems, onUpdateImage);
+  const items = getSelectedRootItems();
+  clearSelection(clearSelectedItems);
+  ungroupItems(items, setSelectedItems, onUpdateImage);
 };
 
 const getItemsGroup = function (item) {
-    const itemParent = item.parent;
+  const itemParent = item.parent;
 
-    if (isGroup(itemParent)) {
-        return itemParent;
-    }
-    return null;
+  if (isGroup(itemParent)) {
+    return itemParent;
+  }
+  return null;
 };
 
 const isGroupChild = function (item) {
-    const rootItem = getRootItem(item);
-    return isGroup(rootItem);
+  const rootItem = getRootItem(item);
+  return isGroup(rootItem);
 };
 
 const shouldShowGroup = function () {
-    const items = getSelectedRootItems();
-    return items.length > 1;
+  const items = getSelectedRootItems();
+  return items.length > 1;
 };
 
 const shouldShowUngroup = function () {
-    const items = getSelectedRootItems();
-    for (let i = 0; i < items.length; i++) {
-        const item = items[i];
-        if (isGroup(item) && !item.data.isPGTextItem && item.children && item.children.length > 0) {
-            return true;
-        }
+  const items = getSelectedRootItems();
+  for (let i = 0; i < items.length; i++) {
+    const item = items[i];
+    if (isGroup(item) && !item.data.isPGTextItem && item.children && item.children.length > 0) {
+      return true;
     }
-    return false;
+  }
+  return false;
 };
 
 export {
-    groupSelection,
-    ungroupSelection,
-    groupItems,
-    ungroupItems,
-    getItemsGroup,
-    isGroup,
-    isGroupChild,
-    shouldShowGroup,
-    shouldShowUngroup
+  groupSelection,
+  ungroupSelection,
+  groupItems,
+  ungroupItems,
+  getItemsGroup,
+  isGroup,
+  isGroupChild,
+  shouldShowGroup,
+  shouldShowUngroup
 };

@@ -14,12 +14,12 @@ Public APIs are compatible with a vanilla scratch-render. TurboWarp/scratch-rend
 
 Notable public API additions include:
 
- - `renderer.setUseHighQualityRender(enabled: boolean)` toggles high quality rendering. A `UseHighQualityRenderChanged` event is emitted on the renderer when this is called. You can read the current setting with `renderer.useHighQualityRender` but don't try to directly modify this value.
- - `renderer.markSkinAsPrivate(skinID: number)` marks a skin as "private".
- - `renderer.allowPrivateSkinAccess` controls whether blocks like "touching color" can access "private" skins.
- - `renderer.offscreenTouching` controls whether collision blocks work offscreen.
- - Skins no longer extend EventEmitter
- - `RenderWebGL.powerPreference` can be set to change the WebGL powerPreference option for future RenderWebGL instances. (default, high-performance, or low-power)
+- `renderer.setUseHighQualityRender(enabled: boolean)` toggles high quality rendering. A `UseHighQualityRenderChanged` event is emitted on the renderer when this is called. You can read the current setting with `renderer.useHighQualityRender` but don't try to directly modify this value.
+- `renderer.markSkinAsPrivate(skinID: number)` marks a skin as "private".
+- `renderer.allowPrivateSkinAccess` controls whether blocks like "touching color" can access "private" skins.
+- `renderer.offscreenTouching` controls whether collision blocks work offscreen.
+- Skins no longer extend EventEmitter
+- `RenderWebGL.powerPreference` can be set to change the WebGL powerPreference option for future RenderWebGL instances. (default, high-performance, or low-power)
 
 ## License
 

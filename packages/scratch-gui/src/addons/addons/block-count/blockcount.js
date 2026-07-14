@@ -12,7 +12,7 @@ export default async function ({ addon, console, msg }) {
     return {
       blockCount,
       scriptCount,
-      spriteCount: sprites.size - 1, // Backdrop counts as a target so we can subtract it
+      spriteCount: sprites.size - 1 // Backdrop counts as a target so we can subtract it
     };
   };
 
@@ -23,29 +23,29 @@ export default async function ({ addon, console, msg }) {
         const topBar = await addon.tab.waitForElement("[class^='menu-bar_main-menu']", {
           markAsSeen: true,
           reduxEvents: [
-            "scratch-gui/mode/SET_PLAYER",
-            "fontsLoaded/SET_FONTS_LOADED",
-            "scratch-gui/locales/SELECT_LOCALE",
+            'scratch-gui/mode/SET_PLAYER',
+            'fontsLoaded/SET_FONTS_LOADED',
+            'scratch-gui/locales/SELECT_LOCALE'
           ],
-          reduxCondition: (state) => !state.scratchGui.mode.isPlayerOnly,
+          reduxCondition: (state) => !state.scratchGui.mode.isPlayerOnly
         });
-        let display = topBar.appendChild(document.createElement("span"));
+        let display = topBar.appendChild(document.createElement('span'));
         addon.tab.displayNoneWhileDisabled(display);
         display.style.order = 1;
-        display.innerText = msg("blocks", { num: getBlockCount().blockCount });
+        display.innerText = msg('blocks', { num: getBlockCount().blockCount });
         let debounce; // debouncing values because of the way 'PROJECT_CHANGED' works
         if (handler) {
-          vm.off("PROJECT_CHANGED", handler);
-          vm.runtime.off("PROJECT_LOADED", handler);
+          vm.off('PROJECT_CHANGED', handler);
+          vm.runtime.off('PROJECT_LOADED', handler);
         }
         handler = async () => {
           clearTimeout(debounce);
           debounce = setTimeout(async () => {
-            display.innerText = msg("blocks", { num: getBlockCount().blockCount });
+            display.innerText = msg('blocks', { num: getBlockCount().blockCount });
           }, 1000);
         };
-        vm.on("PROJECT_CHANGED", handler);
-        vm.runtime.on("PROJECT_LOADED", handler);
+        vm.on('PROJECT_CHANGED', handler);
+        vm.runtime.on('PROJECT_LOADED', handler);
       }
     } else {
       let timeout = setTimeout(function () {

@@ -1,14 +1,14 @@
-import addSmallStageClass from "../../libraries/common/cs/small-stage.js";
+import addSmallStageClass from '../../libraries/common/cs/small-stage.js';
 
 export default async function ({ addon, console }) {
-  var posContainerContainer = document.createElement("div");
-  addon.tab.displayNoneWhileDisabled(posContainerContainer, { display: "flex" });
+  var posContainerContainer = document.createElement('div');
+  addon.tab.displayNoneWhileDisabled(posContainerContainer, { display: 'flex' });
 
-  var posContainer = document.createElement("div");
-  var pos = document.createElement("span");
+  var posContainer = document.createElement('div');
+  var pos = document.createElement('span');
 
-  posContainerContainer.className = "pos-container-container";
-  posContainer.className = "pos-container";
+  posContainerContainer.className = 'pos-container-container';
+  posContainer.className = 'pos-container';
 
   posContainerContainer.appendChild(posContainer);
   posContainer.appendChild(pos);
@@ -21,9 +21,9 @@ export default async function ({ addon, console }) {
   var x = vm.runtime.ioDevices.mouse.__scratchX ? vm.runtime.ioDevices.mouse.__scratchX : 0;
   var y = vm.runtime.ioDevices.mouse.__scratchY ? vm.runtime.ioDevices.mouse.__scratchY : 0;
 
-  const showUpdatedValue = () => pos.setAttribute("data-content", `${Math.round(x)}, ${Math.round(y)}`);
+  const showUpdatedValue = () => pos.setAttribute('data-content', `${Math.round(x)}, ${Math.round(y)}`);
 
-  Object.defineProperty(vm.runtime.ioDevices.mouse, "_scratchX", {
+  Object.defineProperty(vm.runtime.ioDevices.mouse, '_scratchX', {
     get: function () {
       return this.__scratchX;
     },
@@ -31,10 +31,10 @@ export default async function ({ addon, console }) {
       x = setx;
       showUpdatedValue();
       this.__scratchX = setx;
-    },
+    }
   });
 
-  Object.defineProperty(vm.runtime.ioDevices.mouse, "_scratchY", {
+  Object.defineProperty(vm.runtime.ioDevices.mouse, '_scratchY', {
     get: function () {
       return this.__scratchY;
     },
@@ -42,7 +42,7 @@ export default async function ({ addon, console }) {
       y = sety;
       showUpdatedValue();
       this.__scratchY = sety;
-    },
+    }
   });
 
   addSmallStageClass();
@@ -50,11 +50,11 @@ export default async function ({ addon, console }) {
   while (true) {
     await addon.tab.waitForElement('[class*="controls_controls-container"]', {
       markAsSeen: true,
-      reduxEvents: ["scratch-gui/mode/SET_PLAYER", "fontsLoaded/SET_FONTS_LOADED", "scratch-gui/locales/SELECT_LOCALE"],
+      reduxEvents: ['scratch-gui/mode/SET_PLAYER', 'fontsLoaded/SET_FONTS_LOADED', 'scratch-gui/locales/SELECT_LOCALE']
     });
 
-    if (addon.tab.editorMode === "editor") {
-      addon.tab.appendToSharedSpace({ space: "afterStopButton", element: posContainerContainer, order: 1 });
+    if (addon.tab.editorMode === 'editor') {
+      addon.tab.appendToSharedSpace({ space: 'afterStopButton', element: posContainerContainer, order: 1 });
     }
   }
 }

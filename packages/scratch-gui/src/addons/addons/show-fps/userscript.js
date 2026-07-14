@@ -1,15 +1,15 @@
-import addSmallStageClass from "../../libraries/common/cs/small-stage.js";
+import addSmallStageClass from '../../libraries/common/cs/small-stage.js';
 
 export default async function ({ addon }) {
   // 创建 FPS 显示容器
-  const fpsContainerContainer = document.createElement("div");
-  addon.tab.displayNoneWhileDisabled(fpsContainerContainer, { display: "flex" });
+  const fpsContainerContainer = document.createElement('div');
+  addon.tab.displayNoneWhileDisabled(fpsContainerContainer, { display: 'flex' });
 
-  const fpsContainer = document.createElement("div");
-  const fpsText = document.createElement("span");
+  const fpsContainer = document.createElement('div');
+  const fpsText = document.createElement('span');
 
-  fpsContainerContainer.className = "fps-container-container";
-  fpsContainer.className = "fps-container";
+  fpsContainerContainer.className = 'fps-container-container';
+  fpsContainer.className = 'fps-container';
 
   fpsContainerContainer.appendChild(fpsContainer);
   fpsContainer.appendChild(fpsText);
@@ -35,13 +35,15 @@ export default async function ({ addon }) {
 
       const maxFps = vm.runtime.frameLoop.framerate === 0 ? 60 : vm.runtime.frameLoop.framerate;
       currentFps = Math.min(renderTimes.length, maxFps);
-      fpsText.style.color = currentFps > maxFps * 0.7 ? "#0099ff" : (
-        currentFps > maxFps * 0.5 ? "#82ff97" : (
-          currentFps > maxFps * 0.2 ? "rgb(255, 197, 130)" : "rgb(255, 130, 130)"
-        )
-
-      )
-      fpsText.setAttribute("data-content", `${currentFps} FPS`);
+      fpsText.style.color =
+        currentFps > maxFps * 0.7
+          ? '#0099ff'
+          : currentFps > maxFps * 0.5
+            ? '#82ff97'
+            : currentFps > maxFps * 0.2
+              ? 'rgb(255, 197, 130)'
+              : 'rgb(255, 130, 130)';
+      fpsText.setAttribute('data-content', `${currentFps} FPS`);
     }
   };
 
@@ -54,22 +56,18 @@ export default async function ({ addon }) {
   };
 
   // 初始化显示
-  fpsText.setAttribute("data-content", "60 FPS");
+  fpsText.setAttribute('data-content', '60 FPS');
 
   addSmallStageClass();
 
   while (true) {
     await addon.tab.waitForElement('[class*="controls_controls-container"]', {
       markAsSeen: true,
-      reduxEvents: [
-        "scratch-gui/mode/SET_PLAYER",
-        "fontsLoaded/SET_FONTS_LOADED",
-        "scratch-gui/locales/SELECT_LOCALE"
-      ],
+      reduxEvents: ['scratch-gui/mode/SET_PLAYER', 'fontsLoaded/SET_FONTS_LOADED', 'scratch-gui/locales/SELECT_LOCALE']
     });
 
-    if (addon.tab.editorMode === "editor") {
-      addon.tab.appendToSharedSpace({ space: "afterStopButton", element: fpsContainerContainer, order: 0 });
+    if (addon.tab.editorMode === 'editor') {
+      addon.tab.appendToSharedSpace({ space: 'afterStopButton', element: fpsContainerContainer, order: 0 });
     } else {
       fpsContainerContainer.remove();
     }

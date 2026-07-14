@@ -6,7 +6,7 @@ export default class ShowBroadcast {
     this.vm = this.addon.tab.traps.vm;
     this.highlights = {
       timeoutId: 0,
-      callback: () => {},
+      callback: () => {}
     };
   }
 
@@ -46,7 +46,7 @@ export default class ShowBroadcast {
       if (!target.isOriginal) return;
       for (const blockId of Object.keys(target.blocks._blocks)) {
         const block = target.blocks.getBlock(blockId);
-        if (block.opcode === "event_whenbroadcastreceived" && block.fields.BROADCAST_OPTION.id === broadcastId) {
+        if (block.opcode === 'event_whenbroadcastreceived' && block.fields.BROADCAST_OPTION.id === broadcastId) {
           targetWithReceivers.push(target);
           break;
         }
@@ -61,7 +61,7 @@ export default class ShowBroadcast {
       clearTimeout(this.highlights.timeoutId);
       this.highlights = {
         timeoutId: 0,
-        callback: () => {},
+        callback: () => {}
       };
     }
     const elemPendingToRemoveHighlights = [];
@@ -80,26 +80,26 @@ export default class ShowBroadcast {
         if (!spriteNameElem) continue;
         elem = spriteNameElem.parentElement;
       }
-      elem.dataset.highlighted = "true";
+      elem.dataset.highlighted = 'true';
       elemPendingToRemoveHighlights.push(elem);
     }
     const callbackFactory = (elemToRemoveHighlights) => () => {
       for (const removingElem of elemToRemoveHighlights) {
         if (!removingElem.isConnected) continue;
-        removingElem.dataset.highlighted = "false";
+        removingElem.dataset.highlighted = 'false';
       }
     };
     const callback = callbackFactory(elemPendingToRemoveHighlights);
     this.highlights = {
       callback,
-      timeoutId: setTimeout(callback, 2000),
+      timeoutId: setTimeout(callback, 2000)
     };
   }
 
   getAssociatedBroadcastId(blockId) {
     const editingTarget = this.vm.editingTarget;
     const block = editingTarget.blocks.getBlock(blockId);
-    if (block.opcode === "event_whenbroadcastreceived") {
+    if (block.opcode === 'event_whenbroadcastreceived') {
       return block.fields.BROADCAST_OPTION.id;
     } else {
       const input = block.inputs.BROADCAST_INPUT;

@@ -5,19 +5,19 @@ import ToolSelectComponent from '../tool-select-base/tool-select-base.jsx';
 import messages from '../../lib/messages.js';
 import rectIcon from './rectangle.svg';
 
-const BitRectComponent = props => (
-    <ToolSelectComponent
-        imgDescriptor={messages.rect}
-        imgSrc={rectIcon}
-        isSelected={props.isSelected}
-        onMouseDown={props.onMouseDown}
-        keybinding="R"
-    />
+const BitRectComponent = (props) => (
+  <ToolSelectComponent
+    imgDescriptor={messages.rect}
+    imgSrc={rectIcon}
+    isSelected={props.isSelected}
+    onMouseDown={props.onMouseDown}
+    keybinding="R"
+  />
 );
 
 BitRectComponent.propTypes = {
-    isSelected: PropTypes.bool.isRequired,
-    onMouseDown: PropTypes.func.isRequired
+  isSelected: PropTypes.bool.isRequired,
+  onMouseDown: PropTypes.func.isRequired
 };
 
 export default BitRectComponent;

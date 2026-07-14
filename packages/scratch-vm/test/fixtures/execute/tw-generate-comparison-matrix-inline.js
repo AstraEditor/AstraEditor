@@ -13,39 +13,24 @@ Blockly.Xml.domToWorkspace(
 
 /* eslint-disable no-console */
 
-const VALUES = [
-    '0',
-    '0.0',
-    '1.23',
-    '.23',
-    '0.123',
-    '-0',
-    '-1',
-    'true',
-    'false',
-    'NaN',
-    'Infinity',
-    'banana',
-    '🎉',
-    ''
-];
+const VALUES = ['0', '0.0', '1.23', '.23', '0.123', '-0', '-1', 'true', 'false', 'NaN', 'Infinity', 'banana', '🎉', ''];
 
 const OPERATORS = [
-    {
-        opcode: 'operator_lt',
-        symbol: '&lt;',
-        execute: (a, b) => Cast.compare(a, b) < 0
-    },
-    {
-        opcode: 'operator_equals',
-        symbol: '=',
-        execute: (a, b) => Cast.compare(a, b) === 0
-    },
-    {
-        opcode: 'operator_gt',
-        symbol: '&gt;',
-        execute: (a, b) => Cast.compare(a, b) > 0
-    }
+  {
+    opcode: 'operator_lt',
+    symbol: '&lt;',
+    execute: (a, b) => Cast.compare(a, b) < 0
+  },
+  {
+    opcode: 'operator_equals',
+    symbol: '=',
+    execute: (a, b) => Cast.compare(a, b) === 0
+  },
+  {
+    opcode: 'operator_gt',
+    symbol: '&gt;',
+    execute: (a, b) => Cast.compare(a, b) > 0
+  }
 ];
 
 const NEXT = '{{NEXT}}';
@@ -69,10 +54,12 @@ let result = `
 
 let n = 0;
 for (const i of VALUES) {
-    for (const j of VALUES) {
-        for (const operator of OPERATORS) {
-            n++;
-            result = result.replace(NEXT, `
+  for (const j of VALUES) {
+    for (const operator of OPERATORS) {
+      n++;
+      result = result.replace(
+        NEXT,
+        `
             <next>
                 <block type="control_if">
                     <value name="CONDITION">
@@ -117,12 +104,15 @@ for (const i of VALUES) {
                     ${NEXT}
                 </block>
             </next>
-            `.replace(/ {4}/g, ' '));
-        }
+            `.replace(/ {4}/g, ' ')
+      );
     }
+  }
 }
 
-result = result.replace(NEXT, `
+result = result.replace(
+  NEXT,
+  `
 <next>
     <block type="looks_say">
         <value name="MESSAGE">
@@ -132,7 +122,8 @@ result = result.replace(NEXT, `
         </value>
     </block>
 </next>
-`);
+`
+);
 
 result = result.replace(NEXT, '');
 

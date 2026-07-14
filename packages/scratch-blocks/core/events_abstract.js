@@ -35,7 +35,7 @@ goog.require('goog.math.Coordinate');
  * Abstract class for an event.
  * @constructor
  */
-Blockly.Events.Abstract = function() {
+Blockly.Events.Abstract = function () {
   /**
    * The workspace identifier for this event.
    * @type {string|undefined}
@@ -61,9 +61,9 @@ Blockly.Events.Abstract = function() {
  * Encode the event as JSON.
  * @return {!Object} JSON representation.
  */
-Blockly.Events.Abstract.prototype.toJson = function() {
+Blockly.Events.Abstract.prototype.toJson = function () {
   var json = {
-    'type': this.type
+    type: this.type
   };
   if (this.group) {
     json['group'] = this.group;
@@ -75,7 +75,7 @@ Blockly.Events.Abstract.prototype.toJson = function() {
  * Decode the JSON event.
  * @param {!Object} json JSON representation.
  */
-Blockly.Events.Abstract.prototype.fromJson = function(json) {
+Blockly.Events.Abstract.prototype.fromJson = function (json) {
   this.group = json['group'];
 };
 
@@ -85,7 +85,7 @@ Blockly.Events.Abstract.prototype.fromJson = function(json) {
  * indicate that they do not change state.
  * @return {boolean} False if something changed.
  */
-Blockly.Events.Abstract.prototype.isNull = function() {
+Blockly.Events.Abstract.prototype.isNull = function () {
   return false;
 };
 
@@ -93,7 +93,7 @@ Blockly.Events.Abstract.prototype.isNull = function() {
  * Run an event.
  * @param {boolean} _forward True if run forward, false if run backward (undo).
  */
-Blockly.Events.Abstract.prototype.run = function(_forward) {
+Blockly.Events.Abstract.prototype.run = function (_forward) {
   // Defined by subclasses.
 };
 
@@ -103,11 +103,10 @@ Blockly.Events.Abstract.prototype.run = function(_forward) {
  * @throws {Error} if workspace is null.
  * @protected
  */
-Blockly.Events.Abstract.prototype.getEventWorkspace_ = function() {
+Blockly.Events.Abstract.prototype.getEventWorkspace_ = function () {
   var workspace = Blockly.Workspace.getById(this.workspaceId);
   if (!workspace) {
-    throw Error('Workspace is null. Event must have been generated from real' +
-      ' Blockly events.');
+    throw Error('Workspace is null. Event must have been generated from real' + ' Blockly events.');
   }
   return workspace;
 };

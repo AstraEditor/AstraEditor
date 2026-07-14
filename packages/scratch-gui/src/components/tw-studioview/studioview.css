@@ -22,7 +22,8 @@ With changes to make it work properly in the scratch-gui environment.
   overflow-y: scroll;
   overflow-anchor: none;
 }
-.studioview-project, .studioview-placeholder {
+.studioview-project,
+.studioview-placeholder {
   display: inline-block;
   width: 144px;
   padding: 3px;
@@ -34,7 +35,8 @@ With changes to make it work properly in the scratch-gui environment.
   position: relative;
   text-decoration: none;
 }
-.studioview-loaded:hover::before, .studioview-loaded:active::before {
+.studioview-loaded:hover::before,
+.studioview-loaded:active::before {
   content: '';
   pointer-events: none;
   user-select: none;
@@ -68,7 +70,8 @@ With changes to make it work properly in the scratch-gui environment.
   width: 100%;
 }
 
-.studioview-thumbnail, .studioview-placeholder-thumbnail {
+.studioview-thumbnail,
+.studioview-placeholder-thumbnail {
   position: relative;
   width: 144px;
   height: 108px;

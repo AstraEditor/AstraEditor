@@ -23,55 +23,53 @@ const costumeData = new Uint8Array(costume);
 const sound = projectZip.readFile('0.wav');
 const soundData = new Uint8Array(sound);
 
-test('offline-custom-assets', t => {
-    const vm = new VirtualMachine();
-    // Use a test storage here that does not have any web sources added to it.
-    const testStorage = new ScratchStorage();
-    vm.attachStorage(testStorage);
+test('offline-custom-assets', (t) => {
+  const vm = new VirtualMachine();
+  // Use a test storage here that does not have any web sources added to it.
+  const testStorage = new ScratchStorage();
+  vm.attachStorage(testStorage);
 
-    // Evaluate playground data and exit
-    vm.on('playgroundData', e => {
-        const threads = JSON.parse(e.threads);
-        t.ok(threads.length === 0);
-        vm.quit();
-        t.end();
+  // Evaluate playground data and exit
+  vm.on('playgroundData', (e) => {
+    const threads = JSON.parse(e.threads);
+    t.ok(threads.length === 0);
+    vm.quit();
+    t.end();
+  });
+
+  // Start VM, load project, and run
+  t.doesNotThrow(() => {
+    vm.start();
+    vm.clear();
+    vm.setCompatibilityMode(false);
+    vm.setTurboMode(false);
+    vm.loadProject(project).then(() => {
+      // Verify initial state
+      t.equals(vm.runtime.targets.length, 2);
+      const costumes = vm.runtime.targets[1].getCostumes();
+      t.equals(costumes.length, 1);
+      const customCostume = costumes[0];
+      t.equals(customCostume.name, 'A_Test_Costume');
+
+      const storedCostume = customCostume.asset;
+      t.type(storedCostume, 'object');
+      t.deepEquals(storedCostume.data, costumeData);
+
+      const sounds = vm.runtime.targets[1].sprite.sounds;
+      t.equals(sounds.length, 1);
+      const customSound = sounds[0];
+      t.equals(customSound.name, 'A_Test_Recording');
+      const storedSound = customSound.asset;
+      t.type(storedSound, 'object');
+      t.deepEquals(storedSound.data, soundData);
+
+      vm.greenFlag();
+
+      // After two seconds, get playground data and stop
+      setTimeout(() => {
+        vm.getPlaygroundData();
+        vm.stopAll();
+      }, 2000);
     });
-
-    // Start VM, load project, and run
-    t.doesNotThrow(() => {
-        vm.start();
-        vm.clear();
-        vm.setCompatibilityMode(false);
-        vm.setTurboMode(false);
-        vm.loadProject(project).then(() => {
-
-            // Verify initial state
-            t.equals(vm.runtime.targets.length, 2);
-            const costumes = vm.runtime.targets[1].getCostumes();
-            t.equals(costumes.length, 1);
-            const customCostume = costumes[0];
-            t.equals(customCostume.name, 'A_Test_Costume');
-
-            const storedCostume = customCostume.asset;
-            t.type(storedCostume, 'object');
-            t.deepEquals(storedCostume.data, costumeData);
-
-            const sounds = vm.runtime.targets[1].sprite.sounds;
-            t.equals(sounds.length, 1);
-            const customSound = sounds[0];
-            t.equals(customSound.name, 'A_Test_Recording');
-            const storedSound = customSound.asset;
-            t.type(storedSound, 'object');
-            t.deepEquals(storedSound.data, soundData);
-
-            vm.greenFlag();
-
-            // After two seconds, get playground data and stop
-            setTimeout(() => {
-                vm.getPlaygroundData();
-                vm.stopAll();
-            }, 2000);
-        });
-    });
-
+  });
 });

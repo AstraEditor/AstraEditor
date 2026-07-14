@@ -163,7 +163,7 @@ Blockly.Msg.MOTION_SETY = 'set y to %1';
 Blockly.Msg.MOTION_IFONEDGEBOUNCE = 'if on edge, bounce';
 Blockly.Msg.MOTION_SETROTATIONSTYLE = 'set rotation style %1';
 Blockly.Msg.MOTION_SETROTATIONSTYLE_LEFTRIGHT = 'left-right';
-Blockly.Msg.MOTION_SETROTATIONSTYLE_DONTROTATE = 'don\'t rotate';
+Blockly.Msg.MOTION_SETROTATIONSTYLE_DONTROTATE = "don't rotate";
 Blockly.Msg.MOTION_SETROTATIONSTYLE_ALLAROUND = 'all around';
 Blockly.Msg.MOTION_XPOSITION = 'x position';
 Blockly.Msg.MOTION_YPOSITION = 'y position';
@@ -235,7 +235,7 @@ Blockly.Msg.SENSING_COLORISTOUCHINGCOLOR = 'color %1 is touching %2?';
 Blockly.Msg.SENSING_DISTANCETO = 'distance to %1';
 Blockly.Msg.SENSING_DISTANCETO_POINTER = 'mouse-pointer';
 Blockly.Msg.SENSING_ASKANDWAIT = 'ask %1 and wait';
-Blockly.Msg.SENSING_ASK_TEXT = 'What\'s your name?';
+Blockly.Msg.SENSING_ASK_TEXT = "What's your name?";
 Blockly.Msg.SENSING_ANSWER = 'answer';
 Blockly.Msg.SENSING_KEYPRESSED = 'key %1 pressed?';
 Blockly.Msg.SENSING_MOUSEDOWN = 'mouse down?';
@@ -330,9 +330,11 @@ Blockly.Msg.NEW_VARIABLE = 'Make a Variable';
 Blockly.Msg.NEW_VARIABLE_TITLE = 'New variable name:';
 Blockly.Msg.VARIABLE_MODAL_TITLE = 'New Variable';
 Blockly.Msg.VARIABLE_ALREADY_EXISTS = 'A variable named "%1" already exists.';
-Blockly.Msg.VARIABLE_ALREADY_EXISTS_FOR_ANOTHER_TYPE = 'A variable named "%1" already exists for another variable of type "%2".';
+Blockly.Msg.VARIABLE_ALREADY_EXISTS_FOR_ANOTHER_TYPE =
+  'A variable named "%1" already exists for another variable of type "%2".';
 Blockly.Msg.DELETE_VARIABLE_CONFIRMATION = 'Delete %1 uses of the "%2" variable?';
-Blockly.Msg.CANNOT_DELETE_VARIABLE_PROCEDURE = 'Can\'t delete the variable "%1" because it\'s part of the definition of the function "%2"';
+Blockly.Msg.CANNOT_DELETE_VARIABLE_PROCEDURE =
+  'Can\'t delete the variable "%1" because it\'s part of the definition of the function "%2"';
 Blockly.Msg.DELETE_VARIABLE = 'Delete the "%1" variable';
 
 // Custom Procedures

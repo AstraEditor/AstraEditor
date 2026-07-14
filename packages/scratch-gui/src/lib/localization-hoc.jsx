@@ -1,6 +1,6 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import {connect} from 'react-redux';
+import { connect } from 'react-redux';
 
 import ConnectedIntlProvider from './connected-intl-provider.jsx';
 
@@ -12,44 +12,41 @@ import ConnectedIntlProvider from './connected-intl-provider.jsx';
  * @returns {React.Component} component with intl state provided from redux
  */
 const LocalizationHOC = function (WrappedComponent) {
-    class LocalizationWrapper extends React.Component {
-        componentDidUpdate (prevProps) {
-            if (prevProps.locale !== this.props.locale) {
-                this.props.onSetLanguage(this.props.locale);
-            }
-        }
-        render () {
-            const {
-                locale, // eslint-disable-line no-unused-vars
-                onSetLanguage, // eslint-disable-line no-unused-vars
-                ...componentProps
-            } = this.props;
-            return (
-                <ConnectedIntlProvider>
-                    <WrappedComponent {...componentProps} />
-                </ConnectedIntlProvider>
-            );
-        }
+  class LocalizationWrapper extends React.Component {
+    componentDidUpdate(prevProps) {
+      if (prevProps.locale !== this.props.locale) {
+        this.props.onSetLanguage(this.props.locale);
+      }
     }
-    LocalizationWrapper.propTypes = {
-        locale: PropTypes.string,
-        onSetLanguage: PropTypes.func
-    };
+    render() {
+      const {
+        locale, // eslint-disable-line no-unused-vars
+        onSetLanguage, // eslint-disable-line no-unused-vars
+        ...componentProps
+      } = this.props;
+      return (
+        <ConnectedIntlProvider>
+          <WrappedComponent {...componentProps} />
+        </ConnectedIntlProvider>
+      );
+    }
+  }
+  LocalizationWrapper.propTypes = {
+    locale: PropTypes.string,
+    onSetLanguage: PropTypes.func
+  };
 
-    LocalizationWrapper.defaultProps = {
-        onSetLanguage: () => {}
-    };
+  LocalizationWrapper.defaultProps = {
+    onSetLanguage: () => {}
+  };
 
-    const mapStateToProps = state => ({
-        locale: state.locales.locale
-    });
+  const mapStateToProps = (state) => ({
+    locale: state.locales.locale
+  });
 
-    const mapDispatchToProps = () => ({});
+  const mapDispatchToProps = () => ({});
 
-    return connect(
-        mapStateToProps,
-        mapDispatchToProps
-    )(LocalizationWrapper);
+  return connect(mapStateToProps, mapDispatchToProps)(LocalizationWrapper);
 };
 
 export default LocalizationHOC;

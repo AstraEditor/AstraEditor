@@ -13,85 +13,79 @@ import balanceText from 'balance-text';
 import bindAll from 'lodash.bindall';
 
 class BalancedText extends React.Component {
-    constructor (props) {
-        super(props);
-        bindAll(this, [
-            'balanceText',
-            'handleResize'
-        ]);
-        this.state = {
-            forceHide: true
-        };
+  constructor(props) {
+    super(props);
+    bindAll(this, ['balanceText', 'handleResize']);
+    this.state = {
+      forceHide: true
+    };
+  }
+
+  componentDidMount() {
+    self.addEventListener('resize', this.handleResize);
+    this.stopHiding();
+  }
+
+  componentDidUpdate() {
+    this.balanceText();
+  }
+
+  componentWillUnmount() {
+    self.removeEventListener('resize', this.handleResize);
+  }
+
+  handleResize() {
+    if (this.props.resize) {
+      this.balanceText();
+    }
+  }
+
+  balanceText() {
+    const { container } = this;
+    if (container) {
+      balanceText(container, {});
+    }
+  }
+
+  stopHiding() {
+    this.setState({ forceHide: false });
+    setTimeout(() => this.balanceText(), 0);
+  }
+
+  render() {
+    let {
+      children,
+      resize, // eslint-disable-line no-unused-vars
+      style,
+      ...otherProps
+    } = this.props;
+
+    if (this.state.forceHide) {
+      style = Object.assign({}, style, { visibility: 'hidden' });
     }
 
-    componentDidMount () {
-        self.addEventListener('resize', this.handleResize);
-        this.stopHiding();
-    }
-
-    componentDidUpdate () {
-        this.balanceText();
-    }
-
-    componentWillUnmount () {
-        self.removeEventListener('resize', this.handleResize);
-    }
-
-    handleResize () {
-        if (this.props.resize) {
-            this.balanceText();
-        }
-    }
-
-    balanceText () {
-        const {container} = this;
-        if (container) {
-            balanceText(container, {});
-        }
-    }
-
-    stopHiding () {
-        this.setState({forceHide: false});
-        setTimeout(() => this.balanceText(), 0);
-    }
-
-    render () {
-        let {
-            children,
-            resize, // eslint-disable-line no-unused-vars
-            style,
-            ...otherProps
-        } = this.props;
-
-        if (this.state.forceHide) {
-            style = Object.assign({}, style, {visibility: 'hidden'});
-        }
-
-        return (
-            <div
-                {...otherProps}
-                style={style}
-            >
-                <span
-                    ref={container => {
-                        this.container = container;
-                    }}
-                >
-                    {children}
-                </span>
-            </div>
-        );
-    }
+    return (
+      <div {...otherProps} style={style}>
+        <span
+          ref={(container) => {
+            this.container = container;
+          }}
+        >
+          {children}
+        </span>
+      </div>
+    );
+  }
 }
 
 BalancedText.propTypes = {
-    children: PropTypes.node,
-    resize: PropTypes.bool,
-    style: PropTypes.object // eslint-disable-line react/forbid-prop-types
+  children: PropTypes.node,
+  resize: PropTypes.bool,
+  style: PropTypes.object // eslint-disable-line react/forbid-prop-types
 };
 
 BalancedText.defaultProps = {
-    resize: true
+  resize: true
 };
 
 export default BalancedText;

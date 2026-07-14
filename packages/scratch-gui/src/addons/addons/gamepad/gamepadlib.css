@@ -33,14 +33,14 @@
   padding: 0;
   margin: 0;
 }
-.gamepadlib-mapping[data-value="1"] .gamepadlib-keyinput {
+.gamepadlib-mapping[data-value='1'] .gamepadlib-keyinput {
   background: yellow;
   color: var(--text-primary-default);
 }
-.gamepadlib-keyinput[data-accepting-input="true"] {
+.gamepadlib-keyinput[data-accepting-input='true'] {
   background: var(--badge-background);
 }
-.gamepadlib-keyinput[data-empty="true"]:not([data-accepting-input="true"]) {
+.gamepadlib-keyinput[data-empty='true']:not([data-accepting-input='true']) {
   color: #aaa;
   font-style: italic;
 }
@@ -60,7 +60,7 @@
   position: absolute;
   top: 50%;
   left: 50%;
-  background-image: url("./dot.svg");
+  background-image: url('./dot.svg');
   width: 8px;
   height: 8px;
   transform: translate(-50%, -50%);

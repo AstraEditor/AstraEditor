@@ -9,41 +9,37 @@ import React from 'react';
  * @returns {function} a function that accepts a component to wrap.
  */
 const ThrottledPropertyHOC = function (propName, throttleTime) {
-    /**
-     * The function to be called with a React component to wrap it.
-     * @param {React.Component} WrappedComponent - Component to wrap with throttler.
-     * @returns {React.Component} the component wrapped with the throttler.
-     */
-    return function (WrappedComponent) {
-        class ThrottledPropertyWrapper extends React.Component {
-            shouldComponentUpdate (nextProps) {
-                for (const property in nextProps) {
-                    if (property !== propName && this.props[property] !== nextProps[property]) {
-                        return true; // Always update if another property has changed
-                    }
-                }
-
-                // If only that prop has changed, allow update to go to render based
-                // on _lastRenderedTime and _lastRenderTime are updated in render
-                if (nextProps[propName] !== this._lastRenderedValue &&
-                    Date.now() - this._lastRenderTime > throttleTime
-                ) {
-                    return true; // Allow this update to go to render
-                }
-
-                return false;
-            }
-            render () {
-                this._lastRenderTime = Date.now();
-                this._lastRenderedValue = this.props[propName];
-                return (
-                    <WrappedComponent {...this.props} />
-                );
-            }
+  /**
+   * The function to be called with a React component to wrap it.
+   * @param {React.Component} WrappedComponent - Component to wrap with throttler.
+   * @returns {React.Component} the component wrapped with the throttler.
+   */
+  return function (WrappedComponent) {
+    class ThrottledPropertyWrapper extends React.Component {
+      shouldComponentUpdate(nextProps) {
+        for (const property in nextProps) {
+          if (property !== propName && this.props[property] !== nextProps[property]) {
+            return true; // Always update if another property has changed
+          }
         }
 
-        return ThrottledPropertyWrapper;
-    };
+        // If only that prop has changed, allow update to go to render based
+        // on _lastRenderedTime and _lastRenderTime are updated in render
+        if (nextProps[propName] !== this._lastRenderedValue && Date.now() - this._lastRenderTime > throttleTime) {
+          return true; // Allow this update to go to render
+        }
+
+        return false;
+      }
+      render() {
+        this._lastRenderTime = Date.now();
+        this._lastRenderedValue = this.props[propName];
+        return <WrappedComponent {...this.props} />;
+      }
+    }
+
+    return ThrottledPropertyWrapper;
+  };
 };
 
 export default ThrottledPropertyHOC;

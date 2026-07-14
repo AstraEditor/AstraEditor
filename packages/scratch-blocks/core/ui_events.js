@@ -45,7 +45,7 @@ goog.require('goog.math.Coordinate');
  * @extends {Blockly.Events.Abstract}
  * @constructor
  */
-Blockly.Events.Ui = function(block, element, oldValue, newValue) {
+Blockly.Events.Ui = function (block, element, oldValue, newValue) {
   Blockly.Events.Ui.superClass_.constructor.call(this);
   this.blockId = block ? block.id : null;
   this.workspaceId = block ? block.workspace.id : null;
@@ -67,7 +67,7 @@ Blockly.Events.Ui.prototype.type = Blockly.Events.UI;
  * Encode the event as JSON.
  * @return {!Object} JSON representation.
  */
-Blockly.Events.Ui.prototype.toJson = function() {
+Blockly.Events.Ui.prototype.toJson = function () {
   var json = Blockly.Events.Ui.superClass_.toJson.call(this);
   json['element'] = this.element;
   if (this.newValue !== undefined) {
@@ -83,7 +83,7 @@ Blockly.Events.Ui.prototype.toJson = function() {
  * Decode the JSON event.
  * @param {!Object} json JSON representation.
  */
-Blockly.Events.Ui.prototype.fromJson = function(json) {
+Blockly.Events.Ui.prototype.fromJson = function (json) {
   Blockly.Events.Ui.superClass_.fromJson.call(this, json);
   this.element = json['element'];
   this.newValue = json['newValue'];

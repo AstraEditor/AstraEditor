@@ -1,12 +1,12 @@
-import icon from "!../../../lib/tw-recolor/build!./bookmark.svg";
-import AddToBar from "../../tools/AddToBar/index.js";
+import icon from '!../../../lib/tw-recolor/build!./bookmark.svg';
+import AddToBar from '../../tools/AddToBar/index.js';
 
 export default async ({ addon, msg, console }) => {
   const Blockly = await addon.tab.traps.getBlockly();
   const vm = addon.tab.traps.vm;
 
-  const BOOKMARK_MAGIC = " // _bookmark_";
-  const BOOKMARK_COMMENT_HEADER = msg("comment-header");
+  const BOOKMARK_MAGIC = ' // _bookmark_';
+  const BOOKMARK_COMMENT_HEADER = msg('comment-header');
 
   // Get current editing target
   const getEditingTarget = () => {
@@ -32,9 +32,9 @@ export default async ({ addon, msg, console }) => {
     const comment = findBookmarkComment();
     if (!comment) return [];
 
-    const lineWithMagic = comment.text.split("\n").find((i) => i.endsWith(BOOKMARK_MAGIC));
+    const lineWithMagic = comment.text.split('\n').find((i) => i.endsWith(BOOKMARK_MAGIC));
     if (!lineWithMagic) {
-      console.warn("Bookmark comment does not contain valid line");
+      console.warn('Bookmark comment does not contain valid line');
       return [];
     }
 
@@ -42,7 +42,7 @@ export default async ({ addon, msg, console }) => {
     try {
       return JSON.parse(jsonText);
     } catch (e) {
-      console.warn("Bookmark comment has invalid JSON", e);
+      console.warn('Bookmark comment has invalid JSON', e);
       return [];
     }
   };
@@ -58,16 +58,7 @@ export default async ({ addon, msg, console }) => {
       const target = getEditingTarget();
       if (!target) return;
 
-      target.createComment(
-        Math.random() + "",
-        null,
-        text,
-        50,
-        50,
-        350,
-        150,
-        false
-      );
+      target.createComment(Math.random() + '', null, text, 50, 50, 350, 150, false);
     }
 
     // Notify project changed
@@ -128,87 +119,87 @@ export default async ({ addon, msg, console }) => {
   // Show bookmark in sidebar
   const showBookmarkSidebar = () => {
     if (!sidebarContent) {
-      sidebarContent = document.createElement("div");
-      sidebarContent.className = "sa-bookmark-sidebar-content";
+      sidebarContent = document.createElement('div');
+      sidebarContent.className = 'sa-bookmark-sidebar-content';
 
-      const bookmarkList = document.createElement("div");
-      bookmarkList.className = "sa-bookmark-list";
+      const bookmarkList = document.createElement('div');
+      bookmarkList.className = 'sa-bookmark-list';
 
       sidebarRenderer = () => {
-        bookmarkList.innerHTML = "";
+        bookmarkList.innerHTML = '';
         const bookmarks = parseBookmarkComment();
 
         if (bookmarks.length === 0) {
-          const emptyMessage = document.createElement("div");
-          emptyMessage.className = "sa-bookmark-empty";
-          emptyMessage.textContent = msg("no-bookmarks");
+          const emptyMessage = document.createElement('div');
+          emptyMessage.className = 'sa-bookmark-empty';
+          emptyMessage.textContent = msg('no-bookmarks');
           bookmarkList.appendChild(emptyMessage);
           return;
         }
 
         bookmarks.forEach((bookmark, index) => {
-          const bookmarkItem = document.createElement("div");
-          bookmarkItem.className = "sa-bookmark-item";
+          const bookmarkItem = document.createElement('div');
+          bookmarkItem.className = 'sa-bookmark-item';
 
-          const bookmarkInfo = document.createElement("div");
-          bookmarkInfo.className = "sa-bookmark-info";
+          const bookmarkInfo = document.createElement('div');
+          bookmarkInfo.className = 'sa-bookmark-info';
 
-          const bookmarkName = document.createElement("span");
-          bookmarkName.className = "sa-bookmark-name";
-          bookmarkName.textContent = bookmark.name || msg("bookmark-default-name", { index: index + 1 });
-          bookmarkName.title = msg("edit-bookmark-hint");
+          const bookmarkName = document.createElement('span');
+          bookmarkName.className = 'sa-bookmark-name';
+          bookmarkName.textContent = bookmark.name || msg('bookmark-default-name', { index: index + 1 });
+          bookmarkName.title = msg('edit-bookmark-hint');
 
           // Make bookmark name editable
-          bookmarkName.addEventListener("click", () => {
-            const input = document.createElement("input");
-            input.type = "text";
-            input.value = bookmark.name || msg("bookmark-default-name", { index: index + 1 });
-            input.className = "sa-bookmark-name-input";
-            input.classList.add(addon.tab.scratchClass("input_input-form"));
+          bookmarkName.addEventListener('click', () => {
+            const input = document.createElement('input');
+            input.type = 'text';
+            input.value = bookmark.name || msg('bookmark-default-name', { index: index + 1 });
+            input.className = 'sa-bookmark-name-input';
+            input.classList.add(addon.tab.scratchClass('input_input-form'));
 
             const saveEdit = () => {
               const newName = input.value.trim();
               bookmark.name = newName || null;
               saveBookmarkComment(bookmarks);
-              bookmarkName.textContent = newName || msg("bookmark-default-name", { index: index + 1 });
+              bookmarkName.textContent = newName || msg('bookmark-default-name', { index: index + 1 });
             };
 
-            input.addEventListener("blur", saveEdit);
-            input.addEventListener("keydown", (e) => {
-              if (e.key === "Enter") {
+            input.addEventListener('blur', saveEdit);
+            input.addEventListener('keydown', (e) => {
+              if (e.key === 'Enter') {
                 saveEdit();
-              } else if (e.key === "Escape") {
-                bookmarkName.textContent = bookmark.name || msg("bookmark-default-name", { index: index + 1 });
+              } else if (e.key === 'Escape') {
+                bookmarkName.textContent = bookmark.name || msg('bookmark-default-name', { index: index + 1 });
               }
             });
 
-            bookmarkName.innerHTML = "";
+            bookmarkName.innerHTML = '';
             bookmarkName.appendChild(input);
             input.focus();
             input.select();
           });
 
-          const bookmarkTime = document.createElement("span");
-          bookmarkTime.className = "sa-bookmark-time";
+          const bookmarkTime = document.createElement('span');
+          bookmarkTime.className = 'sa-bookmark-time';
           bookmarkTime.textContent = new Date(bookmark.timestamp).toLocaleString();
 
           bookmarkInfo.appendChild(bookmarkName);
           bookmarkInfo.appendChild(bookmarkTime);
 
-          const bookmarkActions = document.createElement("div");
-          bookmarkActions.className = "sa-bookmark-actions";
+          const bookmarkActions = document.createElement('div');
+          bookmarkActions.className = 'sa-bookmark-actions';
 
-          const jumpButton = document.createElement("button");
-          jumpButton.className = "sa-bookmark-action-button";
-          jumpButton.textContent = msg("jump");
-          jumpButton.addEventListener("click", () => {
+          const jumpButton = document.createElement('button');
+          jumpButton.className = 'sa-bookmark-action-button';
+          jumpButton.textContent = msg('jump');
+          jumpButton.addEventListener('click', () => {
             restoreWorkspaceState(bookmark.state);
           });
 
-          const deleteButton = document.createElement("button");
-          deleteButton.className = "sa-bookmark-action-button sa-bookmark-delete";
-          deleteButton.textContent = msg("delete");
-          deleteButton.addEventListener("click", () => {
+          const deleteButton = document.createElement('button');
+          deleteButton.className = 'sa-bookmark-action-button sa-bookmark-delete';
+          deleteButton.textContent = msg('delete');
+          deleteButton.addEventListener('click', () => {
             const bookmarks = parseBookmarkComment();
             bookmarks.splice(index, 1);
             saveBookmarkComment(bookmarks);
@@ -225,22 +216,22 @@ export default async ({ addon, msg, console }) => {
       };
 
       // 添加书签表单
-      const addBookmarkForm = document.createElement("div");
-      addBookmarkForm.className = "sa-bookmark-add-form";
+      const addBookmarkForm = document.createElement('div');
+      addBookmarkForm.className = 'sa-bookmark-add-form';
 
-      const nameLabel = document.createElement("label");
-      nameLabel.textContent = msg("bookmark-name");
+      const nameLabel = document.createElement('label');
+      nameLabel.textContent = msg('bookmark-name');
 
-      const nameInput = document.createElement("input");
-      nameInput.type = "text";
-      nameInput.placeholder = msg("bookmark-name-placeholder");
-      nameInput.className = addon.tab.scratchClass("input_input-form");
+      const nameInput = document.createElement('input');
+      nameInput.type = 'text';
+      nameInput.placeholder = msg('bookmark-name-placeholder');
+      nameInput.className = addon.tab.scratchClass('input_input-form');
 
-      const addButton = document.createElement("button");
-      addButton.textContent = msg("add-bookmark");
-      addButton.className = addon.tab.scratchClass("prompt_ok-button");
+      const addButton = document.createElement('button');
+      addButton.textContent = msg('add-bookmark');
+      addButton.className = addon.tab.scratchClass('prompt_ok-button');
 
-      addButton.addEventListener("click", () => {
+      addButton.addEventListener('click', () => {
         const name = nameInput.value.trim();
         const bookmarks = parseBookmarkComment();
         const newBookmark = {
@@ -250,7 +241,7 @@ export default async ({ addon, msg, console }) => {
         };
         bookmarks.push(newBookmark);
         saveBookmarkComment(bookmarks);
-        nameInput.value = "";
+        nameInput.value = '';
         sidebarRenderer();
       });
 
@@ -265,13 +256,13 @@ export default async ({ addon, msg, console }) => {
 
   // Create bookmark modal
   const createBookmarkModal = () => {
-    const { backdrop, container, content, closeButton, remove } = addon.tab.createModal(msg("bookmark-title"), {
+    const { backdrop, container, content, closeButton, remove } = addon.tab.createModal(msg('bookmark-title'), {
       isOpen: true,
       useEditorClasses: true
     });
-    container.classList.add("sa-bookmark-modal");
-    content.classList.add("sa-bookmark-modal-content");
-    
+    container.classList.add('sa-bookmark-modal');
+    content.classList.add('sa-bookmark-modal-content');
+
     // Check theme after a small delay to ensure DOM is ready
     setTimeout(() => {
       // The theme is handled by CSS variables, no need for JavaScript detection
@@ -279,87 +270,87 @@ export default async ({ addon, msg, console }) => {
     }, 10);
 
     // Create bookmark list
-    const bookmarkList = document.createElement("div");
-    bookmarkList.className = "sa-bookmark-list";
+    const bookmarkList = document.createElement('div');
+    bookmarkList.className = 'sa-bookmark-list';
 
     let bookmarks = parseBookmarkComment();
 
     const renderBookmarks = () => {
-      bookmarkList.innerHTML = "";
+      bookmarkList.innerHTML = '';
       bookmarks = parseBookmarkComment();
 
       if (bookmarks.length === 0) {
-        const emptyMessage = document.createElement("div");
-        emptyMessage.className = "sa-bookmark-empty";
-        emptyMessage.textContent = msg("no-bookmarks");
+        const emptyMessage = document.createElement('div');
+        emptyMessage.className = 'sa-bookmark-empty';
+        emptyMessage.textContent = msg('no-bookmarks');
         bookmarkList.appendChild(emptyMessage);
         return;
       }
 
       bookmarks.forEach((bookmark, index) => {
-        const bookmarkItem = document.createElement("div");
-        bookmarkItem.className = "sa-bookmark-item";
+        const bookmarkItem = document.createElement('div');
+        bookmarkItem.className = 'sa-bookmark-item';
 
-        const bookmarkInfo = document.createElement("div");
-        bookmarkInfo.className = "sa-bookmark-info";
+        const bookmarkInfo = document.createElement('div');
+        bookmarkInfo.className = 'sa-bookmark-info';
 
-        const bookmarkName = document.createElement("span");
-        bookmarkName.className = "sa-bookmark-name";
-        bookmarkName.textContent = bookmark.name || msg("bookmark-default-name", { index: index + 1 });
-        bookmarkName.title = msg("edit-bookmark-hint");
+        const bookmarkName = document.createElement('span');
+        bookmarkName.className = 'sa-bookmark-name';
+        bookmarkName.textContent = bookmark.name || msg('bookmark-default-name', { index: index + 1 });
+        bookmarkName.title = msg('edit-bookmark-hint');
 
         // Make bookmark name editable
-        bookmarkName.addEventListener("click", () => {
-          const input = document.createElement("input");
-          input.type = "text";
-          input.value = bookmark.name || msg("bookmark-default-name", { index: index + 1 });
-          input.className = "sa-bookmark-name-input";
-          input.classList.add(addon.tab.scratchClass("input_input-form"));
+        bookmarkName.addEventListener('click', () => {
+          const input = document.createElement('input');
+          input.type = 'text';
+          input.value = bookmark.name || msg('bookmark-default-name', { index: index + 1 });
+          input.className = 'sa-bookmark-name-input';
+          input.classList.add(addon.tab.scratchClass('input_input-form'));
 
           const saveEdit = () => {
             const newName = input.value.trim();
             bookmark.name = newName || null;
             saveBookmarkComment(bookmarks);
-            bookmarkName.textContent = newName || msg("bookmark-default-name", { index: index + 1 });
+            bookmarkName.textContent = newName || msg('bookmark-default-name', { index: index + 1 });
           };
 
-          input.addEventListener("blur", saveEdit);
-          input.addEventListener("keydown", (e) => {
-            if (e.key === "Enter") {
+          input.addEventListener('blur', saveEdit);
+          input.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
               saveEdit();
-            } else if (e.key === "Escape") {
-              bookmarkName.textContent = bookmark.name || msg("bookmark-default-name", { index: index + 1 });
+            } else if (e.key === 'Escape') {
+              bookmarkName.textContent = bookmark.name || msg('bookmark-default-name', { index: index + 1 });
             }
           });
 
-          bookmarkName.innerHTML = "";
+          bookmarkName.innerHTML = '';
           bookmarkName.appendChild(input);
           input.focus();
           input.select();
         });
 
-        const bookmarkTime = document.createElement("span");
-        bookmarkTime.className = "sa-bookmark-time";
+        const bookmarkTime = document.createElement('span');
+        bookmarkTime.className = 'sa-bookmark-time';
         bookmarkTime.textContent = new Date(bookmark.timestamp).toLocaleString();
 
         bookmarkInfo.appendChild(bookmarkName);
         bookmarkInfo.appendChild(bookmarkTime);
 
-        const bookmarkActions = document.createElement("div");
-        bookmarkActions.className = "sa-bookmark-actions";
+        const bookmarkActions = document.createElement('div');
+        bookmarkActions.className = 'sa-bookmark-actions';
 
-        const jumpButton = document.createElement("button");
-        jumpButton.className = "sa-bookmark-action-button";
-        jumpButton.textContent = msg("jump");
-        jumpButton.addEventListener("click", () => {
+        const jumpButton = document.createElement('button');
+        jumpButton.className = 'sa-bookmark-action-button';
+        jumpButton.textContent = msg('jump');
+        jumpButton.addEventListener('click', () => {
           restoreWorkspaceState(bookmark.state);
           remove();
         });
 
-        const deleteButton = document.createElement("button");
-        deleteButton.className = "sa-bookmark-action-button sa-bookmark-delete";
-        deleteButton.textContent = msg("delete");
-        deleteButton.addEventListener("click", () => {
+        const deleteButton = document.createElement('button');
+        deleteButton.className = 'sa-bookmark-action-button sa-bookmark-delete';
+        deleteButton.textContent = msg('delete');
+        deleteButton.addEventListener('click', () => {
           bookmarks.splice(index, 1);
           saveBookmarkComment(bookmarks);
           renderBookmarks();
@@ -377,22 +368,22 @@ export default async ({ addon, msg, console }) => {
     renderBookmarks();
 
     // Add bookmark form
-    const addBookmarkForm = document.createElement("div");
-    addBookmarkForm.className = "sa-bookmark-add-form";
+    const addBookmarkForm = document.createElement('div');
+    addBookmarkForm.className = 'sa-bookmark-add-form';
 
-    const nameLabel = document.createElement("label");
-    nameLabel.textContent = msg("bookmark-name");
+    const nameLabel = document.createElement('label');
+    nameLabel.textContent = msg('bookmark-name');
 
-    const nameInput = document.createElement("input");
-    nameInput.type = "text";
-    nameInput.placeholder = msg("bookmark-name-placeholder");
-    nameInput.className = addon.tab.scratchClass("input_input-form");
+    const nameInput = document.createElement('input');
+    nameInput.type = 'text';
+    nameInput.placeholder = msg('bookmark-name-placeholder');
+    nameInput.className = addon.tab.scratchClass('input_input-form');
 
-    const addButton = document.createElement("button");
-    addButton.textContent = msg("add-bookmark");
-    addButton.className = addon.tab.scratchClass("prompt_ok-button");
+    const addButton = document.createElement('button');
+    addButton.textContent = msg('add-bookmark');
+    addButton.className = addon.tab.scratchClass('prompt_ok-button');
 
-    addButton.addEventListener("click", () => {
+    addButton.addEventListener('click', () => {
       const name = nameInput.value.trim();
       const newBookmark = {
         name: name || null,
@@ -401,7 +392,7 @@ export default async ({ addon, msg, console }) => {
       };
       bookmarks.push(newBookmark);
       saveBookmarkComment(bookmarks);
-      nameInput.value = "";
+      nameInput.value = '';
       renderBookmarks();
     });
 
@@ -413,24 +404,24 @@ export default async ({ addon, msg, console }) => {
     content.appendChild(addBookmarkForm);
 
     // Close handlers
-    backdrop.addEventListener("click", () => remove());
-    closeButton.addEventListener("click", () => remove());
+    backdrop.addEventListener('click', () => remove());
+    closeButton.addEventListener('click', () => remove());
 
     // Close on Escape
     const escapeHandler = (e) => {
-      if (e.key === "Escape") {
+      if (e.key === 'Escape') {
         remove();
-        document.removeEventListener("keydown", escapeHandler);
+        document.removeEventListener('keydown', escapeHandler);
       }
     };
-    document.addEventListener("keydown", escapeHandler);
+    document.addEventListener('keydown', escapeHandler);
   };
 
   // Button injection via AddToBar (handles both VSCode and non-VSCode layouts)
   AddToBar(addon, {
     id: 'bookmark',
     icon: icon,
-    text: msg("bookmark-button"),
+    text: msg('bookmark-button'),
     getContent: () => {
       showBookmarkSidebar();
       return sidebarContent;
@@ -441,6 +432,6 @@ export default async ({ addon, msg, console }) => {
     onClick: () => {
       createBookmarkModal();
     },
-    containerSelector: '.bookmarkContainer',
+    containerSelector: '.bookmarkContainer'
   });
 };

@@ -17,11 +17,11 @@ export default async function ({ addon, console }) {
     return originalInit.call(this, ...args);
   };
 
-  addon.self.addEventListener("disabled", () => {
+  addon.self.addEventListener('disabled', () => {
     const workspace = Blockly.getMainWorkspace();
     const audio = workspace.getAudioManager();
     delete audio.SOUNDS_.click;
     delete audio.SOUNDS_.delete;
   });
-  addon.self.addEventListener("reenabled", injectCurrent);
+  addon.self.addEventListener('reenabled', injectCurrent);
 }

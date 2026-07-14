@@ -38,26 +38,26 @@ class LogView {
     this.canAutoScrollToEnd = true;
     this.rowHeight = 20;
 
-    this.outerElement = document.createElement("div");
-    this.outerElement.className = "sa-debugger-log-outer";
+    this.outerElement = document.createElement('div');
+    this.outerElement.className = 'sa-debugger-log-outer';
 
-    this.innerElement = document.createElement("div");
-    this.innerElement.className = "sa-debugger-log-inner";
+    this.innerElement = document.createElement('div');
+    this.innerElement.className = 'sa-debugger-log-inner';
     this.outerElement.appendChild(this.innerElement);
-    this.innerElement.addEventListener("scroll", this._handleScroll.bind(this), { passive: true });
-    this.innerElement.addEventListener("wheel", this._handleWheel.bind(this), { passive: true });
+    this.innerElement.addEventListener('scroll', this._handleScroll.bind(this), { passive: true });
+    this.innerElement.addEventListener('wheel', this._handleWheel.bind(this), { passive: true });
 
-    this.endElement = document.createElement("div");
-    this.endElement.className = "sa-debugger-log-end";
-    this.endElement.dataset.index = "-1";
+    this.endElement = document.createElement('div');
+    this.endElement.className = 'sa-debugger-log-end';
+    this.endElement.dataset.index = '-1';
     this.innerElement.appendChild(this.endElement);
 
-    this.placeholderElement = document.createElement("div");
-    this.placeholderElement.className = "sa-debugger-log-empty";
+    this.placeholderElement = document.createElement('div');
+    this.placeholderElement.className = 'sa-debugger-log-empty';
 
     this.visible = false;
     this.isScrolledToEnd = true;
-    this.scrollTopWhenHidden = "end";
+    this.scrollTopWhenHidden = 'end';
     this.scrollTop = 0;
     this.updateContentQueued = false;
     this.scrollToEndQueued = false;
@@ -88,7 +88,7 @@ class LogView {
     this.visible = true;
     this.height = this.innerElement.offsetHeight;
     this.queueUpdateContent();
-    if (this.scrollTopWhenHidden === "end") {
+    if (this.scrollTopWhenHidden === 'end') {
       this._queueScrollToEnd();
     } else {
       this.innerElement.scrollTop = this.scrollTopWhenHidden;
@@ -97,7 +97,7 @@ class LogView {
 
   hide() {
     this.visible = false;
-    this.scrollTopWhenHidden = this.isScrolledToEnd ? "end" : this.scrollTop;
+    this.scrollTopWhenHidden = this.isScrolledToEnd ? 'end' : this.scrollTop;
   }
 
   _handleScroll(e) {
@@ -214,7 +214,7 @@ class LogView {
         newElements.push(elements.root);
         metadata = {
           stringify: null,
-          elements,
+          elements
         };
         this.rowToMetadata.set(row, metadata);
       }

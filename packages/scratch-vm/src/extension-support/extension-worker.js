@@ -4,114 +4,119 @@ const ScratchCommon = require('./tw-extension-api-common');
 const createScratchX = require('./tw-scratchx-compatibility-layer');
 const dispatch = require('../dispatch/worker-dispatch');
 const log = require('../util/log');
-const {isWorker} = require('./tw-extension-worker-context');
+const { isWorker } = require('./tw-extension-worker-context');
 const createTranslate = require('./tw-l10n');
 
 const translate = createTranslate(null);
 
-const loadScripts = url => {
-    if (isWorker) {
-        // In Worker, importScripts is synchronous and throws on error
-        try {
-            importScripts(url);
-            return Promise.resolve();
-        } catch (e) {
-            return Promise.reject(new Error(`Failed to load extension script: ${e.message}`));
-        }
-    } else {
-        // In iframe, use dynamic script loading with timeout
-        return new Promise((resolve, reject) => {
-            const script = document.createElement('script');
-            const timeoutId = setTimeout(() => {
-                reject(new Error(`Extension script loading timeout: ${url}`));
-            }, 10000); // 10 second timeout
-
-            script.onload = () => {
-                clearTimeout(timeoutId);
-                // Add a small delay to allow the script to execute and register
-                setTimeout(resolve, 100);
-            };
-            script.onerror = () => {
-                clearTimeout(timeoutId);
-                reject(new Error(`Error in sandboxed script: ${url}. Check the console for more information.`));
-            };
-            script.src = url;
-            document.body.appendChild(script);
-        });
+const loadScripts = (url) => {
+  if (isWorker) {
+    // In Worker, importScripts is synchronous and throws on error
+    try {
+      importScripts(url);
+      return Promise.resolve();
+    } catch (e) {
+      return Promise.reject(new Error(`Failed to load extension script: ${e.message}`));
     }
+  } else {
+    // In iframe, use dynamic script loading with timeout
+    return new Promise((resolve, reject) => {
+      const script = document.createElement('script');
+      const timeoutId = setTimeout(() => {
+        reject(new Error(`Extension script loading timeout: ${url}`));
+      }, 10000); // 10 second timeout
+
+      script.onload = () => {
+        clearTimeout(timeoutId);
+        // Add a small delay to allow the script to execute and register
+        setTimeout(resolve, 100);
+      };
+      script.onerror = () => {
+        clearTimeout(timeoutId);
+        reject(new Error(`Error in sandboxed script: ${url}. Check the console for more information.`));
+      };
+      script.src = url;
+      document.body.appendChild(script);
+    });
+  }
 };
 
 class ExtensionWorker {
-    constructor () {
-        this.nextExtensionId = 0;
+  constructor() {
+    this.nextExtensionId = 0;
 
-        this.initialRegistrations = [];
+    this.initialRegistrations = [];
 
-        this.firstRegistrationPromise = new Promise(resolve => {
-            this.firstRegistrationCallback = resolve;
-        });
+    this.firstRegistrationPromise = new Promise((resolve) => {
+      this.firstRegistrationCallback = resolve;
+    });
 
-        dispatch.waitForConnection.then(() => {
-            dispatch.call('extensions', 'allocateWorker').then(async x => {
-                const [id, extension] = x;
-                this.workerId = id;
+    dispatch.waitForConnection.then(() => {
+      dispatch.call('extensions', 'allocateWorker').then(async (x) => {
+        const [id, extension] = x;
+        this.workerId = id;
 
-                try {
-                    // Add timeout for registration - if extension doesn't register within 5 seconds, fail
-                    const registrationTimeout = new Promise((_, reject) => {
-                        setTimeout(() => {
-                            reject(new Error('Extension did not call Scratch.extensions.register() within 15 seconds. The script may have crashed or contains syntax errors.'));
-                        }, 15000);
-                    });
+        try {
+          // Add timeout for registration - if extension doesn't register within 5 seconds, fail
+          const registrationTimeout = new Promise((_, reject) => {
+            setTimeout(() => {
+              reject(
+                new Error(
+                  'Extension did not call Scratch.extensions.register() within 15 seconds. The script may have crashed or contains syntax errors.'
+                )
+              );
+            }, 15000);
+          });
 
-                    await loadScripts(extension);
-                    await Promise.race([this.firstRegistrationPromise, registrationTimeout]);
+          await loadScripts(extension);
+          await Promise.race([this.firstRegistrationPromise, registrationTimeout]);
 
-                    const initialRegistrations = this.initialRegistrations;
-                    this.initialRegistrations = null;
+          const initialRegistrations = this.initialRegistrations;
+          this.initialRegistrations = null;
 
-                    Promise.all(initialRegistrations).then(() => dispatch.call('extensions', 'onWorkerInit', id));
-                } catch (e) {
-                    log.error(e);
-                    dispatch.call('extensions', 'onWorkerInit', id, `${e}`);
-                }
-            });
-        });
-
-        this.extensions = [];
-    }
-
-    register (extensionObject) {
-        const extensionId = this.nextExtensionId++;
-        this.extensions.push(extensionObject);
-        const serviceName = `extension.${this.workerId}.${extensionId}`;
-        const promise = dispatch.setService(serviceName, extensionObject)
-            .then(() => dispatch.call('extensions', 'registerExtensionService', serviceName));
-        if (this.initialRegistrations) {
-            this.firstRegistrationCallback();
-            this.initialRegistrations.push(promise);
+          Promise.all(initialRegistrations).then(() => dispatch.call('extensions', 'onWorkerInit', id));
+        } catch (e) {
+          log.error(e);
+          dispatch.call('extensions', 'onWorkerInit', id, `${e}`);
         }
-        return promise;
+      });
+    });
+
+    this.extensions = [];
+  }
+
+  register(extensionObject) {
+    const extensionId = this.nextExtensionId++;
+    this.extensions.push(extensionObject);
+    const serviceName = `extension.${this.workerId}.${extensionId}`;
+    const promise = dispatch
+      .setService(serviceName, extensionObject)
+      .then(() => dispatch.call('extensions', 'registerExtensionService', serviceName));
+    if (this.initialRegistrations) {
+      this.firstRegistrationCallback();
+      this.initialRegistrations.push(promise);
     }
+    return promise;
+  }
 }
 
 global.Scratch = global.Scratch || {};
 Object.assign(global.Scratch, ScratchCommon, {
-    canFetch: () => Promise.resolve(true),
-    fetch: (url, options) => fetch(url, options),
-    canOpenWindow: () => Promise.resolve(false),
-    openWindow: () => Promise.reject(new Error('Scratch.openWindow not supported in sandboxed extensions')),
-    canRedirect: () => Promise.resolve(false),
-    redirect: () => Promise.reject(new Error('Scratch.redirect not supported in sandboxed extensions')),
-    canRecordAudio: () => Promise.resolve(false),
-    canRecordVideo: () => Promise.resolve(false),
-    canReadClipboard: () => Promise.resolve(false),
-    canNotify: () => Promise.resolve(false),
-    canGeolocate: () => Promise.resolve(false),
-    canEmbed: () => Promise.resolve(false),
-    canDownload: () => Promise.resolve(false),
-    download: () => Promise.reject(new Error('Scratch.download not supported in sandboxed extensions')),
-    translate
+  canFetch: () => Promise.resolve(true),
+  fetch: (url, options) => fetch(url, options),
+  canOpenWindow: () => Promise.resolve(false),
+  openWindow: () => Promise.reject(new Error('Scratch.openWindow not supported in sandboxed extensions')),
+  canRedirect: () => Promise.resolve(false),
+  redirect: () => Promise.reject(new Error('Scratch.redirect not supported in sandboxed extensions')),
+  canRecordAudio: () => Promise.resolve(false),
+  canRecordVideo: () => Promise.resolve(false),
+  canReadClipboard: () => Promise.resolve(false),
+  canNotify: () => Promise.resolve(false),
+  canGeolocate: () => Promise.resolve(false),
+  canEmbed: () => Promise.resolve(false),
+  canDownload: () => Promise.resolve(false),
+  download: () => Promise.reject(new Error('Scratch.download not supported in sandboxed extensions')),
+  translate
 });
 
 /**
@@ -119,7 +124,7 @@ Object.assign(global.Scratch, ScratchCommon, {
  */
 const extensionWorker = new ExtensionWorker();
 global.Scratch.extensions = {
-    register: extensionWorker.register.bind(extensionWorker)
+  register: extensionWorker.register.bind(extensionWorker)
 };
 
 global.ScratchExtensions = createScratchX(global.Scratch);

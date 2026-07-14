@@ -5,19 +5,19 @@ import ToolSelectComponent from '../tool-select-base/tool-select-base.jsx';
 
 import reshapeIcon from './reshape.svg';
 
-const ReshapeModeComponent = props => (
-    <ToolSelectComponent
-        imgDescriptor={messages.reshape}
-        imgSrc={reshapeIcon}
-        isSelected={props.isSelected}
-        onMouseDown={props.onMouseDown}
-        keybinding="A"
-    />
+const ReshapeModeComponent = (props) => (
+  <ToolSelectComponent
+    imgDescriptor={messages.reshape}
+    imgSrc={reshapeIcon}
+    isSelected={props.isSelected}
+    onMouseDown={props.onMouseDown}
+    keybinding="A"
+  />
 );
 
 ReshapeModeComponent.propTypes = {
-    isSelected: PropTypes.bool.isRequired,
-    onMouseDown: PropTypes.func.isRequired
+  isSelected: PropTypes.bool.isRequired,
+  onMouseDown: PropTypes.func.isRequired
 };
 
 export default ReshapeModeComponent;

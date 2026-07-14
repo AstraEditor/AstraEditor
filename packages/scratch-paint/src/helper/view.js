@@ -1,7 +1,7 @@
 import paper from '@turbowarp/paper';
-import {CROSSHAIR_SIZE, getBackgroundGuideLayer, getDragCrosshairLayer, getRaster} from './layer';
-import {getAllRootItems, getSelectedRootItems} from './selection';
-import {getHitBounds} from './bitmap';
+import { CROSSHAIR_SIZE, getBackgroundGuideLayer, getDragCrosshairLayer, getRaster } from './layer';
+import { getAllRootItems, getSelectedRootItems } from './selection';
+import { getHitBounds } from './bitmap';
 import log from '../log/log';
 
 // Vectors are imported and exported at SVG_ART_BOARD size.
@@ -16,7 +16,7 @@ let ART_BOARD_HEIGHT;
 let CENTER;
 const PADDING_PERCENT = 25; // Padding as a percent of the max of width/height of the sprite
 const BUFFER = 50; // Number of pixels of allowance around objects at the edges of the workspace
-const MIN_RATIO = .125; // Zoom in to at least 1/8 of the screen. This way you don't end up incredibly
+const MIN_RATIO = 0.125; // Zoom in to at least 1/8 of the screen. This way you don't end up incredibly
 //                         zoomed in for tiny costumes.
 const OUTERMOST_ZOOM_LEVEL = 0.1;
 const EXTEND_SIZE = 2;
@@ -25,23 +25,24 @@ let MAX_WORKSPACE_BOUNDS;
 /* eslint-enable import/no-mutable-exports */
 
 const resizeView = (width, height) => {
-    SVG_ART_BOARD_WIDTH = width;
-    SVG_ART_BOARD_HEIGHT = height;
-    ART_BOARD_WIDTH = SVG_ART_BOARD_WIDTH * 2;
-    ART_BOARD_HEIGHT = SVG_ART_BOARD_HEIGHT * 2;
-    CENTER = new paper.Point(ART_BOARD_WIDTH / 2, ART_BOARD_HEIGHT / 2);
-    ART_BOARD_BOUNDS = new paper.Rectangle(0, 0, ART_BOARD_WIDTH, ART_BOARD_HEIGHT);
-    // Expand MAX_WORKSPACE_BOUNDS evenly around ART_BOARD_BOUNDS center
-    // This ensures scrolling works correctly regardless of the expand amount
-    const expandAmount = 1900; // Total pixels to add to each dimension (can be changed to any value)
-    const expandedWidth = ART_BOARD_WIDTH + expandAmount;
-    const expandedHeight = ART_BOARD_HEIGHT + expandAmount;
-    // Center the expanded bounds around ART_BOARD_BOUNDS
-    MAX_WORKSPACE_BOUNDS = new paper.Rectangle(
-        (ART_BOARD_WIDTH - expandedWidth) / 2,
-        (ART_BOARD_HEIGHT - expandedHeight) / 2,
-        expandedWidth,
-        expandedHeight);
+  SVG_ART_BOARD_WIDTH = width;
+  SVG_ART_BOARD_HEIGHT = height;
+  ART_BOARD_WIDTH = SVG_ART_BOARD_WIDTH * 2;
+  ART_BOARD_HEIGHT = SVG_ART_BOARD_HEIGHT * 2;
+  CENTER = new paper.Point(ART_BOARD_WIDTH / 2, ART_BOARD_HEIGHT / 2);
+  ART_BOARD_BOUNDS = new paper.Rectangle(0, 0, ART_BOARD_WIDTH, ART_BOARD_HEIGHT);
+  // Expand MAX_WORKSPACE_BOUNDS evenly around ART_BOARD_BOUNDS center
+  // This ensures scrolling works correctly regardless of the expand amount
+  const expandAmount = 1900; // Total pixels to add to each dimension (can be changed to any value)
+  const expandedWidth = ART_BOARD_WIDTH + expandAmount;
+  const expandedHeight = ART_BOARD_HEIGHT + expandAmount;
+  // Center the expanded bounds around ART_BOARD_BOUNDS
+  MAX_WORKSPACE_BOUNDS = new paper.Rectangle(
+    (ART_BOARD_WIDTH - expandedWidth) / 2,
+    (ART_BOARD_HEIGHT - expandedHeight) / 2,
+    expandedWidth,
+    expandedHeight
+  );
 };
 resizeView(480, 360);
 
@@ -50,113 +51,114 @@ let _workspaceBounds = ART_BOARD_BOUNDS;
 const getWorkspaceBounds = () => _workspaceBounds;
 
 /**
-* The workspace bounds define the areas that the scroll bars can access.
-* They include at minimum the artboard, and extend to a bit beyond the
-* farthest item off tne edge in any given direction (so items can't be
-* "lost" off the edge)
-*
-* @param {boolean} clipEmpty Clip empty space from bounds, even if it
-* means discontinuously jumping the viewport. This should probably be
-* false unless the viewport is going to move discontinuously anyway
-* (such as in a zoom button click)
-*/
-const setWorkspaceBounds = clipEmpty => {
-    // Always use MAX_WORKSPACE_BOUNDS to allow scrolling in both directions
-    _workspaceBounds = MAX_WORKSPACE_BOUNDS;
+ * The workspace bounds define the areas that the scroll bars can access.
+ * They include at minimum the artboard, and extend to a bit beyond the
+ * farthest item off tne edge in any given direction (so items can't be
+ * "lost" off the edge)
+ *
+ * @param {boolean} clipEmpty Clip empty space from bounds, even if it
+ * means discontinuously jumping the viewport. This should probably be
+ * false unless the viewport is going to move discontinuously anyway
+ * (such as in a zoom button click)
+ */
+const setWorkspaceBounds = (clipEmpty) => {
+  // Always use MAX_WORKSPACE_BOUNDS to allow scrolling in both directions
+  _workspaceBounds = MAX_WORKSPACE_BOUNDS;
 };
 
 const clampViewBounds = () => {
-    const {left, right, top, bottom, width, height} = paper.project.view.bounds;
+  const { left, right, top, bottom, width, height } = paper.project.view.bounds;
 
-    // When the viewport is larger than the workspace in a dimension,
-    // center it instead of clamping individual edges — the latter causes
-    // the opposite edges to fight each other and produce visible jitter.
-    if (width >= _workspaceBounds.width) {
-        const centerX = _workspaceBounds.center.x;
-        paper.project.view.scrollBy(new paper.Point(centerX - (left + right) / 2, 0));
-    } else {
-        if (left < _workspaceBounds.left) {
-            paper.project.view.scrollBy(new paper.Point(_workspaceBounds.left - left, 0));
-        }
-        if (right > _workspaceBounds.right) {
-            paper.project.view.scrollBy(new paper.Point(_workspaceBounds.right - right, 0));
-        }
+  // When the viewport is larger than the workspace in a dimension,
+  // center it instead of clamping individual edges — the latter causes
+  // the opposite edges to fight each other and produce visible jitter.
+  if (width >= _workspaceBounds.width) {
+    const centerX = _workspaceBounds.center.x;
+    paper.project.view.scrollBy(new paper.Point(centerX - (left + right) / 2, 0));
+  } else {
+    if (left < _workspaceBounds.left) {
+      paper.project.view.scrollBy(new paper.Point(_workspaceBounds.left - left, 0));
     }
-
-    if (height >= _workspaceBounds.height) {
-        const centerY = _workspaceBounds.center.y;
-        paper.project.view.scrollBy(new paper.Point(0, centerY - (top + bottom) / 2));
-    } else {
-        if (top < _workspaceBounds.top) {
-            paper.project.view.scrollBy(new paper.Point(0, _workspaceBounds.top - top));
-        }
-        if (bottom > _workspaceBounds.bottom) {
-            paper.project.view.scrollBy(new paper.Point(0, _workspaceBounds.bottom - bottom));
-        }
+    if (right > _workspaceBounds.right) {
+      paper.project.view.scrollBy(new paper.Point(_workspaceBounds.right - right, 0));
     }
+  }
 
-    setWorkspaceBounds();
+  if (height >= _workspaceBounds.height) {
+    const centerY = _workspaceBounds.center.y;
+    paper.project.view.scrollBy(new paper.Point(0, centerY - (top + bottom) / 2));
+  } else {
+    if (top < _workspaceBounds.top) {
+      paper.project.view.scrollBy(new paper.Point(0, _workspaceBounds.top - top));
+    }
+    if (bottom > _workspaceBounds.bottom) {
+      paper.project.view.scrollBy(new paper.Point(0, _workspaceBounds.bottom - bottom));
+    }
+  }
+
+  setWorkspaceBounds();
 };
 
 const resizeCrosshair = () => {
-    if (getDragCrosshairLayer() && getDragCrosshairLayer().dragCrosshair) {
-        getDragCrosshairLayer().dragCrosshair.scale(
-            CROSSHAIR_SIZE / getDragCrosshairLayer().dragCrosshair.bounds.width / paper.view.zoom);
-    }
-    if (getBackgroundGuideLayer() && getBackgroundGuideLayer().dragCrosshair) {
-        getBackgroundGuideLayer().dragCrosshair.scale(
-            CROSSHAIR_SIZE / getBackgroundGuideLayer().dragCrosshair.bounds.width / paper.view.zoom);
-    }
+  if (getDragCrosshairLayer() && getDragCrosshairLayer().dragCrosshair) {
+    getDragCrosshairLayer().dragCrosshair.scale(
+      CROSSHAIR_SIZE / getDragCrosshairLayer().dragCrosshair.bounds.width / paper.view.zoom
+    );
+  }
+  if (getBackgroundGuideLayer() && getBackgroundGuideLayer().dragCrosshair) {
+    getBackgroundGuideLayer().dragCrosshair.scale(
+      CROSSHAIR_SIZE / getBackgroundGuideLayer().dragCrosshair.bounds.width / paper.view.zoom
+    );
+  }
 };
 
 // Zoom keeping a project-space point fixed.
 // This article was helpful http://matthiasberth.com/tech/stable-zoom-and-pan-in-paperjs
 const zoomOnFixedPoint = (deltaZoom, fixedPoint) => {
-    const view = paper.view;
-    const preZoomCenter = view.center;
-    const newZoom = Math.max(OUTERMOST_ZOOM_LEVEL, view.zoom + deltaZoom);
-    const scaling = view.zoom / newZoom;
-    const preZoomOffset = fixedPoint.subtract(preZoomCenter);
-    const postZoomOffset = fixedPoint.subtract(preZoomOffset.multiply(scaling))
-        .subtract(preZoomCenter);
-    view.zoom = newZoom;
-    view.translate(postZoomOffset.multiply(-1));
+  const view = paper.view;
+  const preZoomCenter = view.center;
+  const newZoom = Math.max(OUTERMOST_ZOOM_LEVEL, view.zoom + deltaZoom);
+  const scaling = view.zoom / newZoom;
+  const preZoomOffset = fixedPoint.subtract(preZoomCenter);
+  const postZoomOffset = fixedPoint.subtract(preZoomOffset.multiply(scaling)).subtract(preZoomCenter);
+  view.zoom = newZoom;
+  view.translate(postZoomOffset.multiply(-1));
 
-    setWorkspaceBounds(true /* clipEmpty */);
-    clampViewBounds();
-    resizeCrosshair();
+  setWorkspaceBounds(true /* clipEmpty */);
+  clampViewBounds();
+  resizeCrosshair();
 };
 
 // Zoom keeping the selection center (if any) fixed.
-const zoomOnSelection = deltaZoom => {
-    let fixedPoint;
-    const items = getSelectedRootItems();
-    if (items.length > 0) {
-        let rect = null;
-        for (const item of items) {
-            if (rect) {
-                rect = rect.unite(item.bounds);
-            } else {
-                rect = item.bounds;
-            }
-        }
-        fixedPoint = rect.center;
-    } else {
-        fixedPoint = paper.project.view.center;
+const zoomOnSelection = (deltaZoom) => {
+  let fixedPoint;
+  const items = getSelectedRootItems();
+  if (items.length > 0) {
+    let rect = null;
+    for (const item of items) {
+      if (rect) {
+        rect = rect.unite(item.bounds);
+      } else {
+        rect = item.bounds;
+      }
     }
-    zoomOnFixedPoint(deltaZoom, fixedPoint);
+    fixedPoint = rect.center;
+  } else {
+    fixedPoint = paper.project.view.center;
+  }
+  zoomOnFixedPoint(deltaZoom, fixedPoint);
 };
 
 const resetZoom = () => {
-    paper.project.view.zoom = .5;
-    setWorkspaceBounds(true /* clipEmpty */);
-    resizeCrosshair();
-    clampViewBounds();
+  paper.project.view.zoom = 0.5;
+  setWorkspaceBounds(true /* clipEmpty */);
+  resizeCrosshair();
+  clampViewBounds();
 };
 
 const pan = (dx, dy) => {
-    paper.project.view.scrollBy(new paper.Point(dx, dy));
-    clampViewBounds();
+  paper.project.view.scrollBy(new paper.Point(dx, dy));
+  clampViewBounds();
 };
 
 /**
@@ -164,66 +166,68 @@ const pan = (dx, dy) => {
  * @param {boolean} isBitmap True if the editor is in bitmap mode, false if it is in vector mode
  * @returns {paper.Rectangle} the bounds within which mouse events should work in the paint editor
  */
-const getActionBounds = isBitmap => {
-    if (isBitmap) {
-        return ART_BOARD_BOUNDS;
-    }
-    return paper.view.bounds.unite(ART_BOARD_BOUNDS).intersect(MAX_WORKSPACE_BOUNDS);
+const getActionBounds = (isBitmap) => {
+  if (isBitmap) {
+    return ART_BOARD_BOUNDS;
+  }
+  return paper.view.bounds.unite(ART_BOARD_BOUNDS).intersect(MAX_WORKSPACE_BOUNDS);
 };
 
-const zoomToFit = isBitmap => {
-    resetZoom();
-    let bounds;
-    if (isBitmap) {
-        bounds = getHitBounds(getRaster()).expand(BUFFER);
-    } else {
-        const items = getAllRootItems();
-        for (const item of items) {
-            if (bounds) {
-                bounds = bounds.unite(item.bounds);
-            } else {
-                bounds = item.bounds;
-            }
-        }
+const zoomToFit = (isBitmap) => {
+  resetZoom();
+  let bounds;
+  if (isBitmap) {
+    bounds = getHitBounds(getRaster()).expand(BUFFER);
+  } else {
+    const items = getAllRootItems();
+    for (const item of items) {
+      if (bounds) {
+        bounds = bounds.unite(item.bounds);
+      } else {
+        bounds = item.bounds;
+      }
     }
-    if (bounds && bounds.width && bounds.height) {
-        const canvas = paper.view.element;
-        // Ratio of (sprite length plus padding on all sides) to viewport length.
-        let ratio = paper.view.zoom *
-            Math.max(
-                bounds.width * (1 + (2 * PADDING_PERCENT / 100)) / canvas.clientWidth,
-                bounds.height * (1 + (2 * PADDING_PERCENT / 100)) / canvas.clientHeight);
-        // Clamp ratio
-        ratio = Math.max(Math.min(1, ratio), MIN_RATIO);
-        if (ratio < 1) {
-            paper.view.center = bounds.center;
-            paper.view.zoom = paper.view.zoom / ratio;
-            resizeCrosshair();
-            clampViewBounds();
-        }
-    } else {
-        log.warn('No bounds!');
+  }
+  if (bounds && bounds.width && bounds.height) {
+    const canvas = paper.view.element;
+    // Ratio of (sprite length plus padding on all sides) to viewport length.
+    let ratio =
+      paper.view.zoom *
+      Math.max(
+        (bounds.width * (1 + (2 * PADDING_PERCENT) / 100)) / canvas.clientWidth,
+        (bounds.height * (1 + (2 * PADDING_PERCENT) / 100)) / canvas.clientHeight
+      );
+    // Clamp ratio
+    ratio = Math.max(Math.min(1, ratio), MIN_RATIO);
+    if (ratio < 1) {
+      paper.view.center = bounds.center;
+      paper.view.zoom = paper.view.zoom / ratio;
+      resizeCrosshair();
+      clampViewBounds();
     }
+  } else {
+    log.warn('No bounds!');
+  }
 };
 
 export {
-    ART_BOARD_BOUNDS,
-    ART_BOARD_HEIGHT,
-    ART_BOARD_WIDTH,
-    CENTER,
-    OUTERMOST_ZOOM_LEVEL,
-    SVG_ART_BOARD_WIDTH,
-    SVG_ART_BOARD_HEIGHT,
-    MAX_WORKSPACE_BOUNDS,
-    resizeView,
-    clampViewBounds,
-    getActionBounds,
-    pan,
-    resetZoom,
-    setWorkspaceBounds,
-    getWorkspaceBounds,
-    resizeCrosshair,
-    zoomOnSelection,
-    zoomOnFixedPoint,
-    zoomToFit
+  ART_BOARD_BOUNDS,
+  ART_BOARD_HEIGHT,
+  ART_BOARD_WIDTH,
+  CENTER,
+  OUTERMOST_ZOOM_LEVEL,
+  SVG_ART_BOARD_WIDTH,
+  SVG_ART_BOARD_HEIGHT,
+  MAX_WORKSPACE_BOUNDS,
+  resizeView,
+  clampViewBounds,
+  getActionBounds,
+  pan,
+  resetZoom,
+  setWorkspaceBounds,
+  getWorkspaceBounds,
+  resizeCrosshair,
+  zoomOnSelection,
+  zoomOnFixedPoint,
+  zoomToFit
 };

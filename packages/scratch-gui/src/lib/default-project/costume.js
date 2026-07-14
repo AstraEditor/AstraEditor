@@ -1,18 +1,18 @@
-import titlesContent from './titles.json'
+import titlesContent from './titles.json';
 
 import { ACCENT_MAP, GUI_DARK, GUI_LIGHT, GUI_MODERNWHITE } from '../themes/index.js';
 
 const theme = (() => {
-    try {
-        const themeStr = localStorage.getItem('tw:theme');
-        if (!themeStr || themeStr === 'undefined' || themeStr === 'null') {
-            return { gui: 'dark', accent: 'astraeditor' };
-        }
-        return JSON.parse(themeStr);
-    } catch (e) {
-        console.warn('Failed to parse theme from localStorage:', e);
-        return { gui: 'dark', accent: 'astraeditor' };
+  try {
+    const themeStr = localStorage.getItem('tw:theme');
+    if (!themeStr || themeStr === 'undefined' || themeStr === 'null') {
+      return { gui: 'dark', accent: 'astraeditor' };
     }
+    return JSON.parse(themeStr);
+  } catch (e) {
+    console.warn('Failed to parse theme from localStorage:', e);
+    return { gui: 'dark', accent: 'astraeditor' };
+  }
 })();
 
 /**
@@ -23,80 +23,82 @@ const theme = (() => {
  * @returns {string} 新的十六进制颜色值
  */
 function adjustHexBrightness(hex, factor) {
-    // 移除 # 号
-    let h = hex.replace('#', '');
+  // 移除 # 号
+  let h = hex.replace('#', '');
 
-    // 处理简写格式 #RGB
-    if (h.length === 3) {
-        h = h.split('').map(c => c + c).join('');
-    }
+  // 处理简写格式 #RGB
+  if (h.length === 3) {
+    h = h
+      .split('')
+      .map((c) => c + c)
+      .join('');
+  }
 
-    // 解析 RGB
-    let r = parseInt(h.substring(0, 2), 16);
-    let g = parseInt(h.substring(2, 4), 16);
-    let b = parseInt(h.substring(4, 6), 16);
+  // 解析 RGB
+  let r = parseInt(h.substring(0, 2), 16);
+  let g = parseInt(h.substring(2, 4), 16);
+  let b = parseInt(h.substring(4, 6), 16);
 
-    // 调整亮度
-    r = Math.min(255, Math.max(0, Math.floor(r * factor)));
-    g = Math.min(255, Math.max(0, Math.floor(g * factor)));
-    b = Math.min(255, Math.max(0, Math.floor(b * factor)));
+  // 调整亮度
+  r = Math.min(255, Math.max(0, Math.floor(r * factor)));
+  g = Math.min(255, Math.max(0, Math.floor(g * factor)));
+  b = Math.min(255, Math.max(0, Math.floor(b * factor)));
 
-    // 转换回 HEX
-    const toHex = (n) => n.toString(16).padStart(2, '0');
-    return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
+  // 转换回 HEX
+  const toHex = (n) => n.toString(16).padStart(2, '0');
+  return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
 }
 
 const returnRandomText = () => {
-    const userName = localStorage.getItem('tw:username') || '创作者'
+  const userName = localStorage.getItem('tw:username') || '创作者';
 
-    const titles = titlesContent
+  const titles = titlesContent;
 
-    if (!titles || titles.length === 0) {
-        return '你好世界'
-    }
+  if (!titles || titles.length === 0) {
+    return '你好世界';
+  }
 
-    const randomTitle = titles[Math.floor(Math.random() * titles.length)]
-    return randomTitle.replace('${UserName}', userName)
-}
-
+  const randomTitle = titles[Math.floor(Math.random() * titles.length)];
+  return randomTitle.replace('${UserName}', userName);
+};
 
 const getThemeColor = () => {
-    try {
-        if (theme.accent == 'custom') {
-            const customThemeStr = localStorage.getItem('constomTheme');
-            if (!customThemeStr || customThemeStr === 'undefined' || customThemeStr === 'null') {
-                return '#0099ff';
-            }
-            const customTheme = JSON.parse(customThemeStr);
-            return customTheme && customTheme['looks-secondary'] ? customTheme['looks-secondary'] : '#0099ff';
-        }
-        return ACCENT_MAP[theme.accent]?.guiColors?.['looks-secondary'] || '#0099ff';
-    } catch (e) {
-        console.warn('Failed to get theme color:', e);
+  try {
+    if (theme.accent == 'custom') {
+      const customThemeStr = localStorage.getItem('constomTheme');
+      if (!customThemeStr || customThemeStr === 'undefined' || customThemeStr === 'null') {
         return '#0099ff';
+      }
+      const customTheme = JSON.parse(customThemeStr);
+      return customTheme && customTheme['looks-secondary'] ? customTheme['looks-secondary'] : '#0099ff';
     }
-}
+    return ACCENT_MAP[theme.accent]?.guiColors?.['looks-secondary'] || '#0099ff';
+  } catch (e) {
+    console.warn('Failed to get theme color:', e);
+    return '#0099ff';
+  }
+};
 
 const getBG = () => {
-    try {
-        if (theme.gui == GUI_LIGHT) return '#fff'
-        if (theme.gui == GUI_MODERNWHITE) return '#fff'
-        if (theme.gui == GUI_DARK) return '#000'
-        else return '#000'
-    } catch {
-        return '#000'
-    }
-}
+  try {
+    if (theme.gui == GUI_LIGHT) return '#fff';
+    if (theme.gui == GUI_MODERNWHITE) return '#fff';
+    if (theme.gui == GUI_DARK) return '#000';
+    return '#000';
+  } catch {
+    return '#000';
+  }
+};
 const getTextBG = () => {
-    try {
-        if (theme.gui == GUI_LIGHT) return "#000";
-        if (theme.gui == GUI_MODERNWHITE) return "#000";
-        if (theme.gui == GUI_DARK) return "#fff";
-        else return "#fff";
-    } catch {
-        return '#fff'
-    }
-}
+  try {
+    if (theme.gui == GUI_LIGHT) return '#000';
+    if (theme.gui == GUI_MODERNWHITE) return '#000';
+    if (theme.gui == GUI_DARK) return '#fff';
+    return '#fff';
+  } catch {
+    return '#fff';
+  }
+};
 export default `<svg version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"
     width="512.25277" height="435.9117" viewBox="0,0,512.25277,435.9117">
     <defs>

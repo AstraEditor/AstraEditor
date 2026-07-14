@@ -9,11 +9,11 @@
 ### 基本使用
 
 ```javascript
-import BottomPanel from "../../ui/bottom-panel/bottom-panel.js";
+import BottomPanel from '../../ui/bottom-panel/bottom-panel.js';
 
 // 创建演示内容
-const demoContent = document.createElement("div");
-demoContent.textContent = "这是底部面板的内容";
+const demoContent = document.createElement('div');
+demoContent.textContent = '这是底部面板的内容';
 
 // 注册插件
 BottomPanel.register('my-plugin', demoContent, {
@@ -31,11 +31,11 @@ BottomPanel.close();
 ### 完整示例
 
 ```javascript
-import BottomPanel from "../../ui/bottom-panel/bottom-panel.js";
+import BottomPanel from '../../ui/bottom-panel/bottom-panel.js';
 
 export default async function ({ addon, console, msg }) {
   // 创建内容
-  const content = document.createElement("div");
+  const content = document.createElement('div');
   content.innerHTML = `
     <h3>我的面板</h3>
     <p>这是我的自定义面板内容</p>
@@ -52,12 +52,12 @@ export default async function ({ addon, console, msg }) {
   });
 
   // 创建切换按钮
-  const toggleBtn = document.createElement("button");
-  toggleBtn.textContent = "切换面板";
-  toggleBtn.className = addon.tab.scratchClass("button_button");
+  const toggleBtn = document.createElement('button');
+  toggleBtn.textContent = '切换面板';
+  toggleBtn.className = addon.tab.scratchClass('button_button');
 
   // 按钮点击事件
-  toggleBtn.addEventListener("click", () => {
+  toggleBtn.addEventListener('click', () => {
     if (BottomPanel.isOpen() && BottomPanel.getActivePlugin() === 'my-plugin') {
       BottomPanel.close();
     } else {
@@ -66,14 +66,14 @@ export default async function ({ addon, console, msg }) {
   });
 
   // 添加到菜单栏
-  addon.tab.appendToSharedSpace({ 
-    space: "menuBar", 
-    element: toggleBtn, 
-    order: 0 
+  addon.tab.appendToSharedSpace({
+    space: 'menuBar',
+    element: toggleBtn,
+    order: 0
   });
 
   // 禁用时清理
-  addon.self.addEventListener("disabled", () => {
+  addon.self.addEventListener('disabled', () => {
     if (BottomPanel.getActivePlugin() === 'my-plugin') {
       BottomPanel.close();
     }
@@ -184,6 +184,7 @@ export default async function ({ addon, console, msg }) {
 项目中包含一个完整的示例：`src/addons/addons/bottom-panel-demo/`
 
 该示例演示了：
+
 - 如何创建面板内容
 - 如何注册插件
 - 如何创建切换按钮

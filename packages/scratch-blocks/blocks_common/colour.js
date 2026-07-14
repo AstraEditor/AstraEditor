@@ -44,18 +44,18 @@ Blockly.Blocks['colour_picker'] = {
    * Block for colour picker.
    * @this Blockly.Block
    */
-  init: function() {
+  init: function () {
     this.jsonInit({
-      "message0": "%1",
-      "args0": [
+      message0: '%1',
+      args0: [
         {
-          "type": "field_colour_slider",
-          "name": "COLOUR",
-          "colour": randomColour()
+          type: 'field_colour_slider',
+          name: 'COLOUR',
+          colour: randomColour()
         }
       ],
-      "outputShape": Blockly.OUTPUT_SHAPE_ROUND,
-      "output": "Colour"
+      outputShape: Blockly.OUTPUT_SHAPE_ROUND,
+      output: 'Colour'
     });
   }
 };

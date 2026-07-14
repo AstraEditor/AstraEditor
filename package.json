@@ -14,8 +14,15 @@
     "build:paint": "pnpm --filter scratch-paint build",
     "build:gui": "pnpm --filter scratch-gui build",
     "build": "pnpm build:l10n && pnpm build:audio && pnpm build:blocks && pnpm build:render && pnpm build:vm && pnpm build:paint && pnpm build:gui",
-    "dev": "pnpm --filter scratch-gui start",
+    "start": "pnpm --filter scratch-gui start",
     "clean": "pnpm -r exec rimraf dist build node_modules",
-    "fetch": "node packages/scratch-gui/scripts/prepublish.mjs"
+    "fetch": "node packages/scratch-gui/scripts/prepublish.mjs",
+    "format::check": "pnpm prettier --check .",
+    "format::fix": "pnpm prettier --write ."
+  },
+  "devDependencies": {
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-prettier": "^5.5.6",
+    "prettier": "^3.9.5"
   }
 }

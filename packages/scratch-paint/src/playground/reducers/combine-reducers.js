@@ -1,8 +1,8 @@
-import {combineReducers} from 'redux';
+import { combineReducers } from 'redux';
 import intlReducer from './intl';
-import {ScratchPaintReducer} from '../..';
+import { ScratchPaintReducer } from '../..';
 
 export default combineReducers({
-    intl: intlReducer,
-    scratchPaint: ScratchPaintReducer
+  intl: intlReducer,
+  scratchPaint: ScratchPaintReducer
 });

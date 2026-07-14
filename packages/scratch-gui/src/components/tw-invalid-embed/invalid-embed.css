@@ -1,37 +1,37 @@
 /* don't use colors.css and friends as the theme system is not set up when this is used */
 
 .container {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    overflow: auto;
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  overflow: auto;
 
-    /* this is an error, so we want it to stand out and always be readable regardless of what the site */
-    /* embedding us looks like */
-    background-color: #0099ff;
-    color: white;
+  /* this is an error, so we want it to stand out and always be readable regardless of what the site */
+  /* embedding us looks like */
+  background-color: #0099ff;
+  color: white;
 
-    box-sizing: border-box;
-    padding: 8px;
+  box-sizing: border-box;
+  padding: 8px;
 
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
 }
 
 .unhappy {
-    font-size: 128px;
-    font-weight: light;
-    padding-bottom: 5px;
+  font-size: 128px;
+  font-weight: light;
+  padding-bottom: 5px;
 }
 
 .code {
-    font-family: monospace;
+  font-family: monospace;
 }
 
 .emphasis {
-    text-decoration: underline;
-    font-weight: bold;
+  text-decoration: underline;
+  font-weight: bold;
 }

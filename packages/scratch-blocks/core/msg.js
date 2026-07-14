@@ -30,7 +30,6 @@
  */
 goog.provide('Blockly.Msg');
 
-
 /**
  * Back up original getMsg function.
  * @type {!Function}
@@ -46,7 +45,7 @@ goog.getMsgOrig = goog.getMsg;
  * @return {string} message with placeholders filled.
  * @suppress {duplicate}
  */
-goog.getMsg = function(str, opt_values) {
+goog.getMsg = function (str, opt_values) {
   var key = goog.getMsg.blocklyMsgMap[str];
   if (key) {
     str = Blockly.Msg[key];
@@ -58,5 +57,5 @@ goog.getMsg = function(str, opt_values) {
  * Mapping of Closure messages to Blockly.Msg names.
  */
 goog.getMsg.blocklyMsgMap = {
-  'Today': 'TODAY'
+  Today: 'TODAY'
 };

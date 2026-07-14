@@ -11,12 +11,12 @@ const staticFetch = require('../util/tw-static-fetch');
  * @param {string} url
  * @returns {URL|null}
  */
-const parseURL = url => {
-    try {
-        return new URL(url, location.href);
-    } catch (e) {
-        return null;
-    }
+const parseURL = (url) => {
+  try {
+    return new URL(url, location.href);
+  } catch (e) {
+    return null;
+  }
 };
 
 /**
@@ -24,58 +24,59 @@ const parseURL = url => {
  * @param {VirtualMachine} vm
  * @returns {Promise<object[]>} Resolves with a list of extension objects when Scratch.extensions.register is called.
  */
-const setupUnsandboxedExtensionAPI = vm => new Promise(resolve => {
+const setupUnsandboxedExtensionAPI = (vm) =>
+  new Promise((resolve) => {
     const extensionObjects = [];
-    const register = extensionObject => {
-        extensionObjects.push(extensionObject);
-        resolve(extensionObjects);
+    const register = (extensionObject) => {
+      extensionObjects.push(extensionObject);
+      resolve(extensionObjects);
     };
 
     // Create a new copy of global.Scratch for each extension
     const Scratch = Object.assign({}, ScratchCommon);
     Scratch.extensions = {
-        unsandboxed: true,
-        register
+      unsandboxed: true,
+      register
     };
     Scratch.vm = vm;
     Scratch.renderer = vm.runtime.renderer;
 
-    Scratch.canFetch = async url => {
-        const parsed = parseURL(url);
-        if (!parsed) {
-            return false;
-        }
-        // Always allow protocols that don't involve a remote request.
-        if (parsed.protocol === 'blob:' || parsed.protocol === 'data:') {
-            return true;
-        }
-        return vm.securityManager.canFetch(parsed.href);
+    Scratch.canFetch = async (url) => {
+      const parsed = parseURL(url);
+      if (!parsed) {
+        return false;
+      }
+      // Always allow protocols that don't involve a remote request.
+      if (parsed.protocol === 'blob:' || parsed.protocol === 'data:') {
+        return true;
+      }
+      return vm.securityManager.canFetch(parsed.href);
     };
 
-    Scratch.canOpenWindow = async url => {
-        const parsed = parseURL(url);
-        if (!parsed) {
-            return false;
-        }
-        // Always reject protocols that would allow code execution.
-        // eslint-disable-next-line no-script-url
-        if (parsed.protocol === 'javascript:') {
-            return false;
-        }
-        return vm.securityManager.canOpenWindow(parsed.href);
+    Scratch.canOpenWindow = async (url) => {
+      const parsed = parseURL(url);
+      if (!parsed) {
+        return false;
+      }
+      // Always reject protocols that would allow code execution.
+      // eslint-disable-next-line no-script-url
+      if (parsed.protocol === 'javascript:') {
+        return false;
+      }
+      return vm.securityManager.canOpenWindow(parsed.href);
     };
 
-    Scratch.canRedirect = async url => {
-        const parsed = parseURL(url);
-        if (!parsed) {
-            return false;
-        }
-        // Always reject protocols that would allow code execution.
-        // eslint-disable-next-line no-script-url
-        if (parsed.protocol === 'javascript:') {
-            return false;
-        }
-        return vm.securityManager.canRedirect(parsed.href);
+    Scratch.canRedirect = async (url) => {
+      const parsed = parseURL(url);
+      if (!parsed) {
+        return false;
+      }
+      // Always reject protocols that would allow code execution.
+      // eslint-disable-next-line no-script-url
+      if (parsed.protocol === 'javascript:') {
+        return false;
+      }
+      return vm.securityManager.canRedirect(parsed.href);
     };
 
     Scratch.canRecordAudio = async () => vm.securityManager.canRecordAudio();
@@ -88,68 +89,68 @@ const setupUnsandboxedExtensionAPI = vm => new Promise(resolve => {
 
     Scratch.canGeolocate = async () => vm.securityManager.canGeolocate();
 
-    Scratch.canEmbed = async url => {
-        const parsed = parseURL(url);
-        if (!parsed) {
-            return false;
-        }
-        return vm.securityManager.canEmbed(parsed.href);
+    Scratch.canEmbed = async (url) => {
+      const parsed = parseURL(url);
+      if (!parsed) {
+        return false;
+      }
+      return vm.securityManager.canEmbed(parsed.href);
     };
 
     Scratch.canDownload = async (url, name) => {
-        const parsed = parseURL(url);
-        if (!parsed) {
-            return false;
-        }
-        // Always reject protocols that would allow code execution.
-        // eslint-disable-next-line no-script-url
-        if (parsed.protocol === 'javascript:') {
-            return false;
-        }
-        return vm.securityManager.canDownload(url, name);
+      const parsed = parseURL(url);
+      if (!parsed) {
+        return false;
+      }
+      // Always reject protocols that would allow code execution.
+      // eslint-disable-next-line no-script-url
+      if (parsed.protocol === 'javascript:') {
+        return false;
+      }
+      return vm.securityManager.canDownload(url, name);
     };
 
     Scratch.fetch = async (url, options) => {
-        const actualURL = url instanceof Request ? url.url : url;
+      const actualURL = url instanceof Request ? url.url : url;
 
-        const staticFetchResult = staticFetch(url);
-        if (staticFetchResult) {
-            return staticFetchResult;
-        }
+      const staticFetchResult = staticFetch(url);
+      if (staticFetchResult) {
+        return staticFetchResult;
+      }
 
-        if (!await Scratch.canFetch(actualURL)) {
-            throw new Error(`Permission to fetch ${actualURL} rejected.`);
-        }
-        return fetch(url, options);
+      if (!(await Scratch.canFetch(actualURL))) {
+        throw new Error(`Permission to fetch ${actualURL} rejected.`);
+      }
+      return fetch(url, options);
     };
 
     Scratch.openWindow = async (url, features) => {
-        if (!await Scratch.canOpenWindow(url)) {
-            throw new Error(`Permission to open tab ${url} rejected.`);
-        }
-        // Use noreferrer to prevent new tab from accessing `window.opener`
-        const baseFeatures = 'noreferrer';
-        features = features ? `${baseFeatures},${features}` : baseFeatures;
-        return window.open(url, '_blank', features);
+      if (!(await Scratch.canOpenWindow(url))) {
+        throw new Error(`Permission to open tab ${url} rejected.`);
+      }
+      // Use noreferrer to prevent new tab from accessing `window.opener`
+      const baseFeatures = 'noreferrer';
+      features = features ? `${baseFeatures},${features}` : baseFeatures;
+      return window.open(url, '_blank', features);
     };
 
-    Scratch.redirect = async url => {
-        if (!await Scratch.canRedirect(url)) {
-            throw new Error(`Permission to redirect to ${url} rejected.`);
-        }
-        location.href = url;
+    Scratch.redirect = async (url) => {
+      if (!(await Scratch.canRedirect(url))) {
+        throw new Error(`Permission to redirect to ${url} rejected.`);
+      }
+      location.href = url;
     };
 
     Scratch.download = async (url, name) => {
-        if (!await Scratch.canDownload(url, name)) {
-            throw new Error(`Permission to download ${name} rejected.`);
-        }
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = name;
-        document.body.appendChild(link);
-        link.click();
-        link.remove();
+      if (!(await Scratch.canDownload(url, name))) {
+        throw new Error(`Permission to download ${name} rejected.`);
+      }
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = name;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
     };
 
     Scratch.translate = createTranslate(vm);
@@ -158,17 +159,17 @@ const setupUnsandboxedExtensionAPI = vm => new Promise(resolve => {
     global.ScratchExtensions = createScratchX(Scratch);
 
     vm.emit('CREATE_UNSANDBOXED_EXTENSION_API', Scratch);
-});
+  });
 
 /**
  * Disable the existing global.Scratch unsandboxed extension APIs.
  * This helps debug poorly designed extensions.
  */
 const teardownUnsandboxedExtensionAPI = () => {
-    // We can assume global.Scratch already exists.
-    global.Scratch.extensions.register = () => {
-        throw new Error('Too late to register new extensions.');
-    };
+  // We can assume global.Scratch already exists.
+  global.Scratch.extensions.register = () => {
+    throw new Error('Too late to register new extensions.');
+  };
 };
 
 /**
@@ -177,67 +178,76 @@ const teardownUnsandboxedExtensionAPI = () => {
  * @param {Virtualmachine} vm
  * @returns {Promise<object[]>} Resolves with a list of extension objects if the extension was loaded successfully.
  */
-const loadUnsandboxedExtension = (extensionURL, vm) => new Promise((resolve, reject) => {
+const loadUnsandboxedExtension = (extensionURL, vm) =>
+  new Promise((resolve, reject) => {
     let isResolved = false;
     const script = document.createElement('script');
 
     document.dispatchEvent(new CustomEvent('loadExtension'));
 
-    const errorHandler = event => {
-        if (isResolved) return;
-        const scriptSrc = event.filename || (event.target && event.target.src);
-        // 检测是不是当前扩展的错误
-        if (scriptSrc === extensionURL || (event.target === script)) {
-            isResolved = true;
-            window.removeEventListener('error', errorHandler);
-            document.dispatchEvent(new CustomEvent('loadExtensionDone', {
-                detail: {
-                    state: 'error',
-                    info: event.message || 'Unknown error'
-                }
-            }));
-        }
+    const errorHandler = (event) => {
+      if (isResolved) return;
+      const scriptSrc = event.filename || (event.target && event.target.src);
+      // 检测是不是当前扩展的错误
+      if (scriptSrc === extensionURL || event.target === script) {
+        isResolved = true;
+        window.removeEventListener('error', errorHandler);
+        document.dispatchEvent(
+          new CustomEvent('loadExtensionDone', {
+            detail: {
+              state: 'error',
+              info: event.message || 'Unknown error'
+            }
+          })
+        );
+      }
     };
     window.addEventListener('error', errorHandler);
 
-    setupUnsandboxedExtensionAPI(vm).then(objects => {
+    setupUnsandboxedExtensionAPI(vm)
+      .then((objects) => {
         if (!isResolved) {
-            isResolved = true;
-            window.removeEventListener('error', errorHandler);
-            resolve(objects);
+          isResolved = true;
+          window.removeEventListener('error', errorHandler);
+          resolve(objects);
         }
-    }).catch(error => {
+      })
+      .catch((error) => {
         if (!isResolved) {
-            isResolved = true;
-            window.removeEventListener('error', errorHandler);
-            reject(error);
+          isResolved = true;
+          window.removeEventListener('error', errorHandler);
+          reject(error);
         }
-    });
+      });
 
     script.onerror = () => {
-        if (!isResolved) {
-            isResolved = true;
-            window.removeEventListener('error', errorHandler);
-            document.dispatchEvent(new CustomEvent('loadExtensionDone', {
-                detail: {
-                    state: 'error',
-                    info: `Error loading unsandboxed script ${extensionURL.slice(0, 100)}${extensionURL.length > 100 ? '...' : ''}. Check the console for more information.`
-                }
-            }));
-        }
+      if (!isResolved) {
+        isResolved = true;
+        window.removeEventListener('error', errorHandler);
+        document.dispatchEvent(
+          new CustomEvent('loadExtensionDone', {
+            detail: {
+              state: 'error',
+              info: `Error loading unsandboxed script ${extensionURL.slice(0, 100)}${extensionURL.length > 100 ? '...' : ''}. Check the console for more information.`
+            }
+          })
+        );
+      }
     };
     script.onload = () => {
-        // Script loaded successfully, waiting for extension to call Scratch.extensions.register()
+      // Script loaded successfully, waiting for extension to call Scratch.extensions.register()
     };
     script.src = extensionURL;
     document.body.appendChild(script);
-}).then(objects => {
-    teardownUnsandboxedExtensionAPI();
-    return objects;
-}).catch(error => {
-    teardownUnsandboxedExtensionAPI();
-    throw error;
-});
+  })
+    .then((objects) => {
+      teardownUnsandboxedExtensionAPI();
+      return objects;
+    })
+    .catch((error) => {
+      teardownUnsandboxedExtensionAPI();
+      throw error;
+    });
 
 // Because loading unsandboxed extensions requires messing with global state (global.Scratch),
 // only let one extension load at a time.
@@ -245,6 +255,6 @@ const limiter = new AsyncLimiter(loadUnsandboxedExtension, 1);
 const load = (extensionURL, vm) => limiter.do(extensionURL, vm);
 
 module.exports = {
-    setupUnsandboxedExtensionAPI,
-    load
+  setupUnsandboxedExtensionAPI,
+  load
 };

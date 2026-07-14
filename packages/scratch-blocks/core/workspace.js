@@ -31,14 +31,13 @@ goog.require('Blockly.WorkspaceComment');
 goog.require('goog.array');
 goog.require('goog.math');
 
-
 /**
  * Class for a workspace.  This is a data structure that contains blocks.
  * There is no UI, and can be created headlessly.
  * @param {!Blockly.Options=} opt_options Dictionary of options.
  * @constructor
  */
-Blockly.Workspace = function(opt_options) {
+Blockly.Workspace = function (opt_options) {
   /** @type {string} */
   this.id = Blockly.utils.genUid();
   Blockly.Workspace.WorkspaceDB_[this.id] = this;
@@ -140,7 +139,7 @@ Blockly.Workspace.prototype.MAX_UNDO = 1024;
  * but may be overriden by subclasses.
  * @private
  */
-Blockly.Workspace.prototype.refreshToolboxSelection_ = function() {
+Blockly.Workspace.prototype.refreshToolboxSelection_ = function () {
   // No-op. Overriden by subclass.
 };
 
@@ -148,7 +147,7 @@ Blockly.Workspace.prototype.refreshToolboxSelection_ = function() {
  * Dispose of this workspace.
  * Unlink from all DOM elements to prevent memory leaks.
  */
-Blockly.Workspace.prototype.dispose = function() {
+Blockly.Workspace.prototype.dispose = function () {
   this.listeners_.length = 0;
   this.clear();
   // Remove from workspace database.
@@ -167,7 +166,7 @@ Blockly.Workspace.SCAN_ANGLE = 3;
  * Add a block to the list of top blocks.
  * @param {!Blockly.Block} block Block to add.
  */
-Blockly.Workspace.prototype.addTopBlock = function(block) {
+Blockly.Workspace.prototype.addTopBlock = function (block) {
   this.topBlocks_.push(block);
 };
 
@@ -175,9 +174,9 @@ Blockly.Workspace.prototype.addTopBlock = function(block) {
  * Remove a block from the list of top blocks.
  * @param {!Blockly.Block} block Block to remove.
  */
-Blockly.Workspace.prototype.removeTopBlock = function(block) {
+Blockly.Workspace.prototype.removeTopBlock = function (block) {
   if (!goog.array.remove(this.topBlocks_, block)) {
-    throw 'Block not present in workspace\'s list of top-most blocks.';
+    throw "Block not present in workspace's list of top-most blocks.";
   }
 };
 
@@ -187,7 +186,7 @@ Blockly.Workspace.prototype.removeTopBlock = function(block) {
  * @param {boolean} ordered Sort the list if true.
  * @return {!Array.<!Blockly.Block>} The top-level block objects.
  */
-Blockly.Workspace.prototype.getTopBlocks = function(ordered) {
+Blockly.Workspace.prototype.getTopBlocks = function (ordered) {
   // Copy the topBlocks_ list.
   var blocks = [].concat(this.topBlocks_);
   if (ordered && blocks.length > 1) {
@@ -195,10 +194,10 @@ Blockly.Workspace.prototype.getTopBlocks = function(ordered) {
     if (this.RTL) {
       offset *= -1;
     }
-    blocks.sort(function(a, b) {
+    blocks.sort(function (a, b) {
       var aXY = a.getRelativeToSurfaceXY();
       var bXY = b.getRelativeToSurfaceXY();
-      return (aXY.y + offset * aXY.x) - (bXY.y + offset * bXY.x);
+      return aXY.y + offset * aXY.x - (bXY.y + offset * bXY.x);
     });
   }
   return blocks;
@@ -209,14 +208,13 @@ Blockly.Workspace.prototype.getTopBlocks = function(ordered) {
  * @param {!Blockly.WorkspaceComment} comment comment to add.
  * @package
  */
-Blockly.Workspace.prototype.addTopComment = function(comment) {
+Blockly.Workspace.prototype.addTopComment = function (comment) {
   this.topComments_.push(comment);
 
   // Note: If the comment database starts to hold block comments, this may need
   // to move to a separate function.
   if (this.commentDB_[comment.id]) {
-    console.warn('Overriding an existing comment on this workspace, with id "' +
-        comment.id + '"');
+    console.warn('Overriding an existing comment on this workspace, with id "' + comment.id + '"');
   }
   this.commentDB_[comment.id] = comment;
 };
@@ -226,9 +224,9 @@ Blockly.Workspace.prototype.addTopComment = function(comment) {
  * @param {!Blockly.WorkspaceComment} comment comment to remove.
  * @package
  */
-Blockly.Workspace.prototype.removeTopComment = function(comment) {
+Blockly.Workspace.prototype.removeTopComment = function (comment) {
   if (!goog.array.remove(this.topComments_, comment)) {
-    throw 'Comment not present in workspace\'s list of top-most comments.';
+    throw "Comment not present in workspace's list of top-most comments.";
   }
   // Note: If the comment database starts to hold block comments, this may need
   // to move to a separate function.
@@ -242,7 +240,7 @@ Blockly.Workspace.prototype.removeTopComment = function(comment) {
  * @return {!Array.<!Blockly.WorkspaceComment>} The top-level comment objects.
  * @package
  */
-Blockly.Workspace.prototype.getTopComments = function(ordered) {
+Blockly.Workspace.prototype.getTopComments = function (ordered) {
   // Copy the topComments_ list.
   var comments = [].concat(this.topComments_);
   if (ordered && comments.length > 1) {
@@ -250,10 +248,10 @@ Blockly.Workspace.prototype.getTopComments = function(ordered) {
     if (this.RTL) {
       offset *= -1;
     }
-    comments.sort(function(a, b) {
+    comments.sort(function (a, b) {
       var aXY = a instanceof Blockly.ScratchBlockComment ? a.getXY() : a.getRelativeToSurfaceXY();
       var bXY = b instanceof Blockly.ScratchBlockComment ? b.getXY() : b.getRelativeToSurfaceXY();
-      return (aXY.y + offset * aXY.x) - (bXY.y + offset * bXY.x);
+      return aXY.y + offset * aXY.x - (bXY.y + offset * bXY.x);
     });
   }
   return comments;
@@ -265,7 +263,7 @@ Blockly.Workspace.prototype.getTopComments = function(ordered) {
  * @param {boolean} ordered Sort the list if true.
  * @return {!Array.<!Blockly.Block>} Array of blocks.
  */
-Blockly.Workspace.prototype.getAllBlocks = function(ordered) {
+Blockly.Workspace.prototype.getAllBlocks = function (ordered) {
   if (ordered) {
     // Slow, but ordered.
     // This gets all levels of descendants because getDescendants
@@ -291,7 +289,7 @@ Blockly.Workspace.prototype.getAllBlocks = function(ordered) {
 /**
  * Dispose of all blocks and comments in workspace.
  */
-Blockly.Workspace.prototype.clear = function() {
+Blockly.Workspace.prototype.clear = function () {
   this.isClearing = true;
   var existingGroup = Blockly.Events.getGroup();
   if (!existingGroup) {
@@ -327,7 +325,7 @@ Blockly.Workspace.prototype.clear = function() {
  * @param {string} id ID of the variable to rename.
  * @param {string} newName New variable name.
  */
-Blockly.Workspace.prototype.renameVariableById = function(id, newName) {
+Blockly.Workspace.prototype.renameVariableById = function (id, newName) {
   this.variableMap_.renameVariableById(id, newName);
 };
 
@@ -344,8 +342,7 @@ Blockly.Workspace.prototype.renameVariableById = function(id, newName) {
  * @param {boolean=} opt_isCloud Whether the variable to create is locally scoped.
  * @return {?Blockly.VariableModel} The newly created variable.
  */
-Blockly.Workspace.prototype.createVariable = function(name, opt_type, opt_id,
-    opt_isLocal, opt_isCloud) {
+Blockly.Workspace.prototype.createVariable = function (name, opt_type, opt_id, opt_isLocal, opt_isCloud) {
   return this.variableMap_.createVariable(name, opt_type, opt_id, opt_isLocal, opt_isCloud);
 };
 
@@ -354,7 +351,7 @@ Blockly.Workspace.prototype.createVariable = function(name, opt_type, opt_id,
  * @param {string} id ID of the variable to find.
  * @return {!Array.<!Blockly.Block>} Array of block usages.
  */
-Blockly.Workspace.prototype.getVariableUsesById = function(id) {
+Blockly.Workspace.prototype.getVariableUsesById = function (id) {
   return this.variableMap_.getVariableUsesById(id);
 };
 
@@ -363,7 +360,7 @@ Blockly.Workspace.prototype.getVariableUsesById = function(id) {
  * workspace. May prompt the user for confirmation.
  * @param {string} id ID of variable to delete.
  */
-Blockly.Workspace.prototype.deleteVariableById = function(id) {
+Blockly.Workspace.prototype.deleteVariableById = function (id) {
   this.variableMap_.deleteVariableById(id);
 };
 
@@ -374,7 +371,7 @@ Blockly.Workspace.prototype.deleteVariableById = function(id) {
  * @param {!Array.<!Blockly.Block>} uses An array of uses of the variable.
  * @private
  */
-Blockly.Workspace.prototype.deleteVariableInternal_ = function(variable, uses) {
+Blockly.Workspace.prototype.deleteVariableInternal_ = function (variable, uses) {
   this.variableMap_.deleteVariableInternal_(variable, uses);
 };
 
@@ -387,9 +384,8 @@ Blockly.Workspace.prototype.deleteVariableInternal_ = function(variable, uses) {
  * @deprecated April 2017
  */
 
-Blockly.Workspace.prototype.variableIndexOf = function(_name) {
-  console.warn(
-      'Deprecated call to Blockly.Workspace.prototype.variableIndexOf');
+Blockly.Workspace.prototype.variableIndexOf = function (_name) {
+  console.warn('Deprecated call to Blockly.Workspace.prototype.variableIndexOf');
   return -1;
 };
 
@@ -402,7 +398,7 @@ Blockly.Workspace.prototype.variableIndexOf = function(_name) {
  *     defaults to the empty string, which is a specific type.
  * @return {?Blockly.VariableModel} the variable with the given name.
  */
-Blockly.Workspace.prototype.getVariable = function(name, opt_type) {
+Blockly.Workspace.prototype.getVariable = function (name, opt_type) {
   return this.variableMap_.getVariable(name, opt_type);
 };
 
@@ -412,7 +408,7 @@ Blockly.Workspace.prototype.getVariable = function(name, opt_type) {
  * @param {!string} id The ID to check for.
  * @return {?Blockly.VariableModel} The variable with the given ID.
  */
-Blockly.Workspace.prototype.getVariableById = function(id) {
+Blockly.Workspace.prototype.getVariableById = function (id) {
   return this.variableMap_.getVariableById(id);
 };
 
@@ -423,7 +419,7 @@ Blockly.Workspace.prototype.getVariableById = function(id) {
  * @return {Array.<Blockly.VariableModel>} The sought after variables of the
  *     passed in type. An empty array if none are found.
  */
-Blockly.Workspace.prototype.getVariablesOfType = function(type) {
+Blockly.Workspace.prototype.getVariablesOfType = function (type) {
   return this.variableMap_.getVariablesOfType(type);
 };
 
@@ -432,7 +428,7 @@ Blockly.Workspace.prototype.getVariablesOfType = function(type) {
  * @return {!Array.<string>} List of variable types.
  * @package
  */
-Blockly.Workspace.prototype.getVariableTypes = function() {
+Blockly.Workspace.prototype.getVariableTypes = function () {
   return this.variableMap_.getVariableTypes();
 };
 
@@ -440,7 +436,7 @@ Blockly.Workspace.prototype.getVariableTypes = function() {
  * Return all variables of all types.
  * @return {!Array.<Blockly.VariableModel>} List of variable models.
  */
-Blockly.Workspace.prototype.getAllVariables = function() {
+Blockly.Workspace.prototype.getAllVariables = function () {
   return this.variableMap_.getAllVariables();
 };
 
@@ -452,7 +448,7 @@ Blockly.Workspace.prototype.getAllVariables = function() {
  * Not relevant for a headless workspace.
  * @return {number} Width.
  */
-Blockly.Workspace.prototype.getWidth = function() {
+Blockly.Workspace.prototype.getWidth = function () {
   return 0;
 };
 
@@ -464,7 +460,7 @@ Blockly.Workspace.prototype.getWidth = function() {
  *     create a new ID.
  * @return {!Blockly.Block} The created block.
  */
-Blockly.Workspace.prototype.newBlock = function(prototypeName, opt_id) {
+Blockly.Workspace.prototype.newBlock = function (prototypeName, opt_id) {
   return new Blockly.Block(this, prototypeName, opt_id);
 };
 
@@ -472,7 +468,7 @@ Blockly.Workspace.prototype.newBlock = function(prototypeName, opt_id) {
  * Undo or redo the previous action.
  * @param {boolean} redo False if undo, true if redo.
  */
-Blockly.Workspace.prototype.undo = function(redo) {
+Blockly.Workspace.prototype.undo = function (redo) {
   var inputStack = redo ? this.redoStack_ : this.undoStack_;
   var outputStack = redo ? this.undoStack_ : this.redoStack_;
   var inputEvent = inputStack.pop();
@@ -481,12 +477,11 @@ Blockly.Workspace.prototype.undo = function(redo) {
   }
   var events = [inputEvent];
   // Do another undo/redo if the next one is of the same group.
-  while (inputStack.length && inputEvent.group &&
-      inputEvent.group == inputStack[inputStack.length - 1].group) {
+  while (inputStack.length && inputEvent.group && inputEvent.group == inputStack[inputStack.length - 1].group) {
     events.push(inputStack.pop());
   }
   // Push these popped events on the opposite stack.
-  for (var i = 0, event; event = events[i]; i++) {
+  for (var i = 0, event; (event = events[i]); i++) {
     outputStack.push(event);
   }
   events = Blockly.Events.filter(events, redo);
@@ -500,7 +495,7 @@ Blockly.Workspace.prototype.undo = function(redo) {
     }
   }
   try {
-    for (var i = 0, event; event = events[i]; i++) {
+    for (var i = 0, event; (event = events[i]); i++) {
       event.run(redo);
     }
   } finally {
@@ -511,7 +506,7 @@ Blockly.Workspace.prototype.undo = function(redo) {
 /**
  * Clear the undo/redo stacks.
  */
-Blockly.Workspace.prototype.clearUndo = function() {
+Blockly.Workspace.prototype.clearUndo = function () {
   this.undoStack_.length = 0;
   this.redoStack_.length = 0;
   // Stop any events already in the firing queue from being undoable.
@@ -522,7 +517,7 @@ Blockly.Workspace.prototype.clearUndo = function() {
  * @return {boolean} whether there are any events in the redo stack.
  * @package
  */
-Blockly.Workspace.prototype.hasRedoStack = function() {
+Blockly.Workspace.prototype.hasRedoStack = function () {
   return this.redoStack_.length != 0;
 };
 
@@ -530,7 +525,7 @@ Blockly.Workspace.prototype.hasRedoStack = function() {
  * @return {boolean} whether there are any events in the undo stack.
  * @package
  */
-Blockly.Workspace.prototype.hasUndoStack = function() {
+Blockly.Workspace.prototype.hasUndoStack = function () {
   return this.undoStack_.length != 0;
 };
 /**
@@ -539,7 +534,7 @@ Blockly.Workspace.prototype.hasUndoStack = function() {
  * @return {!Function} Function that can be passed to
  *     removeChangeListener.
  */
-Blockly.Workspace.prototype.addChangeListener = function(func) {
+Blockly.Workspace.prototype.addChangeListener = function (func) {
   this.listeners_.push(func);
   return func;
 };
@@ -548,7 +543,7 @@ Blockly.Workspace.prototype.addChangeListener = function(func) {
  * Stop listening for this workspace's changes.
  * @param {Function} func Function to stop calling.
  */
-Blockly.Workspace.prototype.removeChangeListener = function(func) {
+Blockly.Workspace.prototype.removeChangeListener = function (func) {
   goog.array.remove(this.listeners_, func);
 };
 
@@ -556,7 +551,7 @@ Blockly.Workspace.prototype.removeChangeListener = function(func) {
  * Fire a change event.
  * @param {!Blockly.Events.Abstract} event Event to fire.
  */
-Blockly.Workspace.prototype.fireChangeListener = function(event) {
+Blockly.Workspace.prototype.fireChangeListener = function (event) {
   if (event.recordUndo) {
     this.undoStack_.push(event);
     this.redoStack_.length = 0;
@@ -566,7 +561,7 @@ Blockly.Workspace.prototype.fireChangeListener = function(event) {
   }
   // Copy listeners in case a listener attaches/detaches itself.
   var currentListeners = this.listeners_.slice();
-  for (var i = 0, func; func = currentListeners[i]; i++) {
+  for (var i = 0, func; (func = currentListeners[i]); i++) {
     func(event);
   }
 };
@@ -576,7 +571,7 @@ Blockly.Workspace.prototype.fireChangeListener = function(event) {
  * @param {string} id ID of block to find.
  * @return {Blockly.Block} The sought after block or null if not found.
  */
-Blockly.Workspace.prototype.getBlockById = function(id) {
+Blockly.Workspace.prototype.getBlockById = function (id) {
   var block = this.blockDB_[id];
   if (!block && this.getFlyout() && this.getFlyout().getWorkspace()) {
     block = this.getFlyout().getWorkspace().blockDB_[id];
@@ -591,7 +586,7 @@ Blockly.Workspace.prototype.getBlockById = function(id) {
  *     found.
  * @package
  */
-Blockly.Workspace.prototype.getCommentById = function(id) {
+Blockly.Workspace.prototype.getCommentById = function (id) {
   return this.commentDB_[id] || null;
 };
 
@@ -600,7 +595,7 @@ Blockly.Workspace.prototype.getCommentById = function(id) {
  * non-rendered workspace, but may be overriden by subclasses.
  * @return {Blockly.Flyout} The flyout on this workspace.
  */
-Blockly.Workspace.prototype.getFlyout = function() {
+Blockly.Workspace.prototype.getFlyout = function () {
   return null;
 };
 
@@ -611,9 +606,9 @@ Blockly.Workspace.prototype.getFlyout = function() {
  *     whether shadow blocks are counted as filled. Defaults to true.
  * @return {boolean} True if all inputs are filled, false otherwise.
  */
-Blockly.Workspace.prototype.allInputsFilled = function(opt_shadowBlocksAreFilled) {
+Blockly.Workspace.prototype.allInputsFilled = function (opt_shadowBlocksAreFilled) {
   var blocks = this.getTopBlocks(false);
-  for (var i = 0, block; block = blocks[i]; i++) {
+  for (var i = 0, block; (block = blocks[i]); i++) {
     if (!block.allInputsFilled(opt_shadowBlocksAreFilled)) {
       return false;
     }
@@ -627,7 +622,7 @@ Blockly.Workspace.prototype.allInputsFilled = function(opt_shadowBlocksAreFilled
  * @return {?Blockly.VariableMap} The potential variable map.
  * @package
  */
-Blockly.Workspace.prototype.getPotentialVariableMap = function() {
+Blockly.Workspace.prototype.getPotentialVariableMap = function () {
   return this.potentialVariableMap_;
 };
 
@@ -635,7 +630,7 @@ Blockly.Workspace.prototype.getPotentialVariableMap = function() {
  * Create and store the potential variable map for this workspace.
  * @package
  */
-Blockly.Workspace.prototype.createPotentialVariableMap = function() {
+Blockly.Workspace.prototype.createPotentialVariableMap = function () {
   this.potentialVariableMap_ = new Blockly.VariableMap(this);
 };
 
@@ -644,7 +639,7 @@ Blockly.Workspace.prototype.createPotentialVariableMap = function() {
  * @return {?Blockly.VariableMap} The  variable map.
  * @package
  */
-Blockly.Workspace.prototype.getVariableMap = function() {
+Blockly.Workspace.prototype.getVariableMap = function () {
   return this.variableMap_;
 };
 
@@ -659,15 +654,12 @@ Blockly.Workspace.WorkspaceDB_ = Object.create(null);
  * @param {string} id ID of workspace to find.
  * @return {Blockly.Workspace} The sought after workspace or null if not found.
  */
-Blockly.Workspace.getById = function(id) {
+Blockly.Workspace.getById = function (id) {
   return Blockly.Workspace.WorkspaceDB_[id] || null;
 };
 
 // Export symbols that would otherwise be renamed by Closure compiler.
 Blockly.Workspace.prototype['clear'] = Blockly.Workspace.prototype.clear;
-Blockly.Workspace.prototype['clearUndo'] =
-    Blockly.Workspace.prototype.clearUndo;
-Blockly.Workspace.prototype['addChangeListener'] =
-    Blockly.Workspace.prototype.addChangeListener;
-Blockly.Workspace.prototype['removeChangeListener'] =
-    Blockly.Workspace.prototype.removeChangeListener;
+Blockly.Workspace.prototype['clearUndo'] = Blockly.Workspace.prototype.clearUndo;
+Blockly.Workspace.prototype['addChangeListener'] = Blockly.Workspace.prototype.addChangeListener;
+Blockly.Workspace.prototype['removeChangeListener'] = Blockly.Workspace.prototype.removeChangeListener;

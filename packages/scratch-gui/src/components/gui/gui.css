@@ -1,96 +1,95 @@
-@import "../../css/units.css";
-@import "../../css/colors.css";
-@import "../../css/z-index.css";
+@import '../../css/units.css';
+@import '../../css/colors.css';
+@import '../../css/z-index.css';
 
 .page-wrapper {
-    height: 100%;
-    display: flex;
-    flex-direction: column;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
 }
 
 .body-wrapper {
-    flex-grow: 1;
-    background-color: $ui-primary;
+  flex-grow: 1;
+  background-color: $ui-primary;
 }
 
 .body-wrapper * {
-    box-sizing: border-box;
+  box-sizing: border-box;
 }
 
 .readmeButton {
-    font-family: inherit;
-    font-size: 14px;
-    font-weight: bold;
-    background-color: $ui-modal-background;
-    border-width: 1px;
-    border-style: solid;
-    color: $text-primary;
-    border-color: $ui-black-transparent;
-    padding: 0.2rem 0.5rem;
-    margin: 0;
-    border-radius: 4px;
-    cursor: pointer;
-    margin: auto auto auto 5px;
-    -webkit-border-radius: 4px;
-    -moz-border-radius: 4px;
-    -ms-border-radius: 4px;
-    -o-border-radius: 4px;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: bold;
+  background-color: $ui-modal-background;
+  border-width: 1px;
+  border-style: solid;
+  color: $text-primary;
+  border-color: $ui-black-transparent;
+  padding: 0.2rem 0.5rem;
+  margin: 0;
+  border-radius: 4px;
+  cursor: pointer;
+  margin: auto auto auto 5px;
+  -webkit-border-radius: 4px;
+  -moz-border-radius: 4px;
+  -ms-border-radius: 4px;
+  -o-border-radius: 4px;
 }
 
 .readmeButton:hover {
-    border-color: var(--motion-primary);
+  border-color: var(--motion-primary);
 }
 
 /* VSCode layout: README button as icon */
 .tab-list.vscode .readmeButton {
-    width: 40px;
-    height: 30px;
-    font-size: 0;
-    background-color: #00000000;
-    border: 0;
-    border-radius: 0px !important;
-    margin: 0 !important;
-    padding: 20px !important;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    display: flex;
-    filter: grayscale(100%);
-    -webkit-filter: grayscale(100%);
+  width: 40px;
+  height: 30px;
+  font-size: 0;
+  background-color: #00000000;
+  border: 0;
+  border-radius: 0px !important;
+  margin: 0 !important;
+  padding: 20px !important;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  display: flex;
+  filter: grayscale(100%);
+  -webkit-filter: grayscale(100%);
 }
 
 .tab-list.vscode .readmeButton svg {
-    width: 1rem;
-    height: 1rem;
+  width: 1rem;
+  height: 1rem;
 }
 
 .tab-list.vscode .readmeButton:hover {
-    filter: brightness(150%) grayscale(100%);
-    -webkit-filter: brightness(150%) grayscale(100%);
+  filter: brightness(150%) grayscale(100%);
+  -webkit-filter: brightness(150%) grayscale(100%);
 }
 
-
 .flex-wrapper {
-    display: flex;
+  display: flex;
 
-    /*
+  /*
         Make 2 columns:
         a) for the blocks + workspace panes, and
         b) for combined stage menu + stage + sprite/stage selectors
     */
-    /* flex-direction: row; Move to JSX */
-    height: 100%;
+  /* flex-direction: row; Move to JSX */
+  height: 100%;
 
-    /*
+  /*
         Stop scrollbar popping in and out from scratch-blocks border issue
         https://github.com/LLK/scratch-gui/issues/318
         TW: and also fix double horizontal scrollbar at some screen sizes in paint editor
     */
-    overflow: hidden;
+  overflow: hidden;
 }
 
 .editor-wrapper {
-    /*
+  /*
         This is carefully balanced--  the minimum width at which the GUI will be displayed is 1024px.
         At that size, the stage pane is 408px wide, with $space of padding to each side.
         However, we must also add the border width to the stage pane. All-in-all, the stage pane's final width is
@@ -100,243 +99,243 @@
         much better ways to solve that (e.g. undo #2124, remove this flex-basis entirely). However, they run their own
         risks of breaking things, so let's just leave this as-is for the time being.
     */
-    flex-basis: calc(1024px - 408px - (($space + $stage-standard-border-width) * 2));
-    flex-grow: 1;
-    flex-shrink: 0;
-    position: relative;
-    background-color: var(--ui-white);
+  flex-basis: calc(1024px - 408px - (($space + $stage-standard-border-width) * 2));
+  flex-grow: 1;
+  flex-shrink: 0;
+  position: relative;
+  background-color: var(--ui-white);
 
-    display: flex;
-    flex-direction: column;
+  display: flex;
+  flex-direction: column;
 }
 
 .editor-wrapper-full {
-    flex-basis: auto !important;
-    flex-grow: 1 !important;
-    width: 100% !important;
+  flex-basis: auto !important;
+  flex-grow: 1 !important;
+  width: 100% !important;
 }
 
 .tab-list {
-    height: $stage-menu-height;
-    width: 250px;
-    /* Match width of the toolbox */
-    display: flex;
-    align-items: flex-end;
-    flex-shrink: 0;
+  height: $stage-menu-height;
+  width: 250px;
+  /* Match width of the toolbox */
+  display: flex;
+  align-items: flex-end;
+  flex-shrink: 0;
 
-    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
-    font-weight: 500;
-    font-size: 0.80rem;
+  font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  font-weight: 500;
+  font-size: 0.8rem;
 
-    /* Overrides for react-tabs styling */
-    margin: 0 !important;
-    border-bottom: 0 !important;
+  /* Overrides for react-tabs styling */
+  margin: 0 !important;
+  border-bottom: 0 !important;
 
-    color: $text-primary;
-    background-color: var(--editorDarkMode-page, hsl(215, 100%, 95%));
-    z-index: $z-index-tab;
+  color: $text-primary;
+  background-color: var(--editorDarkMode-page, hsl(215, 100%, 95%));
+  z-index: $z-index-tab;
 }
 
 .tab {
-    flex-grow: 1;
-    height: 80%;
-    margin-bottom: 0;
+  flex-grow: 1;
+  height: 80%;
+  margin-bottom: 0;
 
-    border-radius: 1rem 1rem 0 0;
-    border: 1px solid $ui-black-transparent;
+  border-radius: 1rem 1rem 0 0;
+  border: 1px solid $ui-black-transparent;
 
-    padding: 0.125rem 1.25rem 0;
-    font-size: 0.75rem;
+  padding: 0.125rem 1.25rem 0;
+  font-size: 0.75rem;
 
-    background-color: $ui-tertiary;
-    color: $text-primary-transparent;
+  background-color: $ui-tertiary;
+  color: $text-primary-transparent;
 
-    display: flex;
-    justify-content: center;
-    align-items: center;
+  display: flex;
+  justify-content: center;
+  align-items: center;
 
-    user-select: none;
-    white-space: nowrap;
+  user-select: none;
+  white-space: nowrap;
 }
 
-[dir="ltr"] .tab {
-    margin-left: -0.5rem;
+[dir='ltr'] .tab {
+  margin-left: -0.5rem;
 }
 
-[dir="rtl"] .tab {
-    margin-right: -0.5rem;
+[dir='rtl'] .tab {
+  margin-right: -0.5rem;
 }
 
-[dir="ltr"] .tab:nth-of-type(1) {
-    margin-left: 0;
+[dir='ltr'] .tab:nth-of-type(1) {
+  margin-left: 0;
 }
 
-[dir="rtl"] .tab:nth-of-type(1) {
-    margin-right: 0;
+[dir='rtl'] .tab:nth-of-type(1) {
+  margin-right: 0;
 }
 
 /* Use z-indices to force left-on-top for tabs */
 .tab:nth-of-type(1) {
-    z-index: 3;
+  z-index: 3;
 }
 
 .tab:nth-of-type(2) {
-    z-index: 2;
+  z-index: 2;
 }
 
 .tab:nth-of-type(3) {
-    z-index: 1;
+  z-index: 1;
 }
 
 .tab:hover {
-    background-color: $ui-primary;
+  background-color: $ui-primary;
 }
 
 .tab.is-selected {
-    height: 90%;
-    color: $looks-secondary;
-    background-color: $ui-white;
-    z-index: 4;
-    /* Make sure selected is always above */
+  height: 90%;
+  color: $looks-secondary;
+  background-color: $ui-white;
+  z-index: 4;
+  /* Make sure selected is always above */
 }
 
 .tab img {
-    width: 1rem;
-    filter: grayscale(100%);
+  width: 1rem;
+  filter: grayscale(100%);
 }
 
 .tab:hover img {
-    filter: brightness(150%) grayscale(100%);
-    -webkit-filter: brightness(150%) grayscale(100%);
+  filter: brightness(150%) grayscale(100%);
+  -webkit-filter: brightness(150%) grayscale(100%);
 }
 
-[dir="ltr"] .tab img {
-    margin-right: 0.125rem;
+[dir='ltr'] .tab img {
+  margin-right: 0.125rem;
 }
 
-[dir="rtl"] .tab img {
-    margin-left: 0.125rem;
+[dir='rtl'] .tab img {
+  margin-left: 0.125rem;
 }
 
 /* mirror blocks and sound tab icons */
-[dir="rtl"] .tab:nth-of-type(1) img {
-    transform: scaleX(-1);
+[dir='rtl'] .tab:nth-of-type(1) img {
+  transform: scaleX(-1);
 }
 
-[dir="rtl"] .tab:nth-of-type(3) img {
-    transform: scaleX(-1);
+[dir='rtl'] .tab:nth-of-type(3) img {
+  transform: scaleX(-1);
 }
 
 .tab.is-selected img {
-    filter: none;
+  filter: none;
 }
 
 /* Tab style overrides from react-tabs */
 .tab.is-selected:after {
-    display: none;
+  display: none;
 }
 
 .tab.is-selected:focus {
-    outline: none;
-    box-shadow: none;
-    border-color: $ui-black-transparent;
+  outline: none;
+  box-shadow: none;
+  border-color: $ui-black-transparent;
 }
 
 .tab.is-selected:focus:after {
-    display: none;
+  display: none;
 }
 
 /* Body of the tabs */
 .tabs {
-    position: relative;
-    flex-grow: 1;
-    display: flex;
-    flex-direction: column;
+  position: relative;
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
 }
 
 .vscode {
-    flex-direction: column !important;
-    height: 100% !important;
+  flex-direction: column !important;
+  height: 100% !important;
 }
 
 .vscodeList {
-    flex-direction: row !important;
+  flex-direction: row !important;
 }
 
 .tab-list.vscode {
-    width: 41px;
-    flex-direction: column !important;
-    align-items: center;
-    justify-content: flex-start;
-    border-bottom: none;
-    overflow-y: auto;
-    align-self: stretch;
-    overflow-x: hidden;
+  width: 41px;
+  flex-direction: column !important;
+  align-items: center;
+  justify-content: flex-start;
+  border-bottom: none;
+  overflow-y: auto;
+  align-self: stretch;
+  overflow-x: hidden;
 }
 
 .vscode .tab {
-    width: 40px;
-    height: 30px;
-    flex-grow: 0;
-    border-radius: 0px !important;
-    margin: 0 !important;
-    padding: 20px 0 !important;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    font-size: 0 !important;
-    background-color: #00000000;
-    border: 0;
+  width: 40px;
+  height: 30px;
+  flex-grow: 0;
+  border-radius: 0px !important;
+  margin: 0 !important;
+  padding: 20px 0 !important;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  font-size: 0 !important;
+  background-color: #00000000;
+  border: 0;
 }
 
 .vscode .tab img {
-    width: 1.35rem;
-    height: 1.35rem;
-    margin: 0 !important;
+  width: 1.35rem;
+  height: 1.35rem;
+  margin: 0 !important;
 }
 
-[dir="rtl"] .vscode .tab img {
-    margin: 0 0 0.25rem 0 !important;
-    transform: none;
+[dir='rtl'] .vscode .tab img {
+  margin: 0 0 0.25rem 0 !important;
+  transform: none;
 }
 
 .vscode .tab.is-selected {
-    background-color: $ui-white;
-    box-shadow: inset 3px 0px 0px 0px $looks-secondary
+  background-color: $ui-white;
+  box-shadow: inset 3px 0px 0px 0px $looks-secondary;
 }
 
 /* 重置 RTL 下的镜像效果 */
 .vscode .tab:nth-of-type(1) img,
 .vscode .tab:nth-of-type(3) img {
-    transform: none;
+  transform: none;
 }
 
 .tab-panel {
-    position: relative;
-    flex-grow: 1;
-    display: none;
+  position: relative;
+  flex-grow: 1;
+  display: none;
 }
 
 .tab-panel.is-selected {
-    display: flex;
+  display: flex;
 }
 
 .blocks-wrapper {
-    flex-grow: 1;
-    position: relative;
+  flex-grow: 1;
+  position: relative;
 }
 
 .monaco-editor-wrapper {
-    flex-grow: 1;
-    position: relative;
-    min-height: 0;
-    height: 100%;
-    display: flex;
-    flex-direction: column;
+  flex-grow: 1;
+  position: relative;
+  min-height: 0;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
 }
 
 .stage-and-target-wrapper {
-    /*
+  /*
         Makes rows for children:
           1) stage menu
           2) stage
@@ -344,124 +343,123 @@
         Only reason we need this, is so .targetWrapper, which holds the selectors,
         goes to full vertical height of the window
     */
-    display: flex;
-    flex-direction: column;
-    min-height: 0;
-    /* pad entire wrapper to the left and right; allow children to fill width */
-    padding-left: 0 !important;
-    padding-right: 0 !important;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  /* pad entire wrapper to the left and right; allow children to fill width */
+  padding-left: 0 !important;
+  padding-right: 0 !important;
 
-    /* this will only ever be as wide as the stage */
-    flex-basis: 0;
+  /* this will only ever be as wide as the stage */
+  flex-basis: 0;
 }
 
 .stage-and-target-wrapper.hidden {
-    display: none;
+  display: none;
 }
 
 .target-wrapper {
-    display: flex;
-    flex-grow: 1;
-    flex-basis: 0;
+  display: flex;
+  flex-grow: 1;
+  flex-basis: 0;
 
-    padding-top: 0 !important;
-    min-height: 0;
-    /* this makes it work in Firefox */
+  padding-top: 0 !important;
+  min-height: 0;
+  /* this makes it work in Firefox */
 
-    /*
+  /*
         For making the sprite-selector a scrollable pane
         @todo: Not working in Safari
     */
-    /* TODO this also breaks the thermometer menu */
-    /* overflow: hidden; */
+  /* TODO this also breaks the thermometer menu */
+  /* overflow: hidden; */
 }
 
 .extension-button-container {
-    width: 3.75rem;
-    height: 3.25rem;
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    z-index: $z-index-extension-button;
-    background: $looks-secondary;
+  width: 3.75rem;
+  height: 3.25rem;
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: $z-index-extension-button;
+  background: $looks-secondary;
 
-    border: 1px solid $looks-secondary;
-    box-sizing: content-box;
-    /* To match scratch-block vertical toolbox borders */
+  border: 1px solid $looks-secondary;
+  box-sizing: content-box;
+  /* To match scratch-block vertical toolbox borders */
 }
 
 $fade-out-distance: 15px;
 
 .extension-button-container:before {
-    content: "";
-    position: absolute;
-    top: calc(calc(-1 * $fade-out-distance) - 1px);
-    left: -1px;
-    background: linear-gradient(rgba(0, 0, 0, 0), rgba(0, 0, 0, 0.15));
-    height: $fade-out-distance;
-    width: calc(100% + 0.5px);
+  content: '';
+  position: absolute;
+  top: calc(calc(-1 * $fade-out-distance) - 1px);
+  left: -1px;
+  background: linear-gradient(rgba(0, 0, 0, 0), rgba(0, 0, 0, 0.15));
+  height: $fade-out-distance;
+  width: calc(100% + 0.5px);
 }
 
-
 .extension-button {
-    background: none;
-    border: none;
-    outline: none;
-    width: 100%;
-    height: 100%;
-    cursor: pointer;
-    user-select: none;
+  background: none;
+  border: none;
+  outline: none;
+  width: 100%;
+  height: 100%;
+  cursor: pointer;
+  user-select: none;
 }
 
 .extension-button-icon {
-    width: 1.5rem;
-    height: 1.5rem;
-    margin-top: 4px;
+  width: 1.5rem;
+  height: 1.5rem;
+  margin-top: 4px;
 }
 
-[dir="rtl"] .extension-button-icon {
-    transform: scaleX(-1);
+[dir='rtl'] .extension-button-icon {
+  transform: scaleX(-1);
 }
 
-.extension-button>div {
-    margin-top: 0;
+.extension-button > div {
+  margin-top: 0;
 }
 
 /* Sprite Selection Watermark */
 .watermark {
-    position: absolute;
-    top: 1.25rem;
-    pointer-events: none;
+  position: absolute;
+  top: 1.25rem;
+  pointer-events: none;
 }
 
-[dir="ltr"] .watermark {
-    right: 1.25rem;
+[dir='ltr'] .watermark {
+  right: 1.25rem;
 }
 
-[dir="rtl"] .watermark {
-    left: 1.25rem;
+[dir='rtl'] .watermark {
+  left: 1.25rem;
 }
 
 /* Menu */
 
 .menu-bar-position {
-    position: relative;
-    z-index: $z-index-menu-bar;
-    min-width: 1024px
-        /*保证开插件时显示正确*/
+  position: relative;
+  z-index: $z-index-menu-bar;
+  min-width: 1024px;
+  /*保证开插件时显示正确*/
 }
 
 /* Alerts */
 
 .alerts-container {
-    display: flex;
-    justify-content: center;
-    width: 100%;
-    z-index: $z-index-alerts;
-    position: absolute;
-    margin-top: 53px;
-    pointer-events: none;
+  display: flex;
+  justify-content: center;
+  width: 100%;
+  z-index: $z-index-alerts;
+  position: absolute;
+  margin-top: 53px;
+  pointer-events: none;
 }
 
 /*
@@ -469,17 +467,16 @@ $fade-out-distance: 15px;
     This CSS class is automatically added to the body when react-modal is open
 */
 :global(.ReactModal__Body--open) {
-    overflow: hidden;
+  overflow: hidden;
 }
 
 /* when in the browser's fullscreen mode, we need to put our own background to avoid just having black */
 .fullscreen-background {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    /* overridden by JS; this will be used if the browser can't understand that color */
-    background-color: white;
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  /* overridden by JS; this will be used if the browser can't understand that color */
+  background-color: white;
 }
-

@@ -18,7 +18,7 @@
  * limitations under the License.
  */
 
- /**
+/**
  * @fileoverview Tests for Blockly.Extensions
  * @author Anm@anm.me (Andrew n marshall)
  */
@@ -39,11 +39,13 @@ function test_extension() {
       this.extendedWithBefore = true;
     });
 
-    Blockly.defineBlocksWithJsonArray([{
-      "type": "extension_test_block",
-      "message0": "extension_test_block",
-      "extensions": ["extensions_test_before", "extensions_test_after"]
-    }]);
+    Blockly.defineBlocksWithJsonArray([
+      {
+        type: 'extension_test_block',
+        message0: 'extension_test_block',
+        extensions: ['extensions_test_before', 'extensions_test_after']
+      }
+    ]);
 
     // Extension defined after the block type (but before instantiation).
     Blockly.Extensions.register('extensions_test_after', function () {
@@ -78,11 +80,13 @@ function test_extension_missing() {
   var exceptionWasThrown = false;
   try {
     assertUndefined(Blockly.Extensions.ALL_['missing_extension']);
-    Blockly.defineBlocksWithJsonArray([{
-      "type": "missing_extension_block",
-      "message0": "missing_extension_block",
-      "extensions": ["missing_extension"]
-    }]);
+    Blockly.defineBlocksWithJsonArray([
+      {
+        type: 'missing_extension_block',
+        message0: 'missing_extension_block',
+        extensions: ['missing_extension']
+      }
+    ]);
 
     block = new Blockly.Block(workspace, 'missing_extension_block');
   } catch (e) {
@@ -135,30 +139,30 @@ function test_extension_not_a_function() {
 }
 
 function test_parent_tooltip_when_inline() {
-  var defaultTooltip = "defaultTooltip";
-  var parentTooltip = "parentTooltip";
+  var defaultTooltip = 'defaultTooltip';
+  var parentTooltip = 'parentTooltip';
 
   var workspace = new Blockly.Workspace();
   var block;
   try {
     Blockly.defineBlocksWithJsonArray([
       {
-        "type": "test_parent_tooltip_when_inline",
-        "message0": "test_parent_tooltip_when_inline",
-        "output": true,
-        "tooltip": defaultTooltip,
-        "extensions": ["parent_tooltip_when_inline"]
+        type: 'test_parent_tooltip_when_inline',
+        message0: 'test_parent_tooltip_when_inline',
+        output: true,
+        tooltip: defaultTooltip,
+        extensions: ['parent_tooltip_when_inline']
       },
       {
-        "type": "test_parent",
-        "message0": "%1",
-        "args0": [
+        type: 'test_parent',
+        message0: '%1',
+        args0: [
           {
-            "type": "input_value",
-            "name": "INPUT"
+            type: 'input_value',
+            name: 'INPUT'
           }
         ],
-        "tooltip": parentTooltip
+        tooltip: parentTooltip
       }
     ]);
 
@@ -200,7 +204,7 @@ function test_parent_tooltip_when_inline() {
 function test_mixin_extension() {
   var TEST_MIXIN = {
     field: 'FIELD',
-    method: function() {
+    method: function () {
       console.log('TEXT_MIXIN method()');
     }
   };
@@ -214,11 +218,13 @@ function test_mixin_extension() {
     Blockly.Extensions.registerMixin('mixin_test', TEST_MIXIN);
     assert(goog.isFunction(Blockly.Extensions.ALL_['mixin_test']));
 
-    Blockly.defineBlocksWithJsonArray([{
-      "type": "test_block_mixin",
-      "message0": "test_block_mixin",
-      "extensions": ["mixin_test"]
-    }]);
+    Blockly.defineBlocksWithJsonArray([
+      {
+        type: 'test_block_mixin',
+        message0: 'test_block_mixin',
+        extensions: ['mixin_test']
+      }
+    ]);
 
     block = new Blockly.Block(workspace, 'test_block_mixin');
 
@@ -235,7 +241,7 @@ function test_mixin_extension() {
 
 function test_bad_mixin_overwrites_local_value() {
   var TEST_MIXIN_BAD_INPUTLIST = {
-    inputList: 'bad inputList'  // Defined in constructor
+    inputList: 'bad inputList' // Defined in constructor
   };
 
   var workspace = new Blockly.Workspace();
@@ -247,17 +253,19 @@ function test_bad_mixin_overwrites_local_value() {
     Blockly.Extensions.registerMixin('mixin_bad_inputList', TEST_MIXIN_BAD_INPUTLIST);
     assert(goog.isFunction(Blockly.Extensions.ALL_['mixin_bad_inputList']));
 
-    Blockly.defineBlocksWithJsonArray([{
-      "type": "test_block_bad_inputList",
-      "message0": "test_block_bad_inputList",
-      "extensions": ["mixin_bad_inputList"]
-    }]);
+    Blockly.defineBlocksWithJsonArray([
+      {
+        type: 'test_block_bad_inputList',
+        message0: 'test_block_bad_inputList',
+        extensions: ['mixin_bad_inputList']
+      }
+    ]);
 
     try {
       block = new Blockly.Block(workspace, 'test_block_bad_inputList');
     } catch (e) {
       // Expected Error
-      assert(e.message.indexOf('inputList') >= 0);  // Reference the conflict
+      assert(e.message.indexOf('inputList') >= 0); // Reference the conflict
       return;
     }
     fail('Expected error when constructing block');
@@ -284,17 +292,19 @@ function test_bad_mixin_overwrites_prototype() {
     Blockly.Extensions.registerMixin('mixin_bad_colour_', TEST_MIXIN_BAD_COLOUR);
     assert(goog.isFunction(Blockly.Extensions.ALL_['mixin_bad_colour_']));
 
-    Blockly.defineBlocksWithJsonArray([{
-      "type": "test_block_bad_colour",
-      "message0": "test_block_bad_colour",
-      "extensions": ["mixin_bad_colour_"]
-    }]);
+    Blockly.defineBlocksWithJsonArray([
+      {
+        type: 'test_block_bad_colour',
+        message0: 'test_block_bad_colour',
+        extensions: ['mixin_bad_colour_']
+      }
+    ]);
 
     try {
       block = new Blockly.Block(workspace, 'test_block_bad_colour');
     } catch (e) {
       // Expected Error
-      assert(e.message.indexOf('colour_') >= 0);  // Reference the conflict
+      assert(e.message.indexOf('colour_') >= 0); // Reference the conflict
       return;
     }
     fail('Expected error when constructing block');
@@ -312,30 +322,31 @@ function test_mutator_mixin() {
   var block;
 
   try {
-    Blockly.defineBlocksWithJsonArray([{
-      "type": "mutator_test_block",
-      "message0": "mutator_test_block",
-      "mutator": "mutator_test"
-    }]);
+    Blockly.defineBlocksWithJsonArray([
+      {
+        type: 'mutator_test_block',
+        message0: 'mutator_test_block',
+        mutator: 'mutator_test'
+      }
+    ]);
 
     // Events code calls mutationToDom and expects it to give back a meaningful
     // value.
     Blockly.Events.disable();
-    Blockly.Extensions.registerMutator('mutator_test',
-      {
-        domToMutation: function() {
-          return 'domToMutationFn';
-        },
-        mutationToDom: function() {
-          return 'mutationToDomFn';
-        },
-        compose: function() {
-          return 'composeFn';
-        },
-        decompose: function() {
-          return 'decomposeFn';
-        }
-      });
+    Blockly.Extensions.registerMutator('mutator_test', {
+      domToMutation: function () {
+        return 'domToMutationFn';
+      },
+      mutationToDom: function () {
+        return 'mutationToDomFn';
+      },
+      compose: function () {
+        return 'composeFn';
+      },
+      decompose: function () {
+        return 'decomposeFn';
+      }
+    });
 
     block = new Blockly.Block(workspace, 'mutator_test_block');
 
@@ -359,25 +370,26 @@ function test_mutator_mixin_no_dialog() {
   var block;
 
   try {
-    Blockly.defineBlocksWithJsonArray([{
-      "type": "mutator_test_block",
-      "message0": "mutator_test_block",
-      "mutator": "mutator_test"
-    }]);
+    Blockly.defineBlocksWithJsonArray([
+      {
+        type: 'mutator_test_block',
+        message0: 'mutator_test_block',
+        mutator: 'mutator_test'
+      }
+    ]);
 
     // Events code calls mutationToDom and expects it to give back a meaningful
     // value.
     Blockly.Events.disable();
     assertUndefined(Blockly.Extensions.ALL_['mutator_test']);
-    Blockly.Extensions.registerMutator('mutator_test',
-      {
-        domToMutation: function() {
-          return 'domToMutationFn';
-        },
-        mutationToDom: function() {
-          return 'mutationToDomFn';
-        }
-      });
+    Blockly.Extensions.registerMutator('mutator_test', {
+      domToMutation: function () {
+        return 'domToMutationFn';
+      },
+      mutationToDom: function () {
+        return 'mutationToDomFn';
+      }
+    });
 
     block = new Blockly.Block(workspace, 'mutator_test_block');
 
@@ -400,18 +412,17 @@ function test_mutator_mixin_no_dialog() {
 function test_mutator_mixin_no_decompose_fails() {
   var exceptionWasThrown = false;
   try {
-    Blockly.Extensions.registerMutator('mutator_test',
-      {
-        domToMutation: function() {
-          return 'domToMutationFn';
-        },
-        mutationToDom: function() {
-          return 'mutationToDomFn';
-        },
-        compose: function() {
-          return 'composeFn';
-        }
-      });
+    Blockly.Extensions.registerMutator('mutator_test', {
+      domToMutation: function () {
+        return 'domToMutationFn';
+      },
+      mutationToDom: function () {
+        return 'mutationToDomFn';
+      },
+      compose: function () {
+        return 'composeFn';
+      }
+    });
   } catch (e) {
     // Expected.
     exceptionWasThrown = true;
@@ -424,18 +435,17 @@ function test_mutator_mixin_no_decompose_fails() {
 function test_mutator_mixin_no_compose_fails() {
   var exceptionWasThrown = false;
   try {
-    Blockly.Extensions.registerMutator('mutator_test',
-      {
-        domToMutation: function() {
-          return 'domToMutationFn';
-        },
-        mutationToDom: function() {
-          return 'mutationToDomFn';
-        },
-        decompose: function() {
-          return 'decomposeFn';
-        }
-      });
+    Blockly.Extensions.registerMutator('mutator_test', {
+      domToMutation: function () {
+        return 'domToMutationFn';
+      },
+      mutationToDom: function () {
+        return 'mutationToDomFn';
+      },
+      decompose: function () {
+        return 'decomposeFn';
+      }
+    });
   } catch (e) {
     // Expected.
     exceptionWasThrown = true;
@@ -448,18 +458,17 @@ function test_mutator_mixin_no_compose_fails() {
 function test_mutator_mixin_no_domToMutation_fails() {
   var exceptionWasThrown = false;
   try {
-    Blockly.Extensions.registerMutator('mutator_test',
-      {
-        mutationToDom: function() {
-          return 'mutationToDomFn';
-        },
-        compose: function() {
-          return 'composeFn';
-        },
-        decompose: function() {
-          return 'decomposeFn';
-        }
-      });
+    Blockly.Extensions.registerMutator('mutator_test', {
+      mutationToDom: function () {
+        return 'mutationToDomFn';
+      },
+      compose: function () {
+        return 'composeFn';
+      },
+      decompose: function () {
+        return 'decomposeFn';
+      }
+    });
   } catch (e) {
     // Expected.
     exceptionWasThrown = true;
@@ -472,18 +481,17 @@ function test_mutator_mixin_no_domToMutation_fails() {
 function test_mutator_mixin_no_mutationToDom_fails() {
   var exceptionWasThrown = false;
   try {
-    Blockly.Extensions.registerMutator('mutator_test',
-      {
-        domToMutation: function() {
-          return 'domToMutationFn';
-        },
-        compose: function() {
-          return 'composeFn';
-        },
-        decompose: function() {
-          return 'decomposeFn';
-        }
-      });
+    Blockly.Extensions.registerMutator('mutator_test', {
+      domToMutation: function () {
+        return 'domToMutationFn';
+      },
+      compose: function () {
+        return 'composeFn';
+      },
+      decompose: function () {
+        return 'decomposeFn';
+      }
+    });
   } catch (e) {
     // Expected.
     exceptionWasThrown = true;
@@ -499,23 +507,24 @@ function test_use_mutator_as_extension_fails() {
   var exceptionWasThrown = false;
 
   try {
-    Blockly.defineBlocksWithJsonArray([{
-      "type": "mutator_test_block",
-      "message0": "mutator_test_block",
-      "extensions": ["mutator_test"]
-    }]);
+    Blockly.defineBlocksWithJsonArray([
+      {
+        type: 'mutator_test_block',
+        message0: 'mutator_test_block',
+        extensions: ['mutator_test']
+      }
+    ]);
 
     Blockly.Events.disable();
     assertUndefined(Blockly.Extensions.ALL_['mutator_test']);
-    Blockly.Extensions.registerMutator('mutator_test',
-      {
-        domToMutation: function() {
-          return 'domToMutationFn';
-        },
-        mutationToDom: function() {
-          return 'mutationToDomFn';
-        }
-      });
+    Blockly.Extensions.registerMutator('mutator_test', {
+      domToMutation: function () {
+        return 'domToMutationFn';
+      },
+      mutationToDom: function () {
+        return 'mutationToDomFn';
+      }
+    });
 
     // Events code calls mutationToDom and expects it to give back a meaningful
     // value.
@@ -542,25 +551,26 @@ function test_use_mutator_mixin_as_extension_fails() {
   var exceptionWasThrown = false;
 
   try {
-    Blockly.defineBlocksWithJsonArray([{
-      "type": "mutator_test_block",
-      "message0": "mutator_test_block",
-      "extensions": ["mutator_test"]
-    }]);
+    Blockly.defineBlocksWithJsonArray([
+      {
+        type: 'mutator_test_block',
+        message0: 'mutator_test_block',
+        extensions: ['mutator_test']
+      }
+    ]);
 
     // Events code calls mutationToDom and expects it to give back a meaningful
     // value.
     Blockly.Events.disable();
     assertUndefined(Blockly.Extensions.ALL_['mutator_test']);
-    Blockly.Extensions.registerMixin('mutator_test',
-      {
-        domToMutation: function() {
-          return 'domToMutationFn';
-        },
-        mutationToDom: function() {
-          return 'mutationToDomFn';
-        }
-      });
+    Blockly.Extensions.registerMixin('mutator_test', {
+      domToMutation: function () {
+        return 'domToMutationFn';
+      },
+      mutationToDom: function () {
+        return 'mutationToDomFn';
+      }
+    });
 
     block = new Blockly.Block(workspace, 'mutator_test_block');
   } catch (e) {
@@ -585,17 +595,19 @@ function test_use_extension_as_mutator_fails() {
   var exceptionWasThrown = false;
 
   try {
-    Blockly.defineBlocksWithJsonArray([{
-      "type": "mutator_test_block",
-      "message0": "mutator_test_block",
-      "mutator": ["extensions_test"]
-    }]);
+    Blockly.defineBlocksWithJsonArray([
+      {
+        type: 'mutator_test_block',
+        message0: 'mutator_test_block',
+        mutator: ['extensions_test']
+      }
+    ]);
 
     // Events code calls mutationToDom and expects it to give back a meaningful
     // value.
     Blockly.Events.disable();
     assertUndefined(Blockly.Extensions.ALL_['extensions_test']);
-    Blockly.Extensions.register('extensions_test', function() {
+    Blockly.Extensions.register('extensions_test', function () {
       return 'extensions_test_fn';
     });
 
@@ -622,24 +634,27 @@ function test_mutator_mixin_plus_function() {
   var fnWasCalled = false;
 
   try {
-    Blockly.defineBlocksWithJsonArray([{
-      "type": "mutator_test_block",
-      "message0": "mutator_test_block",
-      "mutator": ["extensions_test"]
-    }]);
+    Blockly.defineBlocksWithJsonArray([
+      {
+        type: 'mutator_test_block',
+        message0: 'mutator_test_block',
+        mutator: ['extensions_test']
+      }
+    ]);
 
     Blockly.Events.disable();
     assertUndefined(Blockly.Extensions.ALL_['extensions_test']);
-    Blockly.Extensions.registerMutator('extensions_test',
+    Blockly.Extensions.registerMutator(
+      'extensions_test',
       {
-        domToMutation: function() {
+        domToMutation: function () {
           return 'domToMutationFn';
         },
-        mutationToDom: function() {
+        mutationToDom: function () {
           return 'mutationToDomFn';
         }
       },
-      function() {
+      function () {
         fnWasCalled = true;
       }
     );

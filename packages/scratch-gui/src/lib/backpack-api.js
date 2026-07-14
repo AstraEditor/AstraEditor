@@ -10,116 +10,124 @@ export const LOCAL_API = '_local_';
 // Add a new property for the full thumbnail url, which includes the host.
 // Also include a full body url for loading sprite zips
 // TODO retreiving the images through storage would allow us to remove this.
-const includeFullUrls = (item, host) => Object.assign({}, item, {
+const includeFullUrls = (item, host) =>
+  Object.assign({}, item, {
     thumbnailUrl: `${host}/${item.thumbnail}`,
     bodyUrl: `${host}/${item.body}`
-});
+  });
 
-const getBackpackContents = ({
-    host,
-    username,
-    token,
-    limit,
-    offset
-}) => new Promise((resolve, reject) => {
+const getBackpackContents = ({ host, username, token, limit, offset }) =>
+  new Promise((resolve, reject) => {
     if (host === LOCAL_API) {
-        return resolve(localBackpackAPI.getBackpackContents({
-            limit,
-            offset
-        }));
+      return resolve(
+        localBackpackAPI.getBackpackContents({
+          limit,
+          offset
+        })
+      );
     }
-    xhr({
+    xhr(
+      {
         method: 'GET',
         uri: `${host}/${username}?limit=${limit}&offset=${offset}`,
-        headers: {'x-token': token},
+        headers: { 'x-token': token },
         json: true
-    }, (error, response) => {
+      },
+      (error, response) => {
         if (error || response.statusCode !== 200) {
-            return reject(new Error(response.status));
+          return reject(new Error(response.status));
         }
-        return resolve(response.body.map(item => includeFullUrls(item, host)));
-    });
-});
+        return resolve(response.body.map((item) => includeFullUrls(item, host)));
+      }
+    );
+  });
 
 const saveBackpackObject = ({
-    host,
-    username,
-    token,
-    type, // Type of object being saved to the backpack
-    mime, // Mime-type of the object being saved
-    name, // User-facing name of the object being saved
-    body, // Base64-encoded body of the object being saved
-    thumbnail // Base64-encoded JPEG thumbnail of the object being saved
-}) => new Promise((resolve, reject) => {
+  host,
+  username,
+  token,
+  type, // Type of object being saved to the backpack
+  mime, // Mime-type of the object being saved
+  name, // User-facing name of the object being saved
+  body, // Base64-encoded body of the object being saved
+  thumbnail // Base64-encoded JPEG thumbnail of the object being saved
+}) =>
+  new Promise((resolve, reject) => {
     if (host === LOCAL_API) {
-        return resolve(localBackpackAPI.saveBackpackObject({
-            type,
-            mime,
-            name,
-            body,
-            thumbnail
-        }));
+      return resolve(
+        localBackpackAPI.saveBackpackObject({
+          type,
+          mime,
+          name,
+          body,
+          thumbnail
+        })
+      );
     }
-    xhr({
+    xhr(
+      {
         method: 'POST',
         uri: `${host}/${username}`,
-        headers: {'x-token': token},
-        json: {type, mime, name, body, thumbnail}
-    }, (error, response) => {
+        headers: { 'x-token': token },
+        json: { type, mime, name, body, thumbnail }
+      },
+      (error, response) => {
         if (error || response.statusCode !== 200) {
-            return reject(new Error(response.status));
+          return reject(new Error(response.status));
         }
         return resolve(includeFullUrls(response.body, host));
-    });
-});
+      }
+    );
+  });
 
-const deleteBackpackObject = ({
-    host,
-    username,
-    token,
-    id
-}) => new Promise((resolve, reject) => {
+const deleteBackpackObject = ({ host, username, token, id }) =>
+  new Promise((resolve, reject) => {
     if (host === LOCAL_API) {
-        return resolve(localBackpackAPI.deleteBackpackObject({
-            id
-        }));
+      return resolve(
+        localBackpackAPI.deleteBackpackObject({
+          id
+        })
+      );
     }
-    xhr({
+    xhr(
+      {
         method: 'DELETE',
         uri: `${host}/${username}/${id}`,
-        headers: {'x-token': token}
-    }, (error, response) => {
+        headers: { 'x-token': token }
+      },
+      (error, response) => {
         if (error || response.statusCode !== 200) {
-            return reject(new Error(response.status));
+          return reject(new Error(response.status));
         }
         return resolve(response.body);
-    });
-});
+      }
+    );
+  });
 
-const updateBackpackObject = ({
-    host,
-    id,
-    name
-}) => new Promise((resolve, reject) => {
+const updateBackpackObject = ({ host, id, name }) =>
+  new Promise((resolve, reject) => {
     if (host === LOCAL_API) {
-        return resolve(localBackpackAPI.updateBackpackObject({
-            id,
-            name
-        }));
+      return resolve(
+        localBackpackAPI.updateBackpackObject({
+          id,
+          name
+        })
+      );
     }
     reject(new Error('updateBackpackObject not supported'));
-});
+  });
 
 // Two types of backpack items are not retreivable through storage
 // code, as json and sprite3 as arraybuffer zips.
-const fetchAs = (responseType, uri) => new Promise((resolve, reject) => {
-    xhr({uri, responseType}, (error, response) => {
-        if (error || response.statusCode !== 200) {
-            return reject(new Error(response.status));
-        }
-        return resolve(response.body);
+const fetchAs = (responseType, uri) =>
+  new Promise((resolve, reject) => {
+    xhr({ uri, responseType }, (error, response) => {
+      if (error || response.statusCode !== 200) {
+        return reject(new Error(response.status));
+      }
+      return resolve(response.body);
     });
-});
+  });
 
 // These two helpers allow easy fetching of backpack code and sprite zips
 // Use the curried fetchAs here so the consumer does not worry about XHR responseTypes
@@ -127,14 +135,14 @@ const fetchCode = fetchAs.bind(null, 'json');
 const fetchSprite = fetchAs.bind(null, 'arraybuffer');
 
 export {
-    getBackpackContents,
-    saveBackpackObject,
-    deleteBackpackObject,
-    updateBackpackObject,
-    costumePayload,
-    soundPayload,
-    spritePayload,
-    codePayload,
-    fetchCode,
-    fetchSprite
+  getBackpackContents,
+  saveBackpackObject,
+  deleteBackpackObject,
+  updateBackpackObject,
+  costumePayload,
+  soundPayload,
+  spritePayload,
+  codePayload,
+  fetchCode,
+  fetchSprite
 };

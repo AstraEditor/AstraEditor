@@ -5,19 +5,19 @@ import ToolSelectComponent from '../tool-select-base/tool-select-base.jsx';
 
 import eraserIcon from './eraser.svg';
 
-const BitEraserComponent = props => (
-    <ToolSelectComponent
-        imgDescriptor={messages.eraser}
-        imgSrc={eraserIcon}
-        isSelected={props.isSelected}
-        onMouseDown={props.onMouseDown}
-        keybinding="E"
-    />
+const BitEraserComponent = (props) => (
+  <ToolSelectComponent
+    imgDescriptor={messages.eraser}
+    imgSrc={eraserIcon}
+    isSelected={props.isSelected}
+    onMouseDown={props.onMouseDown}
+    keybinding="E"
+  />
 );
 
 BitEraserComponent.propTypes = {
-    isSelected: PropTypes.bool.isRequired,
-    onMouseDown: PropTypes.func.isRequired
+  isSelected: PropTypes.bool.isRequired,
+  onMouseDown: PropTypes.func.isRequired
 };
 
 export default BitEraserComponent;

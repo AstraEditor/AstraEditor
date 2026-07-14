@@ -1,6 +1,6 @@
 // copy from debugger
 
-import EventTarget from "../../event-target.js"; /* inserted by pull.js */
+import EventTarget from '../../event-target.js'; /* inserted by pull.js */
 
 // https://github.com/scratchfoundation/scratch-vm/blob/bb352913b57991713a5ccf0b611fda91056e14ec/src/engine/thread.js#L198
 const STATUS_RUNNING = 0;
@@ -9,7 +9,7 @@ const STATUS_YIELD = 2;
 const STATUS_YIELD_TICK = 3;
 const STATUS_DONE = 4;
 
-const REACT_INTERNAL_PREFIX = "__reactInternalInstance$";
+const REACT_INTERNAL_PREFIX = '__reactInternalInstance$';
 
 let vm;
 
@@ -33,7 +33,7 @@ const pauseThread = (thread) => {
 
   const pauseState = {
     time: vm.runtime.currentMSecs,
-    status: thread.status,
+    status: thread.status
   };
   pausedThreadState.set(thread, pauseState);
 
@@ -102,13 +102,13 @@ export const setPaused = (_paused) => {
   const didChange = paused !== _paused;
   if (didChange) {
     paused = _paused;
-    eventTarget.dispatchEvent(new CustomEvent("change"));
+    eventTarget.dispatchEvent(new CustomEvent('change'));
 
     // TW: events for extensions
     if (paused) {
-      vm.runtime.emit("RUNTIME_PAUSED");
+      vm.runtime.emit('RUNTIME_PAUSED');
     } else {
-      vm.runtime.emit("RUNTIME_UNPAUSED");
+      vm.runtime.emit('RUNTIME_UNPAUSED');
     }
   }
 
@@ -125,7 +125,7 @@ export const setPaused = (_paused) => {
     const activeThread = vm.runtime.sequencer.activeThread;
     if (activeThread) {
       setSteppingThread(activeThread);
-      eventTarget.dispatchEvent(new CustomEvent("step"));
+      eventTarget.dispatchEvent(new CustomEvent('step'));
     }
   }
 
@@ -152,11 +152,11 @@ export const setPaused = (_paused) => {
 };
 
 export const onPauseChanged = (listener) => {
-  eventTarget.addEventListener("change", () => listener(paused));
+  eventTarget.addEventListener('change', () => listener(paused));
 };
 
 export const onSingleStep = (listener) => {
-  eventTarget.addEventListener("step", listener);
+  eventTarget.addEventListener('step', listener);
 };
 
 export const getRunningThread = () => steppingThread;
@@ -196,11 +196,11 @@ const singleStepThread = (thread) => {
 
     Why are we here just to suffer?
   */
-  const specialError = ["special error used by Scratch Addons for implementing single-stepping"];
-  Object.defineProperty(thread, "blockGlowInFrame", {
+  const specialError = ['special error used by Scratch Addons for implementing single-stepping'];
+  Object.defineProperty(thread, 'blockGlowInFrame', {
     set(_block) {
       throw specialError;
-    },
+    }
   });
 
   try {
@@ -253,11 +253,11 @@ const singleStepThread = (thread) => {
   } finally {
     pauseNewThreads = false;
     vm.runtime.sequencer.activeThread = null;
-    Object.defineProperty(thread, "blockGlowInFrame", {
+    Object.defineProperty(thread, 'blockGlowInFrame', {
       value: currentBlockId,
       configurable: true,
       enumerable: true,
-      writable: true,
+      writable: true
     });
 
     // Strictly this doesn't seem to be necessary, but let's make sure the thread is still paused after we step it.
@@ -374,7 +374,7 @@ export const singleStep = () => {
     pauseNewThreads = false;
   }
 
-  eventTarget.dispatchEvent(new CustomEvent("step"));
+  eventTarget.dispatchEvent(new CustomEvent('step'));
 };
 
 export const setup = (addon) => {
@@ -406,7 +406,7 @@ export const setup = (addon) => {
   vm.runtime.startHats = function (...args) {
     const hat = args[0];
     // These hats can be manually started by the user when paused or while single stepping.
-    const isUserInitiated = hat === "event_whenbroadcastreceived" || hat === "control_start_as_clone";
+    const isUserInitiated = hat === 'event_whenbroadcastreceived' || hat === 'control_start_as_clone';
     if (pauseNewThreads) {
       if (!isUserInitiated && !this.getIsEdgeActivatedHat(hat)) {
         return [];

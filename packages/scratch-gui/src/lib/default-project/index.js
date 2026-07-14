@@ -6,42 +6,48 @@ import backdrop from '!raw-loader!./cd21514d0531fdffb22204e0ec5ed84a.svg';
 /* eslint-enable import/no-unresolved */
 import { TextEncoder } from '../tw-text-encoder';
 import costume from './costume.js';
-const defaultProject = translator => {
-    if (overrideDefaultProject.byteLength > 0) {
-        return [{
-            id: 0,
-            assetType: 'Project',
-            dataFormat: 'JSON',
-            data: overrideDefaultProject
-        }];
-    }
-
-    let _TextEncoder;
-    if (typeof TextEncoder === 'undefined') {
-        _TextEncoder = require('text-encoding').TextEncoder;
-    } else {
-        _TextEncoder = TextEncoder;
-    }
-    const encoder = new _TextEncoder();
-
-    const projectJson = projectData(translator);
-
-    return [{
+const defaultProject = (translator) => {
+  if (overrideDefaultProject.byteLength > 0) {
+    return [
+      {
         id: 0,
         assetType: 'Project',
         dataFormat: 'JSON',
-        data: JSON.stringify(projectJson)
-    }, {
-        id: 'cd21514d0531fdffb22204e0ec5ed84a',
-        assetType: 'ImageVector',
-        dataFormat: 'SVG',
-        data: encoder.encode(backdrop)
-    }, {
-        id: '927d672925e7b99f7813735c484c6923',
-        assetType: 'ImageVector',
-        dataFormat: 'SVG',
-        data: encoder.encode(costume)
-    }];
-}
+        data: overrideDefaultProject
+      }
+    ];
+  }
+
+  let _TextEncoder;
+  if (typeof TextEncoder === 'undefined') {
+    _TextEncoder = require('text-encoding').TextEncoder;
+  } else {
+    _TextEncoder = TextEncoder;
+  }
+  const encoder = new _TextEncoder();
+
+  const projectJson = projectData(translator);
+
+  return [
+    {
+      id: 0,
+      assetType: 'Project',
+      dataFormat: 'JSON',
+      data: JSON.stringify(projectJson)
+    },
+    {
+      id: 'cd21514d0531fdffb22204e0ec5ed84a',
+      assetType: 'ImageVector',
+      dataFormat: 'SVG',
+      data: encoder.encode(backdrop)
+    },
+    {
+      id: '927d672925e7b99f7813735c484c6923',
+      assetType: 'ImageVector',
+      dataFormat: 'SVG',
+      data: encoder.encode(costume)
+    }
+  ];
+};
 
 export default defaultProject;

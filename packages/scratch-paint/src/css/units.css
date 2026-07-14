@@ -9,7 +9,7 @@ GRID UNITS.
 ALSO EDITED ON 11/13/2017 TO ADD IN CONTANTS FOR LAYOUT FROM `layout-contents.js`*/
 
 $space: 0.5rem;
-$grid-unit: .25rem;
+$grid-unit: 0.25rem;
 
 $sprites-per-row: 5;
 

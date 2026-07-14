@@ -3,24 +3,20 @@ const UPDATE_MONITORS = 'scratch-gui/monitors/UPDATE_MONITORS';
 const initialState = null;
 
 const reducer = function (state, action) {
-    if (typeof state === 'undefined') state = initialState;
-    switch (action.type) {
+  if (typeof state === 'undefined') state = initialState;
+  switch (action.type) {
     case UPDATE_MONITORS:
-        return action.monitors;
+      return action.monitors;
     default:
-        return state;
-    }
+      return state;
+  }
 };
 
 const updateMonitors = function (monitors) {
-    return {
-        type: UPDATE_MONITORS,
-        monitors: monitors
-    };
+  return {
+    type: UPDATE_MONITORS,
+    monitors: monitors
+  };
 };
 
-export {
-    reducer as default,
-    initialState as monitorsInitialState,
-    updateMonitors
-};
+export { reducer as default, initialState as monitorsInitialState, updateMonitors };

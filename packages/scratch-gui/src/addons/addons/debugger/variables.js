@@ -2,12 +2,12 @@ export default async function createVariablesTab({ debug, addon, console, msg })
   const vm = addon.tab.traps.vm;
 
   const tab = debug.createHeaderTab({
-    text: msg("tab-variables"),
-    icon: addon.self.getResource("/icons/variables.svg") /* rewritten by pull.js */,
+    text: msg('tab-variables'),
+    icon: addon.self.getResource('/icons/variables.svg') /* rewritten by pull.js */
   });
 
   // 收藏状态管理
-  const STORAGE_KEY = "tw:debugger-favorites";
+  const STORAGE_KEY = 'tw:debugger-favorites';
   const getFavorites = () => {
     const stored = localStorage.getItem(STORAGE_KEY);
     if (stored) {
@@ -35,14 +35,14 @@ export default async function createVariablesTab({ debug, addon, console, msg })
     return index === -1;
   };
 
-  const content = document.createElement("div");
-  content.className = "sa-debugger-variables";
+  const content = document.createElement('div');
+  content.className = 'sa-debugger-variables';
 
-  const searchBox = document.createElement("input");
-  searchBox.placeholder = msg("search");
-  searchBox.className = "sa-debugger-variables-searchbox";
+  const searchBox = document.createElement('input');
+  searchBox.placeholder = msg('search');
+  searchBox.className = 'sa-debugger-variables-searchbox';
 
-  searchBox.addEventListener("input", (e) => {
+  searchBox.addEventListener('input', (e) => {
     for (const variable of localVariables) {
       variable.handleSearch(searchBox.value);
     }
@@ -54,19 +54,19 @@ export default async function createVariablesTab({ debug, addon, console, msg })
 
   content.appendChild(searchBox);
 
-  const localVars = document.createElement("div");
-  const localHeading = document.createElement("span");
-  const localList = document.createElement("table");
-  localHeading.className = "sa-debugger-variables-heading";
-  localHeading.innerText = msg("for-this-sprite");
+  const localVars = document.createElement('div');
+  const localHeading = document.createElement('span');
+  const localList = document.createElement('table');
+  localHeading.className = 'sa-debugger-variables-heading';
+  localHeading.innerText = msg('for-this-sprite');
   localVars.appendChild(localHeading);
   localVars.appendChild(localList);
 
-  const globalVars = document.createElement("div");
-  const globalHeading = document.createElement("span");
-  const globalList = document.createElement("table");
-  globalHeading.className = "sa-debugger-variables-heading";
-  globalHeading.innerText = msg("for-all-sprites");
+  const globalVars = document.createElement('div');
+  const globalHeading = document.createElement('span');
+  const globalList = document.createElement('table');
+  globalHeading.className = 'sa-debugger-variables-heading';
+  globalHeading.innerText = msg('for-all-sprites');
   globalVars.appendChild(globalHeading);
   globalVars.appendChild(globalList);
 
@@ -78,10 +78,10 @@ export default async function createVariablesTab({ debug, addon, console, msg })
   let preventUpdate = false;
 
   function updateHeadingVisibility() {
-    let filteredLocals = localVariables.filter((v) => v.row.style.display !== "none");
-    let filteredGlobals = globalVariables.filter((v) => v.row.style.display !== "none");
-    localHeading.style.display = filteredLocals.length === 0 ? "none" : "";
-    globalHeading.style.display = filteredGlobals.length === 0 ? "none" : "";
+    let filteredLocals = localVariables.filter((v) => v.row.style.display !== 'none');
+    let filteredGlobals = globalVariables.filter((v) => v.row.style.display !== 'none');
+    localHeading.style.display = filteredLocals.length === 0 ? 'none' : '';
+    globalHeading.style.display = filteredGlobals.length === 0 ? 'none' : '';
   }
 
   const rowToVariableMap = new WeakMap();
@@ -93,7 +93,7 @@ export default async function createVariablesTab({ debug, addon, console, msg })
       }
     },
     {
-      rootMargin: "100px",
+      rootMargin: '100px'
     }
   );
 
@@ -111,8 +111,8 @@ export default async function createVariablesTab({ debug, addon, console, msg })
 
       let newValue;
       let maxSafeLength;
-      if (this.scratchVariable.type === "list") {
-        newValue = this.scratchVariable.value.join("\n");
+      if (this.scratchVariable.type === 'list') {
+        newValue = this.scratchVariable.value.join('\n');
         maxSafeLength = 5000000;
       } else {
         newValue = this.scratchVariable.value;
@@ -120,7 +120,7 @@ export default async function createVariablesTab({ debug, addon, console, msg })
       }
 
       if (!this.ignoreTooBig && newValue.length > maxSafeLength) {
-        this.input.value = "";
+        this.input.value = '';
         this.row.dataset.tooBig = true;
         return;
       }
@@ -134,19 +134,19 @@ export default async function createVariablesTab({ debug, addon, console, msg })
 
     handleSearch(search) {
       if (this.scratchVariable.name.toLowerCase().includes(search.toLowerCase()) || !search) {
-        this.row.style.display = "";
+        this.row.style.display = '';
         this.updateValue(true);
       } else {
-        this.row.style.display = "none";
+        this.row.style.display = 'none';
       }
     }
 
     resizeInputIfList() {
-      if (this.scratchVariable.type === "list") {
-        this.input.style.height = "auto";
+      if (this.scratchVariable.type === 'list') {
+        this.input.style.height = 'auto';
         const height = Math.min(1000, this.input.scrollHeight);
         if (height > 0) {
-          this.input.style.height = height + "px";
+          this.input.style.height = height + 'px';
         }
       }
     }
@@ -162,23 +162,24 @@ export default async function createVariablesTab({ debug, addon, console, msg })
     buildDOM() {
       const id = `sa-debugger-variables-${this.scratchVariable.id}`;
 
-      const row = document.createElement("tr");
+      const row = document.createElement('tr');
       this.row = row;
-      const labelCell = document.createElement("td");
-      labelCell.className = "sa-debugger-variables-name";
+      const labelCell = document.createElement('td');
+      labelCell.className = 'sa-debugger-variables-name';
 
-      const favoriteButton = document.createElement("button");
-      favoriteButton.className = "sa-debugger-variables-favorite";
-      favoriteButton.title = msg("favorite");
-      favoriteButton.style.cssText = "background: none; border: none; cursor: pointer; padding: 0; margin: 0; display: flex; align-items: center; justify-content: center; width: 20px; height: 20px;";
-      const favoriteIcon = document.createElement("img");
-      favoriteIcon.className = "sa-debugger-variables-favorite-icon";
-      favoriteIcon.src = addon.self.getResource("/icons/favorites.svg");
-      favoriteIcon.style.cssText = "width: 16px; height: 16px;";
+      const favoriteButton = document.createElement('button');
+      favoriteButton.className = 'sa-debugger-variables-favorite';
+      favoriteButton.title = msg('favorite');
+      favoriteButton.style.cssText =
+        'background: none; border: none; cursor: pointer; padding: 0; margin: 0; display: flex; align-items: center; justify-content: center; width: 20px; height: 20px;';
+      const favoriteIcon = document.createElement('img');
+      favoriteIcon.className = 'sa-debugger-variables-favorite-icon';
+      favoriteIcon.src = addon.self.getResource('/icons/favorites.svg');
+      favoriteIcon.style.cssText = 'width: 16px; height: 16px;';
       favoriteButton.appendChild(favoriteIcon);
       labelCell.appendChild(favoriteButton);
 
-      const label = document.createElement("input");
+      const label = document.createElement('input');
       label.value = this.scratchVariable.name;
       label.htmlFor = id;
 
@@ -192,12 +193,12 @@ export default async function createVariablesTab({ debug, addon, console, msg })
           return;
         }
 
-        const CLOUD_SYMBOL = "☁";
-        const CLOUD_PREFIX = CLOUD_SYMBOL + " ";
+        const CLOUD_SYMBOL = '☁';
+        const CLOUD_PREFIX = CLOUD_SYMBOL + ' ';
         if (this.scratchVariable.isCloud) {
           if (newName.startsWith(CLOUD_SYMBOL)) {
             if (!newName.startsWith(CLOUD_PREFIX)) {
-              newName = newName.substring(0, 1) + " " + newName.substring(1);
+              newName = newName.substring(0, 1) + ' ' + newName.substring(1);
             }
           } else {
             newName = CLOUD_PREFIX + newName;
@@ -223,19 +224,19 @@ export default async function createVariablesTab({ debug, addon, console, msg })
         }
       };
 
-      label.addEventListener("keydown", (e) => {
-        if (e.key === "Enter") e.target.blur();
+      label.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') e.target.blur();
       });
-      label.addEventListener("focusout", onLabelOut);
+      label.addEventListener('focusout', onLabelOut);
 
-      label.addEventListener("focus", (e) => {
+      label.addEventListener('focus', (e) => {
         preventUpdate = true;
-        content.classList.add("freeze");
+        content.classList.add('freeze');
       });
 
-      label.addEventListener("blur", (e) => {
+      label.addEventListener('blur', (e) => {
         preventUpdate = false;
-        content.classList.remove("freeze");
+        content.classList.remove('freeze');
       });
 
       labelCell.appendChild(label);
@@ -243,67 +244,67 @@ export default async function createVariablesTab({ debug, addon, console, msg })
       rowToVariableMap.set(row, this);
       observer.observe(row);
 
-      const valueCell = document.createElement("td");
-      valueCell.className = "sa-debugger-variables-value";
+      const valueCell = document.createElement('td');
+      valueCell.className = 'sa-debugger-variables-value';
 
-      const tooBigElement = document.createElement("button");
+      const tooBigElement = document.createElement('button');
       this.tooBigElement = tooBigElement;
-      tooBigElement.textContent = msg("too-big");
-      tooBigElement.className = "sa-debugger-variables-too-big";
-      tooBigElement.addEventListener("click", () => {
+      tooBigElement.textContent = msg('too-big');
+      tooBigElement.className = 'sa-debugger-variables-too-big';
+      tooBigElement.addEventListener('click', () => {
         this.ignoreTooBig = true;
         this.updateValue(true);
       });
 
       let input;
-      if (this.scratchVariable.type === "list") {
-        input = document.createElement("textarea");
+      if (this.scratchVariable.type === 'list') {
+        input = document.createElement('textarea');
       } else {
-        input = document.createElement("input");
+        input = document.createElement('input');
       }
-      input.className = "sa-debugger-variables-value-input";
+      input.className = 'sa-debugger-variables-value-input';
       input.id = id;
       this.input = input;
 
       this.updateValue(true);
-      if (this.scratchVariable.type === "list") {
-        this.input.addEventListener("input", () => this.resizeInputIfList(), false);
+      if (this.scratchVariable.type === 'list') {
+        this.input.addEventListener('input', () => this.resizeInputIfList(), false);
       }
 
       const onInputOut = (e) => {
         e.preventDefault();
-        if (this.scratchVariable.type === "list") {
-          vm.setVariableValue(this.target.id, this.scratchVariable.id, input.value.split("\n"));
+        if (this.scratchVariable.type === 'list') {
+          vm.setVariableValue(this.target.id, this.scratchVariable.id, input.value.split('\n'));
         } else {
           vm.setVariableValue(this.target.id, this.scratchVariable.id, input.value);
         }
         input.blur();
       };
 
-      input.addEventListener("keydown", (e) => {
-        if (e.target.nodeName === "INPUT" && e.key === "Enter") e.target.blur();
+      input.addEventListener('keydown', (e) => {
+        if (e.target.nodeName === 'INPUT' && e.key === 'Enter') e.target.blur();
       });
-      input.addEventListener("focusout", onInputOut);
+      input.addEventListener('focusout', onInputOut);
 
-      input.addEventListener("focus", (e) => {
+      input.addEventListener('focus', (e) => {
         preventUpdate = true;
-        content.classList.add("freeze");
+        content.classList.add('freeze');
       });
 
-      input.addEventListener("blur", (e) => {
+      input.addEventListener('blur', (e) => {
         preventUpdate = false;
-        content.classList.remove("freeze");
+        content.classList.remove('freeze');
       });
 
       // 收藏按钮功能
       const updateFavoriteIcon = () => {
         const favorited = isFavorite(this.scratchVariable.id);
         favoriteIcon.src = favorited
-          ? addon.self.getResource("/icons/favorited.svg")
-          : addon.self.getResource("/icons/favorites.svg");
+          ? addon.self.getResource('/icons/favorited.svg')
+          : addon.self.getResource('/icons/favorites.svg');
       };
 
-      favoriteButton.addEventListener("click", () => {
+      favoriteButton.addEventListener('click', () => {
         const favorited = toggleFavorite(this.scratchVariable.id);
         updateFavoriteIcon();
 
@@ -336,10 +337,10 @@ export default async function createVariablesTab({ debug, addon, console, msg })
     localVariables = editingTarget.isStage
       ? []
       : Object.values(editingTarget.variables)
-        .filter((i) => i.type === "" || i.type === "list")
-        .map((i) => new WrappedVariable(i, editingTarget));
+          .filter((i) => i.type === '' || i.type === 'list')
+          .map((i) => new WrappedVariable(i, editingTarget));
     globalVariables = Object.values(stage.variables)
-      .filter((i) => i.type === "" || i.type === "list")
+      .filter((i) => i.type === '' || i.type === 'list')
       .map((i) => new WrappedVariable(i, stage));
 
     // 排序：收藏的变量放在前面
@@ -396,7 +397,7 @@ export default async function createVariablesTab({ debug, addon, console, msg })
   });
 
   // 监听项目重载和变量变化事件
-  vm.runtime.on("PROJECT_LOADED", () => {
+  vm.runtime.on('PROJECT_LOADED', () => {
     try {
       fullReload();
     } catch (e) {
@@ -404,7 +405,7 @@ export default async function createVariablesTab({ debug, addon, console, msg })
     }
   });
 
-  vm.runtime.on("TOOLBOX_EXTENSIONS_NEED_UPDATE", () => {
+  vm.runtime.on('TOOLBOX_EXTENSIONS_NEED_UPDATE', () => {
     try {
       fullReload();
     } catch (e) {
@@ -413,11 +414,11 @@ export default async function createVariablesTab({ debug, addon, console, msg })
   });
 
   const show = () => {
-    content.style.display = "";
+    content.style.display = '';
     fullReload();
   };
   const hide = () => {
-    content.style.display = "none";
+    content.style.display = 'none';
     cleanup();
   };
 
@@ -426,6 +427,6 @@ export default async function createVariablesTab({ debug, addon, console, msg })
     content,
     buttons: [],
     show,
-    hide,
+    hide
   };
 }

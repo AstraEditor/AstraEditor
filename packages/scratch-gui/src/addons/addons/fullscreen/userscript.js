@@ -45,12 +45,13 @@ export default async function ({ addon, console }) {
 
   // "Browser fullscreen" is defined as the mode that hides the browser UI.
   function updateBrowserFullscreen() {
-    if (addon.settings.get("browserFullscreen") && !addon.self.disabled) {
+    if (addon.settings.get('browserFullscreen') && !addon.self.disabled) {
       // If Scratch fullscreen is enabled, then browser fullscreen should also
       // be enabled, and vice versa for disabling.
       if (addon.tab.redux.state.scratchGui.mode.isFullScreen && document.fullscreenElement === null) {
         isEnteringFullscreen = true;
-        document.documentElement.requestFullscreen()
+        document.documentElement
+          .requestFullscreen()
           .then(() => {
             isEnteringFullscreen = false;
           })
@@ -67,13 +68,13 @@ export default async function ({ addon, console }) {
   // "Scratch fullscreen" is defined as the mode normally toggled by the
   // rightmost button above the stage.
   function updateScratchFullscreen() {
-    if (addon.settings.get("browserFullscreen") && !addon.self.disabled) {
+    if (addon.settings.get('browserFullscreen') && !addon.self.disabled) {
       // If browser fullscreen is disabled, then Scratch fullscreen should also
       // be disabled.
       if (document.fullscreenElement === null && addon.tab.redux.state.scratchGui.mode.isFullScreen) {
         addon.tab.redux.dispatch({
-          type: "scratch-gui/mode/SET_FULL_SCREEN",
-          isFullScreen: false,
+          type: 'scratch-gui/mode/SET_FULL_SCREEN',
+          isFullScreen: false
         });
       }
     }
@@ -90,37 +91,37 @@ export default async function ({ addon, console }) {
     if (
       !addon.self.disabled &&
       addon.tab.redux.state.scratchGui.mode.isFullScreen &&
-      addon.settings.get("toolbar") === "hover"
+      addon.settings.get('toolbar') === 'hover'
     ) {
       const canvas = await addon.tab.waitForElement('[class*="stage_full-screen"] canvas');
       const header = await addon.tab.waitForElement('[class^="stage-header_stage-header-wrapper"]');
 
       // 如果已经有旧的 phantom，就先拆掉再重建，避免监听器丢失。
-      if (header.parentElement.classList.contains("phantom-header")) {
+      if (header.parentElement.classList.contains('phantom-header')) {
         const existingPhantom = header.parentElement;
         existingPhantom.parentElement.appendChild(header);
         existingPhantom.remove();
       }
 
-      const phantom = header.parentElement.appendChild(document.createElement("div"));
-      phantom.classList.add("phantom-header");
+      const phantom = header.parentElement.appendChild(document.createElement('div'));
+      phantom.classList.add('phantom-header');
 
       // Make the header a child of the phantom, so that mouseleave will trigger when the
       // mouse leaves the header OR the phantom header.
       phantom.appendChild(header);
 
-      phantom.addEventListener("mouseenter", () => {
-        header.classList.add("stage-header-hover");
+      phantom.addEventListener('mouseenter', () => {
+        header.classList.add('stage-header-hover');
       });
-      phantom.addEventListener("mouseleave", () => {
-        header.classList.remove("stage-header-hover");
+      phantom.addEventListener('mouseleave', () => {
+        header.classList.remove('stage-header-hover');
       });
 
       const showHeader = () => {
-        header.classList.add("stage-header-hover");
+        header.classList.add('stage-header-hover');
       };
       const hideHeader = () => {
-        header.classList.remove("stage-header-hover");
+        header.classList.remove('stage-header-hover');
       };
 
       // Listen for when the mouse moves above the page (helps to show header when not in browser full screen mode)
@@ -131,7 +132,7 @@ export default async function ({ addon, console }) {
       };
       // and for when the mouse re-enters the page
       const handleBodyMouseEnter = () => {
-        if (!phantom.matches(":hover") && !header.matches(":hover")) {
+        if (!phantom.matches(':hover') && !header.matches(':hover')) {
           hideHeader();
         }
       };
@@ -139,19 +140,19 @@ export default async function ({ addon, console }) {
       const handleDocumentMouseMove = (e) => {
         if (e.clientY <= getHeaderTriggerZonePx()) {
           showHeader();
-        } else if (!phantom.matches(":hover") && !header.matches(":hover")) {
+        } else if (!phantom.matches(':hover') && !header.matches(':hover')) {
           hideHeader();
         }
       };
 
-      document.body.addEventListener("mouseleave", handleBodyMouseLeave);
-      document.body.addEventListener("mouseenter", handleBodyMouseEnter);
-      document.addEventListener("mousemove", handleDocumentMouseMove);
+      document.body.addEventListener('mouseleave', handleBodyMouseLeave);
+      document.body.addEventListener('mouseenter', handleBodyMouseEnter);
+      document.addEventListener('mousemove', handleDocumentMouseMove);
 
       // Pass click events on the phantom header onto the project player, essentially making it click-through
-      const forwardedEvents = ["mousedown", "mousemove", "mouseup", "touchstart", "touchmove", "touchend", "wheel"];
+      const forwardedEvents = ['mousedown', 'mousemove', 'mouseup', 'touchstart', 'touchmove', 'touchend', 'wheel'];
       const forwardToCanvas = (e) => {
-        if (e.target.classList.contains("phantom-header")) {
+        if (e.target.classList.contains('phantom-header')) {
           canvas.dispatchEvent(new e.constructor(e.type, e));
         }
       };
@@ -160,16 +161,16 @@ export default async function ({ addon, console }) {
       });
 
       cleanupPhantomHeader = () => {
-        document.body.removeEventListener("mouseleave", handleBodyMouseLeave);
-        document.body.removeEventListener("mouseenter", handleBodyMouseEnter);
-        document.removeEventListener("mousemove", handleDocumentMouseMove);
+        document.body.removeEventListener('mouseleave', handleBodyMouseLeave);
+        document.body.removeEventListener('mouseenter', handleBodyMouseEnter);
+        document.removeEventListener('mousemove', handleDocumentMouseMove);
         forwardedEvents.forEach((eventName) => {
           phantom.removeEventListener(eventName, forwardToCanvas);
         });
       };
     } else {
       const header = await addon.tab.waitForElement('[class*="stage-header_stage-header-wrapper"]');
-      if (header.parentElement.classList.contains("phantom-header")) {
+      if (header.parentElement.classList.contains('phantom-header')) {
         const phantom = header.parentElement;
         phantom.parentElement.appendChild(header);
         phantom.remove();
@@ -180,18 +181,18 @@ export default async function ({ addon, console }) {
   updatePhantomHeader();
 
   async function setPageScrollbar() {
-    const body = await addon.tab.waitForElement(".sa-body-editor");
+    const body = await addon.tab.waitForElement('.sa-body-editor');
     if (addon.tab.redux.state.scratchGui.mode.isFullScreen) {
-      body.classList.add("sa-fullscreen");
+      body.classList.add('sa-fullscreen');
     } else {
-      body.classList.remove("sa-fullscreen");
+      body.classList.remove('sa-fullscreen');
     }
   }
 
   // Properly resize the canvas and scale variable monitors on stage resize.
   let monitorScaler, resizeObserver, stage;
   async function initScaler() {
-    monitorScaler = await addon.tab.waitForElement("[class*=monitor-list_monitor-list-scaler]");
+    monitorScaler = await addon.tab.waitForElement('[class*=monitor-list_monitor-list-scaler]');
     stage = await addon.tab.waitForElement('[class*="stage-wrapper_full-screen"] [class*="stage_stage"] canvas');
     resizeObserver = new ResizeObserver(() => {
       const stageSize = stage.getBoundingClientRect();
@@ -220,8 +221,8 @@ export default async function ({ addon, console }) {
   // Changing to or from Scratch fullscreen is signified by a state change
   // (URL change doesn't work when editing project without project page)
   addon.tab.redux.initialize();
-  addon.tab.redux.addEventListener("statechanged", (e) => {
-    if (e.detail.action.type === "scratch-gui/mode/SET_FULL_SCREEN") {
+  addon.tab.redux.addEventListener('statechanged', (e) => {
+    if (e.detail.action.type === 'scratch-gui/mode/SET_FULL_SCREEN') {
       initScaler();
       updateBrowserFullscreen();
       setPageScrollbar();
@@ -229,18 +230,18 @@ export default async function ({ addon, console }) {
     }
   });
   // Changing to or from browser fullscreen is signified by a window resize.
-  window.addEventListener("resize", () => {
+  window.addEventListener('resize', () => {
     if (!isEnteringFullscreen) {
       updateScratchFullscreen();
     }
   });
   // Handles the case of F11 full screen AND document full screen being enabled
   // at the same time.
-  document.addEventListener("fullscreenchange", () => {
+  document.addEventListener('fullscreenchange', () => {
     if (document.fullscreenElement === null && addon.tab.redux.state.scratchGui.mode.isFullScreen) {
       addon.tab.redux.dispatch({
-        type: "scratch-gui/mode/SET_FULL_SCREEN",
-        isFullScreen: false,
+        type: 'scratch-gui/mode/SET_FULL_SCREEN',
+        isFullScreen: false
       });
     }
   });
@@ -248,15 +249,15 @@ export default async function ({ addon, console }) {
   // These handle the case of the user already being in Scratch fullscreen
   // (without being in browser fullscreen) when the addon or sync option are
   // dynamically enabled.
-  addon.settings.addEventListener("change", () => {
+  addon.settings.addEventListener('change', () => {
     updateBrowserFullscreen();
     updatePhantomHeader();
   });
-  addon.self.addEventListener("disabled", () => {
+  addon.self.addEventListener('disabled', () => {
     resizeObserver.disconnect();
     updatePhantomHeader();
   });
-  addon.self.addEventListener("reenabled", () => {
+  addon.self.addEventListener('reenabled', () => {
     resizeObserver.observe(stage);
     updateBrowserFullscreen();
     updatePhantomHeader();

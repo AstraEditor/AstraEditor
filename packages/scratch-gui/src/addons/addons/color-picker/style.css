@@ -32,7 +32,7 @@
   border-bottom-left-radius: 0;
 }
 
-[dir="rtl"] .sa-color-picker > .sa-color-picker-color {
+[dir='rtl'] .sa-color-picker > .sa-color-picker-color {
   border-top-left-radius: 0;
   border-bottom-left-radius: 0;
   border-top-right-radius: 1rem;
@@ -41,14 +41,14 @@
   margin-right: 0.5rem;
 }
 
-[dir="rtl"] .sa-color-picker > .sa-color-picker-text {
+[dir='rtl'] .sa-color-picker > .sa-color-picker-text {
   border-top-left-radius: 1rem;
   border-bottom-left-radius: 1rem;
   border-top-right-radius: 0;
   border-bottom-right-radius: 0;
 }
 
-body.sa-hide-eye-dropper-background div[class*="stage_color-picker-background"] {
+body.sa-hide-eye-dropper-background div[class*='stage_color-picker-background'] {
   /* Do not show eye dropper background if the color picker is "fake" */
   display: none;
 }

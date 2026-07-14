@@ -18,7 +18,7 @@
  * limitations under the License.
  */
 
- /**
+/**
  * @fileoverview Tests for Blockly.FieldNumber
  * @author Anm@anm.me (Andrew n marshall)
  */
@@ -48,11 +48,7 @@ function test_fieldnumber_constructor() {
   assertEquals(field.getValue(), '2.5');
 
   // All values
-  field = new Blockly.FieldNumber(
-    /* value */ 0,
-    /* min */ -128,
-    /* max */ 127,
-    /* precision */ 1);
+  field = new Blockly.FieldNumber(/* value */ 0, /* min */ -128, /* max */ 127, /* precision */ 1);
   // Unlike blockly, scratch-blocks doesn't store min, max, and precision.
   assertEquals(field.getValue(), '0');
   assertEquals(field.min_, undefined);
@@ -73,10 +69,10 @@ function test_fieldnumber_fromJson() {
   // All options, but scratch-blocks parses min/max/precision differently from
   // Blockly.  See notes in field_number.js.
   var field = Blockly.FieldNumber.fromJson({
-      value: 0,
-      min: -128,
-      max: 127,
-      precision: 1
+    value: 0,
+    min: -128,
+    max: 127,
+    precision: 1
   });
   assertEquals(field.getValue(), '0');
 }

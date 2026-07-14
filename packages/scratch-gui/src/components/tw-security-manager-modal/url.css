@@ -1,11 +1,11 @@
 .url {
-    font-family: monospace;
-    user-select: text;
-    word-wrap: break-word;
+  font-family: monospace;
+  user-select: text;
+  word-wrap: break-word;
 }
 .url::before {
-    content: '"';
+  content: '"';
 }
 .url::after {
-    content: '"';
+  content: '"';
 }

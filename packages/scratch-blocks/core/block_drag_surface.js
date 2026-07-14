@@ -34,7 +34,6 @@ goog.require('Blockly.utils');
 goog.require('goog.asserts');
 goog.require('goog.math.Coordinate');
 
-
 /**
  * Class for a drag surface for the currently dragged block. This is a separate
  * SVG that contains only the currently moving block, or nothing.
@@ -110,22 +109,24 @@ Blockly.BlockDragSurfaceSvg.SHADOW_STD_DEVIATION = 6;
  */
 Blockly.BlockDragSurfaceSvg.prototype.createDom = function () {
   if (this.SVG_) {
-    return;  // Already created.
+    return; // Already created.
   }
-  this.SVG_ = Blockly.utils.createSvgElement('svg',
+  this.SVG_ = Blockly.utils.createSvgElement(
+    'svg',
     {
-      'xmlns': Blockly.SVG_NS,
+      xmlns: Blockly.SVG_NS,
       'xmlns:html': Blockly.HTML_NS,
       'xmlns:xlink': 'http://www.w3.org/1999/xlink',
-      'version': '1.1',
-      'class': 'blocklyBlockDragSurface'
-    }, this.container_);
+      version: '1.1',
+      class: 'blocklyBlockDragSurface'
+    },
+    this.container_
+  );
   this.dragGroup_ = Blockly.utils.createSvgElement('g', {}, this.SVG_);
   // Belongs in Scratch Blocks, but not Blockly.
   var defs = Blockly.utils.createSvgElement('defs', {}, this.SVG_);
   this.dragShadowFilterId_ = this.createDropShadowDom_(defs);
-  this.dragGroup_.setAttribute(
-    'filter', 'url(#' + this.dragShadowFilterId_ + ')');
+  this.dragGroup_.setAttribute('filter', 'url(#' + this.dragShadowFilterId_ + ')');
 };
 
 /**
@@ -137,38 +138,49 @@ Blockly.BlockDragSurfaceSvg.prototype.createDom = function () {
 Blockly.BlockDragSurfaceSvg.prototype.createDropShadowDom_ = function (defs) {
   var rnd = String(Math.random()).substring(2);
   // Adjust these width/height, x/y properties to stop the shadow from clipping
-  var dragShadowFilter = Blockly.utils.createSvgElement('filter',
+  var dragShadowFilter = Blockly.utils.createSvgElement(
+    'filter',
     {
-      'id': 'blocklyDragShadowFilter' + rnd,
-      'height': '140%',
-      'width': '140%',
-      'y': '-20%',
-      'x': '-20%'
+      id: 'blocklyDragShadowFilter' + rnd,
+      height: '140%',
+      width: '140%',
+      y: '-20%',
+      x: '-20%'
     },
-    defs);
-  Blockly.utils.createSvgElement('feGaussianBlur',
+    defs
+  );
+  Blockly.utils.createSvgElement(
+    'feGaussianBlur',
     {
-      'in': 'SourceAlpha',
-      'stdDeviation': Blockly.BlockDragSurfaceSvg.SHADOW_STD_DEVIATION
+      in: 'SourceAlpha',
+      stdDeviation: Blockly.BlockDragSurfaceSvg.SHADOW_STD_DEVIATION
     },
-    dragShadowFilter);
+    dragShadowFilter
+  );
   var componentTransfer = Blockly.utils.createSvgElement(
-    'feComponentTransfer', { 'result': 'offsetBlur' }, dragShadowFilter);
+    'feComponentTransfer',
+    { result: 'offsetBlur' },
+    dragShadowFilter
+  );
   // Shadow opacity is specified in the adjustable colour library,
   // since the darkness of the shadow largely depends on the workspace colour.
-  Blockly.utils.createSvgElement('feFuncA',
+  Blockly.utils.createSvgElement(
+    'feFuncA',
     {
-      'type': 'linear',
-      'slope': Blockly.Colours.dragShadowOpacity
+      type: 'linear',
+      slope: Blockly.Colours.dragShadowOpacity
     },
-    componentTransfer);
-  Blockly.utils.createSvgElement('feComposite',
+    componentTransfer
+  );
+  Blockly.utils.createSvgElement(
+    'feComposite',
     {
-      'in': 'SourceGraphic',
-      'in2': 'offsetBlur',
-      'operator': 'over'
+      in: 'SourceGraphic',
+      in2: 'offsetBlur',
+      operator: 'over'
     },
-    dragShadowFilter);
+    dragShadowFilter
+  );
   return dragShadowFilter.id;
 };
 
@@ -179,8 +191,7 @@ Blockly.BlockDragSurfaceSvg.prototype.createDropShadowDom_ = function (defs) {
  * surface.
  */
 Blockly.BlockDragSurfaceSvg.prototype.setBlocksAndShow = function (blocks) {
-  goog.asserts.assert(
-    this.dragGroup_.childNodes.length == 0, 'Already dragging a block.');
+  goog.asserts.assert(this.dragGroup_.childNodes.length == 0, 'Already dragging a block.');
   // appendChild removes the blocks from the previous parent
   this.dragGroup_.appendChild(blocks);
   this.SVG_.style.display = 'block';
@@ -206,8 +217,7 @@ Blockly.BlockDragSurfaceSvg.prototype.translateAndScaleGroup = function (x, y, s
   // fuzzy while they are being dragged on the drag surface.
   var fixedX = x.toFixed(0);
   var fixedY = y.toFixed(0);
-  this.dragGroup_.setAttribute('transform',
-    'translate(' + fixedX + ',' + fixedY + ') scale(' + scale + ')');
+  this.dragGroup_.setAttribute('transform', 'translate(' + fixedX + ',' + fixedY + ') scale(' + scale + ')');
 };
 
 /**
@@ -223,8 +233,7 @@ Blockly.BlockDragSurfaceSvg.prototype.translateSurfaceInternal_ = function () {
   y = y.toFixed(0);
   this.SVG_.style.display = 'block';
 
-  Blockly.utils.setCssTransform(this.SVG_,
-    'translate(' + x + 'px, ' + y + 'px)');
+  Blockly.utils.setCssTransform(this.SVG_, 'translate(' + x + 'px, ' + y + 'px)');
 };
 
 /**
@@ -286,8 +295,7 @@ Blockly.BlockDragSurfaceSvg.prototype.clearAndHide = function (opt_newSurface) {
     this.dragGroup_.removeChild(this.getCurrentBlock());
   }
   this.SVG_.style.display = 'none';
-  goog.asserts.assert(
-    this.dragGroup_.childNodes.length == 0, 'Drag group was not cleared.');
+  goog.asserts.assert(this.dragGroup_.childNodes.length == 0, 'Drag group was not cleared.');
   this.surfaceXY_ = null;
 
   // Reset the overflow property back to hidden so that nothing appears outside

@@ -3,35 +3,35 @@
 $arrow-border-width: 14px;
 
 .dropdown {
-    border: 1px solid $form-border;
-    border-radius: 5px;
-    overflow: visible;
-    min-width: 3.5rem;
-    color: $looks-secondary;
-    padding: .5rem;
+  border: 1px solid $form-border;
+  border-radius: 5px;
+  overflow: visible;
+  min-width: 3.5rem;
+  color: $looks-secondary;
+  padding: 0.5rem;
 }
 
 .mod-open {
-    background-color: $form-border;
+  background-color: $form-border;
 }
 
 .dropdown-icon {
-    width: .5rem;
-    height: .5rem;
-    vertical-align: middle;
-    padding-bottom: .2rem;
+  width: 0.5rem;
+  height: 0.5rem;
+  vertical-align: middle;
+  padding-bottom: 0.2rem;
 }
 
-[dir="ltr"] .dropdown-icon {
-    margin-left: .5rem;
+[dir='ltr'] .dropdown-icon {
+  margin-left: 0.5rem;
 }
 
-[dir="rtl"] .dropdown-icon {
-    margin-right: .5rem;
+[dir='rtl'] .dropdown-icon {
+  margin-right: 0.5rem;
 }
 
 .mod-caret-up {
-    transform: rotate(180deg);
-    padding-bottom: 0;
-    padding-top: .2rem;
+  transform: rotate(180deg);
+  padding-bottom: 0;
+  padding-top: 0.2rem;
 }

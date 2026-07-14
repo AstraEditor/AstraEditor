@@ -1,6 +1,6 @@
-import { onPauseChanged, isPaused, singleStep, onSingleStep, getRunningThread } from "./module.js";
-import LogView from "./log-view.js";
-import Highlighter from "../editor-stepping/highlighter.js";
+import { onPauseChanged, isPaused, singleStep, onSingleStep, getRunningThread } from './module.js';
+import LogView from './log-view.js';
+import Highlighter from '../editor-stepping/highlighter.js';
 
 const concatInPlace = (copyInto, copyFrom) => {
   for (const i of copyFrom) {
@@ -12,59 +12,59 @@ export default async function createThreadsTab({ debug, addon, console, msg }) {
   const vm = addon.tab.traps.vm;
 
   const tab = debug.createHeaderTab({
-    text: msg("tab-threads"),
-    icon: addon.self.getResource("/icons/threads.svg") /* rewritten by pull.js */,
+    text: msg('tab-threads'),
+    icon: addon.self.getResource('/icons/threads.svg') /* rewritten by pull.js */
   });
 
   const logView = new LogView();
   logView.canAutoScrollToEnd = false;
-  logView.outerElement.classList.add("sa-debugger-threads");
-  logView.placeholderElement.textContent = msg("no-threads-running");
+  logView.outerElement.classList.add('sa-debugger-threads');
+  logView.placeholderElement.textContent = msg('no-threads-running');
 
-  const highlighter = new Highlighter(10, "#ff1111");
+  const highlighter = new Highlighter(10, '#ff1111');
 
   logView.generateRow = (row) => {
-    const root = document.createElement("div");
-    root.className = "sa-debugger-log";
+    const root = document.createElement('div');
+    root.className = 'sa-debugger-log';
 
-    const isHeader = row.type === "thread-header";
-    const indenter = document.createElement("div");
-    indenter.className = "sa-debugger-thread-indent";
-    indenter.style.setProperty("--level", isHeader ? row.depth : row.depth + 1);
+    const isHeader = row.type === 'thread-header';
+    const indenter = document.createElement('div');
+    indenter.className = 'sa-debugger-thread-indent';
+    indenter.style.setProperty('--level', isHeader ? row.depth : row.depth + 1);
     root.appendChild(indenter);
 
     if (isHeader) {
-      root.classList.add("sa-debugger-thread-title");
+      root.classList.add('sa-debugger-thread-title');
 
       if (row.depth > 0) {
-        const icon = document.createElement("div");
-        icon.className = "sa-debugger-log-icon";
+        const icon = document.createElement('div');
+        icon.className = 'sa-debugger-log-icon';
         root.appendChild(icon);
       }
 
-      const name = document.createElement("div");
+      const name = document.createElement('div');
       name.textContent = row.targetName;
-      name.className = "sa-debugger-thread-target-name";
+      name.className = 'sa-debugger-thread-target-name';
       root.appendChild(name);
 
-      const id = document.createElement("div");
-      id.className = "sa-debugger-thread-id";
-      id.textContent = msg("thread", {
-        id: row.id,
+      const id = document.createElement('div');
+      id.className = 'sa-debugger-thread-id';
+      id.textContent = msg('thread', {
+        id: row.id
       });
       root.appendChild(id);
     }
 
-    if (row.type === "thread-stack") {
+    if (row.type === 'thread-stack') {
       const preview = debug.createBlockPreview(row.targetId, row.blockId);
       if (preview) {
         root.appendChild(preview);
       }
     }
 
-    if (row.type === "compiled") {
+    if (row.type === 'compiled') {
       const el = document.createElement('div');
-      el.className = "sa-debugger-thread-compiled";
+      el.className = 'sa-debugger-thread-compiled';
       el.textContent = "Compiled threads can't be stepped and have no stack information.";
       root.appendChild(el);
     }
@@ -74,13 +74,13 @@ export default async function createThreadsTab({ debug, addon, console, msg }) {
     }
 
     return {
-      root,
+      root
     };
   };
 
   logView.renderRow = (elements, row) => {
     const { root } = elements;
-    root.classList.toggle("sa-debugger-thread-running", !!row.running);
+    root.classList.toggle('sa-debugger-thread-running', !!row.running);
   };
 
   let threadInfoCache = new WeakMap();
@@ -116,16 +116,18 @@ export default async function createThreadsTab({ debug, addon, console, msg }) {
       if (!threadInfoCache.has(thread)) {
         threadInfoCache.set(thread, {
           headerItem: {
-            type: "thread-header",
+            type: 'thread-header',
             depth,
             targetName: target.getName(),
-            id,
+            id
           },
-          compiledItem: thread.isCompiled ? {
-            type: "compiled",
-            depth: 1,
-          } : null,
-          blockCache: new WeakMap(),
+          compiledItem: thread.isCompiled
+            ? {
+                type: 'compiled',
+                depth: 1
+              }
+            : null,
+          blockCache: new WeakMap()
         });
       }
       const cacheInfo = threadInfoCache.get(thread);
@@ -145,20 +147,17 @@ export default async function createThreadsTab({ debug, addon, console, msg }) {
 
         if (!blockInfo) {
           blockInfo = blockInfoMap[stackFrameIdx] = {
-            type: "thread-stack",
+            type: 'thread-stack',
             depth,
             targetId: target.id,
-            blockId,
+            blockId
           };
         }
 
         blockInfo.running =
-          thread === runningThread && (
-            thread.isCompiled || (
-              blockId === runningThread.peekStack() &&
-              stackFrameIdx === runningThread.stackFrames.length - 1
-            )
-          );
+          thread === runningThread &&
+          (thread.isCompiled ||
+            (blockId === runningThread.peekStack() && stackFrameIdx === runningThread.stackFrames.length - 1));
 
         const result = [blockInfo];
         if (stackFrame && stackFrame.executionContext && stackFrame.executionContext.startedThreads) {
@@ -216,16 +215,16 @@ export default async function createThreadsTab({ debug, addon, console, msg }) {
   });
 
   const stepButton = debug.createHeaderButton({
-    text: msg("step"),
-    icon: addon.self.getResource("/icons/step.svg") /* rewritten by pull.js */,
-    description: msg("step-desc"),
+    text: msg('step'),
+    icon: addon.self.getResource('/icons/step.svg') /* rewritten by pull.js */,
+    description: msg('step-desc')
   });
-  stepButton.element.addEventListener("click", () => {
+  stepButton.element.addEventListener('click', () => {
     singleStep();
   });
 
   const handlePauseChanged = (paused) => {
-    stepButton.element.style.display = paused ? "" : "none";
+    stepButton.element.style.display = paused ? '' : 'none';
     updateContent();
   };
   handlePauseChanged(isPaused());
@@ -241,7 +240,7 @@ export default async function createThreadsTab({ debug, addon, console, msg }) {
         const maxScrollback = Math.floor(logView.height / logView.rowHeight);
         for (let i = 1; i < maxScrollback; i++) {
           const checkIndex = runningIndex - i;
-          if (logView.rows[checkIndex].type === "thread-header") {
+          if (logView.rows[checkIndex].type === 'thread-header') {
             logView.scrollTo(checkIndex);
             found = true;
             break;
@@ -271,6 +270,6 @@ export default async function createThreadsTab({ debug, addon, console, msg }) {
     content: logView.outerElement,
     buttons: [stepButton],
     show,
-    hide,
+    hide
   };
 }

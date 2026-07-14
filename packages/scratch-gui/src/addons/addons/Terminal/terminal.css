@@ -310,7 +310,7 @@
 }
 
 /* VSCode 布局下的侧边栏按钮样式 - 与 SPA、bookmark 一致 */
-[class*="tabs"][class*="vscodeList"] .sa-terminal-toggle-button.vscode-tab {
+[class*='tabs'][class*='vscodeList'] .sa-terminal-toggle-button.vscode-tab {
   width: 40px;
   height: 40px;
   font-size: 0;
@@ -326,21 +326,21 @@
   position: relative;
 }
 
-[class*="tabs"][class*="vscodeList"] .sa-terminal-toggle-button.vscode-tab img {
+[class*='tabs'][class*='vscodeList'] .sa-terminal-toggle-button.vscode-tab img {
   width: 22px;
   height: auto;
   filter: grayscale(100%);
 }
 
 /* VSCode 布局下按钮激活状态 */
-[class*="tabs"][class*="vscodeList"] .sa-terminal-toggle-button.vscode-tab.sa-terminal-toggle-active,
-[class*="tabs"][class*="vscodeList"] .sa-terminal-toggle-button.vscode-tab.is-selected {
+[class*='tabs'][class*='vscodeList'] .sa-terminal-toggle-button.vscode-tab.sa-terminal-toggle-active,
+[class*='tabs'][class*='vscodeList'] .sa-terminal-toggle-button.vscode-tab.is-selected {
   background-color: var(--ui-white) !important;
   box-shadow: inset 3px 0px 0px 0px var(--looks-secondary) !important;
 }
 
-[class*="tabs"][class*="vscodeList"] .sa-terminal-toggle-button.vscode-tab.sa-terminal-toggle-active img,
-[class*="tabs"][class*="vscodeList"] .sa-terminal-toggle-button.vscode-tab.is-selected img {
+[class*='tabs'][class*='vscodeList'] .sa-terminal-toggle-button.vscode-tab.sa-terminal-toggle-active img,
+[class*='tabs'][class*='vscodeList'] .sa-terminal-toggle-button.vscode-tab.is-selected img {
   filter: grayscale(0%);
 }
 /* 

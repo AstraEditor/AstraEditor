@@ -7,10 +7,15 @@ This document is a compact fixture for previewing common Markdown syntax.
 ## Headings
 
 # H1
+
 ## H2
+
 ### H3
+
 #### H4
+
 ##### H5
+
 ###### H6
 
 ## Paragraphs
@@ -22,11 +27,11 @@ This line should appear after a hard break.
 
 ## Emphasis
 
-*Italic text*
+_Italic text_
 
 **Bold text**
 
-***Bold and italic text***
+_**Bold and italic text**_
 
 ~~Strikethrough text~~
 
@@ -91,16 +96,16 @@ Use `git submodule update --init --recursive` when submodules are missing.
 
 ## Tables
 
-| Syntax | Description |
-| --- | --- |
-| Header | Title |
-| Paragraph | Text |
-| Code | `const x = 1` |
+| Syntax    | Description   |
+| --------- | ------------- |
+| Header    | Title         |
+| Paragraph | Text          |
+| Code      | `const x = 1` |
 
 | Left | Center | Right |
-| :--- | :---: | ---: |
-| A | B | C |
-| 1 | 2 | 3 |
+| :--- | :----: | ----: |
+| A    |   B    |     C |
+| 1    |   2    |     3 |
 
 ## Code Blocks
 
@@ -112,7 +117,7 @@ pnpm install
 
 ```javascript
 function greet(name) {
-    return `Hello, ${name}!`;
+  return `Hello, ${name}!`;
 }
 
 console.log(greet('world'));
@@ -128,9 +133,9 @@ console.log(greet('world'));
 
 ```css
 .example {
-    display: block;
-    width: max-content;
-    min-width: 100%;
+  display: block;
+  width: max-content;
+  min-width: 100%;
 }
 ```
 
@@ -164,10 +169,10 @@ console.log(greet('world'));
 2. Read the table below.
 3. Check the note after the table.
 
-| Step | Command | Status |
-| --- | --- | --- |
-| Install | `pnpm install` | Done |
-| Build | `pnpm build` | Pending |
+| Step    | Command        | Status  |
+| ------- | -------------- | ------- |
+| Install | `pnpm install` | Done    |
+| Build   | `pnpm build`   | Pending |
 
 > [!NOTE]
 > The code block below is intentionally long to test horizontal overflow behavior.

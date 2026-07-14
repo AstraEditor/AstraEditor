@@ -30,7 +30,6 @@ goog.require('Blockly.Events.VarCreate');
 
 goog.require('goog.string');
 
-
 /**
  * Class for a variable model.
  * Holds information for the variable including name, ID, and type.
@@ -47,8 +46,7 @@ goog.require('goog.string');
  * @see {Blockly.FieldVariable}
  * @constructor
  */
-Blockly.VariableModel = function(workspace, name, opt_type, opt_id,
-    opt_isLocal, opt_isCloud) {
+Blockly.VariableModel = function (workspace, name, opt_type, opt_id, opt_isLocal, opt_isCloud) {
   /**
    * The workspace the variable is in.
    * @type {!Blockly.Workspace}
@@ -99,7 +97,7 @@ Blockly.VariableModel = function(workspace, name, opt_type, opt_id,
 /**
  * @return {!string} The ID for the variable.
  */
-Blockly.VariableModel.prototype.getId = function() {
+Blockly.VariableModel.prototype.getId = function () {
   return this.id_;
 };
 
@@ -111,6 +109,6 @@ Blockly.VariableModel.prototype.getId = function() {
  *     and 1 if greater.
  * @package
  */
-Blockly.VariableModel.compareByName = function(var1, var2) {
+Blockly.VariableModel.compareByName = function (var1, var2) {
   return Blockly.scratchBlocksUtils.compareStrings(var1.name, var2.name);
 };

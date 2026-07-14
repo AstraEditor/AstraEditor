@@ -8,12 +8,12 @@ const PROJECT_SERVER = 'https://cdn.projects.scratch.mit.edu/';
  * @returns {string} a URL to download a project file.
  */
 const getProjectUrl = function (asset) {
-    const assetIdParts = asset.assetId.split('.');
-    const assetUrlParts = [PROJECT_SERVER, 'internalapi/project/', assetIdParts[0], '/get/'];
-    if (assetIdParts[1]) {
-        assetUrlParts.push(assetIdParts[1]);
-    }
-    return assetUrlParts.join('');
+  const assetIdParts = asset.assetId.split('.');
+  const assetUrlParts = [PROJECT_SERVER, 'internalapi/project/', assetIdParts[0], '/get/'];
+  if (assetIdParts[1]) {
+    assetUrlParts.push(assetIdParts[1]);
+  }
+  return assetUrlParts.join('');
 };
 
 /**
@@ -21,15 +21,8 @@ const getProjectUrl = function (asset) {
  * @returns {string} a URL to download a project asset (PNG, WAV, etc.)
  */
 const getAssetUrl = function (asset) {
-    const assetUrlParts = [
-        ASSET_SERVER,
-        'internalapi/asset/',
-        asset.assetId,
-        '.',
-        asset.dataFormat,
-        '/get/'
-    ];
-    return assetUrlParts.join('');
+  const assetUrlParts = [ASSET_SERVER, 'internalapi/asset/', asset.assetId, '.', asset.dataFormat, '/get/'];
+  return assetUrlParts.join('');
 };
 
 /**
@@ -37,11 +30,11 @@ const getAssetUrl = function (asset) {
  * @returns {ScratchStorage} - an instance of ScratchStorage, ready to be used for tests.
  */
 const makeTestStorage = function () {
-    const storage = new ScratchStorage();
-    const AssetType = storage.AssetType;
-    storage.addWebStore([AssetType.Project], getProjectUrl);
-    storage.addWebStore([AssetType.ImageVector, AssetType.ImageBitmap, AssetType.Sound], getAssetUrl);
-    return storage;
+  const storage = new ScratchStorage();
+  const AssetType = storage.AssetType;
+  storage.addWebStore([AssetType.Project], getProjectUrl);
+  storage.addWebStore([AssetType.ImageVector, AssetType.ImageBitmap, AssetType.Sound], getAssetUrl);
+  return storage;
 };
 
 module.exports = makeTestStorage;

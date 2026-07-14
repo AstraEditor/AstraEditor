@@ -4,19 +4,19 @@ import ToolSelectComponent from '../tool-select-base/tool-select-base.jsx';
 import messages from '../../lib/messages.js';
 import ovalIcon from './oval.svg';
 
-const OvalModeComponent = props => (
-    <ToolSelectComponent
-        imgDescriptor={messages.oval}
-        imgSrc={ovalIcon}
-        isSelected={props.isSelected}
-        onMouseDown={props.onMouseDown}
-        keybinding="C"
-    />
+const OvalModeComponent = (props) => (
+  <ToolSelectComponent
+    imgDescriptor={messages.oval}
+    imgSrc={ovalIcon}
+    isSelected={props.isSelected}
+    onMouseDown={props.onMouseDown}
+    keybinding="C"
+  />
 );
 
 OvalModeComponent.propTypes = {
-    isSelected: PropTypes.bool.isRequired,
-    onMouseDown: PropTypes.func.isRequired
+  isSelected: PropTypes.bool.isRequired,
+  onMouseDown: PropTypes.func.isRequired
 };
 
 export default OvalModeComponent;

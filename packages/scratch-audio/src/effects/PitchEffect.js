@@ -19,110 +19,110 @@ const Effect = require('./Effect');
  * playback on one SoundPlayer or a group of them.
  */
 class PitchEffect extends Effect {
-    /**
-     * @param {AudioEngine} audioEngine - audio engine this runs with
-     * @param {AudioPlayer} audioPlayer - audio player this affects
-     * @param {Effect} lastEffect - effect in the chain before this one
-     * @constructor
-     */
-    constructor (audioEngine, audioPlayer, lastEffect) {
-        super(audioEngine, audioPlayer, lastEffect);
-
-        /**
-         * The playback rate ratio
-         * @type {Number}
-         */
-        this.ratio = 1;
-    }
+  /**
+   * @param {AudioEngine} audioEngine - audio engine this runs with
+   * @param {AudioPlayer} audioPlayer - audio player this affects
+   * @param {Effect} lastEffect - effect in the chain before this one
+   * @constructor
+   */
+  constructor(audioEngine, audioPlayer, lastEffect) {
+    super(audioEngine, audioPlayer, lastEffect);
 
     /**
-     * Return the name of the effect.
-     * @type {string}
+     * The playback rate ratio
+     * @type {Number}
      */
-    get name () {
-        return 'pitch';
-    }
+    this.ratio = 1;
+  }
 
-    /**
-     * Should the effect be connected to the audio graph?
-     * @return {boolean} is the effect affecting the graph?
-     */
-    get _isPatch () {
-        return false;
-    }
+  /**
+   * Return the name of the effect.
+   * @type {string}
+   */
+  get name() {
+    return 'pitch';
+  }
 
-    /**
-     * Get the input node.
-     * @return {AudioNode} - audio node that is the input for this effect
-     */
-    getInputNode () {
-        return this.target.getInputNode();
-    }
+  /**
+   * Should the effect be connected to the audio graph?
+   * @return {boolean} is the effect affecting the graph?
+   */
+  get _isPatch() {
+    return false;
+  }
 
-    /**
-     * Initialize the Effect.
-     * Effects start out uninitialized. Then initialize when they are first set
-     * with some value.
-     * @throws {Error} throws when left unimplemented
-     */
-    initialize () {
-        this.initialized = true;
-    }
+  /**
+   * Get the input node.
+   * @return {AudioNode} - audio node that is the input for this effect
+   */
+  getInputNode() {
+    return this.target.getInputNode();
+  }
 
-    /**
-     * Set the effect value.
-     * @param {number} value - the new value to set the effect to
-     */
-    _set (value) {
-        this.value = value;
-        this.ratio = this.getRatio(this.value);
-        this.updatePlayers(this.audioPlayer.getSoundPlayers());
-    }
+  /**
+   * Initialize the Effect.
+   * Effects start out uninitialized. Then initialize when they are first set
+   * with some value.
+   * @throws {Error} throws when left unimplemented
+   */
+  initialize() {
+    this.initialized = true;
+  }
 
-    /**
-     * Update the effect for changes in the audioPlayer.
-     */
-    update () {
-        this.updatePlayers(this.audioPlayer.getSoundPlayers());
-    }
+  /**
+   * Set the effect value.
+   * @param {number} value - the new value to set the effect to
+   */
+  _set(value) {
+    this.value = value;
+    this.ratio = this.getRatio(this.value);
+    this.updatePlayers(this.audioPlayer.getSoundPlayers());
+  }
 
-    /**
-     * Compute the playback ratio for an effect value.
-     * The playback ratio is scaled so that a change of 10 in the effect value
-     * gives a change of 1 semitone in the ratio.
-     * @param {number} val - an effect value
-     * @returns {number} a playback ratio
-     */
-    getRatio (val) {
-        const interval = val / 10;
-        // Convert the musical interval in semitones to a frequency ratio
-        return Math.pow(2, (interval / 12));
-    }
+  /**
+   * Update the effect for changes in the audioPlayer.
+   */
+  update() {
+    this.updatePlayers(this.audioPlayer.getSoundPlayers());
+  }
 
-    /**
-     * Update a sound player's playback rate using the current ratio for the
-     * effect
-     * @param {object} player - a SoundPlayer object
-     */
-    updatePlayer (player) {
-        player.setPlaybackRate(this.ratio);
-    }
+  /**
+   * Compute the playback ratio for an effect value.
+   * The playback ratio is scaled so that a change of 10 in the effect value
+   * gives a change of 1 semitone in the ratio.
+   * @param {number} val - an effect value
+   * @returns {number} a playback ratio
+   */
+  getRatio(val) {
+    const interval = val / 10;
+    // Convert the musical interval in semitones to a frequency ratio
+    return Math.pow(2, interval / 12);
+  }
 
-    /**
-     * Update a sound player's playback rate using the current ratio for the
-     * effect
-     * @param {object} players - a dictionary of SoundPlayer objects to update,
-     *     indexed by md5
-     */
-    updatePlayers (players) {
-        if (!players) return;
+  /**
+   * Update a sound player's playback rate using the current ratio for the
+   * effect
+   * @param {object} player - a SoundPlayer object
+   */
+  updatePlayer(player) {
+    player.setPlaybackRate(this.ratio);
+  }
 
-        for (const id in players) {
-            if (Object.prototype.hasOwnProperty.call(players, id)) {
-                this.updatePlayer(players[id]);
-            }
-        }
+  /**
+   * Update a sound player's playback rate using the current ratio for the
+   * effect
+   * @param {object} players - a dictionary of SoundPlayer objects to update,
+   *     indexed by md5
+   */
+  updatePlayers(players) {
+    if (!players) return;
+
+    for (const id in players) {
+      if (Object.prototype.hasOwnProperty.call(players, id)) {
+        this.updatePlayer(players[id]);
+      }
     }
+  }
 }
 
 module.exports = PitchEffect;

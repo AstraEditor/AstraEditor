@@ -19,13 +19,9 @@ import downloadBlob from '../lib/download-blob.js';
 import Settings from '../addons/settings/settings.jsx';
 import render from './app-target';
 
-const onExportSettings = settings => {
-    const blob = new Blob([JSON.stringify(settings)]);
-    downloadBlob('astraeditor-addon-settings.json', blob);
+const onExportSettings = (settings) => {
+  const blob = new Blob([JSON.stringify(settings)]);
+  downloadBlob('astraeditor-addon-settings.json', blob);
 };
 
-render((
-    <Settings
-        onExportSettings={onExportSettings}
-    />
-));
+render(<Settings onExportSettings={onExportSettings} />);

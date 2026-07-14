@@ -2,27 +2,30 @@
 @todo This file is copied from GUI and should be pulled out into a shared library.
 See https://github.com/LLK/scratch-paint/issues/13 */
 
-$ui-pane-border: var(--paint-ui-pane-border, #D9D9D9);
-$ui-pane-gray: #F9F9F9;
+$ui-pane-border: var(--paint-ui-pane-border, #d9d9d9);
+$ui-pane-gray: #f9f9f9;
 $ui-background-blue: #e8edf1;
 
 $text-primary: var(--paint-text-primary, #575e75);
 
-$looks-secondary: var(--paint-looks-secondary, #855CD6);
-$looks-transparent: var(--paint-looks-transparent, hsla(260, 60%, 60%, 0.35)); /* 35% transparent version of looks-secondary */
+$looks-secondary: var(--paint-looks-secondary, #855cd6);
+$looks-transparent: var(
+  --paint-looks-transparent,
+  hsla(260, 60%, 60%, 0.35)
+); /* 35% transparent version of looks-secondary */
 
-$red-primary: #FF661A;
-$red-tertiary: #E64D00;
+$red-primary: #ff661a;
+$red-tertiary: #e64d00;
 
-$sound-primary: #CF63CF;
-$sound-tertiary: #A63FA6;
+$sound-primary: #cf63cf;
+$sound-tertiary: #a63fa6;
 
-$control-primary: #FFAB19;
+$control-primary: #ffab19;
 
-$data-primary: #FF8C1A;
+$data-primary: #ff8c1a;
 
-$form-border: var(--paint-form-border, #E9EEF2);
+$form-border: var(--paint-form-border, #e9eef2);
 
-$input-background: var(--paint-input-background, #FFFFFF);
+$input-background: var(--paint-input-background, #ffffff);
 
-$popover-background: var(--paint-popover-background, #FFFFFF);
+$popover-background: var(--paint-popover-background, #ffffff);

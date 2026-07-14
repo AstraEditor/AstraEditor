@@ -13,7 +13,7 @@ const FakeRenderer = require('../fixtures/fake-renderer');
 const FakeBitmapAdapter = require('../fixtures/fake-bitmap-adapter');
 const readFileToBuffer = require('../fixtures/readProjectFile').readFileToBuffer;
 const VirtualMachine = require('../../src/index');
-const {serializeCostumes} = require('../../src/serialization/serialize-assets');
+const { serializeCostumes } = require('../../src/serialization/serialize-assets');
 
 const projectUri = path.resolve(__dirname, '../fixtures/missing_svg.sb2');
 const project = readFileToBuffer(projectUri);
@@ -21,89 +21,89 @@ const project = readFileToBuffer(projectUri);
 const missingCostumeAssetId = 'beca8009621913e2f5b3111eed2d8210';
 
 global.Image = function () {
-    const image = {
-        width: 1,
-        height: 1
-    };
-    setTimeout(() => image.onload(), 1000);
-    return image;
+  const image = {
+    width: 1,
+    height: 1
+  };
+  setTimeout(() => image.onload(), 1000);
+  return image;
 };
 
 global.document = {
-    createElement: () => ({
-        // Create mock canvas
-        getContext: () => ({
-            drawImage: () => ({})
-        })
+  createElement: () => ({
+    // Create mock canvas
+    getContext: () => ({
+      drawImage: () => ({})
     })
+  })
 };
 
 let vm;
 
 tap.beforeEach(() => {
-    const storage = makeTestStorage();
+  const storage = makeTestStorage();
 
-    vm = new VirtualMachine();
-    vm.attachStorage(storage);
-    vm.attachRenderer(new FakeRenderer());
-    vm.attachV2BitmapAdapter(new FakeBitmapAdapter());
+  vm = new VirtualMachine();
+  vm.attachStorage(storage);
+  vm.attachRenderer(new FakeRenderer());
+  vm.attachV2BitmapAdapter(new FakeBitmapAdapter());
 
-    return vm.loadProject(project);
+  return vm.loadProject(project);
 });
 
 const test = tap.test;
 
-test('loading sb2 project with missing vector costume file', t => {
-    t.equal(vm.runtime.targets.length, 2);
+test('loading sb2 project with missing vector costume file', (t) => {
+  t.equal(vm.runtime.targets.length, 2);
 
-    const stage = vm.runtime.targets[0];
-    t.ok(stage.isStage);
+  const stage = vm.runtime.targets[0];
+  t.ok(stage.isStage);
 
-    const blueGuySprite = vm.runtime.targets[1];
-    t.equal(blueGuySprite.getName(), 'Blue Guy');
-    t.equal(blueGuySprite.getCostumes().length, 1);
+  const blueGuySprite = vm.runtime.targets[1];
+  t.equal(blueGuySprite.getName(), 'Blue Guy');
+  t.equal(blueGuySprite.getCostumes().length, 1);
 
-    const missingCostume = blueGuySprite.getCostumes()[0];
-    t.equal(missingCostume.name, 'Blue Guy 2');
-    // Costume should have both default cosutme (e.g. Gray Question Mark) data and original data
-    const defaultVectorAssetId = vm.runtime.storage.defaultAssetId.ImageVector;
-    t.equal(missingCostume.assetId, defaultVectorAssetId);
-    t.equal(missingCostume.dataFormat, 'svg');
-    // Runtime should have info about broken asset
-    t.ok(missingCostume.broken);
-    t.equal(missingCostume.broken.assetId, missingCostumeAssetId);
+  const missingCostume = blueGuySprite.getCostumes()[0];
+  t.equal(missingCostume.name, 'Blue Guy 2');
+  // Costume should have both default cosutme (e.g. Gray Question Mark) data and original data
+  const defaultVectorAssetId = vm.runtime.storage.defaultAssetId.ImageVector;
+  t.equal(missingCostume.assetId, defaultVectorAssetId);
+  t.equal(missingCostume.dataFormat, 'svg');
+  // Runtime should have info about broken asset
+  t.ok(missingCostume.broken);
+  t.equal(missingCostume.broken.assetId, missingCostumeAssetId);
 
-    t.end();
+  t.end();
 });
 
-test('load and then save sb2 project with missing costume file', t => {
-    const resavedProject = JSON.parse(vm.toJSON());
+test('load and then save sb2 project with missing costume file', (t) => {
+  const resavedProject = JSON.parse(vm.toJSON());
 
-    t.equal(resavedProject.targets.length, 2);
+  t.equal(resavedProject.targets.length, 2);
 
-    const stage = resavedProject.targets[0];
-    t.ok(stage.isStage);
+  const stage = resavedProject.targets[0];
+  t.ok(stage.isStage);
 
-    const blueGuySprite = resavedProject.targets[1];
-    t.equal(blueGuySprite.name, 'Blue Guy');
-    t.equal(blueGuySprite.costumes.length, 1);
+  const blueGuySprite = resavedProject.targets[1];
+  t.equal(blueGuySprite.name, 'Blue Guy');
+  t.equal(blueGuySprite.costumes.length, 1);
 
-    const missingCostume = blueGuySprite.costumes[0];
-    t.equal(missingCostume.name, 'Blue Guy 2');
-    // Costume should have both default cosutme (e.g. Gray Question Mark) data and original data
-    t.equal(missingCostume.assetId, missingCostumeAssetId);
-    t.equal(missingCostume.dataFormat, 'svg');
-    // Test that we didn't save any data about the costume being broken
-    t.notOk(missingCostume.broken);
+  const missingCostume = blueGuySprite.costumes[0];
+  t.equal(missingCostume.name, 'Blue Guy 2');
+  // Costume should have both default cosutme (e.g. Gray Question Mark) data and original data
+  t.equal(missingCostume.assetId, missingCostumeAssetId);
+  t.equal(missingCostume.dataFormat, 'svg');
+  // Test that we didn't save any data about the costume being broken
+  t.notOk(missingCostume.broken);
 
-    t.end();
+  t.end();
 });
 
-test('serializeCostume does not save data for missing costume', t => {
-    const costumeDescs = serializeCostumes(vm.runtime);
+test('serializeCostume does not save data for missing costume', (t) => {
+  const costumeDescs = serializeCostumes(vm.runtime);
 
-    t.equal(costumeDescs.length, 1); // Should only have one costume, the backdrop
-    t.not(costumeDescs[0].fileName, `${missingCostumeAssetId}.svg`);
+  t.equal(costumeDescs.length, 1); // Should only have one costume, the backdrop
+  t.not(costumeDescs[0].fileName, `${missingCostumeAssetId}.svg`);
 
-    t.end();
+  t.end();
 });

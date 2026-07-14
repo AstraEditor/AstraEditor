@@ -10,22 +10,22 @@ export default async function ({ addon, console, msg }) {
   let closeOnMouseUp = false;
   let scrollAnimation = true;
 
-  const SVG_NS = "http://www.w3.org/2000/svg";
+  const SVG_NS = 'http://www.w3.org/2000/svg';
 
   const Blockly = await addon.tab.traps.getBlockly();
 
   function getSpeedValue() {
     let data = {
-      none: "0",
-      short: "0.2",
-      default: "0.3",
-      long: "0.5",
+      none: '0',
+      short: '0.2',
+      default: '0.3',
+      long: '0.5'
     };
-    return data[addon.settings.get("speed")];
+    return data[addon.settings.get('speed')];
   }
 
   function getToggleSetting() {
-    return addon.settings.get("toggle");
+    return addon.settings.get('toggle');
   }
 
   function setTransition(speed) {
@@ -36,27 +36,27 @@ export default async function ({ addon, console, msg }) {
 
   function removeTransition() {
     for (let element of [flyOut, scrollBar]) {
-      element.style.removeProperty("transition-duration");
+      element.style.removeProperty('transition-duration');
     }
   }
 
   function updateLockDisplay() {
-    lockObject.classList.toggle("locked", flyoutLock);
-    lockButton.title = flyoutLock ? msg("unlock") : msg("lock");
-    lockIcon.src = addon.self.getResource(`/${flyoutLock ? "" : "un"}lock.svg`) /* rewritten by pull.js */;
+    lockObject.classList.toggle('locked', flyoutLock);
+    lockButton.title = flyoutLock ? msg('unlock') : msg('lock');
+    lockIcon.src = addon.self.getResource(`/${flyoutLock ? '' : 'un'}lock.svg`); /* rewritten by pull.js */
   }
 
   function autoLock() {
-    const option = addon.settings.get("lockLoad");
+    const option = addon.settings.get('lockLoad');
     if (option) {
-      if (getToggleSetting() === "category") {
+      if (getToggleSetting() === 'category') {
         toggle = true;
       } else {
         flyoutLock = option;
         updateLockDisplay();
       }
-      flyOut.classList.remove("sa-flyoutClose");
-      scrollBar.classList.remove("sa-flyoutClose");
+      flyOut.classList.remove('sa-flyoutClose');
+      scrollBar.classList.remove('sa-flyoutClose');
     }
   }
 
@@ -65,12 +65,12 @@ export default async function ({ addon, console, msg }) {
     if (
       !e ||
       e.buttons === 0 ||
-      document.querySelector(".blocklyToolboxDiv").className.includes("blocklyToolboxDelete")
+      document.querySelector('.blocklyToolboxDiv').className.includes('blocklyToolboxDelete')
     ) {
-      speed = typeof speed === "object" ? getSpeedValue() : speed;
+      speed = typeof speed === 'object' ? getSpeedValue() : speed;
       setTransition(speed);
-      flyOut.classList.remove("sa-flyoutClose");
-      scrollBar.classList.remove("sa-flyoutClose");
+      flyOut.classList.remove('sa-flyoutClose');
+      scrollBar.classList.remove('sa-flyoutClose');
       setTimeout(() => {
         addon.tab.traps.getWorkspace()?.recordCachedAreas();
         removeTransition();
@@ -87,8 +87,8 @@ export default async function ({ addon, console, msg }) {
       return;
     }
     setTransition(speed);
-    flyOut.classList.add("sa-flyoutClose");
-    scrollBar.classList.add("sa-flyoutClose");
+    flyOut.classList.add('sa-flyoutClose');
+    scrollBar.classList.add('sa-flyoutClose');
     setTimeout(() => {
       addon.tab.traps.getWorkspace()?.recordCachedAreas();
       removeTransition();
@@ -97,7 +97,7 @@ export default async function ({ addon, console, msg }) {
 
   const updateIsFullScreen = () => {
     const isFullScreen = addon.tab.redux.state.scratchGui.mode.isFullScreen;
-    document.documentElement.classList.toggle("sa-hide-flyout-not-fullscreen", !isFullScreen);
+    document.documentElement.classList.toggle('sa-hide-flyout-not-fullscreen', !isFullScreen);
   };
   updateIsFullScreen();
 
@@ -109,52 +109,52 @@ export default async function ({ addon, console, msg }) {
     didOneTimeSetup = true;
 
     addon.tab.redux.initialize();
-    addon.tab.redux.addEventListener("statechanged", (e) => {
+    addon.tab.redux.addEventListener('statechanged', (e) => {
       switch (e.detail.action.type) {
         // Event casted when you switch between tabs
-        case "scratch-gui/navigation/ACTIVATE_TAB": {
+        case 'scratch-gui/navigation/ACTIVATE_TAB': {
           // always 0, 1, 2
           const toggleSetting = getToggleSetting();
           if (
             e.detail.action.activeTabIndex === 0 &&
             !addon.self.disabled &&
-            (toggleSetting === "hover" || toggleSetting === "cathover")
+            (toggleSetting === 'hover' || toggleSetting === 'cathover')
           ) {
             onmouseleave(null, 0);
             toggle = false;
           }
           break;
         }
-        case "scratch-gui/mode/SET_FULL_SCREEN":
+        case 'scratch-gui/mode/SET_FULL_SCREEN':
           updateIsFullScreen();
           break;
       }
     });
 
-    document.body.addEventListener("mouseup", () => {
+    document.body.addEventListener('mouseup', () => {
       if (closeOnMouseUp) {
         onmouseleave();
         closeOnMouseUp = false;
       }
     });
 
-    if (addon.self.enabledLate && getToggleSetting() === "category" && !addon.settings.get("lockLoad")) {
+    if (addon.self.enabledLate && getToggleSetting() === 'category' && !addon.settings.get('lockLoad')) {
       Blockly.getMainWorkspace().getToolbox().selectedItem_.setSelected(false);
     }
-    addon.self.addEventListener("disabled", () => {
+    addon.self.addEventListener('disabled', () => {
       Blockly.getMainWorkspace().getToolbox().selectedItem_.setSelected(true);
     });
-    addon.self.addEventListener("reenabled", () => {
-      if (getToggleSetting() === "category" && !addon.settings.get("lockLoad")) {
+    addon.self.addEventListener('reenabled', () => {
+      if (getToggleSetting() === 'category' && !addon.settings.get('lockLoad')) {
         Blockly.getMainWorkspace().getToolbox().selectedItem_.setSelected(false);
         onmouseleave(null, 0);
         toggle = false;
       }
     });
 
-    addon.settings.addEventListener("change", () => {
+    addon.settings.addEventListener('change', () => {
       if (addon.self.disabled) return;
-      if (getToggleSetting() === "category") {
+      if (getToggleSetting() === 'category') {
         // switching to category click mode
         // close the flyout unless it's locked
         if (flyoutLock) {
@@ -168,7 +168,7 @@ export default async function ({ addon, console, msg }) {
         }
       } else {
         // switching from category click to a different mode
-        if (addon.settings.get("lockLoad")) {
+        if (addon.settings.get('lockLoad')) {
           flyoutLock = true;
           updateLockDisplay();
         } else {
@@ -183,7 +183,7 @@ export default async function ({ addon, console, msg }) {
     Blockly.Toolbox.prototype.setSelectedItem = function (item, shouldScroll = true) {
       const previousSelection = this.selectedItem_;
       oldSetSelectedItem.call(this, item, shouldScroll);
-      if (addon.self.disabled || getToggleSetting() !== "category") return;
+      if (addon.self.disabled || getToggleSetting() !== 'category') return;
       if (!shouldScroll && !toggle) {
         // ignore initial selection when updating the toolbox
         item.setSelected(false);
@@ -205,7 +205,7 @@ export default async function ({ addon, console, msg }) {
     Blockly.Toolbox.prototype.selectCategoryById = function (...args) {
       // called after populating the toolbox
       // ignore if the palette is closed
-      if (!addon.self.disabled && getToggleSetting() === "category" && !toggle) return;
+      if (!addon.self.disabled && getToggleSetting() === 'category' && !toggle) return;
       return oldSelectCategoryById.call(this, ...args);
     };
 
@@ -230,18 +230,18 @@ export default async function ({ addon, console, msg }) {
     }
   }
   while (true) {
-    flyOut = await addon.tab.waitForElement(".blocklyFlyout", {
+    flyOut = await addon.tab.waitForElement('.blocklyFlyout', {
       markAsSeen: true,
       reduxEvents: [
-        "scratch-gui/mode/SET_PLAYER",
-        "scratch-gui/locales/SELECT_LOCALE",
-        "scratch-gui/theme/SET_THEME",
-        "scratch-gui/mode/SET_FULL_SCREEN",
-        "fontsLoaded/SET_FONTS_LOADED",
+        'scratch-gui/mode/SET_PLAYER',
+        'scratch-gui/locales/SELECT_LOCALE',
+        'scratch-gui/theme/SET_THEME',
+        'scratch-gui/mode/SET_FULL_SCREEN',
+        'fontsLoaded/SET_FONTS_LOADED'
       ],
-      reduxCondition: (state) => !state.scratchGui.mode.isPlayerOnly,
+      reduxCondition: (state) => !state.scratchGui.mode.isPlayerOnly
     });
-    
+
     updateFlyoutWidth();
 
     if (typeof ResizeObserver !== 'undefined') {
@@ -250,36 +250,36 @@ export default async function ({ addon, console, msg }) {
       });
       resizeObserver.observe(flyOut);
     }
-    scrollBar = document.querySelector(".blocklyFlyoutScrollbar");
+    scrollBar = document.querySelector('.blocklyFlyoutScrollbar');
     const blocksWrapper = document.querySelector('[class*="gui_blocks-wrapper_"]');
-    const injectionDiv = document.querySelector(".injectionDiv");
+    const injectionDiv = document.querySelector('.injectionDiv');
 
     // Code editor left border
-    const borderElement1 = document.createElement("div");
-    borderElement1.className = "sa-flyout-border-1";
+    const borderElement1 = document.createElement('div');
+    borderElement1.className = 'sa-flyout-border-1';
     addon.tab.displayNoneWhileDisabled(borderElement1);
     injectionDiv.appendChild(borderElement1);
-    const borderElement2 = document.createElement("div");
-    borderElement2.className = "sa-flyout-border-2";
+    const borderElement2 = document.createElement('div');
+    borderElement2.className = 'sa-flyout-border-2';
     addon.tab.displayNoneWhileDisabled(borderElement2);
     injectionDiv.appendChild(borderElement2);
 
     // Placeholder Div
     if (placeHolderDiv) placeHolderDiv.remove();
-    placeHolderDiv = document.createElement("div");
+    placeHolderDiv = document.createElement('div');
     blocksWrapper.appendChild(placeHolderDiv);
-    placeHolderDiv.className = "sa-flyout-placeHolder";
-    placeHolderDiv.style.display = "none"; // overridden by userstyle if the addon is enabled
+    placeHolderDiv.className = 'sa-flyout-placeHolder';
+    placeHolderDiv.style.display = 'none'; // overridden by userstyle if the addon is enabled
 
     // Lock image
     if (lockObject) lockObject.remove();
-    lockObject = document.createElementNS(SVG_NS, "foreignObject");
-    lockObject.setAttribute("class", "sa-lock-object");
-    lockObject.style.display = "none"; // overridden by userstyle if the addon is enabled
-    lockButton = document.createElement("button");
-    lockButton.className = "sa-lock-button";
-    lockIcon = document.createElement("img");
-    lockIcon.alt = "";
+    lockObject = document.createElementNS(SVG_NS, 'foreignObject');
+    lockObject.setAttribute('class', 'sa-lock-object');
+    lockObject.style.display = 'none'; // overridden by userstyle if the addon is enabled
+    lockButton = document.createElement('button');
+    lockButton.className = 'sa-lock-button';
+    lockIcon = document.createElement('img');
+    lockIcon.alt = '';
     updateLockDisplay();
     lockButton.onclick = () => {
       flyoutLock = !flyoutLock;
@@ -292,24 +292,24 @@ export default async function ({ addon, console, msg }) {
     onmouseleave(null, 0);
     toggle = false;
 
-    const toolbox = document.querySelector(".blocklyToolboxDiv");
-    const addExtensionButton = document.querySelector("[class^=gui_extension-button-container_]");
+    const toolbox = document.querySelector('.blocklyToolboxDiv');
+    const addExtensionButton = document.querySelector('[class^=gui_extension-button-container_]');
 
     for (let element of [toolbox, addExtensionButton, flyOut, scrollBar]) {
       element.onmouseenter = (e) => {
         const toggleSetting = getToggleSetting();
-        if (!addon.self.disabled && (toggleSetting === "hover" || toggleSetting === "cathover")) onmouseenter(e);
+        if (!addon.self.disabled && (toggleSetting === 'hover' || toggleSetting === 'cathover')) onmouseenter(e);
       };
       element.onmouseleave = (e) => {
         const toggleSetting = getToggleSetting();
-        if (!addon.self.disabled && (toggleSetting === "hover" || toggleSetting === "cathover")) onmouseleave(e);
+        if (!addon.self.disabled && (toggleSetting === 'hover' || toggleSetting === 'cathover')) onmouseleave(e);
       };
     }
     placeHolderDiv.onmouseenter = (e) => {
-      if (!addon.self.disabled && getToggleSetting() === "hover") onmouseenter(e);
+      if (!addon.self.disabled && getToggleSetting() === 'hover') onmouseenter(e);
     };
     placeHolderDiv.onmouseleave = (e) => {
-      if (!addon.self.disabled && getToggleSetting() === "hover") onmouseleave(e);
+      if (!addon.self.disabled && getToggleSetting() === 'hover') onmouseleave(e);
     };
 
     doOneTimeSetup();

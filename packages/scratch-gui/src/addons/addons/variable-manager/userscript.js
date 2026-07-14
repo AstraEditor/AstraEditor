@@ -1,9 +1,9 @@
-import SideBar from "../../ui/side-bar/side-bar.js";
-import { getSetting } from "../../tools/AEsettings/index.js";
+import SideBar from '../../ui/side-bar/side-bar.js';
+import { getSetting } from '../../tools/AEsettings/index.js';
 
 // 检测是否启用 VSCode 布局
 function isVSCodeLayoutEnabled() {
-  return getSetting("EnableVSCodeLayout");
+  return getSetting('EnableVSCodeLayout');
 }
 
 export default async function ({ addon, console, msg }) {
@@ -13,14 +13,14 @@ export default async function ({ addon, console, msg }) {
   let globalVariables = [];
   let preventUpdate = false;
 
-  const manager = document.createElement("div");
-  manager.classList.add(addon.tab.scratchClass("asset-panel_wrapper"), "sa-var-manager");
+  const manager = document.createElement('div');
+  manager.classList.add(addon.tab.scratchClass('asset-panel_wrapper'), 'sa-var-manager');
 
-  const searchBox = document.createElement("input");
-  searchBox.placeholder = msg("search");
-  searchBox.className = addon.tab.scratchClass("input_input-form", { others: "sa-var-manager-searchbox" });
+  const searchBox = document.createElement('input');
+  searchBox.placeholder = msg('search');
+  searchBox.className = addon.tab.scratchClass('input_input-form', { others: 'sa-var-manager-searchbox' });
 
-  searchBox.addEventListener("input", (e) => {
+  searchBox.addEventListener('input', (e) => {
     for (const variable of localVariables) {
       variable.handleSearch(searchBox.value);
     }
@@ -32,19 +32,19 @@ export default async function ({ addon, console, msg }) {
 
   manager.appendChild(searchBox);
 
-  const localVars = document.createElement("div");
-  const localHeading = document.createElement("span");
-  const localList = document.createElement("table");
-  localHeading.className = "sa-var-manager-heading";
-  localHeading.innerText = msg("for-this-sprite");
+  const localVars = document.createElement('div');
+  const localHeading = document.createElement('span');
+  const localList = document.createElement('table');
+  localHeading.className = 'sa-var-manager-heading';
+  localHeading.innerText = msg('for-this-sprite');
   localVars.appendChild(localHeading);
   localVars.appendChild(localList);
 
-  const globalVars = document.createElement("div");
-  const globalHeading = document.createElement("span");
-  const globalList = document.createElement("table");
-  globalHeading.className = "sa-var-manager-heading";
-  globalHeading.innerText = msg("for-all-sprites");
+  const globalVars = document.createElement('div');
+  const globalHeading = document.createElement('span');
+  const globalList = document.createElement('table');
+  globalHeading.className = 'sa-var-manager-heading';
+  globalHeading.innerText = msg('for-all-sprites');
   globalVars.appendChild(globalHeading);
   globalVars.appendChild(globalList);
 
@@ -59,43 +59,43 @@ export default async function ({ addon, console, msg }) {
     SideBar.register('variable-manager', manager, {
       onActivate: () => {
         // 激活时添加按钮状态
-        toggleBtn.classList.add("sa-var-manager-active", "is-selected");
-        toggleBtn.setAttribute("aria-selected", "true");
+        toggleBtn.classList.add('sa-var-manager-active', 'is-selected');
+        toggleBtn.setAttribute('aria-selected', 'true');
         fullReload();
       },
       onDeactivate: () => {
         // 停用时移除按钮状态
-        toggleBtn.classList.remove("sa-var-manager-active", "is-selected");
-        toggleBtn.setAttribute("aria-selected", "false");
+        toggleBtn.classList.remove('sa-var-manager-active', 'is-selected');
+        toggleBtn.setAttribute('aria-selected', 'false');
       }
     });
   }
 
   // 创建Tab按钮
-  const toggleBtn = document.createElement("li");
-  addon.tab.displayNoneWhileDisabled(toggleBtn, { display: "flex" });
+  const toggleBtn = document.createElement('li');
+  addon.tab.displayNoneWhileDisabled(toggleBtn, { display: 'flex' });
   toggleBtn.classList.add(
-    addon.tab.scratchClass("react-tabs_react-tabs__tab"),
-    addon.tab.scratchClass("gui_tab"),
-    "tab"
+    addon.tab.scratchClass('react-tabs_react-tabs__tab'),
+    addon.tab.scratchClass('gui_tab'),
+    'tab'
   );
   if (isVSCode) {
-    toggleBtn.classList.add("vscode-tab");
+    toggleBtn.classList.add('vscode-tab');
   }
-  toggleBtn.id = "react-tabs-sa-variable-manager";
+  toggleBtn.id = 'react-tabs-sa-variable-manager';
 
   const toggleBtnIcon = addon.tab.recolorable();
   toggleBtnIcon.draggable = false;
-  toggleBtnIcon.src = addon.self.getResource("/icon.svg") /* rewritten by pull.js */;
+  toggleBtnIcon.src = addon.self.getResource('/icon.svg'); /* rewritten by pull.js */
 
-  const toggleBtnText = document.createElement("span");
-  toggleBtnText.innerText = msg("variables");
+  const toggleBtnText = document.createElement('span');
+  toggleBtnText.innerText = msg('variables');
 
   toggleBtn.appendChild(toggleBtnIcon);
   toggleBtn.appendChild(toggleBtnText);
 
   // Tab点击逻辑 - 根据布局类型使用不同的显示方式
-  toggleBtn.addEventListener("click", () => {
+  toggleBtn.addEventListener('click', () => {
     if (isVSCode) {
       // VSCode布局：使用侧边栏
       if (SideBar.getActivePlugin() === 'variable-manager') {
@@ -105,7 +105,7 @@ export default async function ({ addon, console, msg }) {
       }
     } else {
       // 非VSCode布局：使用Tab样式
-      addon.tab.redux.dispatch({ type: "scratch-gui/navigation/ACTIVATE_TAB", activeTabIndex: 4 });
+      addon.tab.redux.dispatch({ type: 'scratch-gui/navigation/ACTIVATE_TAB', activeTabIndex: 4 });
     }
   });
 
@@ -114,16 +114,16 @@ export default async function ({ addon, console, msg }) {
     function setVisible(visible) {
       if (visible) {
         toggleBtn.classList.add(
-          addon.tab.scratchClass("react-tabs_react-tabs__tab--selected"),
-          addon.tab.scratchClass("gui_is-selected")
+          addon.tab.scratchClass('react-tabs_react-tabs__tab--selected'),
+          addon.tab.scratchClass('gui_is-selected')
         );
-        const contentArea = document.querySelector("[class^=gui_tabs]");
-        contentArea.insertAdjacentElement("beforeend", manager);
+        const contentArea = document.querySelector('[class^=gui_tabs]');
+        contentArea.insertAdjacentElement('beforeend', manager);
         fullReload();
       } else {
         toggleBtn.classList.remove(
-          addon.tab.scratchClass("react-tabs_react-tabs__tab--selected"),
-          addon.tab.scratchClass("gui_is-selected")
+          addon.tab.scratchClass('react-tabs_react-tabs__tab--selected'),
+          addon.tab.scratchClass('gui_is-selected')
         );
         manager.remove();
         cleanup();
@@ -134,18 +134,18 @@ export default async function ({ addon, console, msg }) {
     addon.tab.redux.initialize();
 
     // 监听Redux状态变化
-    addon.tab.redux.addEventListener("statechanged", ({ detail }) => {
-      if (detail.action.type === "scratch-gui/navigation/ACTIVATE_TAB") {
+    addon.tab.redux.addEventListener('statechanged', ({ detail }) => {
+      if (detail.action.type === 'scratch-gui/navigation/ACTIVATE_TAB') {
         const varManagerWasSelected = document.body.contains(manager);
         const switchedToVarManager = detail.action.activeTabIndex === 4;
 
         if (varManagerWasSelected && !switchedToVarManager) {
           // Fixes #5773
-          queueMicrotask(() => window.dispatchEvent(new Event("resize")));
+          queueMicrotask(() => window.dispatchEvent(new Event('resize')));
         }
 
         setVisible(switchedToVarManager);
-      } else if (detail.action.type === "scratch-gui/mode/SET_PLAYER") {
+      } else if (detail.action.type === 'scratch-gui/mode/SET_PLAYER') {
         if (!detail.action.isPlayerOnly && addon.tab.redux.state.scratchGui.editorTab.activeTabIndex === 4) {
           // DOM doesn't actually exist yet
           queueMicrotask(() => setVisible(true));
@@ -156,10 +156,10 @@ export default async function ({ addon, console, msg }) {
 
   function updateHeadingVisibility() {
     // used to hide the headings if there are no variables
-    let filteredLocals = localVariables.filter((v) => v.row.style.display !== "none");
-    let filteredGlobals = globalVariables.filter((v) => v.row.style.display !== "none");
-    localHeading.style.display = filteredLocals.length === 0 ? "none" : "";
-    globalHeading.style.display = filteredGlobals.length === 0 ? "none" : "";
+    let filteredLocals = localVariables.filter((v) => v.row.style.display !== 'none');
+    let filteredGlobals = globalVariables.filter((v) => v.row.style.display !== 'none');
+    localHeading.style.display = filteredLocals.length === 0 ? 'none' : '';
+    globalHeading.style.display = filteredGlobals.length === 0 ? 'none' : '';
   }
 
   const rowToVariableMap = new WeakMap();
@@ -171,7 +171,7 @@ export default async function ({ addon, console, msg }) {
       }
     },
     {
-      rootMargin: "100px",
+      rootMargin: '100px'
     }
   );
 
@@ -189,8 +189,8 @@ export default async function ({ addon, console, msg }) {
 
       let newValue;
       let maxSafeLength;
-      if (this.scratchVariable.type === "list") {
-        newValue = this.scratchVariable.value.join("\n");
+      if (this.scratchVariable.type === 'list') {
+        newValue = this.scratchVariable.value.join('\n');
         maxSafeLength = 5000000;
       } else {
         newValue = this.scratchVariable.value;
@@ -198,7 +198,7 @@ export default async function ({ addon, console, msg }) {
       }
 
       if (!this.ignoreTooBig && newValue.length > maxSafeLength) {
-        this.input.value = "";
+        this.input.value = '';
         this.row.dataset.tooBig = true;
         return;
       }
@@ -214,19 +214,19 @@ export default async function ({ addon, console, msg }) {
       // this doesn't check if this.visible is true or whatever. maybe that would improve performance while typing into the search box but it's probably fine™
       if (this.scratchVariable.name.toLowerCase().includes(search.toLowerCase()) || !search) {
         // fuzzy searches are lame we are too cool for fuzzy searches (& i doubt they're even the right thing to use here, this should work fine enough)
-        this.row.style.display = ""; // make the row normal
+        this.row.style.display = ''; // make the row normal
         this.updateValue(true); // force it to update because its hidden and it wouldn't be able to otherwise
       } else {
-        this.row.style.display = "none"; // set the entire row as hidden
+        this.row.style.display = 'none'; // set the entire row as hidden
       }
     }
 
     resizeInputIfList() {
-      if (this.scratchVariable.type === "list") {
-        this.input.style.height = "auto";
+      if (this.scratchVariable.type === 'list') {
+        this.input.style.height = 'auto';
         const height = Math.min(1000, this.input.scrollHeight);
         if (height > 0) {
-          this.input.style.height = height + "px";
+          this.input.style.height = height + 'px';
         }
       }
     }
@@ -242,12 +242,12 @@ export default async function ({ addon, console, msg }) {
     buildDOM() {
       const id = `sa-variable-manager-${this.scratchVariable.id}`;
 
-      const row = document.createElement("tr");
+      const row = document.createElement('tr');
       this.row = row;
-      const labelCell = document.createElement("td");
-      labelCell.className = "sa-var-manager-name";
+      const labelCell = document.createElement('td');
+      labelCell.className = 'sa-var-manager-name';
 
-      const label = document.createElement("input");
+      const label = document.createElement('input');
       label.value = this.scratchVariable.name;
       label.htmlFor = id;
       const onLabelOut = (e) => {
@@ -260,13 +260,13 @@ export default async function ({ addon, console, msg }) {
           return;
         }
 
-        const CLOUD_SYMBOL = "☁";
-        const CLOUD_PREFIX = CLOUD_SYMBOL + " ";
+        const CLOUD_SYMBOL = '☁';
+        const CLOUD_PREFIX = CLOUD_SYMBOL + ' ';
         if (this.scratchVariable.isCloud) {
           if (newName.startsWith(CLOUD_SYMBOL)) {
             if (!newName.startsWith(CLOUD_PREFIX)) {
               // There isn't a space between the cloud symbol and the name, so add one.
-              newName = newName.substring(0, 1) + " " + newName.substring(1);
+              newName = newName.substring(0, 1) + ' ' + newName.substring(1);
             }
           } else {
             newName = CLOUD_PREFIX + newName;
@@ -294,75 +294,75 @@ export default async function ({ addon, console, msg }) {
           }
         }
       };
-      label.addEventListener("keydown", (e) => {
-        if (e.key === "Enter") e.target.blur();
+      label.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') e.target.blur();
       });
-      label.addEventListener("focusout", onLabelOut);
+      label.addEventListener('focusout', onLabelOut);
 
-      label.addEventListener("focus", (e) => {
+      label.addEventListener('focus', (e) => {
         preventUpdate = true;
-        manager.classList.add("freeze");
+        manager.classList.add('freeze');
       });
 
-      label.addEventListener("blur", (e) => {
+      label.addEventListener('blur', (e) => {
         preventUpdate = false;
-        manager.classList.remove("freeze");
+        manager.classList.remove('freeze');
       });
       labelCell.appendChild(label);
 
       rowToVariableMap.set(row, this);
       observer.observe(row);
 
-      const valueCell = document.createElement("td");
-      valueCell.className = "sa-var-manager-value";
+      const valueCell = document.createElement('td');
+      valueCell.className = 'sa-var-manager-value';
 
-      const tooBigElement = document.createElement("button");
+      const tooBigElement = document.createElement('button');
       this.tooBigElement = tooBigElement;
-      tooBigElement.textContent = msg("too-big");
-      tooBigElement.className = "sa-var-manager-too-big";
-      tooBigElement.addEventListener("click", () => {
+      tooBigElement.textContent = msg('too-big');
+      tooBigElement.className = 'sa-var-manager-too-big';
+      tooBigElement.addEventListener('click', () => {
         this.ignoreTooBig = true;
         this.updateValue(true);
       });
 
       let input;
-      if (this.scratchVariable.type === "list") {
-        input = document.createElement("textarea");
+      if (this.scratchVariable.type === 'list') {
+        input = document.createElement('textarea');
       } else {
-        input = document.createElement("input");
+        input = document.createElement('input');
       }
-      input.className = "sa-var-manager-value-input";
+      input.className = 'sa-var-manager-value-input';
       input.id = id;
       this.input = input;
 
       this.updateValue(true);
-      if (this.scratchVariable.type === "list") {
-        this.input.addEventListener("input", () => this.resizeInputIfList(), false);
+      if (this.scratchVariable.type === 'list') {
+        this.input.addEventListener('input', () => this.resizeInputIfList(), false);
       }
 
       const onInputOut = (e) => {
         e.preventDefault();
-        if (this.scratchVariable.type === "list") {
-          vm.setVariableValue(this.target.id, this.scratchVariable.id, input.value.split("\n"));
+        if (this.scratchVariable.type === 'list') {
+          vm.setVariableValue(this.target.id, this.scratchVariable.id, input.value.split('\n'));
         } else {
           vm.setVariableValue(this.target.id, this.scratchVariable.id, input.value);
         }
         input.blur();
       };
 
-      input.addEventListener("keydown", (e) => {
-        if (e.target.nodeName === "INPUT" && e.key === "Enter") e.target.blur();
+      input.addEventListener('keydown', (e) => {
+        if (e.target.nodeName === 'INPUT' && e.key === 'Enter') e.target.blur();
       });
-      input.addEventListener("focusout", onInputOut);
+      input.addEventListener('focusout', onInputOut);
 
-      input.addEventListener("focus", (e) => {
+      input.addEventListener('focus', (e) => {
         preventUpdate = true;
-        manager.classList.add("freeze");
+        manager.classList.add('freeze');
       });
 
-      input.addEventListener("blur", (e) => {
+      input.addEventListener('blur', (e) => {
         preventUpdate = false;
-        manager.classList.remove("freeze");
+        manager.classList.remove('freeze');
       });
 
       valueCell.appendChild(input);
@@ -375,74 +375,74 @@ export default async function ({ addon, console, msg }) {
   }
 
   function fullReload() {
-      if (isVSCode) {
-        // VSCode布局：检查侧边栏状态
-        if (!SideBar.isOpen() || SideBar.getActivePlugin() !== 'variable-manager' || preventUpdate) return;
-      } else {
-        // 非VSCode布局：检查Tab索引
-        if (addon.tab.redux.state?.scratchGui?.editorTab?.activeTabIndex !== 4 || preventUpdate) return;
-      }
-  
-      const editingTarget = vm.runtime.getEditingTarget();
-      const stage = vm.runtime.getTargetForStage();
-      localVariables = editingTarget.isStage
-        ? []
-        : Object.values(editingTarget.variables)
-          .filter((i) => i.type === "" || i.type === "list")
-          .map((i) => new WrappedVariable(i, editingTarget));
-      globalVariables = Object.values(stage.variables)
-        .filter((i) => i.type === "" || i.type === "list")
-          .map((i) => new WrappedVariable(i, stage));
-  
-      updateHeadingVisibility();
-  
-      while (localList.firstChild) {
-        localList.removeChild(localList.firstChild);
-      }
-      while (globalList.firstChild) {
-        globalList.removeChild(globalList.firstChild);
-      }
-  
-      for (const variable of localVariables) {
-        localList.appendChild(variable.row);
-        variable.resizeInputIfList();
-      }
-      for (const variable of globalVariables) {
-        globalList.appendChild(variable.row);
-        variable.resizeInputIfList();
-      }
-    }
-  
-    function quickReload() {
-      if (isVSCode) {
-        // VSCode布局：检查侧边栏状态
-        if (!SideBar.isOpen() || SideBar.getActivePlugin() !== 'variable-manager' || preventUpdate) return;
-      } else {
-        // 非VSCode布局：检查Tab索引
-        if (addon.tab.redux.state?.scratchGui?.editorTab?.activeTabIndex !== 4 || preventUpdate) return;
-      }
-  
-      for (const variable of localVariables) {
-        variable.updateValue();
-      }
-      for (const variable of globalVariables) {
-        variable.updateValue();
-      }
-    }
-  
-    function cleanup() {
-      localVariables = [];
-      globalVariables = [];
+    if (isVSCode) {
+      // VSCode布局：检查侧边栏状态
+      if (!SideBar.isOpen() || SideBar.getActivePlugin() !== 'variable-manager' || preventUpdate) return;
+    } else {
+      // 非VSCode布局：检查Tab索引
+      if (addon.tab.redux.state?.scratchGui?.editorTab?.activeTabIndex !== 4 || preventUpdate) return;
     }
 
-  vm.runtime.on("PROJECT_LOADED", () => {
+    const editingTarget = vm.runtime.getEditingTarget();
+    const stage = vm.runtime.getTargetForStage();
+    localVariables = editingTarget.isStage
+      ? []
+      : Object.values(editingTarget.variables)
+          .filter((i) => i.type === '' || i.type === 'list')
+          .map((i) => new WrappedVariable(i, editingTarget));
+    globalVariables = Object.values(stage.variables)
+      .filter((i) => i.type === '' || i.type === 'list')
+      .map((i) => new WrappedVariable(i, stage));
+
+    updateHeadingVisibility();
+
+    while (localList.firstChild) {
+      localList.removeChild(localList.firstChild);
+    }
+    while (globalList.firstChild) {
+      globalList.removeChild(globalList.firstChild);
+    }
+
+    for (const variable of localVariables) {
+      localList.appendChild(variable.row);
+      variable.resizeInputIfList();
+    }
+    for (const variable of globalVariables) {
+      globalList.appendChild(variable.row);
+      variable.resizeInputIfList();
+    }
+  }
+
+  function quickReload() {
+    if (isVSCode) {
+      // VSCode布局：检查侧边栏状态
+      if (!SideBar.isOpen() || SideBar.getActivePlugin() !== 'variable-manager' || preventUpdate) return;
+    } else {
+      // 非VSCode布局：检查Tab索引
+      if (addon.tab.redux.state?.scratchGui?.editorTab?.activeTabIndex !== 4 || preventUpdate) return;
+    }
+
+    for (const variable of localVariables) {
+      variable.updateValue();
+    }
+    for (const variable of globalVariables) {
+      variable.updateValue();
+    }
+  }
+
+  function cleanup() {
+    localVariables = [];
+    globalVariables = [];
+  }
+
+  vm.runtime.on('PROJECT_LOADED', () => {
     try {
       fullReload();
     } catch (e) {
       console.error(e);
     }
   });
-  vm.runtime.on("TOOLBOX_EXTENSIONS_NEED_UPDATE", () => {
+  vm.runtime.on('TOOLBOX_EXTENSIONS_NEED_UPDATE', () => {
     try {
       fullReload();
     } catch (e) {
@@ -461,7 +461,7 @@ export default async function ({ addon, console, msg }) {
     return ret;
   };
 
-  addon.self.addEventListener("disabled", () => {
+  addon.self.addEventListener('disabled', () => {
     if (isVSCode) {
       // VSCode布局：关闭侧边栏
       if (SideBar.getActivePlugin() === 'variable-manager') {
@@ -470,7 +470,7 @@ export default async function ({ addon, console, msg }) {
     } else {
       // 非VSCode布局：切换到其他Tab
       if (addon.tab.redux.state.scratchGui.editorTab.activeTabIndex === 4) {
-        addon.tab.redux.dispatch({ type: "scratch-gui/navigation/ACTIVATE_TAB", activeTabIndex: 2 });
+        addon.tab.redux.dispatch({ type: 'scratch-gui/navigation/ACTIVATE_TAB', activeTabIndex: 2 });
       }
     }
   });
@@ -479,9 +479,9 @@ export default async function ({ addon, console, msg }) {
   while (true) {
     await addon.tab.waitForElement("[class^='react-tabs_react-tabs__tab-list']", {
       markAsSeen: true,
-      reduxEvents: ["scratch-gui/mode/SET_PLAYER", "fontsLoaded/SET_FONTS_LOADED", "scratch-gui/locales/SELECT_LOCALE"],
-      reduxCondition: (state) => !state.scratchGui.mode.isPlayerOnly,
+      reduxEvents: ['scratch-gui/mode/SET_PLAYER', 'fontsLoaded/SET_FONTS_LOADED', 'scratch-gui/locales/SELECT_LOCALE'],
+      reduxCondition: (state) => !state.scratchGui.mode.isPlayerOnly
     });
-    addon.tab.appendToSharedSpace({ space: "afterTabs", element: toggleBtn, order: 4 });
+    addon.tab.appendToSharedSpace({ space: 'afterTabs', element: toggleBtn, order: 4 });
   }
 }

@@ -18,7 +18,7 @@
  * limitations under the License.
  */
 
- /**
+/**
  * @fileoverview Tests for Blockly.FieldVariable
  * @author marisaleung@google.com (Marisa Leung)
  */
@@ -41,7 +41,12 @@ function fieldVariableTestWithMocks_tearDown() {
 }
 
 function fieldVariable_mockBlock(workspace) {
-  return {'workspace': workspace, 'isShadow': function(){return false;}};
+  return {
+    workspace: workspace,
+    isShadow: function () {
+      return false;
+    }
+  };
 }
 
 function fieldVariable_createAndInitField(workspace) {
@@ -62,15 +67,14 @@ function test_fieldVariable_Constructor() {
 }
 
 function test_fieldVariable_setValueMatchId() {
- // Expect the fieldVariable value to be set to variable name
+  // Expect the fieldVariable value to be set to variable name
   fieldVariableTestWithMocks_setUp();
   workspace.createVariable('name2', null, 'id2');
 
   var fieldVariable = fieldVariable_createAndInitField(workspace);
 
   var oldId = fieldVariable.getValue();
-  var event = new Blockly.Events.BlockChange(
-        fieldVariable.sourceBlock_, 'field', undefined, oldId, 'id2');
+  var event = new Blockly.Events.BlockChange(fieldVariable.sourceBlock_, 'field', undefined, oldId, 'id2');
   setUpMockMethod(mockControl_, Blockly.Events, 'fire', [event], null);
 
   fieldVariable.setValue('id2');
@@ -84,7 +88,7 @@ function test_fieldVariable_setValueNoVariable() {
 
   var fieldVariable = fieldVariable_createAndInitField(workspace);
   var mockBlock = fieldVariable.sourceBlock_;
-  mockBlock.isShadow = function() {
+  mockBlock.isShadow = function () {
     return false;
   };
 
@@ -107,8 +111,7 @@ function test_fieldVariable_dropdownCreateVariablesExist() {
 
   var fieldVariable = fieldVariable_createAndInitField(workspace);
 
-  var result_options = Blockly.FieldVariable.dropdownCreate.call(
-      fieldVariable);
+  var result_options = Blockly.FieldVariable.dropdownCreate.call(fieldVariable);
 
   assertEquals(result_options.length, 3);
   isEqualArrays(result_options[0], ['name1', 'id1']);
@@ -131,7 +134,6 @@ function test_fieldVariable_setValueNull() {
   } finally {
     fieldVariableTestWithMocks_tearDown();
   }
-
 }
 
 function test_fieldVariable_getVariableTypes_undefinedVariableTypes() {
@@ -154,8 +156,7 @@ function test_fieldVariable_getVariableTypes_givenVariableTypes() {
   workspace.createVariable('name1', 'type1');
   workspace.createVariable('name2', 'type2');
 
-  var fieldVariable = new Blockly.FieldVariable(
-      'name1', null, ['type1', 'type2']);
+  var fieldVariable = new Blockly.FieldVariable('name1', null, ['type1', 'type2']);
   var resultTypes = fieldVariable.getVariableTypes_();
   isEqualArrays(resultTypes, ['type1', 'type2']);
   workspace.dispose();

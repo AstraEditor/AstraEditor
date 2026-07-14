@@ -27,7 +27,6 @@
 goog.provide('Blockly.Options');
 goog.require('Blockly.Colours');
 
-
 /**
  * Parse the user-specified options, using reasonable defaults where behaviour
  * is unspecified.
@@ -35,7 +34,7 @@ goog.require('Blockly.Colours');
  *   https://developers.google.com/blockly/guides/get-started/web#configuration
  * @constructor
  */
-Blockly.Options = function(options) {
+Blockly.Options = function (options) {
   var readOnly = !!options['readOnly'];
   if (readOnly) {
     var languageTree = null;
@@ -52,8 +51,7 @@ Blockly.Options = function(options) {
       options['toolbox'] = dom.documentElement;
     }
     var languageTree = Blockly.Options.parseToolboxTree(options['toolbox']);
-    var hasCategories = Boolean(languageTree &&
-        languageTree.getElementsByTagName('category').length);
+    var hasCategories = Boolean(languageTree && languageTree.getElementsByTagName('category').length);
     var hasTrashcan = options['trashcan'];
     if (hasTrashcan === undefined) {
       hasTrashcan = false;
@@ -88,11 +86,9 @@ Blockly.Options = function(options) {
   }
 
   if (horizontalLayout) {
-    var toolboxPosition = toolboxAtStart ?
-        Blockly.TOOLBOX_AT_TOP : Blockly.TOOLBOX_AT_BOTTOM;
+    var toolboxPosition = toolboxAtStart ? Blockly.TOOLBOX_AT_TOP : Blockly.TOOLBOX_AT_BOTTOM;
   } else {
-    var toolboxPosition = (toolboxAtStart == rtl) ?
-        Blockly.TOOLBOX_AT_RIGHT : Blockly.TOOLBOX_AT_LEFT;
+    var toolboxPosition = toolboxAtStart == rtl ? Blockly.TOOLBOX_AT_RIGHT : Blockly.TOOLBOX_AT_LEFT;
   }
 
   var hasScrollbars = options['scrollbars'];
@@ -162,7 +158,7 @@ Blockly.Options.prototype.getMetrics = null;
  * @return {!Object} A dictionary of normalized options.
  * @private
  */
-Blockly.Options.parseZoomOptions_ = function(options) {
+Blockly.Options.parseZoomOptions_ = function (options) {
   var zoom = options['zoom'] || {};
   var zoomOptions = {};
   if (zoom['controls'] === undefined) {
@@ -206,7 +202,7 @@ Blockly.Options.parseZoomOptions_ = function(options) {
  * @return {!Object} A dictionary of normalized options.
  * @private
  */
-Blockly.Options.parseGridOptions_ = function(options) {
+Blockly.Options.parseGridOptions_ = function (options) {
   var grid = options['grid'] || {};
   var gridOptions = {};
   gridOptions.spacing = parseFloat(grid['spacing']) || 0;
@@ -221,7 +217,7 @@ Blockly.Options.parseGridOptions_ = function(options) {
  * @param {Node|string} tree DOM tree of blocks, or text representation of same.
  * @return {Node} DOM tree of blocks, or null.
  */
-Blockly.Options.parseToolboxTree = function(tree) {
+Blockly.Options.parseToolboxTree = function (tree) {
   if (tree) {
     if (typeof tree != 'string') {
       if (typeof XSLTProcessor == 'undefined' && tree.outerHTML) {

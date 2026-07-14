@@ -8,6 +8,6 @@ const VideoMotion = require('./library');
 const VideoMotionView = require('./view');
 
 module.exports = {
-    VideoMotion,
-    VideoMotionView
+  VideoMotion,
+  VideoMotionView
 };

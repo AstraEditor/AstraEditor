@@ -1,84 +1,84 @@
-import { setSnapFrom, setSnapTo, snapOn, snapFrom, snapTo, toggle, threshold, setThreshold } from "./state.js";
+import { setSnapFrom, setSnapTo, snapOn, snapFrom, snapTo, toggle, threshold, setThreshold } from './state.js';
 
 /** @type {import("../../addon-api/content-script/typedef").UserscriptUtilities} */
 export function initUI({ addon, msg }) {
   const createGroup = () => {
-    const el = document.createElement("div");
-    el.className = "sa-paint-snap-group";
+    const el = document.createElement('div');
+    el.className = 'sa-paint-snap-group';
     return el;
   };
   const createSeparator = () => {
-    const el = document.createElement("div");
-    el.className = "sa-paint-snap-settings-separator";
+    const el = document.createElement('div');
+    el.className = 'sa-paint-snap-settings-separator';
     return el;
   };
 
   const createButton = ({ useButtonTag } = {}) => {
-    const el = document.createElement(useButtonTag ? "button" : "span");
-    el.className = "sa-paint-snap-button";
-    el.setAttribute("role", "button");
+    const el = document.createElement(useButtonTag ? 'button' : 'span');
+    el.className = 'sa-paint-snap-button';
+    el.setAttribute('role', 'button');
     return el;
   };
 
   const createButtonImage = (name) => {
-    const el = document.createElement("img");
-    el.className = "sa-paint-snap-image";
+    const el = document.createElement('img');
+    el.className = 'sa-paint-snap-image';
     el.draggable = false;
-    el.src = addon.self.getResource("/icons/" + name + ".svg") /* rewritten by pull.js */;
+    el.src = addon.self.getResource('/icons/' + name + '.svg'); /* rewritten by pull.js */
     return el;
   };
 
   const controlsGroup = createGroup();
   addon.tab.displayNoneWhileDisabled(controlsGroup, {
-    display: "flex",
+    display: 'flex'
   });
 
-  const settingPageWrapper = document.createElement("div");
-  settingPageWrapper.className = "sa-paint-snap-settings-wrapper";
+  const settingPageWrapper = document.createElement('div');
+  settingPageWrapper.className = 'sa-paint-snap-settings-wrapper';
   controlsGroup.appendChild(settingPageWrapper);
 
-  const settingsPage = document.createElement("div");
-  settingsPage.className = "sa-paint-snap-settings";
+  const settingsPage = document.createElement('div');
+  settingsPage.className = 'sa-paint-snap-settings';
   settingPageWrapper.appendChild(settingsPage);
 
   //todo msg
-  const SVG_NS = "http://www.w3.org/2000/svg";
-  const settingsTip = document.createElementNS(SVG_NS, "svg");
-  settingsTip.setAttribute("class", "sa-paint-snap-settings-tip");
-  settingsTip.setAttribute("width", "14");
-  settingsTip.setAttribute("height", "7");
-  const settingsTipShape = document.createElementNS(SVG_NS, "polygon");
-  settingsTipShape.setAttribute("class", "sa-paint-snap-settings-polygon");
-  settingsTipShape.setAttribute("points", "0,0 7,7, 14,0");
+  const SVG_NS = 'http://www.w3.org/2000/svg';
+  const settingsTip = document.createElementNS(SVG_NS, 'svg');
+  settingsTip.setAttribute('class', 'sa-paint-snap-settings-tip');
+  settingsTip.setAttribute('width', '14');
+  settingsTip.setAttribute('height', '7');
+  const settingsTipShape = document.createElementNS(SVG_NS, 'polygon');
+  settingsTipShape.setAttribute('class', 'sa-paint-snap-settings-polygon');
+  settingsTipShape.setAttribute('points', '0,0 7,7, 14,0');
   settingsTip.appendChild(settingsTipShape);
   settingsPage.appendChild(settingsTip);
 
   const toggleButton = createButton();
-  toggleButton.addEventListener("click", () => {
+  toggleButton.addEventListener('click', () => {
     if (!snapOn) {
       if (!Object.values(snapTo).some((e) => e)) {
-        setSnapTo("pageCenter", true);
+        setSnapTo('pageCenter', true);
       }
       if (!Object.values(snapFrom).some((e) => e)) {
-        setSnapFrom("boxCenter", true);
+        setSnapFrom('boxCenter', true);
       }
     }
     toggle(!snapOn);
     toggleButton.dataset.enabled = snapOn;
   });
-  toggleButton.title = msg("toggle");
-  toggleButton.appendChild(createButtonImage("snap"));
+  toggleButton.title = msg('toggle');
+  toggleButton.appendChild(createButtonImage('snap'));
   toggleButton.dataset.enabled = snapOn;
   controlsGroup.appendChild(toggleButton);
 
   const settingButton = createButton();
-  settingButton.addEventListener("click", () => setSettingsOpen(!areSettingsOpen()));
-  settingButton.title = msg("settings");
-  settingButton.appendChild(createButtonImage("settings"));
+  settingButton.addEventListener('click', () => setSettingsOpen(!areSettingsOpen()));
+  settingButton.title = msg('settings');
+  settingButton.appendChild(createButtonImage('settings'));
   controlsGroup.appendChild(settingButton);
 
-  document.body.addEventListener("click", (e) => {
-    if (areSettingsOpen() && !e.target.matches(".sa-paint-snap-group *")) setSettingsOpen(false);
+  document.body.addEventListener('click', (e) => {
+    if (areSettingsOpen() && !e.target.matches('.sa-paint-snap-group *')) setSettingsOpen(false);
   });
 
   const settingsOpenUpdaters = [];
@@ -97,7 +97,7 @@ export function initUI({ addon, msg }) {
       toggleButton.dataset.enabled = false;
     }
   };
-  const areSettingsOpen = () => settingsPage.dataset.visible === "true";
+  const areSettingsOpen = () => settingsPage.dataset.visible === 'true';
 
   const createToggle = (button1Text, button2Text, defaultValue, onChange = () => {}) => {
     const values = [button1Text, button2Text];
@@ -113,8 +113,8 @@ export function initUI({ addon, msg }) {
     button1.appendChild(icon1);
     button2.appendChild(icon2);
 
-    button1.setAttribute("aria-label", (button1.title = msg(button1Text)));
-    button2.setAttribute("aria-label", (button2.title = msg(button2Text)));
+    button1.setAttribute('aria-label', (button1.title = msg(button1Text)));
+    button2.setAttribute('aria-label', (button2.title = msg(button2Text)));
 
     const setSelectedButton = (button, e, suppress = false) => {
       button1.dataset.enabled = !!button;
@@ -124,8 +124,8 @@ export function initUI({ addon, msg }) {
 
     setSelectedButton(1 - values.indexOf(defaultValue), null, true);
 
-    button1.addEventListener("click", setSelectedButton.bind(button1, 1));
-    button2.addEventListener("click", setSelectedButton.bind(button2, 0));
+    button1.addEventListener('click', setSelectedButton.bind(button1, 1));
+    button2.addEventListener('click', setSelectedButton.bind(button2, 0));
 
     group.append(button1, button2);
 
@@ -133,31 +133,31 @@ export function initUI({ addon, msg }) {
   };
   const createNumberInput = (defaultValue, onChange = () => {}, min = -Infinity, max = Infinity, step = 1) => {
     const group = createGroup();
-    const filler = document.createElement("div");
-    filler.style.width = "20px";
+    const filler = document.createElement('div');
+    filler.style.width = '20px';
 
     const valueButton = createButton();
     valueButton.appendChild(filler);
-    const valueInput = document.createElement("input");
-    valueInput.className = "sa-paint-snap-settings-input";
-    valueInput.type = "number";
+    const valueInput = document.createElement('input');
+    valueInput.className = 'sa-paint-snap-settings-input';
+    valueInput.type = 'number';
     valueInput.step = step;
     valueInput.min = min;
     valueInput.max = max;
     valueInput.value = defaultValue;
-    valueInput.addEventListener("change", () => {
+    valueInput.addEventListener('change', () => {
       if (valueInput.value > max) valueInput.value = max;
       if (valueInput.value < min) valueInput.value = min;
       onChange(valueInput.value);
     });
-    valueInput.addEventListener("blur", () => {
-      if (!valueInput.value) valueInput.value = "0";
+    valueInput.addEventListener('blur', () => {
+      if (!valueInput.value) valueInput.value = '0';
     });
     valueButton.appendChild(valueInput);
 
     const decrementButton = createButton();
-    decrementButton.appendChild(createButtonImage("decrement"));
-    decrementButton.addEventListener("click", () => {
+    decrementButton.appendChild(createButtonImage('decrement'));
+    decrementButton.addEventListener('click', () => {
       if (valueInput.value > min) {
         valueInput.value = Number(valueInput.value) - 1;
         onChange(Number(valueInput.value) + 1);
@@ -165,8 +165,8 @@ export function initUI({ addon, msg }) {
     });
 
     const incrementButton = createButton();
-    incrementButton.appendChild(createButtonImage("increment"));
-    incrementButton.addEventListener("click", () => {
+    incrementButton.appendChild(createButtonImage('increment'));
+    incrementButton.addEventListener('click', () => {
       if (valueInput.value < max) {
         valueInput.value = Number(valueInput.value) + 1;
         onChange(Number(valueInput.value) + 1);
@@ -179,17 +179,17 @@ export function initUI({ addon, msg }) {
   };
 
   const createSettingWithLabel = (settingId, settingElem) => {
-    const container = document.createElement("label");
-    container.className = "sa-paint-snap-settings-line";
+    const container = document.createElement('label');
+    container.className = 'sa-paint-snap-settings-line';
 
-    const labelElem = document.createElement("div");
-    labelElem.className = "sa-paint-snap-settings-label";
+    const labelElem = document.createElement('div');
+    labelElem.className = 'sa-paint-snap-settings-label';
     labelElem.textContent = msg(settingId);
     container.append(labelElem, settingElem);
 
     settingsOpenUpdaters.push(() => {
-      const onBtn = settingElem.querySelector(`[aria-label="${msg("on")}"]`);
-      const offBtn = settingElem.querySelector(`[aria-label="${msg("off")}"]`);
+      const onBtn = settingElem.querySelector(`[aria-label="${msg('on')}"]`);
+      const offBtn = settingElem.querySelector(`[aria-label="${msg('off')}"]`);
       if (settingId in snapTo) {
         onBtn.dataset.enabled = !!snapTo[settingId];
         offBtn.dataset.enabled = !snapTo[settingId];
@@ -204,12 +204,12 @@ export function initUI({ addon, msg }) {
   };
 
   const createSection = (title, ...settingElems) => {
-    const sectionContainer = document.createElement("div");
-    sectionContainer.className = "sa-paint-snap-settings-section";
+    const sectionContainer = document.createElement('div');
+    sectionContainer.className = 'sa-paint-snap-settings-section';
 
-    const titleElem = document.createElement("span");
+    const titleElem = document.createElement('span');
     titleElem.appendChild(document.createTextNode(title));
-    titleElem.className = "sa-paint-snap-settings-section-title";
+    titleElem.className = 'sa-paint-snap-settings-section-title';
     sectionContainer.appendChild(titleElem);
 
     sectionContainer.append(...settingElems);
@@ -218,7 +218,7 @@ export function initUI({ addon, msg }) {
   };
 
   const threshSetting = createSettingWithLabel(
-    "threshold",
+    'threshold',
     createNumberInput(
       threshold,
       (value) => {
@@ -230,13 +230,13 @@ export function initUI({ addon, msg }) {
     )
   );
 
-  const toOnOff = (bool) => (bool ? "on" : "off");
-  const toBool = (onOff) => !!["on", "off"].indexOf(onOff);
+  const toOnOff = (bool) => (bool ? 'on' : 'off');
+  const toBool = (onOff) => !!['on', 'off'].indexOf(onOff);
   const toggleParams = (defaultValue, onChange = () => {}) => [
-    "off",
-    "on",
+    'off',
+    'on',
     toOnOff(defaultValue),
-    (value) => onChange(toBool(value)),
+    (value) => onChange(toBool(value))
   ];
   const createSnapToSetting = (forPoint) =>
     createSettingWithLabel(
@@ -250,15 +250,15 @@ export function initUI({ addon, msg }) {
       )
     );
   const snapToSection = createSection(
-    msg("snapTo"),
-    createSnapToSetting("pageCenter"),
-    createSnapToSetting("pageAxes"),
-    createSnapToSetting("pageEdges"),
-    createSnapToSetting("pageCorners"),
-    createSnapToSetting("objectCenters"),
-    createSnapToSetting("objectMidlines"),
-    createSnapToSetting("objectEdges"),
-    createSnapToSetting("objectCorners")
+    msg('snapTo'),
+    createSnapToSetting('pageCenter'),
+    createSnapToSetting('pageAxes'),
+    createSnapToSetting('pageEdges'),
+    createSnapToSetting('pageCorners'),
+    createSnapToSetting('objectCenters'),
+    createSnapToSetting('objectMidlines'),
+    createSnapToSetting('objectEdges'),
+    createSnapToSetting('objectCorners')
   );
 
   const createSnapFromSetting = (forPoint) =>
@@ -272,10 +272,10 @@ export function initUI({ addon, msg }) {
     );
 
   const snapFromSection = createSection(
-    msg("snapFrom"),
-    createSnapFromSetting("boxCenter"),
-    createSnapFromSetting("boxCorners"),
-    createSnapFromSetting("boxEdgeMids")
+    msg('snapFrom'),
+    createSnapFromSetting('boxCenter'),
+    createSnapFromSetting('boxCorners'),
+    createSnapFromSetting('boxEdgeMids')
   );
 
   settingsPage.append(threshSetting, createSeparator(), snapToSection, createSeparator(), snapFromSection);
@@ -286,20 +286,20 @@ export function initUI({ addon, msg }) {
       const canvasControls = await addon.tab.waitForElement("[class^='paint-editor_canvas-controls']", {
         markAsSeen: true,
         reduxEvents: [
-          "scratch-gui/navigation/ACTIVATE_TAB",
-          "scratch-gui/mode/SET_PLAYER",
-          "fontsLoaded/SET_FONTS_LOADED",
-          "scratch-gui/locales/SELECT_LOCALE",
-          "scratch-gui/targets/UPDATE_TARGET_LIST",
+          'scratch-gui/navigation/ACTIVATE_TAB',
+          'scratch-gui/mode/SET_PLAYER',
+          'fontsLoaded/SET_FONTS_LOADED',
+          'scratch-gui/locales/SELECT_LOCALE',
+          'scratch-gui/targets/UPDATE_TARGET_LIST'
         ],
         reduxCondition: (state) =>
-          state.scratchGui.editorTab.activeTabIndex === 1 && !state.scratchGui.mode.isPlayerOnly,
+          state.scratchGui.editorTab.activeTabIndex === 1 && !state.scratchGui.mode.isPlayerOnly
       });
       const zoomControlsContainer = canvasControls.querySelector("[class^='paint-editor_zoom-controls']");
       addon.tab.appendToSharedSpace({
-        space: "paintEditorZoomControls",
+        space: 'paintEditorZoomControls',
         element: controlsGroup,
-        order: 2,
+        order: 2
       });
 
       if (!hasRunOnce) {
@@ -307,14 +307,14 @@ export function initUI({ addon, msg }) {
         const groupClass = zoomControlsContainer.firstChild.className;
         const buttonClass = zoomControlsContainer.firstChild.firstChild.className;
         const imageClass = zoomControlsContainer.firstChild.firstChild.firstChild.className;
-        for (const el of document.querySelectorAll(".sa-paint-snap-group")) {
-          el.className += " " + groupClass;
+        for (const el of document.querySelectorAll('.sa-paint-snap-group')) {
+          el.className += ' ' + groupClass;
         }
-        for (const el of document.querySelectorAll(".sa-paint-snap-button")) {
-          el.className += " " + buttonClass;
+        for (const el of document.querySelectorAll('.sa-paint-snap-button')) {
+          el.className += ' ' + buttonClass;
         }
-        for (const el of document.querySelectorAll(".sa-paint-snap-image")) {
-          el.className += " " + imageClass;
+        for (const el of document.querySelectorAll('.sa-paint-snap-image')) {
+          el.className += ' ' + imageClass;
         }
       }
     }

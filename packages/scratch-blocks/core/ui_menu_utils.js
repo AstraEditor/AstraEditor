@@ -30,14 +30,13 @@
  **/
 goog.provide('Blockly.utils.uiMenu');
 
-
 /**
  * Get the size of a rendered goog.ui.Menu.
  * @param {!goog.ui.Menu} menu The menu to measure.
  * @return {!goog.math.Size} Object with width and height properties.
  * @package
  */
-Blockly.utils.uiMenu.getSize = function(menu) {
+Blockly.utils.uiMenu.getSize = function (menu) {
   var menuDom = menu.getElement();
   var menuSize = goog.style.getSize(menuDom);
   // Recalculate height for the total content, not only box height.
@@ -59,8 +58,7 @@ Blockly.utils.uiMenu.getSize = function(menu) {
  *     widget div, in window coordinates.
  * @package
  */
-Blockly.utils.uiMenu.adjustBBoxesForRTL = function(viewportBBox, anchorBBox,
-    menuSize) {
+Blockly.utils.uiMenu.adjustBBoxesForRTL = function (viewportBBox, anchorBBox, menuSize) {
   anchorBBox.left += menuSize.width;
   anchorBBox.right += menuSize.width;
   viewportBBox.left += menuSize.width;

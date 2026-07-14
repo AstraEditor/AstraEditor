@@ -29,15 +29,13 @@ goog.provide('Blockly.WorkspaceAudio');
 
 goog.require('goog.userAgent');
 
-
 /**
  * Class for loading, storing, and playing audio for a workspace.
  * @param {Blockly.WorkspaceSvg} parentWorkspace The parent of the workspace
  *     this audio object belongs to, or null.
  * @constructor
  */
-Blockly.WorkspaceAudio = function(parentWorkspace) {
-
+Blockly.WorkspaceAudio = function (parentWorkspace) {
   /**
    * The parent of the workspace this object belongs to, or null.  May be
    * checked for sounds that this object can't find.
@@ -65,7 +63,7 @@ Blockly.WorkspaceAudio.prototype.lastSound_ = null;
  * Dispose of this audio manager.
  * @package
  */
-Blockly.WorkspaceAudio.prototype.dispose = function() {
+Blockly.WorkspaceAudio.prototype.dispose = function () {
   this.parentWorkspace_ = null;
   this.SOUNDS_ = null;
 };
@@ -78,7 +76,7 @@ Blockly.WorkspaceAudio.prototype.dispose = function() {
  * @param {string} name Name of sound.
  * @package
  */
-Blockly.WorkspaceAudio.prototype.load = function(filenames, name) {
+Blockly.WorkspaceAudio.prototype.load = function (filenames, name) {
   if (!filenames.length) {
     return;
   }
@@ -108,7 +106,7 @@ Blockly.WorkspaceAudio.prototype.load = function(filenames, name) {
  * Preload all the audio files so that they play quickly when asked for.
  * @package
  */
-Blockly.WorkspaceAudio.prototype.preload = function() {
+Blockly.WorkspaceAudio.prototype.preload = function () {
   for (var name in this.SOUNDS_) {
     var sound = this.SOUNDS_[name];
     sound.volume = 0.01;
@@ -119,7 +117,7 @@ Blockly.WorkspaceAudio.prototype.preload = function() {
       // If we don't wait for the play request to complete before calling pause() we will get an exception:
       // Uncaught (in promise) DOMException: The play() request was interrupted by a call to pause().
       // See more: https://developers.google.com/web/updates/2017/06/play-request-was-interrupted
-      playPromise.then(sound.pause).catch(function() {
+      playPromise.then(sound.pause).catch(function () {
         // Play without user interaction was prevented.
       });
     } else {
@@ -140,19 +138,17 @@ Blockly.WorkspaceAudio.prototype.preload = function() {
  * @param {string} name Name of sound.
  * @param {number=} opt_volume Volume of sound (0-1).
  */
-Blockly.WorkspaceAudio.prototype.play = function(name, opt_volume) {
+Blockly.WorkspaceAudio.prototype.play = function (name, opt_volume) {
   var sound = this.SOUNDS_[name];
   if (sound) {
     // Don't play one sound on top of another.
-    var now = new Date;
-    if (this.lastSound_ != null &&
-        now - this.lastSound_ < Blockly.SOUND_LIMIT) {
+    var now = new Date();
+    if (this.lastSound_ != null && now - this.lastSound_ < Blockly.SOUND_LIMIT) {
       return;
     }
     this.lastSound_ = now;
     var mySound;
-    var ie9 = goog.userAgent.DOCUMENT_MODE &&
-              goog.userAgent.DOCUMENT_MODE === 9;
+    var ie9 = goog.userAgent.DOCUMENT_MODE && goog.userAgent.DOCUMENT_MODE === 9;
     if (ie9 || goog.userAgent.IPAD || goog.userAgent.ANDROID) {
       // Creating a new audio node causes lag in IE9, Android and iPad. Android
       // and IE9 refetch the file from the server, iPad uses a singleton audio
@@ -161,7 +157,7 @@ Blockly.WorkspaceAudio.prototype.play = function(name, opt_volume) {
     } else {
       mySound = sound.cloneNode();
     }
-    mySound.volume = (opt_volume === undefined ? 1 : opt_volume);
+    mySound.volume = opt_volume === undefined ? 1 : opt_volume;
     mySound.play();
   } else if (this.parentWorkspace_) {
     // Maybe a workspace on a lower level knows about this sound.

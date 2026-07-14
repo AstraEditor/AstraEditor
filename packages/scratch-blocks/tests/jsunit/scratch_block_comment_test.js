@@ -32,9 +32,11 @@ function scratchBlockCommentTest_setUp() {
 
   var BLOCK_TYPE = 'test_json_minimal';
 
-  Blockly.defineBlocksWithJsonArray([{
-    "type": BLOCK_TYPE
-  }]);
+  Blockly.defineBlocksWithJsonArray([
+    {
+      type: BLOCK_TYPE
+    }
+  ]);
 
   block = new Blockly.BlockSvg(workspace, BLOCK_TYPE);
 
@@ -119,14 +121,13 @@ function test_blockCommentXYWhenPositionProvided() {
 function test_blockCommentXYWhenPositionNotProvided() {
   scratchBlockCommentTest_setUp();
   try {
-    var comment = new Blockly.ScratchBlockComment(
-        block, 'Some comment text', 'aMockComment');
+    var comment = new Blockly.ScratchBlockComment(block, 'Some comment text', 'aMockComment');
     var commentXY = comment.getXY();
     var commentX = commentXY.x;
     var commentY = commentXY.y;
 
-    console.log("COMMENT X: " + commentX);
-    console.log("COMMENT Y: " + commentY);
+    console.log('COMMENT X: ' + commentX);
+    console.log('COMMENT Y: ' + commentY);
 
     assertEquals('Comment x position is type number', 'number', typeof commentX);
     assertEquals('Comment y position is type number', 'number', typeof commentY);
@@ -141,8 +142,7 @@ function test_blockCommentXYWhenPositionNotProvided() {
 function test_blockCommentXYNaNPositionProvided() {
   scratchBlockCommentTest_setUp();
   try {
-    var comment = new Blockly.ScratchBlockComment(
-        block, 'Some comment text', 'aMockComment', NaN, NaN);
+    var comment = new Blockly.ScratchBlockComment(block, 'Some comment text', 'aMockComment', NaN, NaN);
     var commentXY = comment.getXY();
     var commentX = commentXY.x;
     var commentY = commentXY.y;
@@ -160,8 +160,7 @@ function test_blockCommentXYNaNPositionProvided() {
 function test_blockCommentXYNullPositionProvided() {
   scratchBlockCommentTest_setUp();
   try {
-    var comment = new Blockly.ScratchBlockComment(
-        block, 'Some comment text', 'aMockComment', null, null);
+    var comment = new Blockly.ScratchBlockComment(block, 'Some comment text', 'aMockComment', null, null);
     var commentXY = comment.getXY();
     var commentX = commentXY.x;
     var commentY = commentXY.y;

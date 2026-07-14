@@ -1,4 +1,4 @@
-import { removeAlpha } from "../../libraries/common/cs/text-color.esm.js";
+import { removeAlpha } from '../../libraries/common/cs/text-color.esm.js';
 
 export default async function ({ addon, console }) {
   const ScratchBlocks = await addon.tab.traps.getBlockly();
@@ -12,13 +12,13 @@ export default async function ({ addon, console }) {
     if (!background) {
       return;
     }
-    const fill = removeAlpha(background.getAttribute("fill"));
-    const border = background.getAttribute("stroke") || "#0003";
+    const fill = removeAlpha(background.getAttribute('fill'));
+    const border = background.getAttribute('stroke') || '#0003';
     const text = ScratchBlocks.Colours.text;
-    widgetDiv.classList.add("sa-contextmenu-colored");
-    widgetDiv.style.setProperty("--sa-contextmenu-bg", fill);
-    widgetDiv.style.setProperty("--sa-contextmenu-border", border);
-    widgetDiv.style.setProperty("--sa-contextmenu-text", text);
+    widgetDiv.classList.add('sa-contextmenu-colored');
+    widgetDiv.style.setProperty('--sa-contextmenu-bg', fill);
+    widgetDiv.style.setProperty('--sa-contextmenu-border', border);
+    widgetDiv.style.setProperty('--sa-contextmenu-text', text);
   };
 
   const originalHandleRightClick = ScratchBlocks.Gesture.prototype.handleRightClick;
@@ -34,7 +34,7 @@ export default async function ({ addon, console }) {
   const originalHide = ScratchBlocks.WidgetDiv.hide;
   ScratchBlocks.WidgetDiv.hide = function (...args) {
     if (ScratchBlocks.WidgetDiv.DIV) {
-      ScratchBlocks.WidgetDiv.DIV.classList.remove("sa-contextmenu-colored");
+      ScratchBlocks.WidgetDiv.DIV.classList.remove('sa-contextmenu-colored');
     }
     return originalHide.call(this, ...args);
   };

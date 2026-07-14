@@ -1,5 +1,5 @@
-[class*="settings-menu_dropdown-label"],
-[class*="menu-bar_collapsible-label"],
-[class*="menu-bar_tutorials-label"] {
+[class*='settings-menu_dropdown-label'],
+[class*='menu-bar_collapsible-label'],
+[class*='menu-bar_tutorials-label'] {
   display: none;
 }

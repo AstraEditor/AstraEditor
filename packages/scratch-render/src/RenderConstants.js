@@ -5,33 +5,33 @@
  * @enum
  */
 module.exports = {
+  /**
+   * The ID value to use for "no item" or when an object has been disposed.
+   * @const {int}
+   */
+  ID_NONE: -1,
+
+  /**
+   * @enum {string}
+   */
+  Events: {
     /**
-     * The ID value to use for "no item" or when an object has been disposed.
-     * @const {int}
+     * Event emitted when the high quality render option changes.
      */
-    ID_NONE: -1,
+    UseHighQualityRenderChanged: 'UseHighQualityRenderChanged',
 
     /**
-     * @enum {string}
+     * Event emitted when the private skin access option changes.
      */
-    Events: {
-        /**
-         * Event emitted when the high quality render option changes.
-         */
-        UseHighQualityRenderChanged: 'UseHighQualityRenderChanged',
+    AllowPrivateSkinAccessChanged: 'AllowPrivateSkinAccessChanged',
 
-        /**
-         * Event emitted when the private skin access option changes.
-         */
-        AllowPrivateSkinAccessChanged: 'AllowPrivateSkinAccessChanged',
-
-        /**
-         * NativeSizeChanged event
-         *
-         * @event RenderWebGL#event:NativeSizeChanged
-         * @type {object}
-         * @property {Array<int>} newSize - the new size of the renderer
-         */
-        NativeSizeChanged: 'NativeSizeChanged'
-    }
+    /**
+     * NativeSizeChanged event
+     *
+     * @event RenderWebGL#event:NativeSizeChanged
+     * @type {object}
+     * @property {Array<int>} newSize - the new size of the renderer
+     */
+    NativeSizeChanged: 'NativeSizeChanged'
+  }
 };

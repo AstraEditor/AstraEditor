@@ -18,7 +18,7 @@
  * limitations under the License.
  */
 
- /**
+/**
  * @fileoverview Tests for Blockly.Input
  */
 'use strict';
@@ -157,7 +157,7 @@ function test_insertFieldAt_prefix() {
   var after = new Blockly.FieldLabel('after');
   var prefix = new Blockly.FieldLabel('prefix');
   var between = new Blockly.FieldLabel('between');
-  between.prefixField = prefix
+  between.prefixField = prefix;
   input.appendField(before);
   input.appendField(after);
 
@@ -183,7 +183,7 @@ function test_insertFieldAt_prefix() {
   var after = new Blockly.FieldLabel('after');
   var suffix = new Blockly.FieldLabel('suffix');
   var between = new Blockly.FieldLabel('between');
-  between.suffixField = suffix
+  between.suffixField = suffix;
   input.appendField(before);
   input.appendField(after);
 

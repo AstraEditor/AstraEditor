@@ -26,9 +26,11 @@ function test_json_minimal() {
   var workspace = new Blockly.Workspace();
   var block;
   try {
-    Blockly.defineBlocksWithJsonArray([{
-      "type": BLOCK_TYPE
-    }]);
+    Blockly.defineBlocksWithJsonArray([
+      {
+        type: BLOCK_TYPE
+      }
+    ]);
 
     block = new Blockly.Block(workspace, BLOCK_TYPE);
     assertEquals(BLOCK_TYPE, block.type);
@@ -48,10 +50,12 @@ function test_json_message0() {
   var workspace = new Blockly.Workspace();
   var block;
   try {
-    Blockly.defineBlocksWithJsonArray([{
-      "type": BLOCK_TYPE,
-      "message0": MESSAGE0
-    }]);
+    Blockly.defineBlocksWithJsonArray([
+      {
+        type: BLOCK_TYPE,
+        message0: MESSAGE0
+      }
+    ]);
 
     block = new Blockly.Block(workspace, BLOCK_TYPE);
     assertEquals(1, block.inputList.length);
@@ -75,11 +79,13 @@ function test_json_message1() {
   var workspace = new Blockly.Workspace();
   var block;
   try {
-    Blockly.defineBlocksWithJsonArray([{
-      "type": BLOCK_TYPE,
-      "message0": MESSAGE0,
-      "message1": MESSAGE1
-    }]);
+    Blockly.defineBlocksWithJsonArray([
+      {
+        type: BLOCK_TYPE,
+        message0: MESSAGE0,
+        message1: MESSAGE1
+      }
+    ]);
 
     block = new Blockly.Block(workspace, BLOCK_TYPE);
     assertEquals(2, block.inputList.length);
@@ -111,10 +117,12 @@ function test_json_message0_i18n() {
   var workspace = new Blockly.Workspace();
   var block;
   try {
-    Blockly.defineBlocksWithJsonArray([{
-      "type": BLOCK_TYPE,
-      "message0": MESSAGE0
-    }]);
+    Blockly.defineBlocksWithJsonArray([
+      {
+        type: BLOCK_TYPE,
+        message0: MESSAGE0
+      }
+    ]);
 
     block = new Blockly.Block(workspace, BLOCK_TYPE);
     assertEquals(1, block.inputList.length);
@@ -141,20 +149,22 @@ function test_json_dropdown() {
   var workspace = new Blockly.Workspace();
   var block;
   try {
-    Blockly.defineBlocksWithJsonArray([{
-      "type": BLOCK_TYPE,
-      "message0": "%1",
-      "args0": [
-        {
-          "type": "field_dropdown",
-          "name": FIELD_NAME,
-          "options": [
-            [LABEL0, VALUE0],
-            [LABEL1, VALUE1]
-          ]
-        }
-      ]
-    }]);
+    Blockly.defineBlocksWithJsonArray([
+      {
+        type: BLOCK_TYPE,
+        message0: '%1',
+        args0: [
+          {
+            type: 'field_dropdown',
+            name: FIELD_NAME,
+            options: [
+              [LABEL0, VALUE0],
+              [LABEL1, VALUE1]
+            ]
+          }
+        ]
+      }
+    ]);
 
     block = new Blockly.Block(workspace, BLOCK_TYPE);
     assertEquals(1, block.inputList.length);
@@ -170,7 +180,7 @@ function test_json_dropdown() {
     assertEquals(LABEL1, options[1][0]);
     assertEquals(VALUE1, options[1][1]);
   } finally {
-    block && block.dispose();  // Disposes of dropdown, too.
+    block && block.dispose(); // Disposes of dropdown, too.
     workspace.dispose();
     delete Blockly.Blocks[BLOCK_TYPE];
   }
@@ -182,44 +192,46 @@ function test_json_dropdown_image() {
   var IMAGE1_ALT_TEXT = 'Localized message.';
   Blockly.Msg['ALT_TEXT'] = IMAGE1_ALT_TEXT;
   var IMAGE0 = {
-    'width': 12,
-    'height': 34,
-    'src': 'http://image0.src',
-    'alt': 'IMAGE0 alt text'
+    width: 12,
+    height: 34,
+    src: 'http://image0.src',
+    alt: 'IMAGE0 alt text'
   };
   var VALUE0 = 'VALUE0';
   var IMAGE1 = {
-    'width': 56,
-    'height': 78,
-    'src': 'http://image1.src',
-    'alt': '%{BKY_ALT_TEXT}'
+    width: 56,
+    height: 78,
+    src: 'http://image1.src',
+    alt: '%{BKY_ALT_TEXT}'
   };
   var VALUE1 = 'VALUE1';
   var IMAGE2 = {
-    'width': 90,
-    'height': 123,
-    'src': 'http://image2.src'
+    width: 90,
+    height: 123,
+    src: 'http://image2.src'
   };
   var VALUE2 = 'VALUE2';
 
   var workspace = new Blockly.Workspace();
   var block;
   try {
-    Blockly.defineBlocksWithJsonArray([{
-      "type": BLOCK_TYPE,
-      "message0": "%1",
-      "args0": [
-        {
-          "type": "field_dropdown",
-          "name": FIELD_NAME,
-          "options": [
-            [IMAGE0, VALUE0],
-            [IMAGE1, VALUE1],
-            [IMAGE2, VALUE2]
-          ]
-        }
-      ]
-    }]);
+    Blockly.defineBlocksWithJsonArray([
+      {
+        type: BLOCK_TYPE,
+        message0: '%1',
+        args0: [
+          {
+            type: 'field_dropdown',
+            name: FIELD_NAME,
+            options: [
+              [IMAGE0, VALUE0],
+              [IMAGE1, VALUE1],
+              [IMAGE2, VALUE2]
+            ]
+          }
+        ]
+      }
+    ]);
 
     block = new Blockly.Block(workspace, BLOCK_TYPE);
     assertEquals(1, block.inputList.length);
@@ -241,20 +253,19 @@ function test_json_dropdown_image() {
     assertEquals(IMAGE1.width, image1.width);
     assertEquals(IMAGE1.height, image1.height);
     assertEquals(IMAGE1.src, image1.src);
-    assertEquals(IMAGE1.alt, IMAGE1_ALT_TEXT);  // Via Msg reference
+    assertEquals(IMAGE1.alt, IMAGE1_ALT_TEXT); // Via Msg reference
     assertEquals(VALUE1, options[1][1]);
 
     var image2 = options[2][0];
     assertEquals(IMAGE2.width, image2.width);
     assertEquals(IMAGE2.height, image2.height);
     assertEquals(IMAGE2.src, image2.src);
-    assert(image2.alt == null);  // No alt specified.
+    assert(image2.alt == null); // No alt specified.
     assertEquals(VALUE2, options[2][1]);
   } finally {
-    block && block.dispose();  // Disposes of dropdown, too.
+    block && block.dispose(); // Disposes of dropdown, too.
     workspace.dispose();
     delete Blockly.Blocks[BLOCK_TYPE];
     delete Blockly.Msg['ALTTEXT'];
   }
 }
-

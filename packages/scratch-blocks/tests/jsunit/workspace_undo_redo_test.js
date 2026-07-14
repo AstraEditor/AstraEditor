@@ -18,7 +18,7 @@
  * limitations under the License.
  */
 
- /**
+/**
  * @fileoverview Tests for Blockly.Workspace.undo.
  * @author marisaleung@google.com (Marisa Leung)
  */
@@ -28,7 +28,6 @@ goog.require('goog.events.EventHandler');
 goog.require('goog.testing');
 goog.require('goog.testing.events');
 goog.require('goog.testing.MockControl');
-
 
 var workspace;
 var mockControl_;
@@ -204,8 +203,8 @@ function test_redoAndUndoDeleteVariableTwice_NoBlocks() {
 
   // Check the undoStack only recorded one delete event.
   var undoStack = workspace.undoStack_;
-  assertEquals('var_delete', undoStack[undoStack.length-1].type);
-  assertNotEquals('var_delete', undoStack[undoStack.length-2].type);
+  assertEquals('var_delete', undoStack[undoStack.length - 1].type);
+  assertNotEquals('var_delete', undoStack[undoStack.length - 2].type);
 
   // undo delete
   workspace.undo();
@@ -231,9 +230,9 @@ function test_redoAndUndoDeleteVariableTwice_WithBlocks() {
 
   // Check the undoStack only recorded one delete event.
   var undoStack = workspace.undoStack_;
-  assertEquals('var_delete', undoStack[undoStack.length-1].type);
-  assertEquals('delete', undoStack[undoStack.length-2].type);
-  assertNotEquals('var_delete', undoStack[undoStack.length-3].type);
+  assertEquals('var_delete', undoStack[undoStack.length - 1].type);
+  assertEquals('delete', undoStack[undoStack.length - 2].type);
+  assertNotEquals('var_delete', undoStack[undoStack.length - 3].type);
 
   // undo delete
   workspace.undo();

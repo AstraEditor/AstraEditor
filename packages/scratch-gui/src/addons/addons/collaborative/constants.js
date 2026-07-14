@@ -1,72 +1,80 @@
 /** 协作模式下用于生成随机房间名的词库 */
 export const ID_SEA = {
-    Who: ["赛博", "口四楼", "汉堡", "猫猫", "小猫", "枫", "虾", "糖果"],
-    Do: ["吃", "玩", "说", "丢", "买"],
-    Things: ["AE", "皮球", "背带裤", "鸡"],
+  Who: ['赛博', '口四楼', '汉堡', '猫猫', '小猫', '枫', '虾', '糖果'],
+  Do: ['吃', '玩', '说', '丢', '买'],
+  Things: ['AE', '皮球', '背带裤', '鸡']
 };
 
 export const SERVER_OPCODE = {
-  POINTER_LEAVE: "pointer-leave",
-  POINTER: "pointer",
-  SNAPSHOT: "snapshot",
-  SNAPSHOT_ERROR: "snapshot-error",
-  SPRITE_ADD: "sprite-add",
-  SPRITE_DELETE: "sprite-delete",
-  BLOCK_CREATE: "block-create",           // 新增积木（完整 XML）
-  BLOCK_DELETE: "block-delete",           // 删除积木（只发 rootId）
-  BLOCK_MOVE: "block-move",               // 移动积木（只发 rootId + 坐标）
-  BLOCK_UPDATE: "block-update",           // 修改字段/连接（完整 XML）
-  BLOCK_FIELD_CHANGE: "block-field-change",     // 字段值变更（增量）
-  BLOCK_MUTATION_CHANGE: "block-mutation-change", // mutation 变更（增量）
-  COMMENT_SYNC: "comment-sync",           // 注释全量同步（简单可靠）
-  EXTENSION_ADD: "extension-add",         // 添加扩展
-  EXTENSION_REMOVE: "extension-remove",   // 移除扩展
-  COSTUME_ADD: "costume-add",             // 添加造型
-  COSTUME_UPDATE: "costume-update",       // 更新造型（含数据变更）
-  COSTUME_DELETE: "costume-delete",       // 删除造型
-  SOUND_ADD: "sound-add",                 // 添加音频
-  SOUND_UPDATE: "sound-update",           // 更新音频（含数据变更）
-  SOUND_DELETE: "sound-delete",           // 删除音频
-  VARIABLE_ADD: "variable-add",             // 创建变量/列表
-  VARIABLE_DELETE: "variable-delete",       // 删除变量/列表
-  VARIABLE_RENAME: "variable-rename",       // 重命名变量/列表
-  CHAT_MESSAGE: "chat-message",             // 实时聊天消息
-  EDIT_LOCK: "edit-lock",               // 锁定积木/注释（其他用户不可编辑）
-  EDIT_UNLOCK: "edit-unlock",           // 解锁积木/注释
-  BLOCK_DRAG_START: "block-drag-start",   // 积木拖动开始（含完整 XML，让远端渲染幽灵）
-  BLOCK_DRAG_MOVE: "block-drag-move",     // 积木拖动中（仅坐标）
-  BLOCK_DRAG_END: "block-drag-end",       // 积木拖动结束（删除幽灵）
-  PING: "ping",
-  PONG: "pong",
-  KICK: "kick",
+  POINTER_LEAVE: 'pointer-leave',
+  POINTER: 'pointer',
+  SNAPSHOT: 'snapshot',
+  SNAPSHOT_ERROR: 'snapshot-error',
+  SPRITE_ADD: 'sprite-add',
+  SPRITE_DELETE: 'sprite-delete',
+  BLOCK_CREATE: 'block-create', // 新增积木（完整 XML）
+  BLOCK_DELETE: 'block-delete', // 删除积木（只发 rootId）
+  BLOCK_MOVE: 'block-move', // 移动积木（只发 rootId + 坐标）
+  BLOCK_UPDATE: 'block-update', // 修改字段/连接（完整 XML）
+  BLOCK_FIELD_CHANGE: 'block-field-change', // 字段值变更（增量）
+  BLOCK_MUTATION_CHANGE: 'block-mutation-change', // mutation 变更（增量）
+  COMMENT_SYNC: 'comment-sync', // 注释全量同步（简单可靠）
+  EXTENSION_ADD: 'extension-add', // 添加扩展
+  EXTENSION_REMOVE: 'extension-remove', // 移除扩展
+  COSTUME_ADD: 'costume-add', // 添加造型
+  COSTUME_UPDATE: 'costume-update', // 更新造型（含数据变更）
+  COSTUME_DELETE: 'costume-delete', // 删除造型
+  SOUND_ADD: 'sound-add', // 添加音频
+  SOUND_UPDATE: 'sound-update', // 更新音频（含数据变更）
+  SOUND_DELETE: 'sound-delete', // 删除音频
+  VARIABLE_ADD: 'variable-add', // 创建变量/列表
+  VARIABLE_DELETE: 'variable-delete', // 删除变量/列表
+  VARIABLE_RENAME: 'variable-rename', // 重命名变量/列表
+  CHAT_MESSAGE: 'chat-message', // 实时聊天消息
+  EDIT_LOCK: 'edit-lock', // 锁定积木/注释（其他用户不可编辑）
+  EDIT_UNLOCK: 'edit-unlock', // 解锁积木/注释
+  BLOCK_DRAG_START: 'block-drag-start', // 积木拖动开始（含完整 XML，让远端渲染幽灵）
+  BLOCK_DRAG_MOVE: 'block-drag-move', // 积木拖动中（仅坐标）
+  BLOCK_DRAG_END: 'block-drag-end', // 积木拖动结束（删除幽灵）
+  PING: 'ping',
+  PONG: 'pong',
+  KICK: 'kick',
   SWITCH_TARGET: 'switch_target',
   MEMBERS_SYNC: 'members_sync'
-}
+};
 
-export const idHead = "sa-addon-collaborative-";
+export const idHead = 'sa-addon-collaborative-';
 
 function darkenHex(hex, percent = 20) {
-    hex = hex.replace("#", "");
-    if (hex.length === 3) {
-        hex = hex
-            .split("")
-            .map((c) => c + c)
-            .join("");
-    }
-    let r = parseInt(hex.substring(0, 2), 16);
-    let g = parseInt(hex.substring(2, 4), 16);
-    let b = parseInt(hex.substring(4, 6), 16);
-    r = Math.max(0, Math.floor(r * (1 - percent / 100)));
-    g = Math.max(0, Math.floor(g * (1 - percent / 100)));
-    b = Math.max(0, Math.floor(b * (1 - percent / 100)));
-    return `#${r.toString(16).padStart(2, "0")}${g.toString(16).padStart(2, "0")}${b.toString(16).padStart(2, "0")}`;
+  hex = hex.replace('#', '');
+  if (hex.length === 3) {
+    hex = hex
+      .split('')
+      .map((c) => c + c)
+      .join('');
+  }
+  let r = parseInt(hex.substring(0, 2), 16);
+  let g = parseInt(hex.substring(2, 4), 16);
+  let b = parseInt(hex.substring(4, 6), 16);
+  r = Math.max(0, Math.floor(r * (1 - percent / 100)));
+  g = Math.max(0, Math.floor(g * (1 - percent / 100)));
+  b = Math.max(0, Math.floor(b * (1 - percent / 100)));
+  return `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`;
 }
 
 // XML 实体转义，防止用户名破坏 SVG 结构
 function escapeXmlText(s) {
-    return String(s).replace(/[<>&'"]/g, c => ({
-        '<': '&lt;', '>': '&gt;', '&': '&amp;', '\'': '&apos;', '"': '&quot;'
-    }[c]));
+  return String(s).replace(
+    /[<>&'"]/g,
+    (c) =>
+      ({
+        '<': '&lt;',
+        '>': '&gt;',
+        '&': '&amp;',
+        "'": '&apos;',
+        '"': '&quot;'
+      })[c]
+  );
 }
 
 export const pointerSVG = (color, name = '') => `

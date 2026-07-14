@@ -17,99 +17,96 @@ import Embed from './embed.jsx';
 import Download from './download.jsx';
 import DelayedMountPropertyHOC from './delayed-mount-property-hoc.jsx';
 import styles from './security-manager-modal.css';
-import { get } from '../../lib/settings.js'
+import { get } from '../../lib/settings.js';
 const messages = defineMessages({
-    title: {
-        defaultMessage: 'Extension Security',
-        // eslint-disable-next-line max-len
-        description: 'Title of modal thats asks the user for permission to let the project load an extension, fetch a resource, open a window, etc.',
-        id: 'tw.securityManager.title'
-    }
+  title: {
+    defaultMessage: 'Extension Security',
+    // eslint-disable-next-line max-len
+    description:
+      'Title of modal thats asks the user for permission to let the project load an extension, fetch a resource, open a window, etc.',
+    id: 'tw.securityManager.title'
+  }
 });
 
-const noop = () => { };
+const noop = () => {};
 
-const SecurityManagerModalComponent = props => (
-    <Modal
-        className={styles.modalContent}
-        onRequestClose={props.enableButtons ? props.onDenied : noop}
-        contentLabel={props.intl.formatMessage(messages.title)}
-        id="securitymanagermodal"
-    >
-        <Box className={styles.body}>
-            {props.type === SecurityModals.LoadExtension ? (
-                <LoadExtensionModal {...props.data} onSkip={() => get('skipExtWarn')} />
-            ) : props.type === SecurityModals.Fetch ? (
-                <FetchModal {...props.data} />
-            ) : props.type === SecurityModals.OpenWindow ? (
-                <OpenWindowModal {...props.data} />
-            ) : props.type === SecurityModals.Redirect ? (
-                <RedirectModal {...props.data} />
-            ) : props.type === SecurityModals.RecordAudio ? (
-                <RecordAudio {...props.data} />
-            ) : props.type === SecurityModals.RecordVideo ? (
-                <RecordVideo {...props.data} />
-            ) : props.type === SecurityModals.ReadClipboard ? (
-                <ReadClipboard {...props.data} />
-            ) : props.type === SecurityModals.Notify ? (
-                <Notify {...props.data} />
-            ) : props.type === SecurityModals.Geolocate ? (
-                <Geolocate {...props.data} />
-            ) : props.type === SecurityModals.Embed ? (
-                <Embed {...props.data} />
-            ) : props.type === SecurityModals.Download ? (
-                <Download {...props.data} />
-            ) : null}
+const SecurityManagerModalComponent = (props) => (
+  <Modal
+    className={styles.modalContent}
+    onRequestClose={props.enableButtons ? props.onDenied : noop}
+    contentLabel={props.intl.formatMessage(messages.title)}
+    id="securitymanagermodal"
+  >
+    <Box className={styles.body}>
+      {props.type === SecurityModals.LoadExtension ? (
+        <LoadExtensionModal {...props.data} onSkip={() => get('skipExtWarn')} />
+      ) : props.type === SecurityModals.Fetch ? (
+        <FetchModal {...props.data} />
+      ) : props.type === SecurityModals.OpenWindow ? (
+        <OpenWindowModal {...props.data} />
+      ) : props.type === SecurityModals.Redirect ? (
+        <RedirectModal {...props.data} />
+      ) : props.type === SecurityModals.RecordAudio ? (
+        <RecordAudio {...props.data} />
+      ) : props.type === SecurityModals.RecordVideo ? (
+        <RecordVideo {...props.data} />
+      ) : props.type === SecurityModals.ReadClipboard ? (
+        <ReadClipboard {...props.data} />
+      ) : props.type === SecurityModals.Notify ? (
+        <Notify {...props.data} />
+      ) : props.type === SecurityModals.Geolocate ? (
+        <Geolocate {...props.data} />
+      ) : props.type === SecurityModals.Embed ? (
+        <Embed {...props.data} />
+      ) : props.type === SecurityModals.Download ? (
+        <Download {...props.data} />
+      ) : null}
 
-            <Box className={styles.buttons}>
-                <button
-                    className={styles.denyButton}
-                    onClick={props.onDenied}
-                    disabled={!props.enableButtons}
-                >
-                    <FormattedMessage
-                        defaultMessage="Deny"
-                        description="Button in modal asking user for permission to load extension, access file, etc."
-                        id="tw.securityManager.deny"
-                    />
-                </button>
-                <button
-                    className={styles.allowButton}
-                    onClick={get('skipExtWarn') ?
-                        props.skip : props.onAllowed}
-                    disabled={!props.enableButtons}
-                >
-                    {get('skipExtWarn') ?
-                        <FormattedMessage
-                            defaultMessage="Allow All"
-                            description="Button in modal asking user for permission to load extension, access file, etc."
-                            id="tw.securityManager.allowall"
-                        />
-                        : <FormattedMessage
-                            defaultMessage="Allow"
-                            description="Button in modal asking user for permission to load extension, access file, etc."
-                            id="tw.securityManager.allow"
-                        />}
-
-                </button>
-            </Box>
-        </Box>
-    </Modal>
+      <Box className={styles.buttons}>
+        <button className={styles.denyButton} onClick={props.onDenied} disabled={!props.enableButtons}>
+          <FormattedMessage
+            defaultMessage="Deny"
+            description="Button in modal asking user for permission to load extension, access file, etc."
+            id="tw.securityManager.deny"
+          />
+        </button>
+        <button
+          className={styles.allowButton}
+          onClick={get('skipExtWarn') ? props.skip : props.onAllowed}
+          disabled={!props.enableButtons}
+        >
+          {get('skipExtWarn') ? (
+            <FormattedMessage
+              defaultMessage="Allow All"
+              description="Button in modal asking user for permission to load extension, access file, etc."
+              id="tw.securityManager.allowall"
+            />
+          ) : (
+            <FormattedMessage
+              defaultMessage="Allow"
+              description="Button in modal asking user for permission to load extension, access file, etc."
+              id="tw.securityManager.allow"
+            />
+          )}
+        </button>
+      </Box>
+    </Box>
+  </Modal>
 );
 
 SecurityManagerModalComponent.propTypes = {
-    intl: intlShape,
-    type: PropTypes.oneOf(Object.values(SecurityModals)),
-    enableButtons: PropTypes.bool,
-    // Each modal may have different type of data
-    // eslint-disable-next-line react/forbid-prop-types
-    data: PropTypes.object.isRequired,
-    onAllowed: PropTypes.func.isRequired,
-    onDenied: PropTypes.func.isRequired
+  intl: intlShape,
+  type: PropTypes.oneOf(Object.values(SecurityModals)),
+  enableButtons: PropTypes.bool,
+  // Each modal may have different type of data
+  // eslint-disable-next-line react/forbid-prop-types
+  data: PropTypes.object.isRequired,
+  onAllowed: PropTypes.func.isRequired,
+  onDenied: PropTypes.func.isRequired
 };
 
 // Prevent accidentally pressing buttons immediately when a prompt appears.
 const BUTTON_DELAY = 750;
 export default DelayedMountPropertyHOC(injectIntl(SecurityManagerModalComponent), BUTTON_DELAY, {
-    enableButtons: true
+  enableButtons: true
 });

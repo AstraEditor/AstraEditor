@@ -1,5 +1,5 @@
-import BlockInstance from "./BlockInstance.js";
-import BlockFlasher from "./BlockFlasher.js";
+import BlockInstance from './BlockInstance.js';
+import BlockFlasher from './BlockFlasher.js';
 
 // Make these global so that every addon uses the same arrays.
 let views = [];

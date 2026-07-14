@@ -12,13 +12,12 @@ import * as accentMIKU from './accent/miku';
 
 import * as guiLight from './gui/light';
 import * as guiDark from './gui/dark';
-import * as guiDeepDark from "./gui/deep_dark";
-import * as guiModenWhite from './gui/modern_white'
+import * as guiDeepDark from './gui/deep_dark';
+import * as guiModenWhite from './gui/modern_white';
 
 import * as blocksThree from './blocks/three';
 import * as blocksHighContrast from './blocks/high-contrast';
 import * as blocksDark from './blocks/dark';
-
 
 const ACCENT_PURPLE = 'purple';
 const ACCENT_BLUE = 'blue';
@@ -30,27 +29,27 @@ const ACCENT_CE = 'ce';
 const ACCENT_TY = 'ty';
 const ACCENT_MIKU = 'miku';
 const ACCENT_MAP = {
-    [ACCENT_PURPLE]: accentPurple,
-    [ACCENT_BLUE]: accentBlue,
-    [ACCENT_RED]: accentRed,
-    [ACCENT_RAINBOW]: accentRainbow,
-    [ACCENT_AE]: accentAE,
-    [ACCENT_COSTOM]: accentCostom.getAllColor(),
-    [ACCENT_CE]: accentCE,
-    [ACCENT_TY]: accentTY,
-    [ACCENT_MIKU]: accentMIKU
+  [ACCENT_PURPLE]: accentPurple,
+  [ACCENT_BLUE]: accentBlue,
+  [ACCENT_RED]: accentRed,
+  [ACCENT_RAINBOW]: accentRainbow,
+  [ACCENT_AE]: accentAE,
+  [ACCENT_COSTOM]: accentCostom.getAllColor(),
+  [ACCENT_CE]: accentCE,
+  [ACCENT_TY]: accentTY,
+  [ACCENT_MIKU]: accentMIKU
 };
 const ACCENT_DEFAULT = ACCENT_AE;
 
 const GUI_LIGHT = 'light';
 const GUI_DARK = 'dark';
-const GUI_DEEKDARK = "deep_dark";
-const GUI_MODERNWHITE = "modern_white"
+const GUI_DEEKDARK = 'deep_dark';
+const GUI_MODERNWHITE = 'modern_white';
 const GUI_MAP = {
-    [GUI_LIGHT]: guiLight,
-    [GUI_DARK]: guiDark,
-    [GUI_DEEKDARK]: guiDeepDark,
-    [GUI_MODERNWHITE]: guiModenWhite
+  [GUI_LIGHT]: guiLight,
+  [GUI_DARK]: guiDark,
+  [GUI_DEEKDARK]: guiDeepDark,
+  [GUI_MODERNWHITE]: guiModenWhite
 };
 const GUI_DEFAULT = GUI_DARK;
 
@@ -61,133 +60,125 @@ const BLOCKS_CUSTOM = 'custom';
 const BLOCKS_DEFAULT = BLOCKS_THREE;
 const defaultBlockColors = blocksThree.blockColors;
 const BLOCKS_MAP = {
-    [BLOCKS_THREE]: {
-        blocksMediaFolder: 'blocks-media/default',
-        colors: blocksThree.blockColors,
-        extensions: blocksThree.extensions,
-        customExtensionColors: {},
-        useForStage: true
-    },
-    [BLOCKS_HIGH_CONTRAST]: {
-        blocksMediaFolder: 'blocks-media/high-contrast',
-        colors: defaultsDeep({}, blocksHighContrast.blockColors, defaultBlockColors),
-        extensions: blocksHighContrast.extensions,
-        customExtensionColors: blocksHighContrast.customExtensionColors,
-        useForStage: true
-    },
-    [BLOCKS_DARK]: {
-        blocksMediaFolder: 'blocks-media/default',
-        colors: defaultsDeep({}, blocksDark.blockColors, defaultBlockColors),
-        extensions: blocksDark.extensions,
-        customExtensionColors: blocksDark.customExtensionColors,
-        useForStage: false
-    },
-    [BLOCKS_CUSTOM]: {
-        // to be filled by editor-theme3 addon
-        blocksMediaFolder: 'blocks-media/default',
-        colors: blocksThree.blockColors,
-        extensions: {},
-        customExtensionColors: {},
-        useForStage: false
-    }
+  [BLOCKS_THREE]: {
+    blocksMediaFolder: 'blocks-media/default',
+    colors: blocksThree.blockColors,
+    extensions: blocksThree.extensions,
+    customExtensionColors: {},
+    useForStage: true
+  },
+  [BLOCKS_HIGH_CONTRAST]: {
+    blocksMediaFolder: 'blocks-media/high-contrast',
+    colors: defaultsDeep({}, blocksHighContrast.blockColors, defaultBlockColors),
+    extensions: blocksHighContrast.extensions,
+    customExtensionColors: blocksHighContrast.customExtensionColors,
+    useForStage: true
+  },
+  [BLOCKS_DARK]: {
+    blocksMediaFolder: 'blocks-media/default',
+    colors: defaultsDeep({}, blocksDark.blockColors, defaultBlockColors),
+    extensions: blocksDark.extensions,
+    customExtensionColors: blocksDark.customExtensionColors,
+    useForStage: false
+  },
+  [BLOCKS_CUSTOM]: {
+    // to be filled by editor-theme3 addon
+    blocksMediaFolder: 'blocks-media/default',
+    colors: blocksThree.blockColors,
+    extensions: {},
+    customExtensionColors: {},
+    useForStage: false
+  }
 };
 
 let themeObjectsCreated = 0;
 
 class Theme {
-    constructor (accent, gui, blocks) {
-        // do not modify these directly
-        /** @readonly */
-        this.id = ++themeObjectsCreated;
-        /** @readonly */
-        this.accent = Object.prototype.hasOwnProperty.call(ACCENT_MAP, accent) ? accent : ACCENT_DEFAULT;
-        /** @readonly */
-        this.gui = Object.prototype.hasOwnProperty.call(GUI_MAP, gui) ? gui : GUI_DEFAULT;
-        /** @readonly */
-        this.blocks = Object.prototype.hasOwnProperty.call(BLOCKS_MAP, blocks) ? blocks : BLOCKS_DEFAULT;
-    }
+  constructor(accent, gui, blocks) {
+    // do not modify these directly
+    /** @readonly */
+    this.id = ++themeObjectsCreated;
+    /** @readonly */
+    this.accent = Object.prototype.hasOwnProperty.call(ACCENT_MAP, accent) ? accent : ACCENT_DEFAULT;
+    /** @readonly */
+    this.gui = Object.prototype.hasOwnProperty.call(GUI_MAP, gui) ? gui : GUI_DEFAULT;
+    /** @readonly */
+    this.blocks = Object.prototype.hasOwnProperty.call(BLOCKS_MAP, blocks) ? blocks : BLOCKS_DEFAULT;
+  }
 
-    static light = new Theme(ACCENT_DEFAULT, GUI_LIGHT, BLOCKS_DEFAULT);
-    static dark = new Theme(ACCENT_DEFAULT, GUI_DARK, BLOCKS_DEFAULT);
-    static highContrast = new Theme(ACCENT_DEFAULT, GUI_DEFAULT, BLOCKS_HIGH_CONTRAST);
+  static light = new Theme(ACCENT_DEFAULT, GUI_LIGHT, BLOCKS_DEFAULT);
+  static dark = new Theme(ACCENT_DEFAULT, GUI_DARK, BLOCKS_DEFAULT);
+  static highContrast = new Theme(ACCENT_DEFAULT, GUI_DEFAULT, BLOCKS_HIGH_CONTRAST);
 
-    set (what, to) {
-        if (what === 'accent') {
-            return new Theme(to, this.gui, this.blocks);
-        } else if (what === 'gui') {
-            return new Theme(this.accent, to, this.blocks);
-        } else if (what === 'blocks') {
-            return new Theme(this.accent, this.gui, to);
-        }
-        throw new Error(`Unknown theme property: ${what}`);
+  set(what, to) {
+    if (what === 'accent') {
+      return new Theme(to, this.gui, this.blocks);
+    } else if (what === 'gui') {
+      return new Theme(this.accent, to, this.blocks);
+    } else if (what === 'blocks') {
+      return new Theme(this.accent, this.gui, to);
     }
+    throw new Error(`Unknown theme property: ${what}`);
+  }
 
-    getBlocksMediaFolder () {
-        return BLOCKS_MAP[this.blocks].blocksMediaFolder;
-    }
+  getBlocksMediaFolder() {
+    return BLOCKS_MAP[this.blocks].blocksMediaFolder;
+  }
 
-    getGuiColors () {
-        return defaultsDeep(
-            {},
-            ACCENT_MAP[this.accent].guiColors,
-            GUI_MAP[this.gui].guiColors,
-            guiLight.guiColors
-        );
-    }
+  getGuiColors() {
+    return defaultsDeep({}, ACCENT_MAP[this.accent].guiColors, GUI_MAP[this.gui].guiColors, guiLight.guiColors);
+  }
 
-    getBlockColors () {
-        return defaultsDeep(
-            {},
-            ACCENT_MAP[this.accent].blockColors,
-            GUI_MAP[this.gui].blockColors,
-            BLOCKS_MAP[this.blocks].colors
-        );
-    }
+  getBlockColors() {
+    return defaultsDeep(
+      {},
+      ACCENT_MAP[this.accent].blockColors,
+      GUI_MAP[this.gui].blockColors,
+      BLOCKS_MAP[this.blocks].colors
+    );
+  }
 
-    getExtensions () {
-        return BLOCKS_MAP[this.blocks].extensions;
-    }
+  getExtensions() {
+    return BLOCKS_MAP[this.blocks].extensions;
+  }
 
-    isDark () {
-        return this.getGuiColors()['color-scheme'] === 'dark' || this.getGuiColors()['color-scheme'] === 'deep_dark';
-    }
+  isDark() {
+    return this.getGuiColors()['color-scheme'] === 'dark' || this.getGuiColors()['color-scheme'] === 'deep_dark';
+  }
 
-    getStageBlockColors () {
-        if (BLOCKS_MAP[this.blocks].useForStage) {
-            return this.getBlockColors();
-        }
-        return Theme.light.getBlockColors();
+  getStageBlockColors() {
+    if (BLOCKS_MAP[this.blocks].useForStage) {
+      return this.getBlockColors();
     }
+    return Theme.light.getBlockColors();
+  }
 
-    getCustomExtensionColors () {
-        return BLOCKS_MAP[this.blocks].customExtensionColors;
-    }
+  getCustomExtensionColors() {
+    return BLOCKS_MAP[this.blocks].customExtensionColors;
+  }
 }
 
 export {
-    Theme,
-    defaultBlockColors,
-
-    ACCENT_RED,
-    ACCENT_PURPLE,
-    ACCENT_BLUE,
-    ACCENT_RAINBOW,
-    ACCENT_MAP,
-    ACCENT_AE,
-    ACCENT_COSTOM,
-    ACCENT_CE,
-    ACCENT_TY,
-    ACCENT_MIKU,
-
-    GUI_LIGHT,
-    GUI_DARK,
-    GUI_DEEKDARK,
-    GUI_MODERNWHITE,
-    GUI_MAP,
-
-    BLOCKS_THREE,
-    BLOCKS_DARK,
-    BLOCKS_HIGH_CONTRAST,
-    BLOCKS_CUSTOM,
-    BLOCKS_MAP
+  Theme,
+  defaultBlockColors,
+  ACCENT_RED,
+  ACCENT_PURPLE,
+  ACCENT_BLUE,
+  ACCENT_RAINBOW,
+  ACCENT_MAP,
+  ACCENT_AE,
+  ACCENT_COSTOM,
+  ACCENT_CE,
+  ACCENT_TY,
+  ACCENT_MIKU,
+  GUI_LIGHT,
+  GUI_DARK,
+  GUI_DEEKDARK,
+  GUI_MODERNWHITE,
+  GUI_MAP,
+  BLOCKS_THREE,
+  BLOCKS_DARK,
+  BLOCKS_HIGH_CONTRAST,
+  BLOCKS_CUSTOM,
+  BLOCKS_MAP
 };

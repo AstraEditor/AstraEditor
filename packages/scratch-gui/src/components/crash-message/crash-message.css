@@ -1,46 +1,46 @@
-@import "../../css/colors.css";
-@import "../../css/units.css";
-@import "../../css/typography.css";
+@import '../../css/colors.css';
+@import '../../css/units.css';
+@import '../../css/typography.css';
 
 .crash-wrapper {
-    background-color: $menu-bar-background;
-    width: 100%;
-    height: 100%;
-    display: flex;
-    justify-content: center;
-    align-items: center;
+  background-color: $menu-bar-background;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 
 .body {
-    width: 50%;
-    color: white;
-    text-align: center;
+  width: 50%;
+  color: white;
+  text-align: center;
 }
 
 /* scratch-www was overriding the colors */
 .body p,
 .body h2 {
-    color: inherit;
+  color: inherit;
 }
 
 .reloadButton {
-    border: 2px solid white;
-    border-radius: 0.25rem;
-    padding: 0.5rem 2rem;
-    background: transparent;
-    color: white;
-    font-weight: bold;
-    font-size: 0.875rem;
-    cursor: pointer;
-    margin: 5px;
+  border: 2px solid white;
+  border-radius: 0.25rem;
+  padding: 0.5rem 2rem;
+  background: transparent;
+  color: white;
+  font-weight: bold;
+  font-size: 0.875rem;
+  cursor: pointer;
+  margin: 5px;
 }
 
 .header {
-    font-size: 1.5em;
-    font-weight: bold;
+  font-size: 1.5em;
+  font-weight: bold;
 }
 
 .error-message {
-    white-space: pre-wrap;
-    font-family: monospace;
+  white-space: pre-wrap;
+  font-family: monospace;
 }

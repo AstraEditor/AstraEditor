@@ -3,11 +3,11 @@ export default async function ({ addon, console, msg }) {
   const vm = addon.tab.traps.vm;
 
   const SCRATCH_ITEMS_TO_HIDE = [
-    "RENAME_VARIABLE_ID",
-    "DELETE_VARIABLE_ID",
-    "NEW_BROADCAST_MESSAGE_ID",
+    'RENAME_VARIABLE_ID',
+    'DELETE_VARIABLE_ID',
+    'NEW_BROADCAST_MESSAGE_ID',
     // From rename-broadcasts addon
-    "RENAME_BROADCAST_MESSAGE_ID",
+    'RENAME_BROADCAST_MESSAGE_ID'
   ];
 
   const canUseAsGlobalVariableName = (name, type) => {
@@ -20,25 +20,25 @@ export default async function ({ addon, console, msg }) {
 
   const ADDON_ITEMS = {
     createGlobalVariable: {
-      enabled: (name) => canUseAsGlobalVariableName(name, ""),
-      createVariable: (workspace, name) => workspace.createVariable(name),
+      enabled: (name) => canUseAsGlobalVariableName(name, ''),
+      createVariable: (workspace, name) => workspace.createVariable(name)
     },
     createLocalVariable: {
-      enabled: (name) => canUseAsLocalVariableName(name, ""),
-      createVariable: (workspace, name) => workspace.createVariable(name, "", null, true),
+      enabled: (name) => canUseAsLocalVariableName(name, ''),
+      createVariable: (workspace, name) => workspace.createVariable(name, '', null, true)
     },
     createGlobalList: {
-      enabled: (name) => canUseAsGlobalVariableName(name, "list"),
-      createVariable: (workspace, name) => workspace.createVariable(name, "list"),
+      enabled: (name) => canUseAsGlobalVariableName(name, 'list'),
+      createVariable: (workspace, name) => workspace.createVariable(name, 'list')
     },
     createLocalList: {
-      enabled: (name) => canUseAsLocalVariableName(name, "list"),
-      createVariable: (workspace, name) => workspace.createVariable(name, "list", null, true),
+      enabled: (name) => canUseAsLocalVariableName(name, 'list'),
+      createVariable: (workspace, name) => workspace.createVariable(name, 'list', null, true)
     },
     createBroadcast: {
-      enabled: (name) => canUseAsGlobalVariableName(name, "broadcast_msg"),
-      createVariable: (workspace, name) => workspace.createVariable(name, "broadcast_msg"),
-    },
+      enabled: (name) => canUseAsGlobalVariableName(name, 'broadcast_msg'),
+      createVariable: (workspace, name) => workspace.createVariable(name, 'broadcast_msg')
+    }
   };
 
   let blocklyDropDownContent = null;
@@ -53,26 +53,26 @@ export default async function ({ addon, console, msg }) {
 
   const oldDropDownDivShow = Blockly.DropDownDiv.show;
   Blockly.DropDownDiv.show = function (...args) {
-    blocklyDropdownMenu = document.querySelector(".blocklyDropdownMenu");
+    blocklyDropdownMenu = document.querySelector('.blocklyDropdownMenu');
     if (!blocklyDropdownMenu) {
       return oldDropDownDivShow.call(this, ...args);
     }
 
     blocklyDropdownMenu.focus = () => {}; // no-op focus() so it can't steal it from the search bar
 
-    searchBar = document.createElement("input");
-    addon.tab.displayNoneWhileDisabled(searchBar, { display: "flex" });
-    searchBar.type = "text";
-    searchBar.addEventListener("input", updateSearch);
-    searchBar.addEventListener("keydown", handleKeyDownEvent);
-    searchBar.classList.add("u-dropdown-searchbar");
+    searchBar = document.createElement('input');
+    addon.tab.displayNoneWhileDisabled(searchBar, { display: 'flex' });
+    searchBar.type = 'text';
+    searchBar.addEventListener('input', updateSearch);
+    searchBar.addEventListener('keydown', handleKeyDownEvent);
+    searchBar.classList.add('u-dropdown-searchbar');
     blocklyDropdownMenu.insertBefore(searchBar, blocklyDropdownMenu.firstChild);
 
     items = Array.from(blocklyDropdownMenu.children)
-      .filter((child) => child.tagName !== "INPUT")
+      .filter((child) => child.tagName !== 'INPUT')
       .map((element) => ({
         element,
-        text: element.textContent,
+        text: element.textContent
       }));
     currentDropdownOptions = resultOfLastGetOptions;
     updateSearch();
@@ -97,7 +97,7 @@ export default async function ({ addon, console, msg }) {
     oldDropDownDivClearContent.call(this);
     items = [];
     searchedItems = [];
-    Blockly.DropDownDiv.content_.style.height = "";
+    Blockly.DropDownDiv.content_.style.height = '';
   };
 
   const oldFieldDropdownGetOptions = Blockly.FieldDropdown.prototype.getOptions;
@@ -106,18 +106,18 @@ export default async function ({ addon, console, msg }) {
     const block = this.sourceBlock_;
     const isStage = vm.editingTarget && vm.editingTarget.isStage;
     if (block) {
-      if (block.category_ === "data") {
-        options.push(getMenuItemMessage("createGlobalVariable"));
+      if (block.category_ === 'data') {
+        options.push(getMenuItemMessage('createGlobalVariable'));
         if (!isStage) {
-          options.push(getMenuItemMessage("createLocalVariable"));
+          options.push(getMenuItemMessage('createLocalVariable'));
         }
-      } else if (block.category_ === "data-lists") {
-        options.push(getMenuItemMessage("createGlobalList"));
+      } else if (block.category_ === 'data-lists') {
+        options.push(getMenuItemMessage('createGlobalList'));
         if (!isStage) {
-          options.push(getMenuItemMessage("createLocalList"));
+          options.push(getMenuItemMessage('createLocalList'));
         }
-      } else if (block.type === "event_broadcast_menu" || block.type === "event_whenbroadcastreceived") {
-        options.push(getMenuItemMessage("createBroadcast"));
+      } else if (block.type === 'event_broadcast_menu' || block.type === 'event_whenbroadcastreceived') {
+        options.push(getMenuItemMessage('createBroadcast'));
       }
     }
     // Options aren't normally stored anywhere, so we'll store them ourselves.
@@ -146,8 +146,8 @@ export default async function ({ addon, console, msg }) {
 
   function selectItem(item, click) {
     // You can't just use click() or focus() because Blockly uses mousedown and mouseup handlers, not click handlers.
-    item.dispatchEvent(new MouseEvent("mousedown", { relatedTarget: item, bubbles: true }));
-    if (click) item.dispatchEvent(new MouseEvent("mouseup", { relatedTarget: item, bubbles: true }));
+    item.dispatchEvent(new MouseEvent('mousedown', { relatedTarget: item, bubbles: true }));
+    if (click) item.dispatchEvent(new MouseEvent('mouseup', { relatedTarget: item, bubbles: true }));
 
     // Scroll the item into view if it is offscreen.
     const itemTop = item.offsetTop;
@@ -201,7 +201,7 @@ export default async function ({ addon, console, msg }) {
     return items
       .map((item, index) => ({
         item,
-        score: rank(item, index),
+        score: rank(item, index)
       }))
       .sort(({ score: scoreA }, { score: scoreB }) => Math.max(0, scoreB) - Math.max(0, scoreA));
   }
@@ -232,23 +232,23 @@ export default async function ({ addon, console, msg }) {
   }
 
   function handleKeyDownEvent(event) {
-    if (event.key === "Enter") {
+    if (event.key === 'Enter') {
       // Reimplement enter to select item to account for hidden items and default to the top item.
       event.stopPropagation();
       event.preventDefault();
 
-      const selectedItem = document.querySelector(".goog-menuitem-highlight");
+      const selectedItem = document.querySelector('.goog-menuitem-highlight');
       if (selectedItem && !selectedItem.hidden) {
         selectItem(selectedItem, true);
         return;
       }
 
       const selectedBlock = Blockly.selected;
-      if (searchBar.value === "" && selectedBlock) {
+      if (searchBar.value === '' && selectedBlock) {
         if (
-          selectedBlock.type === "event_broadcast" ||
-          selectedBlock.type === "event_broadcastandwait" ||
-          selectedBlock.type === "event_whenbroadcastreceived"
+          selectedBlock.type === 'event_broadcast' ||
+          selectedBlock.type === 'event_broadcastandwait' ||
+          selectedBlock.type === 'event_whenbroadcastreceived'
         ) {
           // The top item of these dropdowns is always "New message"
           // When pressing enter on an empty search bar, we close the dropdown instead of making a new broadcast.
@@ -263,9 +263,9 @@ export default async function ({ addon, console, msg }) {
         }
       }
       // If there is no top value, do nothing and leave the dropdown open
-    } else if (event.key === "Escape") {
+    } else if (event.key === 'Escape') {
       Blockly.DropDownDiv.hide();
-    } else if (event.key === "ArrowDown" || event.key === "ArrowUp") {
+    } else if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
       // Reimplement keyboard navigation to account for hidden items.
       event.preventDefault();
       event.stopPropagation();
@@ -277,7 +277,7 @@ export default async function ({ addon, console, msg }) {
 
       let selectedIndex = -1;
       for (let i = 0; i < items.length; i++) {
-        if (items[i].element.classList.contains("goog-menuitem-highlight")) {
+        if (items[i].element.classList.contains('goog-menuitem-highlight')) {
           selectedIndex = i;
           break;
         }
@@ -285,7 +285,7 @@ export default async function ({ addon, console, msg }) {
 
       const lastIndex = items.length - 1;
       let newIndex = 0;
-      if (event.key === "ArrowDown") {
+      if (event.key === 'ArrowDown') {
         if (selectedIndex === -1 || selectedIndex === lastIndex) {
           newIndex = 0;
         } else {
@@ -306,6 +306,6 @@ export default async function ({ addon, console, msg }) {
   function getMenuItemMessage(message) {
     // Format used internally by Scratch:
     // [human readable name, internal name]
-    return [msg(message, { name: searchBar && searchBar.value.trim() || "" }), message];
+    return [msg(message, { name: (searchBar && searchBar.value.trim()) || '' }), message];
   }
 }

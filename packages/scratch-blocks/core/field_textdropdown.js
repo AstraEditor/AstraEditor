@@ -31,7 +31,6 @@ goog.require('Blockly.FieldDropdown');
 goog.require('Blockly.FieldTextInput');
 goog.require('goog.userAgent');
 
-
 /**
  * Class for a combination text + drop-down field.
  * @param {string} text The initial content of the text field.
@@ -47,7 +46,7 @@ goog.require('goog.userAgent');
  * @extends {Blockly.FieldTextInput}
  * @constructor
  */
-Blockly.FieldTextDropdown = function(text, menuGenerator, opt_validator, opt_restrictor) {
+Blockly.FieldTextDropdown = function (text, menuGenerator, opt_validator, opt_restrictor) {
   this.menuGenerator_ = menuGenerator;
   Blockly.FieldDropdown.prototype.trimOptions_.call(this);
   Blockly.FieldTextDropdown.superClass_.constructor.call(this, text, opt_validator, opt_restrictor);
@@ -63,9 +62,8 @@ goog.inherits(Blockly.FieldTextDropdown, Blockly.FieldTextInput);
  * @package
  * @nocollapse
  */
-Blockly.FieldTextDropdown.fromJson = function(element) {
-  var field =
-      new Blockly.FieldTextDropdown(element['text'], element['options']);
+Blockly.FieldTextDropdown.fromJson = function (element) {
+  var field = new Blockly.FieldTextDropdown(element['text'], element['options']);
   if (typeof element['spellcheck'] == 'boolean') {
     field.setSpellcheck(element['spellcheck']);
   }
@@ -75,7 +73,7 @@ Blockly.FieldTextDropdown.fromJson = function(element) {
 /**
  * Install this text drop-down field on a block.
  */
-Blockly.FieldTextDropdown.prototype.init = function() {
+Blockly.FieldTextDropdown.prototype.init = function () {
   if (this.fieldGroup_) {
     // Text input + dropdown has already been initialized once.
     return;
@@ -90,17 +88,18 @@ Blockly.FieldTextDropdown.prototype.init = function() {
     this.arrowX_ = 0;
     /** @type {Number} */
     this.arrowY_ = 11;
-    this.arrow_ = Blockly.utils.createSvgElement('image',
-        {
-          'height': this.arrowSize_ + 'px',
-          'width': this.arrowSize_ + 'px'
-        });
-    this.arrow_.setAttributeNS('http://www.w3.org/1999/xlink',
-        'xlink:href', Blockly.mainWorkspace.options.pathToMedia + 'dropdown-arrow-dark.svg');
+    this.arrow_ = Blockly.utils.createSvgElement('image', {
+      height: this.arrowSize_ + 'px',
+      width: this.arrowSize_ + 'px'
+    });
+    this.arrow_.setAttributeNS(
+      'http://www.w3.org/1999/xlink',
+      'xlink:href',
+      Blockly.mainWorkspace.options.pathToMedia + 'dropdown-arrow-dark.svg'
+    );
     this.arrow_.style.cursor = 'pointer';
     this.fieldGroup_.appendChild(this.arrow_);
-    this.mouseUpWrapper_ =
-        Blockly.bindEvent_(this.arrow_, 'mouseup', this, this.showDropdown_);
+    this.mouseUpWrapper_ = Blockly.bindEvent_(this.arrow_, 'mouseup', this, this.showDropdown_);
   }
   // Prevent the drop-down handler from changing the field colour on open.
   this.disableColourChange_ = true;
@@ -109,7 +108,7 @@ Blockly.FieldTextDropdown.prototype.init = function() {
 /**
  * Close the input widget if this input is being deleted.
  */
-Blockly.FieldTextDropdown.prototype.dispose = function() {
+Blockly.FieldTextDropdown.prototype.dispose = function () {
   if (this.mouseUpWrapper_) {
     Blockly.unbindEvent_(this.mouseUpWrapper_);
     this.mouseUpWrapper_ = null;
@@ -121,15 +120,14 @@ Blockly.FieldTextDropdown.prototype.dispose = function() {
 /**
  * If the drop-down isn't open, show the text editor.
  */
-Blockly.FieldTextDropdown.prototype.showEditor_ = function() {
+Blockly.FieldTextDropdown.prototype.showEditor_ = function () {
   if (!this.dropDownOpen_) {
-    Blockly.FieldTextDropdown.superClass_.showEditor_.call(this, null, null,
-        true, function() {
-          // When the drop-down arrow is clicked, hide text editor and show drop-down.
-          Blockly.WidgetDiv.hide();
-          this.showDropdown_();
-          Blockly.Touch.clearTouchIdentifier();
-        });
+    Blockly.FieldTextDropdown.superClass_.showEditor_.call(this, null, null, true, function () {
+      // When the drop-down arrow is clicked, hide text editor and show drop-down.
+      Blockly.WidgetDiv.hide();
+      this.showDropdown_();
+      Blockly.Touch.clearTouchIdentifier();
+    });
   }
 };
 

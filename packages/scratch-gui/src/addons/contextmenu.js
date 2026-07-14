@@ -9,20 +9,25 @@ let contextMenus = [];
 
 const onReactContextMenu = function (e) {
   if (!e.target) return;
-  const ctxTarget = e.target.closest(".react-contextmenu-wrapper");
+  const ctxTarget = e.target.closest('.react-contextmenu-wrapper');
   if (!ctxTarget) return;
-  let ctxMenu = ctxTarget.querySelector("nav.react-contextmenu");
+  let ctxMenu = ctxTarget.querySelector('nav.react-contextmenu');
   let type;
   const extra = {};
-  if (false && !ctxMenu && ctxTarget.closest(".monitor-overlay")) {
+  if (false && !ctxMenu && ctxTarget.closest('.monitor-overlay')) {
     // Monitors are rendered on document.body.
     // This is internal id which is different from the actual monitor ID.
     // Optional chain just to prevent crashes when they change the internal stuff.
     const internal = ctxTarget[this.traps.getInternalKey(ctxTarget)];
-    const mInternalId = internal && internal.return && internal.return.stateNode && internal.return.stateNode.props && internal.return.stateNode.props.id;
+    const mInternalId =
+      internal &&
+      internal.return &&
+      internal.return.stateNode &&
+      internal.return.stateNode.props &&
+      internal.return.stateNode.props.id;
     if (!mInternalId) return;
     ctxMenu = Array.prototype.find.call(
-      document.querySelectorAll("body > nav.react-contextmenu"),
+      document.querySelectorAll('body > nav.react-contextmenu'),
       (candidate) => candidate[this.traps.getInternalKey(candidate)]?.return?.stateNode?.props?.id === mInternalId
     );
     if (!ctxMenu) return;
@@ -47,38 +52,38 @@ const onReactContextMenu = function (e) {
     menuItem: ctxMenu,
     target: ctxTarget,
     type,
-    ...extra,
+    ...extra
   };
   Array.from(ctxMenu.children).forEach((existing) => {
-    if (existing.classList.contains("sa-ctx-menu")) existing.remove();
+    if (existing.classList.contains('sa-ctx-menu')) existing.remove();
   });
   for (const item of hasDynamicContextMenu
-    ? contextMenus.flatMap((menu) => (typeof menu === "function" ? menu(type, ctx) : menu))
+    ? contextMenus.flatMap((menu) => (typeof menu === 'function' ? menu(type, ctx) : menu))
     : contextMenus) {
     if (!item) continue;
     if (item.types && !item.types.some((itemType) => type === itemType)) continue;
     if (item.condition && !item.condition(ctx)) continue;
-    const itemElem = document.createElement("div");
-    const classes = ["context-menu_menu-item"];
-    if (item.border) classes.push("context-menu_menu-item-bordered");
-    if (item.dangerous) classes.push("context-menu_menu-item-danger");
+    const itemElem = document.createElement('div');
+    const classes = ['context-menu_menu-item'];
+    if (item.border) classes.push('context-menu_menu-item-bordered');
+    if (item.dangerous) classes.push('context-menu_menu-item-danger');
     itemElem.className = this.scratchClass(...classes, {
-      others: ["react-contextmenu-item", "sa-ctx-menu", item.className || ""],
+      others: ['react-contextmenu-item', 'sa-ctx-menu', item.className || '']
     });
-    const label = document.createElement("span");
+    const label = document.createElement('span');
     label.textContent = item.label;
     itemElem.append(label);
     this.displayNoneWhileDisabled(itemElem, {
-      display: "block",
+      display: 'block'
     });
 
-    itemElem.addEventListener("click", (e) => {
+    itemElem.addEventListener('click', (e) => {
       e.stopPropagation();
       window.dispatchEvent(
-        new CustomEvent("REACT_CONTEXTMENU_HIDE", {
+        new CustomEvent('REACT_CONTEXTMENU_HIDE', {
           detail: {
-            action: "REACT_CONTEXTMENU_HIDE",
-          },
+            action: 'REACT_CONTEXTMENU_HIDE'
+          }
         })
       );
       item.callback(ctx);
@@ -88,7 +93,7 @@ const onReactContextMenu = function (e) {
       space: item.position,
       order: item.order,
       scope: ctxMenu,
-      element: itemElem,
+      element: itemElem
     });
   }
   return;
@@ -97,17 +102,17 @@ const onReactContextMenu = function (e) {
 const initialize = (tab) => {
   if (initialized) return;
   initialized = true;
-  document.body.addEventListener("contextmenu", (e) => onReactContextMenu.call(tab, e), { capture: true });
+  document.body.addEventListener('contextmenu', (e) => onReactContextMenu.call(tab, e), { capture: true });
 };
 
 export const addContextMenu = (tab, callback, opts) => {
-  if (typeof opts === "undefined") {
+  if (typeof opts === 'undefined') {
     contextMenus.push(callback);
     hasDynamicContextMenu = true;
   } else {
     contextMenus.push({
       ...opts,
-      callback,
+      callback
     });
   }
   initialize(tab);

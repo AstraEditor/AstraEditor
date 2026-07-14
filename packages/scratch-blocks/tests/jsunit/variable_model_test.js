@@ -41,8 +41,7 @@ function variableModelTest_tearDown() {
  */
 function testInit_Trivial() {
   variableModelTest_setUp();
-  variable = new Blockly.VariableModel(workspace, 'test', 'test_type',
-    'test_id');
+  variable = new Blockly.VariableModel(workspace, 'test', 'test_type', 'test_id');
   assertEquals('test', variable.name);
   assertEquals('test_type', variable.type);
   assertEquals('test_id', variable.id_);

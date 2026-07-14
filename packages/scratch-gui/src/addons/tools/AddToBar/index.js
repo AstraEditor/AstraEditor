@@ -2,7 +2,7 @@ import { getSetting } from '../AEsettings/index.js';
 import SideBar from '../../ui/side-bar/side-bar.js';
 
 function isVSCodeLayoutEnabled() {
-    return getSetting('EnableVSCodeLayout');
+  return getSetting('EnableVSCodeLayout');
 }
 
 const TAB_BUTTON_CLASS = 'ae-tab-button';
@@ -10,10 +10,10 @@ const CONTAINER_CLASS = 'ae-addons-list';
 
 let stylesInjected = false;
 function injectStyles() {
-    if (stylesInjected) return;
-    stylesInjected = true;
-    const el = document.createElement('style');
-    el.textContent = `
+  if (stylesInjected) return;
+  stylesInjected = true;
+  const el = document.createElement('style');
+  el.textContent = `
 .${TAB_BUTTON_CLASS} {
   display: flex;
   align-items: center;
@@ -90,7 +90,7 @@ function injectStyles() {
   filter: grayscale(0%);
 }
 `;
-    document.head.appendChild(el);
+  document.head.appendChild(el);
 }
 
 /**
@@ -112,92 +112,88 @@ function injectStyles() {
  * @param {function} [config.onClick] - called when button is clicked in non-VSCode layout
  */
 export default async function AddToBar(addon, config) {
-    injectStyles();
-    const { id, icon, text, vscOnly, getContent, onActivate, onDeactivate, onClick } = config;
-    const vscode = isVSCodeLayoutEnabled();
+  injectStyles();
+  const { id, icon, text, vscOnly, getContent, onActivate, onDeactivate, onClick } = config;
+  const vscode = isVSCodeLayoutEnabled();
 
-    // vscOnly: skip entirely when not in VSCode layout
-    if (vscOnly && !vscode) return;
-    const tabListSelector = '[class*="react-tabs_react-tabs__tab-list"]';
-    const tabAddonListSelector = CONTAINER_CLASS;
+  // vscOnly: skip entirely when not in VSCode layout
+  if (vscOnly && !vscode) return;
+  const tabListSelector = '[class*="react-tabs_react-tabs__tab-list"]';
+  const tabAddonListSelector = CONTAINER_CLASS;
 
-    // Create button
-    const button = vscode
-        ? document.createElement('li')
-        : document.createElement('button');
+  // Create button
+  const button = vscode ? document.createElement('li') : document.createElement('button');
 
-    button.className = addon.tab.scratchClass('menu-bar_menu-bar-button', {
-        others: TAB_BUTTON_CLASS
-    });
+  button.className = addon.tab.scratchClass('menu-bar_menu-bar-button', {
+    others: TAB_BUTTON_CLASS
+  });
 
-    if (vscode) {
-        const img = document.createElement('img');
-        img.src = typeof icon === 'function' ? icon() : icon;
-        img.draggable = false;
-        img.alt = text;
-        button.appendChild(img);
+  if (vscode) {
+    const img = document.createElement('img');
+    img.src = typeof icon === 'function' ? icon() : icon;
+    img.draggable = false;
+    img.alt = text;
+    button.appendChild(img);
 
-        const enableEffect = () => {
-            button.classList.add('is-selected');
-            button.setAttribute('aria-selected', 'true');
-        };
-        const unableEffect = () => {
-            button.classList.remove('is-selected');
-            button.setAttribute('aria-selected', 'false');
-        };
+    const enableEffect = () => {
+      button.classList.add('is-selected');
+      button.setAttribute('aria-selected', 'true');
+    };
+    const unableEffect = () => {
+      button.classList.remove('is-selected');
+      button.setAttribute('aria-selected', 'false');
+    };
 
-        button.onclick = () => {
-            if (SideBar.getActivePlugin() === id) {
-                SideBar.close();
-                unableEffect();
-                if (onDeactivate) onDeactivate();
-            } else {
-                if (getContent) {
-                    SideBar.register(id, getContent(), {
-                        onActivate: () => {
-                            enableEffect();
-                            if (onActivate) onActivate();
-                        },
-                        onDeactivate: () => {
-                            unableEffect();
-                            if (onDeactivate) onDeactivate();
-                        }
-                    });
-                }
-                SideBar.switchTo(id);
-                SideBar.open();
-                enableEffect();
+    button.onclick = () => {
+      if (SideBar.getActivePlugin() === id) {
+        SideBar.close();
+        unableEffect();
+        if (onDeactivate) onDeactivate();
+      } else {
+        if (getContent) {
+          SideBar.register(id, getContent(), {
+            onActivate: () => {
+              enableEffect();
+              if (onActivate) onActivate();
+            },
+            onDeactivate: () => {
+              unableEffect();
+              if (onDeactivate) onDeactivate();
             }
-        };
-    } else {
-        button.textContent = text;
-        button.title = text;
-        button.addEventListener('click', () => {
-            if (onClick) onClick();
-        });
-    }
-
-    addon.tab.displayNoneWhileDisabled(button);
-
-    while (true) {
-        const tabs = await addon.tab.waitForElement(tabListSelector, {
-            markAsSeen: true,
-            reduxEvents: ['scratch-gui/mode/SET_PLAYER', 'fontsLoaded/SET_FONTS_LOADED', 'scratch-gui/locales/SELECT_LOCALE'],
-            reduxCondition: (state) => !state.scratchGui.mode.isPlayerOnly,
-        });
-        let container = document.querySelector(`.${tabAddonListSelector}`);
-        if (!container) {
-            // VSCode 布局：容器用 <li>（与 react-tabs Tab 一致）
-            // 非 VSCode：容器用 <div>
-            container = vscode
-                ? document.createElement('li')
-                : document.createElement('div');
-            container.className = tabAddonListSelector;
-            container.appendChild(button);
-            // 通过共享空间机制注入，order=6（位于搜索框(5)之后、README 之前）
-            if (tabs) addon.tab.appendToSharedSpace({ space: 'afterTabs', element: container, order: 6 });
-        } else {
-            container.appendChild(button);
+          });
         }
+        SideBar.switchTo(id);
+        SideBar.open();
+        enableEffect();
+      }
+    };
+  } else {
+    button.textContent = text;
+    button.title = text;
+    button.addEventListener('click', () => {
+      if (onClick) onClick();
+    });
+  }
+
+  addon.tab.displayNoneWhileDisabled(button);
+
+  while (true) {
+    const tabs = await addon.tab.waitForElement(tabListSelector, {
+      markAsSeen: true,
+      reduxEvents: ['scratch-gui/mode/SET_PLAYER', 'fontsLoaded/SET_FONTS_LOADED', 'scratch-gui/locales/SELECT_LOCALE'],
+      reduxCondition: (state) => !state.scratchGui.mode.isPlayerOnly
+    });
+    let container = document.querySelector(`.${tabAddonListSelector}`);
+    if (!container) {
+      // VSCode 布局：容器用 <li>（与 react-tabs Tab 一致）
+      // 非 VSCode：容器用 <div>
+      container = vscode ? document.createElement('li') : document.createElement('div');
+      container.className = tabAddonListSelector;
+      container.appendChild(button);
+      // 通过共享空间机制注入，order=6（位于搜索框(5)之后、README 之前）
+      if (tabs) addon.tab.appendToSharedSpace({ space: 'afterTabs', element: container, order: 6 });
+    } else {
+      container.appendChild(button);
     }
+  }
 }

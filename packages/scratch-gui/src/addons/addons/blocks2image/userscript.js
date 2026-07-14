@@ -2,7 +2,7 @@ export default async function ({ addon, console, msg }) {
   const Blockly = await addon.tab.traps.getBlockly();
 
   function makeStyle() {
-    let style = document.createElement("style");
+    let style = document.createElement('style');
     style.textContent = `
     .blocklyText {
         fill: ${Blockly.Colours.text};
@@ -26,20 +26,20 @@ export default async function ({ addon, console, msg }) {
 
   function setCSSVars(element) {
     for (let property of document.documentElement.style) {
-      if (property.startsWith("--editorTheme3-"))
+      if (property.startsWith('--editorTheme3-'))
         element.style.setProperty(property, document.documentElement.style.getPropertyValue(property));
     }
   }
 
-  let exSVG = document.createElementNS("http://www.w3.org/2000/svg", "svg");
-  exSVG.setAttribute("xmlns:html", "http://www.w3.org/1999/xhtml");
-  exSVG.setAttribute("xmlns:xlink", "http://www.w3.org/1999/xlink");
-  exSVG.setAttribute("version", "1.1");
+  let exSVG = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+  exSVG.setAttribute('xmlns:html', 'http://www.w3.org/1999/xhtml');
+  exSVG.setAttribute('xmlns:xlink', 'http://www.w3.org/1999/xlink');
+  exSVG.setAttribute('version', '1.1');
 
   addon.tab.createBlockContextMenu(
     (items) => {
       if (addon.self.disabled) return items;
-      let svgchild = document.querySelector("svg.blocklySvg g.blocklyBlockCanvas");
+      let svgchild = document.querySelector('svg.blocklySvg g.blocklyBlockCanvas');
 
       const pasteItemIndex = items.findIndex((obj) => obj._isDevtoolsFirstItem);
       const insertBeforeIndex =
@@ -54,19 +54,19 @@ export default async function ({ addon, console, msg }) {
         0,
         {
           enabled: !!svgchild?.childNodes?.length,
-          text: msg("export_all_to_SVG"),
+          text: msg('export_all_to_SVG'),
           callback: () => {
             exportBlock(false);
           },
-          separator: true,
+          separator: true
         },
         {
           enabled: !!svgchild?.childNodes?.length,
-          text: msg("export_all_to_PNG"),
+          text: msg('export_all_to_PNG'),
           callback: () => {
             exportBlock(true);
           },
-          separator: false,
+          separator: false
         }
       );
 
@@ -90,19 +90,19 @@ export default async function ({ addon, console, msg }) {
         0,
         {
           enabled: true,
-          text: msg("export_selected_to_SVG"),
+          text: msg('export_selected_to_SVG'),
           callback: () => {
             exportBlock(false, block);
           },
-          separator: true,
+          separator: true
         },
         {
           enabled: true,
-          text: msg("export_selected_to_PNG"),
+          text: msg('export_selected_to_PNG'),
           callback: () => {
             exportBlock(true, block);
           },
-          separator: false,
+          separator: false
         }
       );
 
@@ -119,22 +119,22 @@ export default async function ({ addon, console, msg }) {
       svg = allBlocks(isExportPNG);
     }
     // resolve nbsp whitespace
-    svg.querySelectorAll("text").forEach((text) => {
-      text.innerHTML = text.innerHTML.replace(/&nbsp;/g, " ");
+    svg.querySelectorAll('text').forEach((text) => {
+      text.innerHTML = text.innerHTML.replace(/&nbsp;/g, ' ');
     });
 
     // replace external images with data URIs
     await Promise.all(
-      Array.from(svg.querySelectorAll("image")).map(async (item) => {
-        const iconUrl = item.getAttribute("xlink:href");
-        if (iconUrl.startsWith("data:")) return;
+      Array.from(svg.querySelectorAll('image')).map(async (item) => {
+        const iconUrl = item.getAttribute('xlink:href');
+        if (iconUrl.startsWith('data:')) return;
         const blob = await (await fetch(iconUrl)).blob();
         const reader = new FileReader();
         const dataUri = await new Promise((resolve) => {
-          reader.addEventListener("load", () => resolve(reader.result));
+          reader.addEventListener('load', () => resolve(reader.result));
           reader.readAsDataURL(blob);
         });
-        item.setAttribute("xlink:href", dataUri);
+        item.setAttribute('xlink:href', dataUri);
       })
     );
     if (!isExportPNG) {
@@ -149,19 +149,19 @@ export default async function ({ addon, console, msg }) {
 
     let svgchild = block.svgGroup_;
     svgchild = svgchild.cloneNode(true);
-    let dataShapes = svgchild.getAttribute("data-shapes");
+    let dataShapes = svgchild.getAttribute('data-shapes');
     let translateY = 0; // blocks no hat
     const scale = isExportPNG ? 2 : 1;
-    if (dataShapes === "c-block c-1 hat") {
+    if (dataShapes === 'c-block c-1 hat') {
       translateY = 20; // for My block
     }
-    if (dataShapes === "hat") {
+    if (dataShapes === 'hat') {
       translateY = 16; // for Events
       if (block.CAT_BLOCKS) {
         translateY += 16; // for cat ears
       }
     }
-    svgchild.setAttribute("transform", `translate(0,${scale * translateY}) scale(${scale})`);
+    svgchild.setAttribute('transform', `translate(0,${scale * translateY}) scale(${scale})`);
     setCSSVars(svg);
     svg.append(makeStyle());
     svg.append(svgchild);
@@ -171,24 +171,24 @@ export default async function ({ addon, console, msg }) {
   function allBlocks(isExportPNG) {
     let svg = exSVG.cloneNode();
 
-    let svgchild = document.querySelector("svg.blocklySvg g.blocklyBlockCanvas");
+    let svgchild = document.querySelector('svg.blocklySvg g.blocklyBlockCanvas');
     svgchild = svgchild.cloneNode(true);
 
     let xArr = [];
     let yArr = [];
 
     svgchild.childNodes.forEach((g) => {
-      let x = g.getAttribute("transform").match(/translate\((.*?),(.*?)\)/)[1] || 0;
-      let y = g.getAttribute("transform").match(/translate\((.*?),(.*?)\)/)[2] || 0;
+      let x = g.getAttribute('transform').match(/translate\((.*?),(.*?)\)/)[1] || 0;
+      let y = g.getAttribute('transform').match(/translate\((.*?),(.*?)\)/)[2] || 0;
       xArr.push(x * (isExportPNG ? 2 : 1));
       yArr.push(y * (isExportPNG ? 2 : 1));
-      g.style.display = ""; // because of TW scratch-blocks changes
+      g.style.display = ''; // because of TW scratch-blocks changes
     });
 
     svgchild.setAttribute(
-      "transform",
+      'transform',
       `translate(${-Math.min(...xArr)},${-Math.min(...yArr) + 18 * (isExportPNG ? 2 : 1)}) ${
-        isExportPNG ? "scale(2)" : ""
+        isExportPNG ? 'scale(2)' : ''
       }`
     );
     setCSSVars(svg);
@@ -198,10 +198,10 @@ export default async function ({ addon, console, msg }) {
   }
 
   function exportData(text) {
-    const saveLink = document.createElement("a");
+    const saveLink = document.createElement('a');
     document.body.appendChild(saveLink);
 
-    const data = new Blob([text], { type: "text" });
+    const data = new Blob([text], { type: 'text' });
     const url = window.URL.createObjectURL(data);
     saveLink.href = url;
 
@@ -217,30 +217,30 @@ export default async function ({ addon, console, msg }) {
   function exportPNG(svg) {
     const serializer = new XMLSerializer();
 
-    const iframe = document.createElement("iframe");
+    const iframe = document.createElement('iframe');
     // iframe.style.display = "none"
     document.body.append(iframe);
     iframe.contentDocument.write(serializer.serializeToString(svg));
-    let { width, height } = iframe.contentDocument.body.querySelector("svg g").getBoundingClientRect();
-    svg.setAttribute("width", width + "px");
-    svg.setAttribute("height", height + "px");
+    let { width, height } = iframe.contentDocument.body.querySelector('svg g').getBoundingClientRect();
+    svg.setAttribute('width', width + 'px');
+    svg.setAttribute('height', height + 'px');
 
-    let canvas = document.createElement("canvas");
-    let ctx = canvas.getContext("2d");
+    let canvas = document.createElement('canvas');
+    let ctx = canvas.getContext('2d');
 
-    let img = document.createElement("img");
+    let img = document.createElement('img');
 
     img.setAttribute(
-      "src",
-      "data:image/svg+xml;base64," + btoa(unescape(encodeURIComponent(serializer.serializeToString(svg))))
+      'src',
+      'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(serializer.serializeToString(svg))))
     );
     img.onload = function () {
       canvas.height = img.height;
       canvas.width = img.width;
       ctx.drawImage(img, 0, 0, img.width, img.height);
       // Now is done
-      let dataURL = canvas.toDataURL("image/png");
-      let link = document.createElement("a");
+      let dataURL = canvas.toDataURL('image/png');
+      let link = document.createElement('a');
       const date = new Date();
       const timestamp = `${date.toLocaleDateString()}-${date.toLocaleTimeString()}`;
 

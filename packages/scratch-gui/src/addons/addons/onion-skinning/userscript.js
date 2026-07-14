@@ -1,12 +1,12 @@
-import {sanitizeSvg} from '@turbowarp/scratch-svg-renderer';
+import { sanitizeSvg } from '@turbowarp/scratch-svg-renderer';
 
 export default async function ({ addon, console, msg }) {
   const paper = await addon.tab.traps.getPaper();
 
   const paintEditorCanvasContainer = await addon.tab.waitForElement("[class^='paint-editor_canvas-container']");
   try {
-    if (!("colorIndex" in addon.tab.redux.state.scratchPaint.fillMode)) {
-      console.error("Detected new paint editor; this will be supported in future versions.");
+    if (!('colorIndex' in addon.tab.redux.state.scratchPaint.fillMode)) {
+      console.error('Detected new paint editor; this will be supported in future versions.');
       return;
     }
   } catch (_) {
@@ -24,20 +24,20 @@ export default async function ({ addon, console, msg }) {
     return [
       (hexNumber >> 16) & 0xff, // R
       (hexNumber >> 8) & 0xff, // G
-      hexNumber & 0xff, // B
+      hexNumber & 0xff // B
     ];
   };
 
   const settings = {
-    enabled: addon.settings.get("default") && !addon.self.disabled,
-    previous: +addon.settings.get("previous"),
-    next: +addon.settings.get("next"),
-    opacity: +addon.settings.get("opacity"),
-    opacityStep: +addon.settings.get("opacityStep"),
-    layering: addon.settings.get("layering"),
-    mode: addon.settings.get("mode"),
-    beforeTint: parseHexColor(addon.settings.get("beforeTint")),
-    afterTint: parseHexColor(addon.settings.get("afterTint")),
+    enabled: addon.settings.get('default') && !addon.self.disabled,
+    previous: +addon.settings.get('previous'),
+    next: +addon.settings.get('next'),
+    opacity: +addon.settings.get('opacity'),
+    opacityStep: +addon.settings.get('opacityStep'),
+    layering: addon.settings.get('layering'),
+    mode: addon.settings.get('mode'),
+    beforeTint: parseHexColor(addon.settings.get('beforeTint')),
+    afterTint: parseHexColor(addon.settings.get('afterTint'))
   };
 
   const getPaperCenter = () => {
@@ -169,7 +169,7 @@ export default async function ({ addon, console, msg }) {
     if (!onionLayer) {
       return;
     }
-    if (settings.layering === "front") {
+    if (settings.layering === 'front') {
       project.addLayer(onionLayer);
     } else {
       const rasterLayer = project.layers.find((i) => i.data.isRasterLayer);
@@ -199,9 +199,9 @@ export default async function ({ addon, console, msg }) {
   };
 
   const toHexColor = ([red, green, blue]) => {
-    const r = Math.round(red).toString(16).padStart(2, "0");
-    const g = Math.round(green).toString(16).padStart(2, "0");
-    const b = Math.round(blue).toString(16).padStart(2, "0");
+    const r = Math.round(red).toString(16).padStart(2, '0');
+    const g = Math.round(green).toString(16).padStart(2, '0');
+    const b = Math.round(blue).toString(16).padStart(2, '0');
     return `#${r}${g}${b}`;
   };
 
@@ -236,8 +236,8 @@ export default async function ({ addon, console, msg }) {
       if (item instanceof paper.Raster) {
         promises.push(
           new Promise((resolve, reject) => {
-            item.on("load", () => resolve());
-            item.on("error", () => reject(new Error("Raster inside SVG failed to load")));
+            item.on('load', () => resolve());
+            item.on('error', () => reject(new Error('Raster inside SVG failed to load')));
           })
         );
       }
@@ -286,7 +286,7 @@ export default async function ({ addon, console, msg }) {
         root.draw(
           ctx,
           new paper.Base({
-            matrices: [matrix],
+            matrices: [matrix]
           })
         );
         ctx.restore();
@@ -306,14 +306,14 @@ export default async function ({ addon, console, msg }) {
 
       const { rotationCenterX, rotationCenterY } = costume;
       // https://github.com/scratchfoundation/scratch-paint/blob/cdf0afc217633e6cfb8ba90ea4ae38b79882cf6c/src/containers/paper-canvas.jsx#L196-L218
-      asset = asset.split(/<\s*svg:/).join("<");
-      asset = asset.split(/<\/\s*svg:/).join("</");
+      asset = asset.split(/<\s*svg:/).join('<');
+      asset = asset.split(/<\/\s*svg:/).join('</');
       const svgAttrs = asset.match(/<svg [^>]*>/);
-      if (svgAttrs && svgAttrs[0].indexOf("xmlns=") === -1) {
-        asset = asset.replace("<svg ", '<svg xmlns="http://www.w3.org/2000/svg" ');
+      if (svgAttrs && svgAttrs[0].indexOf('xmlns=') === -1) {
+        asset = asset.replace('<svg ', '<svg xmlns="http://www.w3.org/2000/svg" ');
       }
       const parser = new DOMParser();
-      const svgDom = parser.parseFromString(asset, "text/xml");
+      const svgDom = parser.parseFromString(asset, 'text/xml');
       const viewBox = svgDom.documentElement.attributes.viewBox
         ? svgDom.documentElement.attributes.viewBox.value.match(/\S+/g)
         : null;
@@ -328,10 +328,10 @@ export default async function ({ addon, console, msg }) {
 
         // https://github.com/scratchfoundation/scratch-paint/blob/cdf0afc217633e6cfb8ba90ea4ae38b79882cf6c/src/containers/paper-canvas.jsx#L274-L275
         recursePaperItem(root, (i) => {
-          if (i.className === "PathItem") {
+          if (i.className === 'PathItem') {
             i.clockwise = true;
           }
-          if (i.className !== "PointText" && !i.children) {
+          if (i.className !== 'PointText' && !i.children) {
             if (i.strokeWidth) {
               i.strokeWidth = i.strokeWidth * 2;
             }
@@ -341,7 +341,7 @@ export default async function ({ addon, console, msg }) {
         });
         root.scale(2, new paper.Point(0, 0));
 
-        if (settings.mode === "tint") {
+        if (settings.mode === 'tint') {
           const gradients = new Set();
           recursePaperItem(root, (i) => {
             if (i.strokeColor) {
@@ -367,7 +367,7 @@ export default async function ({ addon, console, msg }) {
 
         const paperCenter = getPaperCenter();
         // https://github.com/scratchfoundation/scratch-paint/blob/cdf0afc217633e6cfb8ba90ea4ae38b79882cf6c/src/containers/paper-canvas.jsx#L277-L287
-        if (typeof rotationCenterX !== "undefined" && typeof rotationCenterY !== "undefined") {
+        if (typeof rotationCenterX !== 'undefined' && typeof rotationCenterY !== 'undefined') {
           let rotationPoint = new paper.Point(rotationCenterX, rotationCenterY);
           if (viewBox && viewBox.length >= 2 && !isNaN(viewBox[0]) && !isNaN(viewBox[1])) {
             rotationPoint = rotationPoint.subtract(viewBox[0], viewBox[1]);
@@ -385,11 +385,11 @@ export default async function ({ addon, console, msg }) {
         insert: false,
         onLoad: (root) => {
           if (!root) {
-            reject(new Error("could not load onion skin"));
+            reject(new Error('could not load onion skin'));
             return;
           }
           resolve(waitForAllRastersToLoad(root).then(() => handleLoad(root)));
-        },
+        }
       });
     });
 
@@ -404,10 +404,10 @@ export default async function ({ addon, console, msg }) {
         const height = Math.min(paperCenter.y * 2, image.height);
 
         // https://github.com/scratchfoundation/scratch-paint/blob/cdf0afc217633e6cfb8ba90ea4ae38b79882cf6c/src/containers/paper-canvas.jsx#L151-L156
-        if (typeof rotationCenterX === "undefined") {
+        if (typeof rotationCenterX === 'undefined') {
           rotationCenterX = width / 2;
         }
-        if (typeof rotationCenterY === "undefined") {
+        if (typeof rotationCenterY === 'undefined') {
           rotationCenterY = height / 2;
         }
 
@@ -420,14 +420,14 @@ export default async function ({ addon, console, msg }) {
         raster.position = new paper.Point(x, y);
         raster.remove();
 
-        if (settings.mode === "tint") {
+        if (settings.mode === 'tint') {
           tintRaster(raster, isBefore);
         }
 
         resolve(raster);
       };
       image.onerror = () => {
-        reject(new Error("could not load image"));
+        reject(new Error('could not load image'));
       };
       image.src = asset;
     });
@@ -480,7 +480,7 @@ export default async function ({ addon, console, msg }) {
         layersToCreate.push({
           index: i,
           isBefore,
-          opacity,
+          opacity
         });
       }
 
@@ -489,9 +489,9 @@ export default async function ({ addon, console, msg }) {
           const onionCostume = costumes[index];
           const onionAsset = vm.getCostume(index);
 
-          if (onionCostume.dataFormat === "svg") {
+          if (onionCostume.dataFormat === 'svg') {
             return makeVectorOnion(opacity, onionCostume, onionAsset, isBefore);
-          } else if (onionCostume.dataFormat === "png" || onionCostume.dataFormat === "jpg") {
+          } else if (onionCostume.dataFormat === 'png' || onionCostume.dataFormat === 'jpg') {
             return makeRasterOnion(opacity, onionCostume, onionAsset, isBefore);
           } else {
             throw new Error(`Unknown data format: ${onionCostume.dataFormat}`);
@@ -557,89 +557,89 @@ export default async function ({ addon, console, msg }) {
   };
 
   const createGroup = () => {
-    const el = document.createElement("div");
-    el.className = "sa-onion-group";
+    const el = document.createElement('div');
+    el.className = 'sa-onion-group';
     return el;
   };
 
   const createButton = ({ useButtonTag } = {}) => {
-    const el = document.createElement(useButtonTag ? "button" : "span");
-    el.className = "sa-onion-button";
-    el.setAttribute("role", "button");
+    const el = document.createElement(useButtonTag ? 'button' : 'span');
+    el.className = 'sa-onion-button';
+    el.setAttribute('role', 'button');
     return el;
   };
 
   const createButtonImage = (name) => {
-    const el = document.createElement("img");
-    el.className = "sa-onion-image";
+    const el = document.createElement('img');
+    el.className = 'sa-onion-image';
     el.draggable = false;
     el.dataset.image = name;
-    el.loading = "lazy";
-    el.src = addon.self.getResource("/" + name + ".svg") /* rewritten by pull.js */;
+    el.loading = 'lazy';
+    el.src = addon.self.getResource('/' + name + '.svg'); /* rewritten by pull.js */
     return el;
   };
 
   const toggleControlsGroup = createGroup();
-  addon.tab.displayNoneWhileDisabled(toggleControlsGroup, { display: "flex" });
+  addon.tab.displayNoneWhileDisabled(toggleControlsGroup, { display: 'flex' });
 
   const toggleButton = createButton();
   toggleButton.dataset.enabled = settings.enabled;
-  toggleButton.addEventListener("click", () => setEnabled(!settings.enabled));
-  toggleButton.title = msg("toggle");
-  toggleButton.appendChild(createButtonImage("toggle"));
+  toggleButton.addEventListener('click', () => setEnabled(!settings.enabled));
+  toggleButton.title = msg('toggle');
+  toggleButton.appendChild(createButtonImage('toggle'));
 
   const settingButton = createButton();
-  settingButton.addEventListener("click", () => setSettingsOpen(!areSettingsOpen()));
-  settingButton.title = msg("settings");
-  settingButton.appendChild(createButtonImage("settings"));
+  settingButton.addEventListener('click', () => setSettingsOpen(!areSettingsOpen()));
+  settingButton.title = msg('settings');
+  settingButton.appendChild(createButtonImage('settings'));
 
-  document.body.addEventListener("click", (e) => {
-    if (areSettingsOpen() && !e.target.matches(".sa-onion-group *")) setSettingsOpen(false);
+  document.body.addEventListener('click', (e) => {
+    if (areSettingsOpen() && !e.target.matches('.sa-onion-group *')) setSettingsOpen(false);
   });
 
   //
   // Settings page
   //
 
-  const settingPageWrapper = document.createElement("div");
-  settingPageWrapper.className = "sa-onion-settings-wrapper";
+  const settingPageWrapper = document.createElement('div');
+  settingPageWrapper.className = 'sa-onion-settings-wrapper';
   toggleControlsGroup.append(settingPageWrapper, toggleButton, settingButton);
 
-  const settingsPage = document.createElement("div");
-  settingsPage.className = "sa-onion-settings";
+  const settingsPage = document.createElement('div');
+  settingsPage.className = 'sa-onion-settings';
 
   const setSettingsOpen = (open) => {
     settingButton.dataset.enabled = open;
     settingsPage.dataset.visible = open;
   };
-  const areSettingsOpen = () => settingsPage.dataset.visible === "true";
+  const areSettingsOpen = () => settingsPage.dataset.visible === 'true';
 
   const layerInputs = {};
-  for (const type of ["previous", "next", "opacity", "opacityStep"]) {
-    const container = document.createElement("label");
-    container.className = "sa-onion-settings-line";
+  for (const type of ['previous', 'next', 'opacity', 'opacityStep']) {
+    const container = document.createElement('label');
+    container.className = 'sa-onion-settings-line';
 
-    const label = document.createElement("div");
-    label.className = "sa-onion-settings-label";
+    const label = document.createElement('div');
+    label.className = 'sa-onion-settings-label';
     label.textContent = msg(type);
     container.appendChild(label);
 
     const group = createGroup();
     const currentButton = createButton();
 
-    const filler = document.createElement("div");
-    filler.style.width = "20px";
+    const filler = document.createElement('div');
+    filler.style.width = '20px';
     currentButton.appendChild(filler);
 
-    const currentInput = document.createElement("input");
+    const currentInput = document.createElement('input');
     layerInputs[type] = currentInput;
-    currentInput.className = "sa-onion-settings-input";
-    currentInput.type = "number";
-    currentInput.step = "1";
-    currentInput.min = "0";
-    currentInput.max = "100";
+    currentInput.className = 'sa-onion-settings-input';
+    currentInput.type = 'number';
+    currentInput.step = '1';
+    currentInput.min = '0';
+    currentInput.max = '100';
     currentInput.value = settings[type];
-    currentInput.addEventListener("input", (e) => {
+    currentInput.addEventListener('input', (e) => {
       if (currentInput.value.length === 0) {
         settings[type] = 0;
         settingsChanged();
@@ -655,16 +655,16 @@ export default async function ({ addon, console, msg }) {
       settings[type] = value;
       settingsChanged();
     });
-    currentInput.addEventListener("blur", () => {
+    currentInput.addEventListener('blur', () => {
       if (!currentInput.value) {
-        currentInput.value = "0";
+        currentInput.value = '0';
       }
     });
     currentButton.appendChild(currentInput);
 
     const decrementButton = createButton();
-    decrementButton.appendChild(createButtonImage("decrement"));
-    decrementButton.addEventListener("click", () => {
+    decrementButton.appendChild(createButtonImage('decrement'));
+    decrementButton.addEventListener('click', () => {
       if (settings[type] > 0) {
         settings[type]--;
         currentInput.value = settings[type];
@@ -673,8 +673,8 @@ export default async function ({ addon, console, msg }) {
     });
 
     const incrementButton = createButton();
-    incrementButton.appendChild(createButtonImage("increment"));
-    incrementButton.addEventListener("click", () => {
+    incrementButton.appendChild(createButtonImage('increment'));
+    incrementButton.addEventListener('click', () => {
       if (settings[type] < +currentInput.max) {
         settings[type]++;
         currentInput.value = settings[type];
@@ -689,84 +689,84 @@ export default async function ({ addon, console, msg }) {
     settingsPage.appendChild(container);
   }
 
-  const modeContainer = document.createElement("div");
-  modeContainer.className = "sa-onion-settings-line";
-  const modeLabel = document.createElement("div");
-  modeLabel.className = "sa-onion-settings-label";
-  modeLabel.textContent = msg("mode");
+  const modeContainer = document.createElement('div');
+  modeContainer.className = 'sa-onion-settings-line';
+  const modeLabel = document.createElement('div');
+  modeLabel.className = 'sa-onion-settings-label';
+  modeLabel.textContent = msg('mode');
   const modeGroup = createGroup();
   modeContainer.appendChild(modeLabel);
   const modeMergeButton = createButton({ useButtonTag: true });
-  modeMergeButton.appendChild(document.createTextNode(msg("merge")));
+  modeMergeButton.appendChild(document.createTextNode(msg('merge')));
   modeGroup.appendChild(modeMergeButton);
-  modeMergeButton.addEventListener("click", (e) => {
-    settings.mode = "merge";
+  modeMergeButton.addEventListener('click', (e) => {
+    settings.mode = 'merge';
     modeTintButton.dataset.enabled = false;
     modeMergeButton.dataset.enabled = true;
     settingsChanged();
   });
-  modeMergeButton.dataset.enabled = settings.mode === "merge";
+  modeMergeButton.dataset.enabled = settings.mode === 'merge';
   const modeTintButton = createButton({ useButtonTag: true });
-  modeTintButton.appendChild(document.createTextNode(msg("tint")));
+  modeTintButton.appendChild(document.createTextNode(msg('tint')));
   modeGroup.appendChild(modeTintButton);
-  modeTintButton.addEventListener("click", (e) => {
-    settings.mode = "tint";
+  modeTintButton.addEventListener('click', (e) => {
+    settings.mode = 'tint';
     modeTintButton.dataset.enabled = true;
     modeMergeButton.dataset.enabled = false;
     settingsChanged();
   });
-  modeTintButton.dataset.enabled = settings.mode === "tint";
+  modeTintButton.dataset.enabled = settings.mode === 'tint';
   modeContainer.appendChild(modeGroup);
   settingsPage.appendChild(modeContainer);
 
-  const layeringContainer = document.createElement("div");
-  layeringContainer.className = "sa-onion-settings-line";
-  const layeringLabel = document.createElement("div");
-  layeringLabel.className = "sa-onion-settings-label";
-  layeringLabel.textContent = msg("layering");
+  const layeringContainer = document.createElement('div');
+  layeringContainer.className = 'sa-onion-settings-line';
+  const layeringLabel = document.createElement('div');
+  layeringLabel.className = 'sa-onion-settings-label';
+  layeringLabel.textContent = msg('layering');
   const layeringGroup = createGroup();
   layeringContainer.appendChild(layeringLabel);
   const layeringFrontButton = createButton({ useButtonTag: true });
-  layeringFrontButton.appendChild(document.createTextNode(msg("front")));
+  layeringFrontButton.appendChild(document.createTextNode(msg('front')));
   layeringGroup.appendChild(layeringFrontButton);
-  layeringFrontButton.addEventListener("click", (e) => {
-    settings.layering = "front";
+  layeringFrontButton.addEventListener('click', (e) => {
+    settings.layering = 'front';
     layeringBehindButton.dataset.enabled = false;
     layeringFrontButton.dataset.enabled = true;
     settingsChanged(true);
   });
-  layeringFrontButton.dataset.enabled = settings.layering === "front";
+  layeringFrontButton.dataset.enabled = settings.layering === 'front';
   const layeringBehindButton = createButton({ useButtonTag: true });
-  layeringBehindButton.appendChild(document.createTextNode(msg("behind")));
+  layeringBehindButton.appendChild(document.createTextNode(msg('behind')));
   layeringGroup.appendChild(layeringBehindButton);
-  layeringBehindButton.addEventListener("click", (e) => {
-    settings.layering = "behind";
+  layeringBehindButton.addEventListener('click', (e) => {
+    settings.layering = 'behind';
     layeringBehindButton.dataset.enabled = true;
     layeringFrontButton.dataset.enabled = false;
     settingsChanged(true);
   });
-  layeringBehindButton.dataset.enabled = settings.layering === "behind";
+  layeringBehindButton.dataset.enabled = settings.layering === 'behind';
   layeringContainer.appendChild(layeringGroup);
   settingsPage.appendChild(layeringContainer);
 
-  const SVG_NS = "http://www.w3.org/2000/svg";
-  const settingsTip = document.createElementNS(SVG_NS, "svg");
-  settingsTip.setAttribute("class", "sa-onion-settings-tip");
-  settingsTip.setAttribute("width", "14");
-  settingsTip.setAttribute("height", "7");
-  const settingsTipShape = document.createElementNS(SVG_NS, "polygon");
-  settingsTipShape.setAttribute("class", "sa-onion-settings-polygon");
-  settingsTipShape.setAttribute("points", "0,0 7,7, 14,0");
+  const SVG_NS = 'http://www.w3.org/2000/svg';
+  const settingsTip = document.createElementNS(SVG_NS, 'svg');
+  settingsTip.setAttribute('class', 'sa-onion-settings-tip');
+  settingsTip.setAttribute('width', '14');
+  settingsTip.setAttribute('height', '7');
+  const settingsTipShape = document.createElementNS(SVG_NS, 'polygon');
+  settingsTipShape.setAttribute('class', 'sa-onion-settings-polygon');
+  settingsTipShape.setAttribute('points', '0,0 7,7, 14,0');
   settingsTip.appendChild(settingsTipShape);
   settingsPage.appendChild(settingsTip);
 
   let oldEnabled = null;
-  addon.self.addEventListener("disabled", () => {
+  addon.self.addEventListener('disabled', () => {
     setSettingsOpen(false);
     oldEnabled = settings.enabled;
     setEnabled(false);
   });
-  addon.self.addEventListener("reenabled", () => {
+  addon.self.addEventListener('reenabled', () => {
     setEnabled(oldEnabled);
   });
 
@@ -776,21 +776,21 @@ export default async function ({ addon, console, msg }) {
       const canvasControls = await addon.tab.waitForElement("[class^='paint-editor_canvas-controls']", {
         markAsSeen: true,
         reduxEvents: [
-          "scratch-gui/navigation/ACTIVATE_TAB",
-          "scratch-gui/mode/SET_PLAYER",
-          "fontsLoaded/SET_FONTS_LOADED",
-          "scratch-gui/locales/SELECT_LOCALE",
-          "scratch-gui/targets/UPDATE_TARGET_LIST",
+          'scratch-gui/navigation/ACTIVATE_TAB',
+          'scratch-gui/mode/SET_PLAYER',
+          'fontsLoaded/SET_FONTS_LOADED',
+          'scratch-gui/locales/SELECT_LOCALE',
+          'scratch-gui/targets/UPDATE_TARGET_LIST'
         ],
         reduxCondition: (state) =>
-          state.scratchGui.editorTab.activeTabIndex === 1 && !state.scratchGui.mode.isPlayerOnly,
+          state.scratchGui.editorTab.activeTabIndex === 1 && !state.scratchGui.mode.isPlayerOnly
       });
       const zoomControlsContainer = canvasControls.querySelector("[class^='paint-editor_zoom-controls']");
 
       addon.tab.appendToSharedSpace({
-        space: "paintEditorZoomControls",
+        space: 'paintEditorZoomControls',
         element: toggleControlsGroup,
-        order: 1,
+        order: 1
       });
       settingPageWrapper.appendChild(settingsPage);
 
@@ -799,14 +799,14 @@ export default async function ({ addon, console, msg }) {
         const groupClass = zoomControlsContainer.firstChild.className;
         const buttonClass = zoomControlsContainer.firstChild.firstChild.className;
         const imageClass = zoomControlsContainer.firstChild.firstChild.firstChild.className;
-        for (const el of document.querySelectorAll(".sa-onion-group")) {
-          el.className += " " + groupClass;
+        for (const el of document.querySelectorAll('.sa-onion-group')) {
+          el.className += ' ' + groupClass;
         }
-        for (const el of document.querySelectorAll(".sa-onion-button")) {
-          el.className += " " + buttonClass;
+        for (const el of document.querySelectorAll('.sa-onion-button')) {
+          el.className += ' ' + buttonClass;
         }
-        for (const el of document.querySelectorAll(".sa-onion-image")) {
-          el.className += " " + imageClass;
+        for (const el of document.querySelectorAll('.sa-onion-image')) {
+          el.className += ' ' + imageClass;
         }
       }
 

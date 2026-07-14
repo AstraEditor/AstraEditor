@@ -1,5 +1,5 @@
 import paper from '@turbowarp/paper';
-import {styleBlob} from '../../helper/style-path';
+import { styleBlob } from '../../helper/style-path';
 
 /**
  * Segment brush functions to add as listeners on the mouse. Call them when the corresponding mouse event happens
@@ -15,81 +15,81 @@ import {styleBlob} from '../../helper/style-path';
  * @param {!Tool} tool paper.js mouse object
  */
 class SegmentBrushHelper {
-    constructor () {
-        this.lastPoint = null;
-        this.finalPath = null;
-        this.firstCircle = null;
+  constructor() {
+    this.lastPoint = null;
+    this.finalPath = null;
+    this.firstCircle = null;
+  }
+  onSegmentMouseDown(event, tool, options) {
+    if (event.event.button > 0) return; // only first mouse button
+
+    tool.minDistance = 2 / paper.view.zoom;
+    tool.maxDistance = options.brushSize;
+
+    this.firstCircle = new paper.Path.Circle({
+      center: event.point,
+      radius: options.brushSize / 2
+    });
+    this.finalPath = this.firstCircle;
+    styleBlob(this.finalPath, options);
+    this.lastPoint = event.point;
+  }
+
+  onSegmentMouseDrag(event, tool, options) {
+    if (event.event.button > 0) return; // only first mouse button
+
+    const step = event.delta.normalize(options.brushSize / 2);
+    const handleVec = step.clone();
+    handleVec.length = options.brushSize / 2;
+    handleVec.angle += 90;
+
+    const path = new paper.Path();
+
+    styleBlob(path, options);
+
+    // Add handles to round the end caps
+    path.add(new paper.Segment(this.lastPoint.subtract(step), handleVec.multiply(-1), handleVec));
+    step.angle += 90;
+
+    path.add(event.lastPoint.add(step));
+    path.insert(0, event.lastPoint.subtract(step));
+    path.add(event.point.add(step));
+    path.insert(0, event.point.subtract(step));
+
+    // Add end cap
+    step.angle -= 90;
+    path.add(new paper.Segment(event.point.add(step), handleVec, handleVec.multiply(-1)));
+    path.closed = true;
+    // The unite function on curved paths does not always work (sometimes deletes half the path)
+    // so we have to flatten.
+    path.flatten(Math.min(5, options.brushSize / 5));
+
+    this.lastPoint = event.point;
+    const newPath = this.finalPath.unite(path);
+    path.remove();
+    this.finalPath.remove();
+    this.finalPath = newPath;
+  }
+
+  onSegmentMouseUp(event) {
+    if (event.event.button > 0) return; // only first mouse button
+
+    // TODO: This smoothing tends to cut off large portions of the path! Would like to eventually
+    // add back smoothing, maybe a custom implementation that only applies to a subset of the line?
+
+    // Smooth the path. Make it unclosed first because smoothing of closed
+    // paths tends to cut off the path.
+    if (this.finalPath.segments && this.finalPath.segments.length > 4) {
+      this.finalPath.closed = false;
+      this.finalPath.simplify(2);
+      this.finalPath.closed = true;
+      // Merge again with the first point, since it gets distorted when we unclose the path.
+      const temp = this.finalPath.unite(this.firstCircle);
+      this.finalPath.remove();
+      this.finalPath = temp;
     }
-    onSegmentMouseDown (event, tool, options) {
-        if (event.event.button > 0) return; // only first mouse button
-
-        tool.minDistance = 2 / paper.view.zoom;
-        tool.maxDistance = options.brushSize;
-        
-        this.firstCircle = new paper.Path.Circle({
-            center: event.point,
-            radius: options.brushSize / 2
-        });
-        this.finalPath = this.firstCircle;
-        styleBlob(this.finalPath, options);
-        this.lastPoint = event.point;
-    }
-    
-    onSegmentMouseDrag (event, tool, options) {
-        if (event.event.button > 0) return; // only first mouse button
-
-        const step = (event.delta).normalize(options.brushSize / 2);
-        const handleVec = step.clone();
-        handleVec.length = options.brushSize / 2;
-        handleVec.angle += 90;
-
-        const path = new paper.Path();
-        
-        styleBlob(path, options);
-
-        // Add handles to round the end caps
-        path.add(new paper.Segment(this.lastPoint.subtract(step), handleVec.multiply(-1), handleVec));
-        step.angle += 90;
-
-        path.add(event.lastPoint.add(step));
-        path.insert(0, event.lastPoint.subtract(step));
-        path.add(event.point.add(step));
-        path.insert(0, event.point.subtract(step));
-
-        // Add end cap
-        step.angle -= 90;
-        path.add(new paper.Segment(event.point.add(step), handleVec, handleVec.multiply(-1)));
-        path.closed = true;
-        // The unite function on curved paths does not always work (sometimes deletes half the path)
-        // so we have to flatten.
-        path.flatten(Math.min(5, options.brushSize / 5));
-        
-        this.lastPoint = event.point;
-        const newPath = this.finalPath.unite(path);
-        path.remove();
-        this.finalPath.remove();
-        this.finalPath = newPath;
-    }
-
-    onSegmentMouseUp (event) {
-        if (event.event.button > 0) return; // only first mouse button
-
-        // TODO: This smoothing tends to cut off large portions of the path! Would like to eventually
-        // add back smoothing, maybe a custom implementation that only applies to a subset of the line?
-
-        // Smooth the path. Make it unclosed first because smoothing of closed
-        // paths tends to cut off the path.
-        if (this.finalPath.segments && this.finalPath.segments.length > 4) {
-            this.finalPath.closed = false;
-            this.finalPath.simplify(2);
-            this.finalPath.closed = true;
-            // Merge again with the first point, since it gets distorted when we unclose the path.
-            const temp = this.finalPath.unite(this.firstCircle);
-            this.finalPath.remove();
-            this.finalPath = temp;
-        }
-        return this.finalPath;
-    }
+    return this.finalPath;
+  }
 }
 
 export default SegmentBrushHelper;

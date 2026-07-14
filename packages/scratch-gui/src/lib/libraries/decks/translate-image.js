@@ -7,18 +7,15 @@ const defaultImages = {};
 let savedImages = {};
 let savedLocale = '';
 
-const translations = {
+const translations = {};
 
-};
-
-const loadImageData = locale => {
-    if (Object.prototype.hasOwnProperty.call(translations, locale)) {
-        translations[locale]()
-            .then(newImages => {
-                savedImages = newImages;
-                savedLocale = locale;
-            });
-    }
+const loadImageData = (locale) => {
+  if (Object.prototype.hasOwnProperty.call(translations, locale)) {
+    translations[locale]().then((newImages) => {
+      savedImages = newImages;
+      savedLocale = locale;
+    });
+  }
 };
 
 /**
@@ -28,13 +25,10 @@ const loadImageData = locale => {
  * @return {string} image
  */
 const translateImage = (imageId, locale) => {
-    if (locale !== savedLocale || !Object.prototype.hasOwnProperty.call(savedImages, imageId)) {
-        return defaultImages[imageId];
-    }
-    return savedImages[imageId];
+  if (locale !== savedLocale || !Object.prototype.hasOwnProperty.call(savedImages, imageId)) {
+    return defaultImages[imageId];
+  }
+  return savedImages[imageId];
 };
 
-export {
-    loadImageData,
-    translateImage
-};
+export { loadImageData, translateImage };

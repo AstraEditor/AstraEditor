@@ -9,12 +9,12 @@
 /* eslint-disable max-len */
 
 const globalState = {
-    Timer: require('../util/timer'),
-    Cast: require('../util/cast'),
-    log: require('../util/log'),
-    blockUtility: require('./compat-block-utility'),
-    /** @type{import("../engine/thread")?} */
-    thread: null
+  Timer: require('../util/timer'),
+  Cast: require('../util/cast'),
+  log: require('../util/log'),
+  blockUtility: require('./compat-block-utility'),
+  /** @type{import("../engine/thread")?} */
+  thread: null
 };
 
 let baseRuntime = '';
@@ -602,28 +602,28 @@ runtimeFunctions.yieldThenCallGenerator = `const yieldThenCallGenerator = functi
  * Step a compiled thread.
  * @param {import("../engine/thread")} thread The thread to step.
  */
-const execute = thread => {
-    globalState.thread = thread;
-    thread.generator.next();
+const execute = (thread) => {
+  globalState.thread = thread;
+  thread.generator.next();
 };
 
 const threadStack = [];
 const saveGlobalState = () => {
-    threadStack.push(globalState.thread);
+  threadStack.push(globalState.thread);
 };
 const restoreGlobalState = () => {
-    globalState.thread = threadStack.pop();
+  globalState.thread = threadStack.pop();
 };
 
-const insertRuntime = source => {
-    let result = baseRuntime;
-    for (const functionName of Object.keys(runtimeFunctions)) {
-        if (source.includes(functionName)) {
-            result += `${runtimeFunctions[functionName]};`;
-        }
+const insertRuntime = (source) => {
+  let result = baseRuntime;
+  for (const functionName of Object.keys(runtimeFunctions)) {
+    if (source.includes(functionName)) {
+      result += `${runtimeFunctions[functionName]};`;
     }
-    result += `return ${source}`;
-    return result;
+  }
+  result += `return ${source}`;
+  return result;
 };
 
 /**
@@ -631,14 +631,14 @@ const insertRuntime = source => {
  * @param {string} source The string to evaluate.
  * @returns {*} The result of evaluating the string.
  */
-const scopedEval = source => {
-    const withRuntime = insertRuntime(source);
-    try {
-        return new Function('globalState', withRuntime)(globalState);
-    } catch (e) {
-        globalState.log.error('was unable to compile script', withRuntime);
-        throw e;
-    }
+const scopedEval = (source) => {
+  const withRuntime = insertRuntime(source);
+  try {
+    return new Function('globalState', withRuntime)(globalState);
+  } catch (e) {
+    globalState.log.error('was unable to compile script', withRuntime);
+    throw e;
+  }
 };
 
 execute.scopedEval = scopedEval;

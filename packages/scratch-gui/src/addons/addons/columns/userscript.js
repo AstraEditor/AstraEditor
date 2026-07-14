@@ -39,9 +39,9 @@ export default async function ({ addon, msg, console }) {
 
     this.setBackgroundPath_(this.width_, this.height_);
 
-    this.svgGroup_.setAttribute("width", this.width_);
-    this.svgGroup_.setAttribute("height", this.height_);
-    var transform = "translate(" + x + "px," + y + "px)";
+    this.svgGroup_.setAttribute('width', this.width_);
+    this.svgGroup_.setAttribute('height', this.height_);
+    var transform = 'translate(' + x + 'px,' + y + 'px)';
     Blockly.utils.setCssTransform(this.svgGroup_, transform);
 
     // Update the scrollbar (if one exists).
@@ -56,8 +56,8 @@ export default async function ({ addon, msg, console }) {
 
     // Set CSS variables for the userstyle.
     const container = this.svgGroup_.closest("[class*='gui_tab-panel_']");
-    container.style.setProperty("--sa-add-extension-button-y", `${y - 33}px`);
-    container.parentElement.style.setProperty("--sa-flyout-y", `${y}px`);
+    container.style.setProperty('--sa-add-extension-button-y', `${y - 33}px`);
+    container.parentElement.style.setProperty('--sa-flyout-y', `${y}px`);
   };
 
   // https://github.com/scratchfoundation/scratch-blocks/blob/893c7e7ad5bfb416eaed75d9a1c93bdce84e36ab/core/flyout_base.js#L370
@@ -74,10 +74,10 @@ export default async function ({ addon, msg, console }) {
   Blockly.Toolbox.CategoryMenu.prototype.createDom = function () {
     _CategoryMenuCreateDom.call(this);
     if (addon.self.disabled) return;
-    this.secondTable = document.createElement("div");
+    this.secondTable = document.createElement('div');
     this.secondTable.className =
-      "scratchCategorySecondMenu " +
-      (this.parent_.horizontalLayout_ ? "scratchCategoryMenuHorizontal" : "scratchCategoryMenu");
+      'scratchCategorySecondMenu ' +
+      (this.parent_.horizontalLayout_ ? 'scratchCategoryMenuHorizontal' : 'scratchCategoryMenu');
     this.parentHtml_.appendChild(this.secondTable);
   };
 
@@ -87,22 +87,22 @@ export default async function ({ addon, msg, console }) {
     if (!domTree) return;
 
     const Categories = [
-      "motion",
-      "looks",
-      "sound",
-      "events",
-      "control",
-      "sensing",
-      "operators",
-      "variables",
-      "lists",
-      "myBlocks",
+      'motion',
+      'looks',
+      'sound',
+      'events',
+      'control',
+      'sensing',
+      'operators',
+      'variables',
+      'lists',
+      'myBlocks'
     ];
     const extensionsNodes = [];
     const extensionTree = domTree.cloneNode(true);
     if (!addon.self.disabled) {
       extensionTree.childNodes.forEach((child) => {
-        if (child.tagName === "category" && !Categories.includes(child.id)) {
+        if (child.tagName === 'category' && !Categories.includes(child.id)) {
           extensionsNodes.push(child.cloneNode(true));
           child.remove();
         }
@@ -110,8 +110,8 @@ export default async function ({ addon, msg, console }) {
     }
     _CategoryMenuPopulate.call(this, extensionTree);
     for (const child of extensionsNodes) {
-      const row = document.createElement("div");
-      row.className = "scratchCategoryMenuRow";
+      const row = document.createElement('div');
+      row.className = 'scratchCategoryMenuRow';
       this.secondTable.appendChild(row);
       if (child) {
         this.categories_.push(new Blockly.Toolbox.Category(this, row, child));
@@ -152,30 +152,30 @@ export default async function ({ addon, msg, console }) {
 
   function updateClass() {
     // Add class to allow editor-compact to handle this addon
-    if (addon.self.disabled) document.body.classList.remove("sa-columns-enabled");
-    else document.body.classList.add("sa-columns-enabled");
+    if (addon.self.disabled) document.body.classList.remove('sa-columns-enabled');
+    else document.body.classList.add('sa-columns-enabled');
   }
 
   updateToolbox();
-  addon.self.addEventListener("disabled", updateToolbox);
-  addon.self.addEventListener("reenabled", updateToolbox);
+  addon.self.addEventListener('disabled', updateToolbox);
+  addon.self.addEventListener('reenabled', updateToolbox);
 
   updateClass();
-  addon.self.addEventListener("disabled", updateClass);
-  addon.self.addEventListener("reenabled", updateClass);
+  addon.self.addEventListener('disabled', updateClass);
+  addon.self.addEventListener('reenabled', updateClass);
 
   while (true) {
     const addExtensionButton = await addon.tab.waitForElement("[class*='gui_extension-button_']", {
       markAsSeen: true,
-      reduxEvents: ["scratch-gui/mode/SET_PLAYER", "fontsLoaded/SET_FONTS_LOADED", "scratch-gui/locales/SELECT_LOCALE"],
-      condition: () => !addon.tab.redux.state.scratchGui.mode.isPlayerOnly,
+      reduxEvents: ['scratch-gui/mode/SET_PLAYER', 'fontsLoaded/SET_FONTS_LOADED', 'scratch-gui/locales/SELECT_LOCALE'],
+      condition: () => !addon.tab.redux.state.scratchGui.mode.isPlayerOnly
     });
-    const addExtensionLabel = Object.assign(document.createElement("span"), {
-      className: "sa-add-extension-label",
-      innerText: addon.tab.scratchMessage("gui.gui.addExtension"),
+    const addExtensionLabel = Object.assign(document.createElement('span'), {
+      className: 'sa-add-extension-label',
+      innerText: addon.tab.scratchMessage('gui.gui.addExtension')
     });
     addon.tab.displayNoneWhileDisabled(addExtensionLabel);
     addExtensionButton.appendChild(addExtensionLabel);
-    addExtensionButton.removeAttribute("title");
+    addExtensionButton.removeAttribute('title');
   }
 }

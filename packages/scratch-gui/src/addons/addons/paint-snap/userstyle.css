@@ -4,10 +4,10 @@
 .sa-paint-snap-button:focus-within {
   background-color: var(--editorDarkMode-primary-transparent35, hsla(260, 60%, 60%, 0.35));
 }
-.sa-paint-snap-button[data-enabled="true"] .sa-paint-snap-image {
+.sa-paint-snap-button[data-enabled='true'] .sa-paint-snap-image {
   filter: brightness(0) invert(1);
 }
-.sa-paint-snap-button[data-enabled="true"] {
+.sa-paint-snap-button[data-enabled='true'] {
   background-color: var(--looks-secondary);
 }
 
@@ -46,7 +46,7 @@
   flex-direction: column;
   gap: 0.25em;
 }
-.sa-paint-snap-settings[data-visible="true"] {
+.sa-paint-snap-settings[data-visible='true'] {
   bottom: calc(100% + 22px);
   pointer-events: auto;
   opacity: 1;
@@ -117,7 +117,7 @@
   white-space: nowrap;
 }
 
-.sa-paint-snap-image[data-shrink="true"] {
+.sa-paint-snap-image[data-shrink='true'] {
   height: 1em;
   width: 1em;
 }

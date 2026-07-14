@@ -37,22 +37,22 @@ Blockly.Blocks['note'] = {
    * Block for musical note value.
    * @this Blockly.Block
    */
-  init: function() {
+  init: function () {
     this.jsonInit({
-      "message0": "%1",
-      "args0": [
+      message0: '%1',
+      args0: [
         {
-          "type": "field_note",
-          "name": "NOTE",
-          "value": 60
+          type: 'field_note',
+          name: 'NOTE',
+          value: 60
         }
       ],
-      "outputShape": Blockly.OUTPUT_SHAPE_ROUND,
-      "output": "Number",
-      "colour": Blockly.Colours.textField,
-      "colourSecondary": Blockly.Colours.textField,
-      "colourTertiary": Blockly.Colours.textField,
-      "colourQuaternary": Blockly.Colours.textField
+      outputShape: Blockly.OUTPUT_SHAPE_ROUND,
+      output: 'Number',
+      colour: Blockly.Colours.textField,
+      colourSecondary: Blockly.Colours.textField,
+      colourTertiary: Blockly.Colours.textField,
+      colourQuaternary: Blockly.Colours.textField
     });
   }
 };

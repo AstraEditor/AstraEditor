@@ -5,19 +5,19 @@ import messages from '../../lib/messages.js';
 
 import brushIcon from './brush.svg';
 
-const BitBrushModeComponent = props => (
-    <ToolSelectComponent
-        imgDescriptor={messages.brush}
-        imgSrc={brushIcon}
-        isSelected={props.isSelected}
-        onMouseDown={props.onMouseDown}
-        keybinding="B"
-    />
+const BitBrushModeComponent = (props) => (
+  <ToolSelectComponent
+    imgDescriptor={messages.brush}
+    imgSrc={brushIcon}
+    isSelected={props.isSelected}
+    onMouseDown={props.onMouseDown}
+    keybinding="B"
+  />
 );
 
 BitBrushModeComponent.propTypes = {
-    isSelected: PropTypes.bool.isRequired,
-    onMouseDown: PropTypes.func.isRequired
+  isSelected: PropTypes.bool.isRequired,
+  onMouseDown: PropTypes.func.isRequired
 };
 
 export default BitBrushModeComponent;

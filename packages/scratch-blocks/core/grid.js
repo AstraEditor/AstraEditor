@@ -31,7 +31,6 @@ goog.require('Blockly.utils');
 
 goog.require('goog.userAgent');
 
-
 /**
  * Class for a workspace's grid.
  * @param {!SVGElement} pattern The grid's SVG pattern, created during injection.
@@ -40,7 +39,7 @@ goog.require('goog.userAgent');
  *     https://developers.google.com/blockly/guides/configure/web/grid
  * @constructor
  */
-Blockly.Grid = function(pattern, options) {
+Blockly.Grid = function (pattern, options) {
   /**
    * The grid's SVG pattern, created during injection.
    * @type {!SVGElement}
@@ -96,7 +95,7 @@ Blockly.Grid.prototype.scale_ = 1;
  * Dispose of this grid and unlink from the DOM.
  * @package
  */
-Blockly.Grid.prototype.dispose = function() {
+Blockly.Grid.prototype.dispose = function () {
   this.gridPattern_ = null;
 };
 
@@ -105,7 +104,7 @@ Blockly.Grid.prototype.dispose = function() {
  * @return {boolean} True if blocks should snap, false otherwise.
  * @package
  */
-Blockly.Grid.prototype.shouldSnap = function() {
+Blockly.Grid.prototype.shouldSnap = function () {
   return this.snapToGrid_;
 };
 
@@ -114,7 +113,7 @@ Blockly.Grid.prototype.shouldSnap = function() {
  * @return {number} The spacing of the grid points.
  * @package
  */
-Blockly.Grid.prototype.getSpacing = function() {
+Blockly.Grid.prototype.getSpacing = function () {
   return this.spacing_;
 };
 
@@ -124,7 +123,7 @@ Blockly.Grid.prototype.getSpacing = function() {
  * @return {string} The pattern ID.
  * @package
  */
-Blockly.Grid.prototype.getPatternId = function() {
+Blockly.Grid.prototype.getPatternId = function () {
   return this.gridPattern_.id;
 };
 
@@ -133,10 +132,10 @@ Blockly.Grid.prototype.getPatternId = function() {
  * @param {number} scale The new workspace scale.
  * @package
  */
-Blockly.Grid.prototype.update = function(scale) {
+Blockly.Grid.prototype.update = function (scale) {
   this.scale_ = scale;
   // MSIE freaks if it sees a 0x0 pattern, so set empty patterns to 100x100.
-  var safeSpacing = (this.spacing_ * scale) || 100;
+  var safeSpacing = this.spacing_ * scale || 100;
 
   this.gridPattern_.setAttribute('width', safeSpacing);
   this.gridPattern_.setAttribute('height', safeSpacing);
@@ -164,7 +163,7 @@ Blockly.Grid.prototype.update = function(scale) {
  * @param {number} y2 The new y end position of the line (in px).
  * @private
  */
-Blockly.Grid.prototype.setLineAttributes_ = function(line, width, x1, x2, y1, y2) {
+Blockly.Grid.prototype.setLineAttributes_ = function (line, width, x1, x2, y1, y2) {
   if (line) {
     line.setAttribute('stroke-width', width);
     line.setAttribute('x1', x1);
@@ -180,7 +179,7 @@ Blockly.Grid.prototype.setLineAttributes_ = function(line, width, x1, x2, y1, y2
  * @param {number} y The new y position ofthe grid (in px).
  * @package
  */
-Blockly.Grid.prototype.moveTo = function(x, y) {
+Blockly.Grid.prototype.moveTo = function (x, y) {
   this.gridPattern_.setAttribute('x', x);
   this.gridPattern_.setAttribute('y', y);
 
@@ -199,24 +198,25 @@ Blockly.Grid.prototype.moveTo = function(x, y) {
  * @return {!SVGElement} The SVG element for the grid pattern.
  * @package
  */
-Blockly.Grid.createDom = function(rnd, gridOptions, defs) {
+Blockly.Grid.createDom = function (rnd, gridOptions, defs) {
   /*
     <pattern id="blocklyGridPattern837493" patternUnits="userSpaceOnUse">
       <rect stroke="#888" />
       <rect stroke="#888" />
     </pattern>
   */
-  var gridPattern = Blockly.utils.createSvgElement('pattern',
-      {
-        'id': 'blocklyGridPattern' + rnd,
-        'patternUnits': 'userSpaceOnUse'
-      }, defs);
+  var gridPattern = Blockly.utils.createSvgElement(
+    'pattern',
+    {
+      id: 'blocklyGridPattern' + rnd,
+      patternUnits: 'userSpaceOnUse'
+    },
+    defs
+  );
   if (gridOptions['length'] > 0 && gridOptions['spacing'] > 0) {
-    Blockly.utils.createSvgElement('line',
-        {'stroke': gridOptions['colour']}, gridPattern);
+    Blockly.utils.createSvgElement('line', { stroke: gridOptions['colour'] }, gridPattern);
     if (gridOptions['length'] > 1) {
-      Blockly.utils.createSvgElement('line',
-          {'stroke': gridOptions['colour']}, gridPattern);
+      Blockly.utils.createSvgElement('line', { stroke: gridOptions['colour'] }, gridPattern);
     }
     // x1, y1, x1, x2 properties will be set later in update.
   } else {

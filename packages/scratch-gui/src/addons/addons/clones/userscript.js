@@ -1,24 +1,24 @@
-import addSmallStageClass from "../../libraries/common/cs/small-stage.js";
+import addSmallStageClass from '../../libraries/common/cs/small-stage.js';
 
 export default async function ({ addon, console, msg }) {
   const vm = addon.tab.traps.vm;
 
-  let showOnProjectPage = addon.settings.get("projectpage");
-  let showIconOnly = addon.settings.get("showicononly");
+  let showOnProjectPage = addon.settings.get('projectpage');
+  let showIconOnly = addon.settings.get('showicononly');
 
   addSmallStageClass();
 
-  let countContainerContainer = document.createElement("div");
+  let countContainerContainer = document.createElement('div');
   addon.tab.displayNoneWhileDisabled(countContainerContainer);
 
-  let countContainer = document.createElement("div");
-  let count = document.createElement("span");
-  let icon = document.createElement("span");
+  let countContainer = document.createElement('div');
+  let count = document.createElement('span');
+  let icon = document.createElement('span');
 
-  countContainerContainer.className = "clone-container-container";
-  countContainer.className = "clone-container";
-  count.className = "clone-count";
-  icon.className = "clone-icon";
+  countContainerContainer.className = 'clone-container-container';
+  countContainer.className = 'clone-container';
+  count.className = 'clone-count';
+  icon.className = 'clone-icon';
 
   countContainerContainer.appendChild(icon);
   countContainerContainer.appendChild(countContainer);
@@ -28,7 +28,7 @@ export default async function ({ addon, console, msg }) {
 
   const cache = Array(301)
     .fill()
-    .map((_, i) => msg("clones", { cloneCount: i }));
+    .map((_, i) => msg('clones', { cloneCount: i }));
 
   function doCloneChecks(force) {
     const v = vm.runtime._cloneCounter;
@@ -36,25 +36,26 @@ export default async function ({ addon, console, msg }) {
     if (v === lastChecked && !force) return;
     lastChecked = v;
     if (v === 0) {
-      countContainerContainer.dataset.count = "none";
+      countContainerContainer.dataset.count = 'none';
     } else if (v >= vm.runtime.runtimeOptions.maxClones) {
-      countContainerContainer.dataset.count = "full";
+      countContainerContainer.dataset.count = 'full';
     } else {
-      countContainerContainer.dataset.count = "";
+      countContainerContainer.dataset.count = '';
     }
     if (showIconOnly) {
       count.dataset.str = v;
     } else {
-      count.dataset.str = cache[v] || msg("clones", { cloneCount: v });
+      count.dataset.str = cache[v] || msg('clones', { cloneCount: v });
     }
 
-    if (v === 0 || (addon.tab.editorMode !== "editor" && !showOnProjectPage)) countContainerContainer.style.display = "none";
-    else countContainerContainer.style.display = "flex";
+    if (v === 0 || (addon.tab.editorMode !== 'editor' && !showOnProjectPage))
+      countContainerContainer.style.display = 'none';
+    else countContainerContainer.style.display = 'flex';
   }
 
-  addon.settings.addEventListener("change", () => {
-    showIconOnly = addon.settings.get("showicononly");
-    showOnProjectPage = addon.settings.get("projectpage");
+  addon.settings.addEventListener('change', () => {
+    showIconOnly = addon.settings.get('showicononly');
+    showOnProjectPage = addon.settings.get('projectpage');
     doCloneChecks(true);
   });
 
@@ -80,11 +81,11 @@ export default async function ({ addon, console, msg }) {
   while (true) {
     await addon.tab.waitForElement('[class*="controls_controls-container"]', {
       markAsSeen: true,
-      reduxEvents: ["scratch-gui/mode/SET_PLAYER", "fontsLoaded/SET_FONTS_LOADED", "scratch-gui/locales/SELECT_LOCALE"],
+      reduxEvents: ['scratch-gui/mode/SET_PLAYER', 'fontsLoaded/SET_FONTS_LOADED', 'scratch-gui/locales/SELECT_LOCALE']
     });
 
-    if (showOnProjectPage || addon.tab.editorMode === "editor" || addon.tab.redux.state.scratchGui.mode.isEmbedded) {
-      addon.tab.appendToSharedSpace({ space: "afterStopButton", element: countContainerContainer, order: 2 });
+    if (showOnProjectPage || addon.tab.editorMode === 'editor' || addon.tab.redux.state.scratchGui.mode.isEmbedded) {
+      addon.tab.appendToSharedSpace({ space: 'afterStopButton', element: countContainerContainer, order: 2 });
       doCloneChecks(true);
     }
   }

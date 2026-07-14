@@ -5,19 +5,19 @@ import ToolSelectComponent from '../tool-select-base/tool-select-base.jsx';
 
 import selectIcon from './select.svg';
 
-const SelectModeComponent = props => (
-    <ToolSelectComponent
-        imgDescriptor={messages.select}
-        imgSrc={selectIcon}
-        isSelected={props.isSelected}
-        onMouseDown={props.onMouseDown}
-        keybinding="S"
-    />
+const SelectModeComponent = (props) => (
+  <ToolSelectComponent
+    imgDescriptor={messages.select}
+    imgSrc={selectIcon}
+    isSelected={props.isSelected}
+    onMouseDown={props.onMouseDown}
+    keybinding="S"
+  />
 );
 
 SelectModeComponent.propTypes = {
-    isSelected: PropTypes.bool.isRequired,
-    onMouseDown: PropTypes.func.isRequired
+  isSelected: PropTypes.bool.isRequired,
+  onMouseDown: PropTypes.func.isRequired
 };
 
 export default SelectModeComponent;

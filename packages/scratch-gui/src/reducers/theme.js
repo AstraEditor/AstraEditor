@@ -1,27 +1,23 @@
-import {detectTheme} from '../lib/themes/themePersistance';
+import { detectTheme } from '../lib/themes/themePersistance';
 
 const SET_THEME = 'scratch-gui/theme/SET_THEME';
 
 const initialState = {
-    theme: detectTheme()
+  theme: detectTheme()
 };
 
 const reducer = (state = initialState, action) => {
-    switch (action.type) {
+  switch (action.type) {
     case SET_THEME:
-        return {...state, theme: action.theme};
+      return { ...state, theme: action.theme };
     default:
-        return state;
-    }
+      return state;
+  }
 };
 
-const setTheme = theme => ({
-    type: SET_THEME,
-    theme
+const setTheme = (theme) => ({
+  type: SET_THEME,
+  theme
 });
 
-export {
-    reducer as default,
-    initialState as themeInitialState,
-    setTheme
-};
+export { reducer as default, initialState as themeInitialState, setTheme };

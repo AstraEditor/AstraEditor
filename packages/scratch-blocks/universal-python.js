@@ -20,11 +20,13 @@ function run(command, args) {
     shell: false,
     stdio: 'inherit'
   });
-  subprocess.on('exit', function(code) {
+  subprocess.on('exit', function (code) {
     // Microsoft Store install shim exits with code 9009
     if (process.platform === 'win32' && code === 9009) {
       // eslint-disable-next-line max-len
-      console.log('universal-python: Attempted to start python, but got the Microsoft Store installation shim. Install python from the Microsoft Store or python.org. (code 9009)');
+      console.log(
+        'universal-python: Attempted to start python, but got the Microsoft Store installation shim. Install python from the Microsoft Store or python.org. (code 9009)'
+      );
     } else if (code === 0) {
       console.log('universal-python: Success');
     } else {
@@ -32,11 +34,11 @@ function run(command, args) {
     }
     process.exit(code);
   });
-  subprocess.on('error', function(error) {
+  subprocess.on('error', function (error) {
     console.log('universal-python: Error starting python; please ensure you have python installed: ' + error);
     process.exit(1);
   });
-  process.on('SIGINT', function() {
+  process.on('SIGINT', function () {
     subprocess.kill('SIGINT');
   });
 }
@@ -74,7 +76,7 @@ if (process.platform === 'win32') {
       if (python2) {
         run(python2, argv);
       } else {
-        console.log("universal-python: Could not find python on your PATH; please ensure you have python installed.");
+        console.log('universal-python: Could not find python on your PATH; please ensure you have python installed.');
         process.exit(1);
       }
     }

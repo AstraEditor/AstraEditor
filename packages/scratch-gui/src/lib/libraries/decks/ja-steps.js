@@ -200,206 +200,206 @@ import talesDanceMoves from './steps/talking-12-dance-moves.ja.png';
 import talesAskAnswer from './steps/talking-13-ask-and-answer.ja.png';
 
 const jaImages = {
-    // Intro
-    introMove: introMove,
-    introSay: introSay,
-    introGreenFlag: introGreenFlag,
+  // Intro
+  introMove: introMove,
+  introSay: introSay,
+  introGreenFlag: introGreenFlag,
 
-    // Text to Speech
-    speechAddExtension: speechAddExtension,
-    speechSaySomething: speechSaySomething,
-    speechSetVoice: speechSetVoice,
-    speechMoveAround: speechMoveAround,
-    speechAddBackdrop: speechAddBackdrop,
-    speechAddSprite: speechAddSprite,
-    speechSong: speechSong,
-    speechChangeColor: speechChangeColor,
-    speechSpin: speechSpin,
-    speechGrowShrink: speechGrowShrink,
+  // Text to Speech
+  speechAddExtension: speechAddExtension,
+  speechSaySomething: speechSaySomething,
+  speechSetVoice: speechSetVoice,
+  speechMoveAround: speechMoveAround,
+  speechAddBackdrop: speechAddBackdrop,
+  speechAddSprite: speechAddSprite,
+  speechSong: speechSong,
+  speechChangeColor: speechChangeColor,
+  speechSpin: speechSpin,
+  speechGrowShrink: speechGrowShrink,
 
-    // Cartoon Network
-    cnShowCharacter: cnShowCharacter,
-    cnSay: cnSay,
-    cnGlide: cnGlide,
-    cnPickSprite: cnPickSprite,
-    cnCollect: cnCollect,
-    cnVariable: cnVariable,
-    cnScore: cnScore,
-    cnBackdrop: cnBackdrop,
+  // Cartoon Network
+  cnShowCharacter: cnShowCharacter,
+  cnSay: cnSay,
+  cnGlide: cnGlide,
+  cnPickSprite: cnPickSprite,
+  cnCollect: cnCollect,
+  cnVariable: cnVariable,
+  cnScore: cnScore,
+  cnBackdrop: cnBackdrop,
 
-    // Add sprite
-    addSprite: addSprite,
+  // Add sprite
+  addSprite: addSprite,
 
-    // Animate a name
-    namePickLetter: namePickLetter,
-    namePlaySound: namePlaySound,
-    namePickLetter2: namePickLetter2,
-    nameChangeColor: nameChangeColor,
-    nameSpin: nameSpin,
-    nameGrow: nameGrow,
+  // Animate a name
+  namePickLetter: namePickLetter,
+  namePlaySound: namePlaySound,
+  namePickLetter2: namePickLetter2,
+  nameChangeColor: nameChangeColor,
+  nameSpin: nameSpin,
+  nameGrow: nameGrow,
 
-    // Make-Music
-    musicPickInstrument: musicPickInstrument,
-    musicPlaySound: musicPlaySound,
-    musicMakeSong: musicMakeSong,
-    musicMakeBeat: musicMakeBeat,
-    musicMakeBeatbox: musicMakeBeatbox,
+  // Make-Music
+  musicPickInstrument: musicPickInstrument,
+  musicPlaySound: musicPlaySound,
+  musicMakeSong: musicMakeSong,
+  musicMakeBeat: musicMakeBeat,
+  musicMakeBeatbox: musicMakeBeatbox,
 
-    // Chase-Game
-    chaseGameAddBackdrop: chaseGameAddBackdrop,
-    chaseGameAddSprite1: chaseGameAddSprite1,
-    chaseGameRightLeft: chaseGameRightLeft,
-    chaseGameUpDown: chaseGameUpDown,
-    chaseGameAddSprite2: chaseGameAddSprite2,
-    chaseGameMoveRandomly: chaseGameMoveRandomly,
-    chaseGamePlaySound: chaseGamePlaySound,
-    chaseGameAddVariable: chaseGameAddVariable,
-    chaseGameChangeScore: chaseGameChangeScore,
+  // Chase-Game
+  chaseGameAddBackdrop: chaseGameAddBackdrop,
+  chaseGameAddSprite1: chaseGameAddSprite1,
+  chaseGameRightLeft: chaseGameRightLeft,
+  chaseGameUpDown: chaseGameUpDown,
+  chaseGameAddSprite2: chaseGameAddSprite2,
+  chaseGameMoveRandomly: chaseGameMoveRandomly,
+  chaseGamePlaySound: chaseGamePlaySound,
+  chaseGameAddVariable: chaseGameAddVariable,
+  chaseGameChangeScore: chaseGameChangeScore,
 
-    // Make-A-Pop/Clicker Game
-    popGamePickSprite: popGamePickSprite,
-    popGamePlaySound: popGamePlaySound,
-    popGameAddScore: popGameAddScore,
-    popGameChangeScore: popGameChangeScore,
-    popGameRandomPosition: popGameRandomPosition,
-    popGameChangeColor: popGameChangeColor,
-    popGameResetScore: popGameResetScore,
+  // Make-A-Pop/Clicker Game
+  popGamePickSprite: popGamePickSprite,
+  popGamePlaySound: popGamePlaySound,
+  popGameAddScore: popGameAddScore,
+  popGameChangeScore: popGameChangeScore,
+  popGameRandomPosition: popGameRandomPosition,
+  popGameChangeColor: popGameChangeColor,
+  popGameResetScore: popGameResetScore,
 
-    // Animate A Character
-    animateCharPickBackdrop: animateCharPickBackdrop,
-    animateCharPickSprite: animateCharPickSprite,
-    animateCharSaySomething: animateCharSaySomething,
-    animateCharAddSound: animateCharAddSound,
-    animateCharTalk: animateCharTalk,
-    animateCharMove: animateCharMove,
-    animateCharJump: animateCharJump,
-    animateCharChangeColor: animateCharChangeColor,
+  // Animate A Character
+  animateCharPickBackdrop: animateCharPickBackdrop,
+  animateCharPickSprite: animateCharPickSprite,
+  animateCharSaySomething: animateCharSaySomething,
+  animateCharAddSound: animateCharAddSound,
+  animateCharTalk: animateCharTalk,
+  animateCharMove: animateCharMove,
+  animateCharJump: animateCharJump,
+  animateCharChangeColor: animateCharChangeColor,
 
-    // Tell A Story
-    storyPickBackdrop: storyPickBackdrop,
-    storyPickSprite: storyPickSprite,
-    storySaySomething: storySaySomething,
-    storyPickSprite2: storyPickSprite2,
-    storyFlip: storyFlip,
-    storyConversation: storyConversation,
-    storyPickBackdrop2: storyPickBackdrop2,
-    storySwitchBackdrop: storySwitchBackdrop,
-    storyHideCharacter: storyHideCharacter,
-    storyShowCharacter: storyShowCharacter,
+  // Tell A Story
+  storyPickBackdrop: storyPickBackdrop,
+  storyPickSprite: storyPickSprite,
+  storySaySomething: storySaySomething,
+  storyPickSprite2: storyPickSprite2,
+  storyFlip: storyFlip,
+  storyConversation: storyConversation,
+  storyPickBackdrop2: storyPickBackdrop2,
+  storySwitchBackdrop: storySwitchBackdrop,
+  storyHideCharacter: storyHideCharacter,
+  storyShowCharacter: storyShowCharacter,
 
-    // Video Sensing
-    videoAddExtension: videoAddExtension,
-    videoPet: videoPet,
-    videoAnimate: videoAnimate,
-    videoPop: videoPop,
+  // Video Sensing
+  videoAddExtension: videoAddExtension,
+  videoPet: videoPet,
+  videoAnimate: videoAnimate,
+  videoPop: videoPop,
 
-    // Make it Fly
-    flyChooseBackdrop: flyChooseBackdrop,
-    flyChooseCharacter: flyChooseCharacter,
-    flySaySomething: flySaySomething,
-    flyMoveArrows: flyMoveArrows,
-    flyChooseObject: flyChooseObject,
-    flyFlyingObject: flyFlyingObject,
-    flySelectFlyingSprite: flySelectFlyingSprite,
-    flyAddScore: flyAddScore,
-    flyKeepScore: flyKeepScore,
-    flyAddScenery: flyAddScenery,
-    flyMoveScenery: flyMoveScenery,
-    flySwitchLooks: flySwitchLooks,
+  // Make it Fly
+  flyChooseBackdrop: flyChooseBackdrop,
+  flyChooseCharacter: flyChooseCharacter,
+  flySaySomething: flySaySomething,
+  flyMoveArrows: flyMoveArrows,
+  flyChooseObject: flyChooseObject,
+  flyFlyingObject: flyFlyingObject,
+  flySelectFlyingSprite: flySelectFlyingSprite,
+  flyAddScore: flyAddScore,
+  flyKeepScore: flyKeepScore,
+  flyAddScenery: flyAddScenery,
+  flyMoveScenery: flyMoveScenery,
+  flySwitchLooks: flySwitchLooks,
 
-    // Pong
-    pongAddBackdrop: pongAddBackdrop,
-    pongAddBallSprite: pongAddBallSprite,
-    pongBounceAround: pongBounceAround,
-    pongAddPaddle: pongAddPaddle,
-    pongMoveThePaddle: pongMoveThePaddle,
-    pongSelectBallSprite: pongSelectBallSprite,
-    pongAddMoreCodeToBall: pongAddMoreCodeToBall,
-    pongAddAScore: pongAddAScore,
-    pongChooseScoreFromMenu: pongChooseScoreFromMenu,
-    pongInsertChangeScoreBlock: pongInsertChangeScoreBlock,
-    pongResetScore: pongResetScore,
-    pongAddLineSprite: pongAddLineSprite,
-    pongGameOver: pongGameOver,
+  // Pong
+  pongAddBackdrop: pongAddBackdrop,
+  pongAddBallSprite: pongAddBallSprite,
+  pongBounceAround: pongBounceAround,
+  pongAddPaddle: pongAddPaddle,
+  pongMoveThePaddle: pongMoveThePaddle,
+  pongSelectBallSprite: pongSelectBallSprite,
+  pongAddMoreCodeToBall: pongAddMoreCodeToBall,
+  pongAddAScore: pongAddAScore,
+  pongChooseScoreFromMenu: pongChooseScoreFromMenu,
+  pongInsertChangeScoreBlock: pongInsertChangeScoreBlock,
+  pongResetScore: pongResetScore,
+  pongAddLineSprite: pongAddLineSprite,
+  pongGameOver: pongGameOver,
 
-    // Imagine a World
-    imagineTypeWhatYouWant: imagineTypeWhatYouWant,
-    imagineClickGreenFlag: imagineClickGreenFlag,
-    imagineChooseBackdrop: imagineChooseBackdrop,
-    imagineChooseSprite: imagineChooseSprite,
-    imagineFlyAround: imagineFlyAround,
-    imagineChooseAnotherSprite: imagineChooseAnotherSprite,
-    imagineLeftRight: imagineLeftRight,
-    imagineUpDown: imagineUpDown,
-    imagineChangeCostumes: imagineChangeCostumes,
-    imagineGlideToPoint: imagineGlideToPoint,
-    imagineGrowShrink: imagineGrowShrink,
-    imagineChooseAnotherBackdrop: imagineChooseAnotherBackdrop,
-    imagineSwitchBackdrops: imagineSwitchBackdrops,
-    imagineRecordASound: imagineRecordASound,
-    imagineChooseSound: imagineChooseSound,
+  // Imagine a World
+  imagineTypeWhatYouWant: imagineTypeWhatYouWant,
+  imagineClickGreenFlag: imagineClickGreenFlag,
+  imagineChooseBackdrop: imagineChooseBackdrop,
+  imagineChooseSprite: imagineChooseSprite,
+  imagineFlyAround: imagineFlyAround,
+  imagineChooseAnotherSprite: imagineChooseAnotherSprite,
+  imagineLeftRight: imagineLeftRight,
+  imagineUpDown: imagineUpDown,
+  imagineChangeCostumes: imagineChangeCostumes,
+  imagineGlideToPoint: imagineGlideToPoint,
+  imagineGrowShrink: imagineGrowShrink,
+  imagineChooseAnotherBackdrop: imagineChooseAnotherBackdrop,
+  imagineSwitchBackdrops: imagineSwitchBackdrops,
+  imagineRecordASound: imagineRecordASound,
+  imagineChooseSound: imagineChooseSound,
 
-    // Add a Backdrop
-    addBackdrop: addBackdrop,
+  // Add a Backdrop
+  addBackdrop: addBackdrop,
 
-    // Add Effects
-    addEffects: addEffects,
+  // Add Effects
+  addEffects: addEffects,
 
-    // Hide and Show
-    hideAndShow: hideAndShow,
+  // Hide and Show
+  hideAndShow: hideAndShow,
 
-    // Switch Costumes
-    switchCostumes: switchCostumes,
+  // Switch Costumes
+  switchCostumes: switchCostumes,
 
-    // Change Size
-    changeSize: changeSize,
+  // Change Size
+  changeSize: changeSize,
 
-    // Spin
-    spinTurn: spinTurn,
-    spinPointInDirection: spinPointInDirection,
+  // Spin
+  spinTurn: spinTurn,
+  spinPointInDirection: spinPointInDirection,
 
-    // Record a Sound
-    recordASoundSoundsTab: recordASoundSoundsTab,
-    recordASoundClickRecord: recordASoundClickRecord,
-    recordASoundPressRecordButton: recordASoundPressRecordButton,
-    recordASoundChooseSound: recordASoundChooseSound,
-    recordASoundPlayYourSound: recordASoundPlayYourSound,
+  // Record a Sound
+  recordASoundSoundsTab: recordASoundSoundsTab,
+  recordASoundClickRecord: recordASoundClickRecord,
+  recordASoundPressRecordButton: recordASoundPressRecordButton,
+  recordASoundChooseSound: recordASoundChooseSound,
+  recordASoundPlayYourSound: recordASoundPlayYourSound,
 
-    // Use Arrow Keys
-    moveArrowKeysLeftRight: moveArrowKeysLeftRight,
-    moveArrowKeysUpDown: moveArrowKeysUpDown,
+  // Use Arrow Keys
+  moveArrowKeysLeftRight: moveArrowKeysLeftRight,
+  moveArrowKeysUpDown: moveArrowKeysUpDown,
 
-    // Glide Around
-    glideAroundBackAndForth: glideAroundBackAndForth,
-    glideAroundPoint: glideAroundPoint,
+  // Glide Around
+  glideAroundBackAndForth: glideAroundBackAndForth,
+  glideAroundPoint: glideAroundPoint,
 
-    // Code a Cartoon
-    codeCartoonSaySomething: codeCartoonSaySomething,
-    codeCartoonAnimate: codeCartoonAnimate,
-    codeCartoonSelectDifferentCharacter: codeCartoonSelectDifferentCharacter,
-    codeCartoonUseMinusSign: codeCartoonUseMinusSign,
-    codeCartoonGrowShrink: codeCartoonGrowShrink,
-    codeCartoonSelectDifferentCharacter2: codeCartoonSelectDifferentCharacter2,
-    codeCartoonJump: codeCartoonJump,
-    codeCartoonChangeScenes: codeCartoonChangeScenes,
-    codeCartoonGlideAround: codeCartoonGlideAround,
-    codeCartoonChangeCostumes: codeCartoonChangeCostumes,
-    codeCartoonChooseMoreCharacters: codeCartoonChooseMoreCharacters,
+  // Code a Cartoon
+  codeCartoonSaySomething: codeCartoonSaySomething,
+  codeCartoonAnimate: codeCartoonAnimate,
+  codeCartoonSelectDifferentCharacter: codeCartoonSelectDifferentCharacter,
+  codeCartoonUseMinusSign: codeCartoonUseMinusSign,
+  codeCartoonGrowShrink: codeCartoonGrowShrink,
+  codeCartoonSelectDifferentCharacter2: codeCartoonSelectDifferentCharacter2,
+  codeCartoonJump: codeCartoonJump,
+  codeCartoonChangeScenes: codeCartoonChangeScenes,
+  codeCartoonGlideAround: codeCartoonGlideAround,
+  codeCartoonChangeCostumes: codeCartoonChangeCostumes,
+  codeCartoonChooseMoreCharacters: codeCartoonChooseMoreCharacters,
 
-    // Talking Tales
-    talesAddExtension: talesAddExtension,
-    talesChooseSprite: talesChooseSprite,
-    talesSaySomething: talesSaySomething,
-    talesAskAnswer: talesAskAnswer,
-    talesChooseBackdrop: talesChooseBackdrop,
-    talesSwitchBackdrop: talesSwitchBackdrop,
-    talesChooseAnotherSprite: talesChooseAnotherSprite,
-    talesMoveAround: talesMoveAround,
-    talesChooseAnotherBackdrop: talesChooseAnotherBackdrop,
-    talesAnimateTalking: talesAnimateTalking,
-    talesChooseThirdBackdrop: talesChooseThirdBackdrop,
-    talesChooseSound: talesChooseSound,
-    talesDanceMoves: talesDanceMoves
+  // Talking Tales
+  talesAddExtension: talesAddExtension,
+  talesChooseSprite: talesChooseSprite,
+  talesSaySomething: talesSaySomething,
+  talesAskAnswer: talesAskAnswer,
+  talesChooseBackdrop: talesChooseBackdrop,
+  talesSwitchBackdrop: talesSwitchBackdrop,
+  talesChooseAnotherSprite: talesChooseAnotherSprite,
+  talesMoveAround: talesMoveAround,
+  talesChooseAnotherBackdrop: talesChooseAnotherBackdrop,
+  talesAnimateTalking: talesAnimateTalking,
+  talesChooseThirdBackdrop: talesChooseThirdBackdrop,
+  talesChooseSound: talesChooseSound,
+  talesDanceMoves: talesDanceMoves
 };
 
-export {jaImages};
+export { jaImages };

@@ -10,12 +10,10 @@
  * @return {Promise<Out[]>} - results of `func` applied to each item in `arr`
  */
 exports.batchMap = async (arr, batchSize, func) => {
-    const results = [];
-    for (let i = 0; i < arr.length; i += batchSize) {
-        const result = await Promise.all(
-            arr.slice(i, i + batchSize).map(func)
-        );
-        results.push(...result);
-    }
-    return results;
+  const results = [];
+  for (let i = 0; i < arr.length; i += batchSize) {
+    const result = await Promise.all(arr.slice(i, i + batchSize).map(func));
+    results.push(...result);
+  }
+  return results;
 };

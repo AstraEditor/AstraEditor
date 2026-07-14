@@ -32,10 +32,10 @@ export function loadModules(paper, vm) {
   };
 
   const getDragCrosshairLayer = function () {
-    return _getLayer("isDragCrosshairLayer");
+    return _getLayer('isDragCrosshairLayer');
   };
   const getGuideLayer = function () {
-    return _getLayer("isGuideLayer");
+    return _getLayer('isGuideLayer');
   };
 
   // https://github.com/scratchfoundation/scratch-paint/blob/2a9fb2356d961200dc849b5b0a090d33f473c0b5/src/helper/view.js
@@ -63,9 +63,9 @@ export function loadModules(paper, vm) {
       -ART_BOARD_HEIGHT / 4,
       ART_BOARD_WIDTH * 1.5,
       ART_BOARD_HEIGHT * 1.5
-    );  
+    );
   };
-  vm.on("STAGE_SIZE_CHANGED", updateStageSize);
+  vm.on('STAGE_SIZE_CHANGED', updateStageSize);
   updateStageSize();
 
   /**
@@ -83,11 +83,11 @@ export function loadModules(paper, vm) {
   const setDefaultGuideStyle = function (item) {
     item.strokeWidth = 1 / paper.view.zoom;
     item.opacity = 1;
-    item.blendMode = "normal";
+    item.blendMode = 'normal';
     item.guide = true;
   };
 
-  const GUIDE_BLUE = "#009dec";
+  const GUIDE_BLUE = '#009dec';
 
   const hoverBounds = function (item, expandBy) {
     let bounds = item.internalBounds;
@@ -110,22 +110,22 @@ export function loadModules(paper, vm) {
   return {
     math: {
       checkPointsClose,
-      snapDeltaToAngle,
+      snapDeltaToAngle
     },
     layer: { CROSSHAIR_FULL_OPACITY, getDragCrosshairLayer, getLayer: _getLayer },
     view: {
-      get CENTER () {
+      get CENTER() {
         return CENTER;
       },
-      get ART_BOARD_BOUNDS () {
+      get ART_BOARD_BOUNDS() {
         return ART_BOARD_BOUNDS;
       },
-      get MAX_WORKSPACE_BOUNDS () {
+      get MAX_WORKSPACE_BOUNDS() {
         return MAX_WORKSPACE_BOUNDS;
       },
       getActionBounds
     },
-    guide: { hoverBounds },
+    guide: { hoverBounds }
   };
 }
 
@@ -143,7 +143,7 @@ const vectorModesObj = {
   OVAL: null,
   RECT: null,
   ROUNDED_RECT: null,
-  TEXT: null,
+  TEXT: null
 };
 const bitmapModesObj = {
   BIT_BRUSH: null,
@@ -153,7 +153,7 @@ const bitmapModesObj = {
   BIT_TEXT: null,
   BIT_FILL: null,
   BIT_ERASER: null,
-  BIT_SELECT: null,
+  BIT_SELECT: null
 };
 const VectorModes = keyMirror(vectorModesObj);
 const BitmapModes = keyMirror(bitmapModesObj);
@@ -170,7 +170,7 @@ const GradientToolsModes = keyMirror({
   BIT_OVAL: null,
   BIT_RECT: null,
   BIT_SELECT: null,
-  BIT_FILL: null,
+  BIT_FILL: null
 });
 
 export { Modes, VectorModes, BitmapModes, GradientToolsModes };

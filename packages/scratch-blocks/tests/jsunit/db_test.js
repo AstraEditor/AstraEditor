@@ -27,28 +27,28 @@ function test_DB_getNeighbours() {
 
   // Set up some connections.
   for (var i = 0; i < 10; i++) {
-      db.addConnection_(helper_createConnection(0, i, Blockly.PREVIOUS_STATEMENT));
+    db.addConnection_(helper_createConnection(0, i, Blockly.PREVIOUS_STATEMENT));
   }
 
   // Test block belongs at beginning
   var result = helper_getNeighbours(db, 0, 0, 4);
   assertEquals(5, result.length);
   for (i = 0; i < result.length; i++) {
-      assertNotEquals(result.indexOf(db[i]), -1); // contains
+    assertNotEquals(result.indexOf(db[i]), -1); // contains
   }
 
   // Test block belongs at middle
   result = helper_getNeighbours(db, 0, 4, 2);
   assertEquals(5, result.length);
   for (i = 0; i < result.length; i++) {
-      assertNotEquals(result.indexOf(db[i + 2]), -1); // contains
+    assertNotEquals(result.indexOf(db[i + 2]), -1); // contains
   }
 
   // Test block belongs at end
   result = helper_getNeighbours(db, 0, 9, 4);
   assertEquals(5, result.length);
   for (i = 0; i < result.length; i++) {
-      assertNotEquals(result.indexOf(db[i + 5]), -1); // contains
+    assertNotEquals(result.indexOf(db[i + 5]), -1); // contains
   }
 
   // Test block has no neighbours due to being out of range in the x direction
@@ -69,7 +69,7 @@ function helper_getNeighbours(db, x, y, radius) {
 }
 
 function helper_createConnection(x, y, type) {
-  var conn = new Blockly.Connection({workspace: {}}, type);
+  var conn = new Blockly.Connection({ workspace: {} }, type);
   conn.x_ = x;
   conn.y_ = y;
   return conn;

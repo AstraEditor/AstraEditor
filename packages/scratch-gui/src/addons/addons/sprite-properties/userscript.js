@@ -1,8 +1,8 @@
 export default async function ({ addon, console, msg }) {
-  const SHOW_PROPS_CLASS = "sa-show-sprite-properties";
-  const HIDE_PROPS_CLASS = "sa-hide-sprite-properties";
-  const PROPS_INFO_BTN_CLASS = "sa-sprite-properties-info-btn";
-  const PROPS_CLOSE_BTN_CLASS = "sa-sprite-properties-close-btn";
+  const SHOW_PROPS_CLASS = 'sa-show-sprite-properties';
+  const HIDE_PROPS_CLASS = 'sa-hide-sprite-properties';
+  const PROPS_INFO_BTN_CLASS = 'sa-sprite-properties-info-btn';
+  const PROPS_CLOSE_BTN_CLASS = 'sa-sprite-properties-close-btn';
 
   /** @type {HTMLElement} */
   let propertiesPanel;
@@ -14,7 +14,7 @@ export default async function ({ addon, console, msg }) {
   });
 
   // Toggle the properties panel when double clicking in the sprite grid
-  document.addEventListener("click", (e) => {
+  document.addEventListener('click', (e) => {
     if (e.detail === 2 && e.target.closest('[class^="sprite-selector_scroll-wrapper_"]')) {
       togglePropertiesPanel();
     }
@@ -31,47 +31,47 @@ export default async function ({ addon, console, msg }) {
   }
 
   function autoHidePanel() {
-    if (addon.settings.get("autoCollapse")) {
+    if (addon.settings.get('autoCollapse')) {
       setPropertiesPanelVisible(false);
     }
   }
   const isDirectionPopoverOpen = () =>
-    document.querySelector("body > div.Popover > div > div > [class*=direction-picker_button-row_]");
+    document.querySelector('body > div.Popover > div > div > [class*=direction-picker_button-row_]');
   // Close properties panel when mouse leaves the entire sprite panel
   document.body.addEventListener(
-    "mouseleave",
+    'mouseleave',
     (e) => {
       if (e.target.matches('[class*="sprite-selector_sprite-selector_"]')) {
         if (!isDirectionPopoverOpen()) autoHidePanel();
       }
     },
     {
-      capture: true,
+      capture: true
     }
   );
-  addon.settings.addEventListener("change", autoHidePanel);
+  addon.settings.addEventListener('change', autoHidePanel);
 
   function applySettings() {
-    const visibleByDefault = !addon.settings.get("autoCollapse") && !addon.settings.get("hideByDefault");
+    const visibleByDefault = !addon.settings.get('autoCollapse') && !addon.settings.get('hideByDefault');
     setPropertiesPanelVisible(visibleByDefault);
   }
-  addon.self.addEventListener("reenabled", applySettings);
+  addon.self.addEventListener('reenabled', applySettings);
   applySettings();
 
-  addon.self.addEventListener("disabled", () => {
+  addon.self.addEventListener('disabled', () => {
     setPropertiesPanelVisible(true);
   });
 
   function createButton(className, iconPath, tooltip) {
-    const buttonIcon = document.createElement("img");
-    buttonIcon.setAttribute("src", addon.self.getResource(iconPath)) /* rewritten by pull.js */;
+    const buttonIcon = document.createElement('img');
+    buttonIcon.setAttribute('src', addon.self.getResource(iconPath)); /* rewritten by pull.js */
     buttonIcon.draggable = false;
-    const button = document.createElement("button");
+    const button = document.createElement('button');
     button.classList.add(className);
     button.title = tooltip;
-    button.addEventListener("click", () => togglePropertiesPanel());
+    button.addEventListener('click', () => togglePropertiesPanel());
     button.appendChild(buttonIcon);
-    addon.tab.displayNoneWhileDisabled(button, { display: "flex" });
+    addon.tab.displayNoneWhileDisabled(button, { display: 'flex' });
     return button;
   }
 
@@ -82,7 +82,7 @@ export default async function ({ addon, console, msg }) {
 
   function injectInfoButton() {
     if (!infoButton) {
-      infoButton = createButton(PROPS_INFO_BTN_CLASS, "/info.svg", msg("open-properties-panel-tooltip"));
+      infoButton = createButton(PROPS_INFO_BTN_CLASS, '/info.svg', msg('open-properties-panel-tooltip'));
     }
     const selectedSprite = propertiesPanel.parentNode.querySelector('[class*="sprite-selector-item_is-selected"]');
     if (infoButton.parentNode !== selectedSprite) {
@@ -96,7 +96,7 @@ export default async function ({ addon, console, msg }) {
 
   function injectCloseButton() {
     if (!closeButton) {
-      closeButton = createButton(PROPS_CLOSE_BTN_CLASS, "/collapse.svg", msg("close-properties-panel-tooltip"));
+      closeButton = createButton(PROPS_CLOSE_BTN_CLASS, '/collapse.svg', msg('close-properties-panel-tooltip'));
     }
     propertiesPanel.appendChild(closeButton);
   }
@@ -109,13 +109,13 @@ export default async function ({ addon, console, msg }) {
     // languages.
     // List of languages is here:
     // https://github.com/scratchfoundation/scratch-gui/blob/e15b2dfa3a2e58e80fae8d1586c7f56aa0cc0ede/src/lib/locale-utils.js#L6-L18
-    const isWideLocale = !!propertiesPanel.querySelector("[class^=label_input-group-column_]");
-    document.body.classList.toggle("sa-sprite-properties-wide-locale", isWideLocale);
+    const isWideLocale = !!propertiesPanel.querySelector('[class^=label_input-group-column_]');
+    document.body.classList.toggle('sa-sprite-properties-wide-locale', isWideLocale);
   }
 
   addon.tab.redux.initialize();
-  addon.tab.redux.addEventListener("statechanged", (e) => {
-    if (e.detail.action.type === "scratch-gui/StageSize/SET_STAGE_SIZE") {
+  addon.tab.redux.addEventListener('statechanged', (e) => {
+    if (e.detail.action.type === 'scratch-gui/StageSize/SET_STAGE_SIZE') {
       setTimeout(updateWideLocaleMode);
     }
   });
@@ -123,15 +123,15 @@ export default async function ({ addon, console, msg }) {
   while (true) {
     propertiesPanel = await addon.tab.waitForElement('[class^="sprite-info_sprite-info_"]', {
       markAsSeen: true,
-      reduxEvents: ["scratch-gui/mode/SET_PLAYER", "fontsLoaded/SET_FONTS_LOADED", "scratch-gui/locales/SELECT_LOCALE"],
-      reduxCondition: (state) => !state.scratchGui.mode.isPlayerOnly,
+      reduxEvents: ['scratch-gui/mode/SET_PLAYER', 'fontsLoaded/SET_FONTS_LOADED', 'scratch-gui/locales/SELECT_LOCALE'],
+      reduxCondition: (state) => !state.scratchGui.mode.isPlayerOnly
     });
 
     const spriteSelector = propertiesPanel.parentNode;
     const itemsWrapper = spriteSelector.querySelector('[class*="sprite-selector_items-wrapper_"]');
     observer.observe(itemsWrapper, {
       childList: true,
-      subtree: true,
+      subtree: true
     });
 
     updateWideLocaleMode();

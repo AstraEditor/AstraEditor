@@ -12,7 +12,7 @@
  * @param {string} blockId blockId for the desired execute cache
  */
 exports.getCached = function () {
-    throw new Error('blocks.js has not initialized BlocksExecuteCache');
+  throw new Error('blocks.js has not initialized BlocksExecuteCache');
 };
 
 // Call after the default throwing getCached is assigned for Blocks to replace.

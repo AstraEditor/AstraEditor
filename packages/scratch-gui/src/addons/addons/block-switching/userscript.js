@@ -5,746 +5,746 @@ export default async function ({ addon, console, msg }) {
   let blockSwitches = {};
   let procedureSwitches = {};
   const noopSwitch = {
-    isNoop: true,
+    isNoop: true
   };
 
   const randomColor = () => {
     const num = Math.floor(Math.random() * 256 * 256 * 256);
-    return `#${num.toString(16).padStart(6, "0")}`;
+    return `#${num.toString(16).padStart(6, '0')}`;
   };
 
   const buildSwitches = () => {
     blockSwitches = {};
     procedureSwitches = {};
 
-    if (addon.settings.get("motion")) {
-      blockSwitches["motion_turnright"] = [
+    if (addon.settings.get('motion')) {
+      blockSwitches['motion_turnright'] = [
         noopSwitch,
         {
-          opcode: "motion_turnleft",
-        },
+          opcode: 'motion_turnleft'
+        }
       ];
-      blockSwitches["motion_turnleft"] = [
+      blockSwitches['motion_turnleft'] = [
         {
-          opcode: "motion_turnright",
+          opcode: 'motion_turnright'
         },
-        noopSwitch,
+        noopSwitch
       ];
-      blockSwitches["motion_setx"] = [
+      blockSwitches['motion_setx'] = [
         noopSwitch,
         {
-          opcode: "motion_changexby",
-          remapInputName: { X: "DX" },
+          opcode: 'motion_changexby',
+          remapInputName: { X: 'DX' }
         },
         {
-          opcode: "motion_sety",
-          remapInputName: { X: "Y" },
+          opcode: 'motion_sety',
+          remapInputName: { X: 'Y' }
         },
         {
-          opcode: "motion_changeyby",
-          remapInputName: { X: "DY" },
-        },
+          opcode: 'motion_changeyby',
+          remapInputName: { X: 'DY' }
+        }
       ];
-      blockSwitches["motion_changexby"] = [
+      blockSwitches['motion_changexby'] = [
         {
-          opcode: "motion_setx",
-          remapInputName: { DX: "X" },
+          opcode: 'motion_setx',
+          remapInputName: { DX: 'X' }
         },
         noopSwitch,
         {
-          opcode: "motion_sety",
-          remapInputName: { DX: "Y" },
+          opcode: 'motion_sety',
+          remapInputName: { DX: 'Y' }
         },
         {
-          opcode: "motion_changeyby",
-          remapInputName: { DX: "DY" },
-        },
+          opcode: 'motion_changeyby',
+          remapInputName: { DX: 'DY' }
+        }
       ];
-      blockSwitches["motion_sety"] = [
+      blockSwitches['motion_sety'] = [
         {
-          opcode: "motion_setx",
-          remapInputName: { Y: "X" },
+          opcode: 'motion_setx',
+          remapInputName: { Y: 'X' }
         },
         {
-          opcode: "motion_changexby",
-          remapInputName: { Y: "DX" },
+          opcode: 'motion_changexby',
+          remapInputName: { Y: 'DX' }
         },
         noopSwitch,
         {
-          opcode: "motion_changeyby",
-          remapInputName: { Y: "DY" },
-        },
+          opcode: 'motion_changeyby',
+          remapInputName: { Y: 'DY' }
+        }
       ];
-      blockSwitches["motion_changeyby"] = [
+      blockSwitches['motion_changeyby'] = [
         {
-          opcode: "motion_setx",
-          remapInputName: { DY: "X" },
+          opcode: 'motion_setx',
+          remapInputName: { DY: 'X' }
         },
         {
-          opcode: "motion_changexby",
-          remapInputName: { DY: "DX" },
+          opcode: 'motion_changexby',
+          remapInputName: { DY: 'DX' }
         },
         {
-          opcode: "motion_sety",
-          remapInputName: { DY: "Y" },
+          opcode: 'motion_sety',
+          remapInputName: { DY: 'Y' }
         },
-        noopSwitch,
+        noopSwitch
       ];
-      blockSwitches["motion_xposition"] = [
+      blockSwitches['motion_xposition'] = [
         noopSwitch,
         {
-          opcode: "motion_yposition",
-        },
+          opcode: 'motion_yposition'
+        }
       ];
-      blockSwitches["motion_yposition"] = [
+      blockSwitches['motion_yposition'] = [
         {
-          opcode: "motion_xposition",
+          opcode: 'motion_xposition'
         },
-        noopSwitch,
+        noopSwitch
       ];
     }
 
-    if (addon.settings.get("looks")) {
-      blockSwitches["looks_seteffectto"] = [
+    if (addon.settings.get('looks')) {
+      blockSwitches['looks_seteffectto'] = [
         noopSwitch,
         {
-          opcode: "looks_changeeffectby",
-          remapInputName: { VALUE: "CHANGE" },
-        },
+          opcode: 'looks_changeeffectby',
+          remapInputName: { VALUE: 'CHANGE' }
+        }
       ];
-      blockSwitches["looks_changeeffectby"] = [
+      blockSwitches['looks_changeeffectby'] = [
         {
-          opcode: "looks_seteffectto",
-          remapInputName: { CHANGE: "VALUE" },
+          opcode: 'looks_seteffectto',
+          remapInputName: { CHANGE: 'VALUE' }
         },
-        noopSwitch,
+        noopSwitch
       ];
-      blockSwitches["looks_setsizeto"] = [
+      blockSwitches['looks_setsizeto'] = [
         noopSwitch,
         {
-          opcode: "looks_changesizeby",
-          remapInputName: { SIZE: "CHANGE" },
+          opcode: 'looks_changesizeby',
+          remapInputName: { SIZE: 'CHANGE' }
+        }
+      ];
+      blockSwitches['looks_changesizeby'] = [
+        {
+          opcode: 'looks_setsizeto',
+          remapInputName: { CHANGE: 'SIZE' }
         },
+        noopSwitch
       ];
-      blockSwitches["looks_changesizeby"] = [
+      blockSwitches['looks_costumenumbername'] = [
+        noopSwitch,
         {
-          opcode: "looks_setsizeto",
-          remapInputName: { CHANGE: "SIZE" },
+          opcode: 'looks_backdropnumbername'
+        }
+      ];
+      blockSwitches['looks_backdropnumbername'] = [
+        {
+          opcode: 'looks_costumenumbername'
         },
-        noopSwitch,
+        noopSwitch
       ];
-      blockSwitches["looks_costumenumbername"] = [
+      blockSwitches['looks_show'] = [
         noopSwitch,
         {
-          opcode: "looks_backdropnumbername",
+          opcode: 'looks_hide'
+        }
+      ];
+      blockSwitches['looks_hide'] = [
+        {
+          opcode: 'looks_show'
         },
+        noopSwitch
       ];
-      blockSwitches["looks_backdropnumbername"] = [
+      blockSwitches['looks_nextcostume'] = [
+        noopSwitch,
         {
-          opcode: "looks_costumenumbername",
+          opcode: 'looks_nextbackdrop'
+        }
+      ];
+      blockSwitches['looks_nextbackdrop'] = [
+        {
+          opcode: 'looks_nextcostume'
         },
-        noopSwitch,
+        noopSwitch
       ];
-      blockSwitches["looks_show"] = [
+      blockSwitches['looks_say'] = [
         noopSwitch,
         {
-          opcode: "looks_hide",
-        },
-      ];
-      blockSwitches["looks_hide"] = [
-        {
-          opcode: "looks_show",
-        },
-        noopSwitch,
-      ];
-      blockSwitches["looks_nextcostume"] = [
-        noopSwitch,
-        {
-          opcode: "looks_nextbackdrop",
-        },
-      ];
-      blockSwitches["looks_nextbackdrop"] = [
-        {
-          opcode: "looks_nextcostume",
-        },
-        noopSwitch,
-      ];
-      blockSwitches["looks_say"] = [
-        noopSwitch,
-        {
-          opcode: "looks_sayforsecs",
+          opcode: 'looks_sayforsecs',
           createInputs: {
             SECS: {
-              shadowType: "math_number",
-              value: "2",
-            },
-          },
+              shadowType: 'math_number',
+              value: '2'
+            }
+          }
         },
         {
-          opcode: "looks_think",
+          opcode: 'looks_think'
         },
         {
-          opcode: "looks_thinkforsecs",
+          opcode: 'looks_thinkforsecs',
           createInputs: {
             SECS: {
-              shadowType: "math_number",
-              value: "2",
-            },
-          },
-        },
+              shadowType: 'math_number',
+              value: '2'
+            }
+          }
+        }
       ];
-      blockSwitches["looks_think"] = [
+      blockSwitches['looks_think'] = [
         {
-          opcode: "looks_say",
+          opcode: 'looks_say'
         },
         {
-          opcode: "looks_sayforsecs",
+          opcode: 'looks_sayforsecs',
           createInputs: {
             SECS: {
-              shadowType: "math_number",
-              value: "2",
-            },
-          },
+              shadowType: 'math_number',
+              value: '2'
+            }
+          }
         },
         noopSwitch,
         {
-          opcode: "looks_thinkforsecs",
+          opcode: 'looks_thinkforsecs',
           createInputs: {
             SECS: {
-              shadowType: "math_number",
-              value: "2",
-            },
-          },
-        },
+              shadowType: 'math_number',
+              value: '2'
+            }
+          }
+        }
       ];
-      blockSwitches["looks_sayforsecs"] = [
+      blockSwitches['looks_sayforsecs'] = [
         {
-          opcode: "looks_say",
-          splitInputs: ["SECS"],
+          opcode: 'looks_say',
+          splitInputs: ['SECS']
         },
         {
-          opcode: "looks_think",
-          splitInputs: ["SECS"],
+          opcode: 'looks_think',
+          splitInputs: ['SECS']
         },
         noopSwitch,
         {
-          opcode: "looks_thinkforsecs",
-        },
+          opcode: 'looks_thinkforsecs'
+        }
       ];
-      blockSwitches["looks_thinkforsecs"] = [
+      blockSwitches['looks_thinkforsecs'] = [
         {
-          opcode: "looks_say",
-          splitInputs: ["SECS"],
+          opcode: 'looks_say',
+          splitInputs: ['SECS']
         },
         {
-          opcode: "looks_think",
-          splitInputs: ["SECS"],
+          opcode: 'looks_think',
+          splitInputs: ['SECS']
         },
         {
-          opcode: "looks_sayforsecs",
+          opcode: 'looks_sayforsecs'
         },
-        noopSwitch,
+        noopSwitch
       ];
-      blockSwitches["looks_switchbackdropto"] = [
-        noopSwitch,
-        {
-          opcode: "looks_switchbackdroptoandwait",
-        },
-      ];
-      blockSwitches["looks_switchbackdroptoandwait"] = [
-        {
-          opcode: "looks_switchbackdropto",
-        },
-        noopSwitch,
-      ];
-      blockSwitches["looks_gotofrontback"] = [
+      blockSwitches['looks_switchbackdropto'] = [
         noopSwitch,
         {
-          opcode: "looks_goforwardbackwardlayers",
+          opcode: 'looks_switchbackdroptoandwait'
+        }
+      ];
+      blockSwitches['looks_switchbackdroptoandwait'] = [
+        {
+          opcode: 'looks_switchbackdropto'
+        },
+        noopSwitch
+      ];
+      blockSwitches['looks_gotofrontback'] = [
+        noopSwitch,
+        {
+          opcode: 'looks_goforwardbackwardlayers',
           remapInputName: {
-            FRONT_BACK: "FORWARD_BACKWARD",
+            FRONT_BACK: 'FORWARD_BACKWARD'
           },
           mapFieldValues: {
             FRONT_BACK: {
-              front: "forward",
-              back: "backward",
-            },
+              front: 'forward',
+              back: 'backward'
+            }
           },
           createInputs: {
             NUM: {
-              shadowType: "math_integer",
-              value: "1",
-            },
-          },
-        },
+              shadowType: 'math_integer',
+              value: '1'
+            }
+          }
+        }
       ];
-      blockSwitches["looks_goforwardbackwardlayers"] = [
+      blockSwitches['looks_goforwardbackwardlayers'] = [
         {
-          opcode: "looks_gotofrontback",
-          splitInputs: ["NUM"],
+          opcode: 'looks_gotofrontback',
+          splitInputs: ['NUM'],
           remapInputName: {
-            FORWARD_BACKWARD: "FRONT_BACK",
+            FORWARD_BACKWARD: 'FRONT_BACK'
           },
           mapFieldValues: {
             FORWARD_BACKWARD: {
-              forward: "front",
-              backward: "back",
-            },
-          },
+              forward: 'front',
+              backward: 'back'
+            }
+          }
         },
-        noopSwitch,
+        noopSwitch
       ];
     }
 
-    if (addon.settings.get("sound")) {
-      blockSwitches["sound_play"] = [
+    if (addon.settings.get('sound')) {
+      blockSwitches['sound_play'] = [
         noopSwitch,
         {
-          opcode: "sound_playuntildone",
-        },
+          opcode: 'sound_playuntildone'
+        }
       ];
-      blockSwitches["sound_playuntildone"] = [
+      blockSwitches['sound_playuntildone'] = [
         {
-          opcode: "sound_play",
+          opcode: 'sound_play'
         },
-        noopSwitch,
+        noopSwitch
       ];
-      blockSwitches["sound_seteffectto"] = [
+      blockSwitches['sound_seteffectto'] = [
         noopSwitch,
         {
-          opcode: "sound_changeeffectby",
-        },
+          opcode: 'sound_changeeffectby'
+        }
       ];
-      blockSwitches["sound_changeeffectby"] = [
+      blockSwitches['sound_changeeffectby'] = [
         {
-          opcode: "sound_seteffectto",
+          opcode: 'sound_seteffectto'
         },
-        noopSwitch,
+        noopSwitch
       ];
-      blockSwitches["sound_setvolumeto"] = [
+      blockSwitches['sound_setvolumeto'] = [
         noopSwitch,
         {
-          opcode: "sound_changevolumeby",
-        },
+          opcode: 'sound_changevolumeby'
+        }
       ];
-      blockSwitches["sound_changevolumeby"] = [
+      blockSwitches['sound_changevolumeby'] = [
         {
-          opcode: "sound_setvolumeto",
+          opcode: 'sound_setvolumeto'
         },
-        noopSwitch,
-      ];
-    }
-
-    if (addon.settings.get("event")) {
-      blockSwitches["event_broadcast"] = [
-        noopSwitch,
-        {
-          opcode: "event_broadcastandwait",
-        },
-      ];
-      blockSwitches["event_broadcastandwait"] = [
-        {
-          opcode: "event_broadcast",
-        },
-        noopSwitch,
+        noopSwitch
       ];
     }
 
-    if (addon.settings.get("control")) {
-      blockSwitches["control_if"] = [
+    if (addon.settings.get('event')) {
+      blockSwitches['event_broadcast'] = [
         noopSwitch,
         {
-          opcode: "control_if_else",
-        },
+          opcode: 'event_broadcastandwait'
+        }
       ];
-      blockSwitches["control_if_else"] = [
+      blockSwitches['event_broadcastandwait'] = [
         {
-          opcode: "control_if",
-          splitInputs: ["SUBSTACK2"],
+          opcode: 'event_broadcast'
         },
-        noopSwitch,
-      ];
-      blockSwitches["control_repeat_until"] = [
-        noopSwitch,
-        {
-          opcode: "control_wait_until",
-          splitInputs: ["SUBSTACK"],
-        },
-        {
-          opcode: "control_forever",
-          splitInputs: ["CONDITION"],
-        },
-      ];
-      blockSwitches["control_forever"] = [
-        {
-          opcode: "control_repeat_until",
-        },
-        noopSwitch,
-      ];
-      blockSwitches["control_wait_until"] = [
-        {
-          opcode: "control_repeat_until",
-        },
-        noopSwitch,
+        noopSwitch
       ];
     }
 
-    if (addon.settings.get("operator")) {
-      blockSwitches["operator_equals"] = [
-        {
-          opcode: "operator_gt",
-        },
+    if (addon.settings.get('control')) {
+      blockSwitches['control_if'] = [
         noopSwitch,
         {
-          opcode: "operator_lt",
-        },
+          opcode: 'control_if_else'
+        }
       ];
-      blockSwitches["operator_gt"] = [
-        noopSwitch,
+      blockSwitches['control_if_else'] = [
         {
-          opcode: "operator_equals",
+          opcode: 'control_if',
+          splitInputs: ['SUBSTACK2']
         },
-        {
-          opcode: "operator_lt",
-        },
+        noopSwitch
       ];
-      blockSwitches["operator_lt"] = [
-        {
-          opcode: "operator_gt",
-        },
-        {
-          opcode: "operator_equals",
-        },
+      blockSwitches['control_repeat_until'] = [
         noopSwitch,
+        {
+          opcode: 'control_wait_until',
+          splitInputs: ['SUBSTACK']
+        },
+        {
+          opcode: 'control_forever',
+          splitInputs: ['CONDITION']
+        }
       ];
-      blockSwitches["operator_add"] = [
-        noopSwitch,
+      blockSwitches['control_forever'] = [
         {
-          opcode: "operator_subtract",
+          opcode: 'control_repeat_until'
         },
-        {
-          opcode: "operator_multiply",
-        },
-        {
-          opcode: "operator_divide",
-        },
-        {
-          opcode: "operator_mod",
-        },
+        noopSwitch
       ];
-      blockSwitches["operator_subtract"] = [
+      blockSwitches['control_wait_until'] = [
         {
-          opcode: "operator_add",
+          opcode: 'control_repeat_until'
         },
-        noopSwitch,
-        {
-          opcode: "operator_multiply",
-        },
-        {
-          opcode: "operator_divide",
-        },
-        {
-          opcode: "operator_mod",
-        },
-      ];
-      blockSwitches["operator_multiply"] = [
-        {
-          opcode: "operator_add",
-        },
-        {
-          opcode: "operator_subtract",
-        },
-        noopSwitch,
-        {
-          opcode: "operator_divide",
-        },
-        {
-          opcode: "operator_mod",
-        },
-      ];
-      blockSwitches["operator_divide"] = [
-        {
-          opcode: "operator_add",
-        },
-        {
-          opcode: "operator_subtract",
-        },
-        {
-          opcode: "operator_multiply",
-        },
-        noopSwitch,
-        {
-          opcode: "operator_mod",
-        },
-      ];
-      blockSwitches["operator_mod"] = [
-        {
-          opcode: "operator_add",
-        },
-        {
-          opcode: "operator_subtract",
-        },
-        {
-          opcode: "operator_multiply",
-        },
-        {
-          opcode: "operator_divide",
-        },
-        noopSwitch,
-      ];
-      blockSwitches["operator_and"] = [
-        noopSwitch,
-        {
-          opcode: "operator_or",
-        },
-      ];
-      blockSwitches["operator_or"] = [
-        {
-          opcode: "operator_and",
-        },
-        noopSwitch,
+        noopSwitch
       ];
     }
 
-    if (addon.settings.get("sensing")) {
-      blockSwitches["sensing_mousex"] = [
-        noopSwitch,
+    if (addon.settings.get('operator')) {
+      blockSwitches['operator_equals'] = [
         {
-          opcode: "sensing_mousey",
-        },
-      ];
-      blockSwitches["sensing_mousey"] = [
-        {
-          opcode: "sensing_mousex",
+          opcode: 'operator_gt'
         },
         noopSwitch,
+        {
+          opcode: 'operator_lt'
+        }
       ];
-      blockSwitches["sensing_touchingcolor"] = [
+      blockSwitches['operator_gt'] = [
         noopSwitch,
         {
-          opcode: "sensing_coloristouchingcolor",
+          opcode: 'operator_equals'
+        },
+        {
+          opcode: 'operator_lt'
+        }
+      ];
+      blockSwitches['operator_lt'] = [
+        {
+          opcode: 'operator_gt'
+        },
+        {
+          opcode: 'operator_equals'
+        },
+        noopSwitch
+      ];
+      blockSwitches['operator_add'] = [
+        noopSwitch,
+        {
+          opcode: 'operator_subtract'
+        },
+        {
+          opcode: 'operator_multiply'
+        },
+        {
+          opcode: 'operator_divide'
+        },
+        {
+          opcode: 'operator_mod'
+        }
+      ];
+      blockSwitches['operator_subtract'] = [
+        {
+          opcode: 'operator_add'
+        },
+        noopSwitch,
+        {
+          opcode: 'operator_multiply'
+        },
+        {
+          opcode: 'operator_divide'
+        },
+        {
+          opcode: 'operator_mod'
+        }
+      ];
+      blockSwitches['operator_multiply'] = [
+        {
+          opcode: 'operator_add'
+        },
+        {
+          opcode: 'operator_subtract'
+        },
+        noopSwitch,
+        {
+          opcode: 'operator_divide'
+        },
+        {
+          opcode: 'operator_mod'
+        }
+      ];
+      blockSwitches['operator_divide'] = [
+        {
+          opcode: 'operator_add'
+        },
+        {
+          opcode: 'operator_subtract'
+        },
+        {
+          opcode: 'operator_multiply'
+        },
+        noopSwitch,
+        {
+          opcode: 'operator_mod'
+        }
+      ];
+      blockSwitches['operator_mod'] = [
+        {
+          opcode: 'operator_add'
+        },
+        {
+          opcode: 'operator_subtract'
+        },
+        {
+          opcode: 'operator_multiply'
+        },
+        {
+          opcode: 'operator_divide'
+        },
+        noopSwitch
+      ];
+      blockSwitches['operator_and'] = [
+        noopSwitch,
+        {
+          opcode: 'operator_or'
+        }
+      ];
+      blockSwitches['operator_or'] = [
+        {
+          opcode: 'operator_and'
+        },
+        noopSwitch
+      ];
+    }
+
+    if (addon.settings.get('sensing')) {
+      blockSwitches['sensing_mousex'] = [
+        noopSwitch,
+        {
+          opcode: 'sensing_mousey'
+        }
+      ];
+      blockSwitches['sensing_mousey'] = [
+        {
+          opcode: 'sensing_mousex'
+        },
+        noopSwitch
+      ];
+      blockSwitches['sensing_touchingcolor'] = [
+        noopSwitch,
+        {
+          opcode: 'sensing_coloristouchingcolor',
           createInputs: {
             COLOR2: {
-              shadowType: "colour_picker",
-              value: randomColor,
-            },
-          },
-        },
+              shadowType: 'colour_picker',
+              value: randomColor
+            }
+          }
+        }
       ];
-      blockSwitches["sensing_coloristouchingcolor"] = [
+      blockSwitches['sensing_coloristouchingcolor'] = [
         {
-          opcode: "sensing_touchingcolor",
-          splitInputs: ["COLOR2"],
+          opcode: 'sensing_touchingcolor',
+          splitInputs: ['COLOR2']
         },
-        noopSwitch,
+        noopSwitch
       ];
     }
 
-    if (addon.settings.get("data")) {
-      blockSwitches["data_setvariableto"] = [
+    if (addon.settings.get('data')) {
+      blockSwitches['data_setvariableto'] = [
         noopSwitch,
         {
-          opcode: "data_changevariableby",
-          remapShadowType: { VALUE: "math_number" },
-        },
+          opcode: 'data_changevariableby',
+          remapShadowType: { VALUE: 'math_number' }
+        }
       ];
-      blockSwitches["data_changevariableby"] = [
+      blockSwitches['data_changevariableby'] = [
         {
-          opcode: "data_setvariableto",
-          remapShadowType: { VALUE: "text" },
+          opcode: 'data_setvariableto',
+          remapShadowType: { VALUE: 'text' }
         },
-        noopSwitch,
+        noopSwitch
       ];
-      blockSwitches["data_showvariable"] = [
-        noopSwitch,
-        {
-          opcode: "data_hidevariable",
-        },
-      ];
-      blockSwitches["data_hidevariable"] = [
-        {
-          opcode: "data_showvariable",
-        },
-        noopSwitch,
-      ];
-      blockSwitches["data_showlist"] = [
+      blockSwitches['data_showvariable'] = [
         noopSwitch,
         {
-          opcode: "data_hidelist",
-        },
+          opcode: 'data_hidevariable'
+        }
       ];
-      blockSwitches["data_hidelist"] = [
+      blockSwitches['data_hidevariable'] = [
         {
-          opcode: "data_showlist",
+          opcode: 'data_showvariable'
         },
-        noopSwitch,
+        noopSwitch
       ];
-      blockSwitches["data_replaceitemoflist"] = [
-        noopSwitch,
-        {
-          opcode: "data_insertatlist",
-        },
-      ];
-      blockSwitches["data_insertatlist"] = [
-        {
-          opcode: "data_replaceitemoflist",
-        },
-        noopSwitch,
-      ];
-      blockSwitches["data_deleteoflist"] = [
+      blockSwitches['data_showlist'] = [
         noopSwitch,
         {
-          opcode: "data_deletealloflist",
-          splitInputs: ["INDEX"],
-        },
+          opcode: 'data_hidelist'
+        }
       ];
-      blockSwitches["data_deletealloflist"] = [
+      blockSwitches['data_hidelist'] = [
         {
-          opcode: "data_deleteoflist",
+          opcode: 'data_showlist'
+        },
+        noopSwitch
+      ];
+      blockSwitches['data_replaceitemoflist'] = [
+        noopSwitch,
+        {
+          opcode: 'data_insertatlist'
+        }
+      ];
+      blockSwitches['data_insertatlist'] = [
+        {
+          opcode: 'data_replaceitemoflist'
+        },
+        noopSwitch
+      ];
+      blockSwitches['data_deleteoflist'] = [
+        noopSwitch,
+        {
+          opcode: 'data_deletealloflist',
+          splitInputs: ['INDEX']
+        }
+      ];
+      blockSwitches['data_deletealloflist'] = [
+        {
+          opcode: 'data_deleteoflist',
           createInputs: {
             INDEX: {
-              shadowType: "math_integer",
-              value: "1",
-            },
-          },
+              shadowType: 'math_integer',
+              value: '1'
+            }
+          }
         },
-        noopSwitch,
+        noopSwitch
       ];
     }
 
-    if (addon.settings.get("extension")) {
-      blockSwitches["pen_penDown"] = [
+    if (addon.settings.get('extension')) {
+      blockSwitches['pen_penDown'] = [
         noopSwitch,
         {
-          opcode: "pen_penUp",
-        },
+          opcode: 'pen_penUp'
+        }
       ];
-      blockSwitches["pen_penUp"] = [
+      blockSwitches['pen_penUp'] = [
         {
-          opcode: "pen_penDown",
+          opcode: 'pen_penDown'
         },
-        noopSwitch,
+        noopSwitch
       ];
-      blockSwitches["pen_setPenColorParamTo"] = [
+      blockSwitches['pen_setPenColorParamTo'] = [
         noopSwitch,
         {
-          opcode: "pen_changePenColorParamBy",
-        },
+          opcode: 'pen_changePenColorParamBy'
+        }
       ];
-      blockSwitches["pen_changePenColorParamBy"] = [
+      blockSwitches['pen_changePenColorParamBy'] = [
         {
-          opcode: "pen_setPenColorParamTo",
+          opcode: 'pen_setPenColorParamTo'
         },
-        noopSwitch,
+        noopSwitch
       ];
-      blockSwitches["pen_setPenHueToNumber"] = [
+      blockSwitches['pen_setPenHueToNumber'] = [
         noopSwitch,
         {
-          opcode: "pen_changePenHueBy",
-        },
+          opcode: 'pen_changePenHueBy'
+        }
       ];
-      blockSwitches["pen_changePenHueBy"] = [
+      blockSwitches['pen_changePenHueBy'] = [
         {
-          opcode: "pen_setPenHueToNumber",
+          opcode: 'pen_setPenHueToNumber'
         },
-        noopSwitch,
+        noopSwitch
       ];
-      blockSwitches["pen_setPenShadeToNumber"] = [
+      blockSwitches['pen_setPenShadeToNumber'] = [
         noopSwitch,
         {
-          opcode: "pen_changePenShadeBy",
-        },
+          opcode: 'pen_changePenShadeBy'
+        }
       ];
-      blockSwitches["pen_changePenShadeBy"] = [
+      blockSwitches['pen_changePenShadeBy'] = [
         {
-          opcode: "pen_setPenShadeToNumber",
+          opcode: 'pen_setPenShadeToNumber'
         },
-        noopSwitch,
+        noopSwitch
       ];
-      blockSwitches["pen_setPenSizeTo"] = [
+      blockSwitches['pen_setPenSizeTo'] = [
         noopSwitch,
         {
-          opcode: "pen_changePenSizeBy",
-        },
+          opcode: 'pen_changePenSizeBy'
+        }
       ];
-      blockSwitches["pen_changePenSizeBy"] = [
+      blockSwitches['pen_changePenSizeBy'] = [
         {
-          opcode: "pen_setPenSizeTo",
+          opcode: 'pen_setPenSizeTo'
         },
-        noopSwitch,
+        noopSwitch
       ];
-      blockSwitches["music_setTempo"] = [
+      blockSwitches['music_setTempo'] = [
         noopSwitch,
         {
-          opcode: "music_changeTempo",
-        },
+          opcode: 'music_changeTempo'
+        }
       ];
-      blockSwitches["music_changeTempo"] = [
+      blockSwitches['music_changeTempo'] = [
         {
-          opcode: "music_setTempo",
+          opcode: 'music_setTempo'
         },
-        noopSwitch,
+        noopSwitch
       ];
     }
 
-    if (addon.settings.get("sa")) {
-      const logProc = "\u200B\u200Blog\u200B\u200B %s";
-      const warnProc = "\u200B\u200Bwarn\u200B\u200B %s";
-      const errorProc = "\u200B\u200Berror\u200B\u200B %s";
-      const logMessage = msg("debugger_log");
-      const warnMessage = msg("debugger_warn");
-      const errorMessage = msg("debugger_error");
+    if (addon.settings.get('sa')) {
+      const logProc = '\u200B\u200Blog\u200B\u200B %s';
+      const warnProc = '\u200B\u200Bwarn\u200B\u200B %s';
+      const errorProc = '\u200B\u200Berror\u200B\u200B %s';
+      const logMessage = msg('debugger_log');
+      const warnMessage = msg('debugger_warn');
+      const errorMessage = msg('debugger_error');
       const logSwitch = {
         mutate: {
-          proccode: logProc,
+          proccode: logProc
         },
-        msg: logMessage,
+        msg: logMessage
       };
       const warnSwitch = {
         mutate: {
-          proccode: warnProc,
+          proccode: warnProc
         },
-        msg: warnMessage,
+        msg: warnMessage
       };
       const errorSwitch = {
         mutate: {
-          proccode: errorProc,
+          proccode: errorProc
         },
-        msg: errorMessage,
+        msg: errorMessage
       };
       procedureSwitches[logProc] = [
         {
           msg: logMessage,
-          isNoop: true,
+          isNoop: true
         },
         warnSwitch,
-        errorSwitch,
+        errorSwitch
       ];
       procedureSwitches[warnProc] = [
         logSwitch,
         {
           msg: warnMessage,
-          isNoop: true,
+          isNoop: true
         },
-        errorSwitch,
+        errorSwitch
       ];
       procedureSwitches[errorProc] = [
         logSwitch,
         warnSwitch,
         {
           msg: errorMessage,
-          isNoop: true,
-        },
+          isNoop: true
+        }
       ];
     }
 
     // Switching for these is implemented by Scratch. We only define them here to optionally add a border.
     // Because we don't implement the switching ourselves, this is not controlled by the data category option.
-    blockSwitches["data_variable"] = [];
-    blockSwitches["data_listcontents"] = [];
+    blockSwitches['data_variable'] = [];
+    blockSwitches['data_listcontents'] = [];
   };
   buildSwitches();
-  addon.settings.addEventListener("change", buildSwitches);
+  addon.settings.addEventListener('change', buildSwitches);
 
   /**
    * @param {*} workspace
@@ -754,8 +754,8 @@ export default async function ({ addon, console, msg }) {
     // Similar to https://github.com/scratchfoundation/scratch-blocks/blob/7575c9a0f2c267676569c4b102b76d77f35d9fd6/core/workspace_svg.js#L1020
     // but without the collision checking.
     const block = ScratchBlocks.Xml.domToBlock(xmlBlock, workspace);
-    const x = +xmlBlock.getAttribute("x");
-    const y = +xmlBlock.getAttribute("y");
+    const x = +xmlBlock.getAttribute('x');
+    const y = +xmlBlock.getAttribute('y');
     // Don't need to handle RTL here
     block.moveBy(x, y);
     return block;
@@ -767,13 +767,13 @@ export default async function ({ addon, console, msg }) {
    */
   const getShadowFieldName = (shadowType) => {
     // This is non-comprehensive.
-    if (shadowType === "text") {
-      return "TEXT";
+    if (shadowType === 'text') {
+      return 'TEXT';
     }
-    if (shadowType === "colour_picker") {
-      return "COLOUR";
+    if (shadowType === 'colour_picker') {
+      return 'COLOUR';
     }
-    return "NUM";
+    return 'NUM';
   };
 
   /**
@@ -782,7 +782,7 @@ export default async function ({ addon, console, msg }) {
    * @returns {T}
    */
   const callIfFunction = (value) => {
-    if (typeof value === "function") {
+    if (typeof value === 'function') {
       return value();
     }
     return value;
@@ -794,7 +794,7 @@ export default async function ({ addon, console, msg }) {
     }
 
     if (opcodeData.fieldValue) {
-      block.setFieldValue(opcodeData.fieldValue, "VALUE");
+      block.setFieldValue(opcodeData.fieldValue, 'VALUE');
       return;
     }
 
@@ -832,10 +832,10 @@ export default async function ({ addon, console, msg }) {
       const xml = ScratchBlocks.Xml.blockToDom(block);
       // blockToDomWithXY's handling of RTL is strange, so we encode the position ourselves.
       const position = block.getRelativeToSurfaceXY();
-      xml.setAttribute("x", position.x);
-      xml.setAttribute("y", position.y);
+      xml.setAttribute('x', position.x);
+      xml.setAttribute('y', position.y);
       if (opcodeData.opcode) {
-        xml.setAttribute("type", opcodeData.opcode);
+        xml.setAttribute('type', opcodeData.opcode);
       }
 
       const parentBlock = block.getParent();
@@ -858,7 +858,7 @@ export default async function ({ addon, console, msg }) {
       // Array.from creates a clone of the children list. This is important as we may remove
       // children as we iterate.
       for (const child of Array.from(xml.children)) {
-        const oldName = child.getAttribute("name");
+        const oldName = child.getAttribute('name');
 
         // Any inputs that were supposed to be split that were not should be removed.
         // (eg. shadow inputs)
@@ -869,29 +869,29 @@ export default async function ({ addon, console, msg }) {
 
         const newName = opcodeData.remapInputName && opcodeData.remapInputName[oldName];
         if (newName) {
-          child.setAttribute("name", newName);
+          child.setAttribute('name', newName);
         }
 
         const newShadowType = opcodeData.remapShadowType && opcodeData.remapShadowType[oldName];
         if (newShadowType) {
           const valueNode = child.firstChild;
           const fieldNode = valueNode.firstChild;
-          valueNode.setAttribute("type", newShadowType);
-          fieldNode.setAttribute("name", getShadowFieldName(newShadowType));
+          valueNode.setAttribute('type', newShadowType);
+          fieldNode.setAttribute('name', getShadowFieldName(newShadowType));
         }
 
         const fieldValueMap = opcodeData.mapFieldValues && opcodeData.mapFieldValues[oldName];
-        if (fieldValueMap && child.tagName === "FIELD") {
+        if (fieldValueMap && child.tagName === 'FIELD') {
           const oldValue = child.innerText;
           const newValue = fieldValueMap[oldValue];
-          if (typeof newValue === "string") {
+          if (typeof newValue === 'string') {
             child.innerText = newValue;
           }
         }
       }
 
       if (opcodeData.mutate) {
-        const mutation = xml.querySelector("mutation");
+        const mutation = xml.querySelector('mutation');
         for (const [key, value] of Object.entries(opcodeData.mutate)) {
           mutation.setAttribute(key, value);
         }
@@ -899,14 +899,14 @@ export default async function ({ addon, console, msg }) {
 
       if (opcodeData.createInputs) {
         for (const [inputName, inputData] of Object.entries(opcodeData.createInputs)) {
-          const valueElement = document.createElement("value");
-          valueElement.setAttribute("name", inputName);
+          const valueElement = document.createElement('value');
+          valueElement.setAttribute('name', inputName);
 
-          const shadowElement = document.createElement("shadow");
-          shadowElement.setAttribute("type", inputData.shadowType);
+          const shadowElement = document.createElement('shadow');
+          shadowElement.setAttribute('type', inputData.shadowType);
 
-          const shadowFieldElement = document.createElement("field");
-          shadowFieldElement.setAttribute("name", getShadowFieldName(inputData.shadowType));
+          const shadowFieldElement = document.createElement('field');
+          shadowFieldElement.setAttribute('name', getShadowFieldName(inputData.shadowType));
           shadowFieldElement.innerText = callIfFunction(inputData.value);
 
           shadowElement.appendChild(shadowFieldElement);
@@ -917,16 +917,15 @@ export default async function ({ addon, console, msg }) {
 
       // 针对无限循环时的connection会因为不存在报错
       let savedNextBlockXml = null;
-      if(opcodeData.opcode === 'control_forever'){
+      if (opcodeData.opcode === 'control_forever') {
         const nextElement = xml.querySelector('next');
-        if(nextElement) {
+        if (nextElement) {
           savedNextBlockXml = nextElement.firstElementChild;
           savedNextBlockXml.setAttribute('x', Number(xml.getAttribute('x')) + 50);
           savedNextBlockXml.setAttribute('y', Number(xml.getAttribute('y')) + 10);
           nextElement.remove();
         }
       }
-      
 
       // Remove the old block and insert the new one.
       block.dispose();
@@ -962,56 +961,56 @@ export default async function ({ addon, console, msg }) {
         const type = block.type;
         let switches = blockSwitches[block.type] || [];
 
-        const customArgsMode = addon.settings.get("customargs") ? addon.settings.get("customargsmode") : "off";
+        const customArgsMode = addon.settings.get('customargs') ? addon.settings.get('customargsmode') : 'off';
         if (
-          customArgsMode !== "off" &&
-          ["argument_reporter_boolean", "argument_reporter_string_number"].includes(type) &&
+          customArgsMode !== 'off' &&
+          ['argument_reporter_boolean', 'argument_reporter_string_number'].includes(type) &&
           // if the arg is a shadow, it's in a procedures_prototype so we don't want it to be switchable
           !block.isShadow()
         ) {
           const customBlocks = getCustomBlocks();
-          if (customArgsMode === "all") {
+          if (customArgsMode === 'all') {
             switch (type) {
-              case "argument_reporter_string_number":
+              case 'argument_reporter_string_number':
                 switches = Object.values(customBlocks)
                   .map((cb) => cb.stringArgs)
                   .flat(1);
                 break;
-              case "argument_reporter_boolean":
+              case 'argument_reporter_boolean':
                 switches = Object.values(customBlocks)
                   .map((cb) => cb.boolArgs)
                   .flat(1);
                 break;
             }
-          } else if (customArgsMode === "defOnly") {
+          } else if (customArgsMode === 'defOnly') {
             const root = block.getRootBlock();
-            if (root.type !== "procedures_definition") return items;
+            if (root.type !== 'procedures_definition') return items;
             const customBlockObj = customBlocks[root.getChildren(true)[0].getProcCode()];
             switch (type) {
-              case "argument_reporter_string_number":
+              case 'argument_reporter_string_number':
                 switches = customBlockObj.stringArgs;
                 break;
-              case "argument_reporter_boolean":
+              case 'argument_reporter_boolean':
                 switches = customBlockObj.boolArgs;
                 break;
             }
           }
-          const currentValue = block.getFieldValue("VALUE");
+          const currentValue = block.getFieldValue('VALUE');
           switches = uniques(switches).map((i) => ({
             isNoop: i === currentValue,
             fieldValue: i,
-            msg: i,
+            msg: i
           }));
         }
 
-        if (block.type === "procedures_call") {
+        if (block.type === 'procedures_call') {
           const proccode = block.getProcCode();
           if (procedureSwitches[proccode]) {
             switches = procedureSwitches[proccode];
           }
         }
 
-        if (!addon.settings.get("noop")) {
+        if (!addon.settings.get('noop')) {
           switches = switches.filter((i) => !i.isNoop);
         }
 
@@ -1028,11 +1027,11 @@ export default async function ({ addon, console, msg }) {
             enabled: true,
             text,
             callback: menuCallbackFactory(block, opcodeData),
-            separator: i === 0,
+            separator: i === 0
           });
         });
 
-        if (block.type === "data_variable" || block.type === "data_listcontents") {
+        if (block.type === 'data_variable' || block.type === 'data_listcontents') {
           // Add top border to first variable (if it exists)
           const delBlockIndex = items.findIndex((item) => item.text === ScratchBlocks.Msg.DELETE_BLOCK);
           // firstVariableItem might be undefined, a variable to switch to,
@@ -1052,14 +1051,14 @@ export default async function ({ addon, console, msg }) {
     code
       .split(/(?=[^\\]%[nbs])/g)
       .map((i) => i.trim())
-      .filter((i) => i.charAt(0) === "%")
+      .filter((i) => i.charAt(0) === '%')
       .map((i) => i.substring(0, 2));
 
   const getCustomBlocks = () => {
     const customBlocks = {};
     const target = vm.editingTarget;
     Object.values(target.blocks._blocks)
-      .filter((block) => block.opcode === "procedures_prototype")
+      .filter((block) => block.opcode === 'procedures_prototype')
       .forEach((block) => {
         const procCode = block.mutation.proccode;
         const argumentNames = JSON.parse(block.mutation.argumentnames);
@@ -1068,7 +1067,7 @@ export default async function ({ addon, console, msg }) {
         const stringArgs = [];
         const boolArgs = [];
         for (let i = 0; i < argumentNames.length; i++) {
-          if (parsedArguments[i] === "%b") {
+          if (parsedArguments[i] === '%b') {
             boolArgs.push(argumentNames[i]);
           } else {
             stringArgs.push(argumentNames[i]);
@@ -1076,7 +1075,7 @@ export default async function ({ addon, console, msg }) {
         }
         customBlocks[procCode] = {
           stringArgs,
-          boolArgs,
+          boolArgs
         };
       });
     return customBlocks;

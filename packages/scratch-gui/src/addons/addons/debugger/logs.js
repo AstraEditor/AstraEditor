@@ -1,16 +1,16 @@
-import downloadBlob from "../../libraries/common/cs/download-blob.js";
-import LogView from "./log-view.js";
+import downloadBlob from '../../libraries/common/cs/download-blob.js';
+import LogView from './log-view.js';
 
 export default async function createLogsTab({ debug, addon, console, msg }) {
   const vm = addon.tab.traps.vm;
 
   const tab = debug.createHeaderTab({
-    text: msg("tab-logs"),
-    icon: addon.self.getResource("/icons/logs.svg") /* rewritten by pull.js */,
+    text: msg('tab-logs'),
+    icon: addon.self.getResource('/icons/logs.svg') /* rewritten by pull.js */
   });
 
   const logView = new LogView();
-  logView.placeholderElement.textContent = msg("no-logs");
+  logView.placeholderElement.textContent = msg('no-logs');
 
   const getInputOfBlock = (targetId, blockId) => {
     const target = vm.runtime.getTargetById(targetId);
@@ -25,23 +25,23 @@ export default async function createLogsTab({ debug, addon, console, msg }) {
   };
 
   logView.generateRow = (row) => {
-    const root = document.createElement("div");
-    root.className = "sa-debugger-log";
+    const root = document.createElement('div');
+    root.className = 'sa-debugger-log';
     if (row.internal) {
-      root.classList.add("sa-debugger-log-internal");
+      root.classList.add('sa-debugger-log-internal');
     }
     root.dataset.type = row.type;
 
-    const icon = document.createElement("div");
-    icon.className = "sa-debugger-log-icon";
-    if (row.type === "warn" || row.type === "error") {
-      icon.title = msg("icon-" + row.type);
+    const icon = document.createElement('div');
+    icon.className = 'sa-debugger-log-icon';
+    if (row.type === 'warn' || row.type === 'error') {
+      icon.title = msg('icon-' + row.type);
     }
     root.appendChild(icon);
 
-    const repeats = document.createElement("div");
-    repeats.className = "sa-debugger-log-repeats";
-    repeats.style.display = "none";
+    const repeats = document.createElement('div');
+    repeats.className = 'sa-debugger-log-repeats';
+    repeats.style.display = 'none';
     root.appendChild(repeats);
 
     if (row.preview && row.blockId && row.targetInfo) {
@@ -55,11 +55,11 @@ export default async function createLogsTab({ debug, addon, console, msg }) {
       }
     }
 
-    const text = document.createElement("div");
-    text.className = "sa-debugger-log-text";
+    const text = document.createElement('div');
+    text.className = 'sa-debugger-log-text';
     if (row.text.length === 0) {
-      text.classList.add("sa-debugger-log-text-empty");
-      text.textContent = msg("empty-string");
+      text.classList.add('sa-debugger-log-text-empty');
+      text.textContent = msg('empty-string');
     } else {
       text.textContent = row.text;
       text.title = row.text;
@@ -72,30 +72,30 @@ export default async function createLogsTab({ debug, addon, console, msg }) {
 
     return {
       root,
-      repeats,
+      repeats
     };
   };
 
   logView.renderRow = (elements, row) => {
     const { repeats } = elements;
     if (row.count > 1) {
-      repeats.style.display = "";
+      repeats.style.display = '';
       repeats.textContent = row.count;
     }
   };
 
   const exportButton = debug.createHeaderButton({
-    text: msg("export"),
-    icon: addon.self.getResource("/icons/download-white.svg") /* rewritten by pull.js */,
-    description: msg("export-desc"),
+    text: msg('export'),
+    icon: addon.self.getResource('/icons/download-white.svg') /* rewritten by pull.js */,
+    description: msg('export-desc')
   });
   const downloadText = (filename, text) => {
-    downloadBlob(filename, new Blob([text], { type: "text/plain" }));
+    downloadBlob(filename, new Blob([text], { type: 'text/plain' }));
   };
-  exportButton.element.addEventListener("click", async (e) => {
-    const defaultFormat = "{sprite}: {content} ({type})";
+  exportButton.element.addEventListener('click', async (e) => {
+    const defaultFormat = '{sprite}: {content} ({type})';
     const exportFormat = e.shiftKey
-      ? await addon.tab.prompt(msg("export"), msg("enter-format"), defaultFormat, { useEditorClasses: true })
+      ? await addon.tab.prompt(msg('export'), msg('enter-format'), defaultFormat, { useEditorClasses: true })
       : defaultFormat;
     if (!exportFormat) return;
     const file = logView.rows
@@ -105,22 +105,22 @@ export default async function createLogsTab({ debug, addon, console, msg }) {
             /\{(sprite|type|content)\}/g,
             (_, match) =>
               ({
-                sprite: targetInfo ? targetInfo.name : msg("unknown-sprite"),
+                sprite: targetInfo ? targetInfo.name : msg('unknown-sprite'),
                 type,
-                content: text,
+                content: text
               })[match]
-          ) + "\n"
+          ) + '\n'
         ).repeat(count)
       )
-      .join("");
-    downloadText("logs.txt", file);
+      .join('');
+    downloadText('logs.txt', file);
   });
 
   const trashButton = debug.createHeaderButton({
-    text: msg("clear"),
-    icon: addon.self.getResource("/icons/delete.svg") /* rewritten by pull.js */,
+    text: msg('clear'),
+    icon: addon.self.getResource('/icons/delete.svg') /* rewritten by pull.js */
   });
-  trashButton.element.addEventListener("click", () => {
+  trashButton.element.addEventListener('click', () => {
     clearLogs();
   });
 
@@ -136,7 +136,7 @@ export default async function createLogsTab({ debug, addon, console, msg }) {
       text,
       type,
       count: 1,
-      preview: true,
+      preview: true
     };
     if (thread) {
       log.blockId = thread.peekStack();
@@ -144,14 +144,14 @@ export default async function createLogsTab({ debug, addon, console, msg }) {
       log.targetId = targetId;
       log.targetInfo = debug.getTargetInfoById(targetId);
     }
-    if (type === "internal") {
+    if (type === 'internal') {
       log.internal = true;
       log.preview = false;
-      log.type = "log";
+      log.type = 'log';
     }
-    if (type === "internal-warn") {
+    if (type === 'internal-warn') {
       log.internal = true;
-      log.type = "warn";
+      log.type = 'warn';
     }
 
     const previousLog = logView.rows[logView.rows.length - 1];
@@ -186,6 +186,6 @@ export default async function createLogsTab({ debug, addon, console, msg }) {
     show,
     hide,
     addLog,
-    clearLogs,
+    clearLogs
   };
 }

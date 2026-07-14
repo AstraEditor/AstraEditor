@@ -1,31 +1,29 @@
 const manifest = {
-  "name": "Background",
-  "description": "Make your editor look brand new.",
-  "editorOnly": false,
-  "tags": [
-    "new"
-  ],
-  "info": [
+  name: 'Background',
+  description: 'Make your editor look brand new.',
+  editorOnly: false,
+  tags: ['new'],
+  info: [
     {
-      "type": "notice",
-      "text": "This may reduce performance",
-      "id": "reducePerformance"
+      type: 'notice',
+      text: 'This may reduce performance',
+      id: 'reducePerformance'
     }
   ],
-  "credits": [
+  credits: [
     {
-      "name": "KOSHINO",
-      "link": "https://github.com/KOSHINOawa"
+      name: 'KOSHINO',
+      link: 'https://github.com/KOSHINOawa'
     }
   ],
-  "userscripts": [
+  userscripts: [
     {
-      "url": "userscript.js"
+      url: 'userscript.js'
     }
   ],
-  "userstyles": [
+  userstyles: [
     {
-      "url": "style.css"
+      url: 'style.css'
     }
   ]
 };

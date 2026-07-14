@@ -12,26 +12,26 @@ const project = readFileToBuffer(uri);
 // By default Central Dispatch works with the Worker class built into the browser. Tell it to use TinyWorker instead.
 dispatch.workerClass = Worker;
 
-test('say/think and wait', t => {
-    const vm = new VirtualMachine();
-    vm.attachStorage(makeTestStorage());
+test('say/think and wait', (t) => {
+  const vm = new VirtualMachine();
+  vm.attachStorage(makeTestStorage());
 
-    // Start VM, load project, and run
-    t.doesNotThrow(() => {
-        vm.start();
-        vm.clear();
-        vm.setCompatibilityMode(false);
-        vm.setTurboMode(false);
-        vm.loadProject(project).then(() => {
-            vm.greenFlag();
+  // Start VM, load project, and run
+  t.doesNotThrow(() => {
+    vm.start();
+    vm.clear();
+    vm.setCompatibilityMode(false);
+    vm.setTurboMode(false);
+    vm.loadProject(project).then(() => {
+      vm.greenFlag();
 
-            // After two seconds, stop the project.
-            // The test will fail if the project throws.
-            setTimeout(() => {
-                vm.stopAll();
-                vm.quit();
-                t.end();
-            }, 2000);
-        });
+      // After two seconds, stop the project.
+      // The test will fail if the project throws.
+      setTimeout(() => {
+        vm.stopAll();
+        vm.quit();
+        t.end();
+      }, 2000);
     });
+  });
 });

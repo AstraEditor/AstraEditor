@@ -65,10 +65,9 @@ goog.require('Blockly.inject');
 goog.require('Blockly.utils');
 goog.require('goog.color');
 
-
 // Turn off debugging when compiled.
 /* eslint-disable no-unused-vars */
-var CLOSURE_DEFINES = {'goog.DEBUG': false};
+var CLOSURE_DEFINES = { 'goog.DEBUG': false };
 /* eslint-enable no-unused-vars */
 
 /**
@@ -117,9 +116,8 @@ Blockly.cache3dSupported_ = null;
  * @param {number} hue Hue on a colour wheel (0-360).
  * @return {string} RGB code, e.g. '#5ba65b'.
  */
-Blockly.hueToRgb = function(hue) {
-  return goog.color.hsvToHex(hue, Blockly.HSV_SATURATION,
-      Blockly.HSV_VALUE * 255);
+Blockly.hueToRgb = function (hue) {
+  return goog.color.hsvToHex(hue, Blockly.HSV_SATURATION, Blockly.HSV_VALUE * 255);
 };
 
 /**
@@ -127,7 +125,7 @@ Blockly.hueToRgb = function(hue) {
  * @param {!Element} svg SVG image.
  * @return {!Object} Contains width and height properties.
  */
-Blockly.svgSize = function(svg) {
+Blockly.svgSize = function (svg) {
   return {
     width: svg.cachedWidth_,
     height: svg.cachedHeight_
@@ -139,7 +137,7 @@ Blockly.svgSize = function(svg) {
  * scrollbars accordingly.
  * @param {!Blockly.WorkspaceSvg} workspace The workspace to resize.
  */
-Blockly.resizeSvgContents = function(workspace) {
+Blockly.resizeSvgContents = function (workspace) {
   workspace.resizeContents();
 };
 
@@ -151,7 +149,7 @@ Blockly.resizeSvgContents = function(workspace) {
  * Record the height/width of the SVG image.
  * @param {!Blockly.WorkspaceSvg} workspace Any workspace in the SVG.
  */
-Blockly.svgResize = function(workspace) {
+Blockly.svgResize = function (workspace) {
   var mainWorkspace = workspace;
   while (mainWorkspace.options.parentWorkspace) {
     mainWorkspace = mainWorkspace.options.parentWorkspace;
@@ -182,9 +180,12 @@ Blockly.svgResize = function(workspace) {
  */
 // TODO (https://github.com/google/blockly/issues/1998) handle cases where there are multiple workspaces
 // and non-main workspaces are able to accept input.
-Blockly.onKeyDown_ = function(e) {
-  if (Blockly.mainWorkspace.options.readOnly || Blockly.utils.isTargetInput(e)
-      || (Blockly.mainWorkspace.rendered && !Blockly.mainWorkspace.isVisible())) {
+Blockly.onKeyDown_ = function (e) {
+  if (
+    Blockly.mainWorkspace.options.readOnly ||
+    Blockly.utils.isTargetInput(e) ||
+    (Blockly.mainWorkspace.rendered && !Blockly.mainWorkspace.isVisible())
+  ) {
     // No key actions on readonly workspaces.
     // When focused on an HTML text input widget, don't trap any keys.
     // Ignore keypresses on rendered workspaces that have been explicitly
@@ -214,8 +215,7 @@ Blockly.onKeyDown_ = function(e) {
     if (Blockly.mainWorkspace.isDragging()) {
       return;
     }
-    if (Blockly.selected &&
-        Blockly.selected.isDeletable() && Blockly.selected.isMovable()) {
+    if (Blockly.selected && Blockly.selected.isDeletable() && Blockly.selected.isMovable()) {
       // Don't allow copying immovable or undeletable blocks. The next step
       // would be to paste, which would create additional undeletable/immovable
       // blocks on the workspace.
@@ -266,7 +266,7 @@ Blockly.onKeyDown_ = function(e) {
  *    to be copied.
  * @private
  */
-Blockly.copy_ = function(toCopy) {
+Blockly.copy_ = function (toCopy) {
   if (toCopy.isComment) {
     var xml = toCopy.toXmlWithXY();
   } else {
@@ -286,7 +286,7 @@ Blockly.copy_ = function(toCopy) {
  *     Workspace Comment to be copied.
  * @private
  */
-Blockly.duplicate_ = function(toDuplicate) {
+Blockly.duplicate_ = function (toDuplicate) {
   // Save the clipboard.
   var clipboardXml = Blockly.clipboardXml_;
   var clipboardSource = Blockly.clipboardSource_;
@@ -305,7 +305,7 @@ Blockly.duplicate_ = function(toDuplicate) {
  * @param {!Event} e Mouse down event.
  * @private
  */
-Blockly.onContextMenu_ = function(e) {
+Blockly.onContextMenu_ = function (e) {
   if (!Blockly.utils.isTargetInput(e)) {
     // When focused on an HTML text input widget, don't cancel the context menu.
     e.preventDefault();
@@ -316,7 +316,7 @@ Blockly.onContextMenu_ = function(e) {
  * Close tooltips, context menus, dropdown selections, etc.
  * @param {boolean=} opt_allowToolbox If true, don't close the toolbox.
  */
-Blockly.hideChaff = function(opt_allowToolbox) {
+Blockly.hideChaff = function (opt_allowToolbox) {
   Blockly.hideChaffInternal_(opt_allowToolbox);
   Blockly.WidgetDiv.hide(true);
 };
@@ -327,7 +327,7 @@ Blockly.hideChaff = function(opt_allowToolbox) {
  * move them.
  * @param {boolean=} opt_allowToolbox If true, don't close the toolbox.
  */
-Blockly.hideChaffOnResize = function(opt_allowToolbox) {
+Blockly.hideChaffOnResize = function (opt_allowToolbox) {
   Blockly.hideChaffInternal_(opt_allowToolbox);
   Blockly.WidgetDiv.repositionForWindowResize();
 };
@@ -338,14 +338,12 @@ Blockly.hideChaffOnResize = function(opt_allowToolbox) {
  * @param {boolean=} opt_allowToolbox If true, don't close the toolbox.
  * @private
  */
-Blockly.hideChaffInternal_ = function(opt_allowToolbox) {
+Blockly.hideChaffInternal_ = function (opt_allowToolbox) {
   Blockly.Tooltip.hide();
   Blockly.DropDownDiv.hideWithoutAnimation();
   if (!opt_allowToolbox) {
     var workspace = Blockly.getMainWorkspace();
-    if (workspace.toolbox_ &&
-        workspace.toolbox_.flyout_ &&
-        workspace.toolbox_.flyout_.autoClose) {
+    if (workspace.toolbox_ && workspace.toolbox_.flyout_ && workspace.toolbox_.flyout_.autoClose) {
       workspace.toolbox_.clearSelection();
     }
   }
@@ -357,7 +355,7 @@ Blockly.hideChaffInternal_ = function(opt_allowToolbox) {
  * Blockly instances on a page.
  * @return {!Blockly.Workspace} The main workspace.
  */
-Blockly.getMainWorkspace = function() {
+Blockly.getMainWorkspace = function () {
   return Blockly.mainWorkspace;
 };
 
@@ -367,7 +365,7 @@ Blockly.getMainWorkspace = function() {
  * @param {string} message The message to display to the user.
  * @param {function()=} opt_callback The callback when the alert is dismissed.
  */
-Blockly.alert = function(message, opt_callback) {
+Blockly.alert = function (message, opt_callback) {
   window.alert(message);
   if (opt_callback) {
     opt_callback();
@@ -380,7 +378,7 @@ Blockly.alert = function(message, opt_callback) {
  * @param {string} message The message to display to the user.
  * @param {!function(boolean)} callback The callback for handling user response.
  */
-Blockly.confirm = function(message, callback) {
+Blockly.confirm = function (message, callback) {
   callback(window.confirm(message));
 };
 
@@ -396,8 +394,7 @@ Blockly.confirm = function(message, callback) {
  * @param {?string} _opt_varType An optional variable type for variable specific
  *     prompt behavior.
  */
-Blockly.prompt = function(message, defaultValue, callback, _opt_title,
-    _opt_varType) {
+Blockly.prompt = function (message, defaultValue, callback, _opt_title, _opt_varType) {
   // opt_title and opt_varType are unused because we only need them to pass
   // information to the scratch-gui, which overwrites this function
   callback(window.prompt(message, defaultValue));
@@ -408,7 +405,7 @@ Blockly.prompt = function(message, defaultValue, callback, _opt_title,
  * should be overridden.
  * @param {string} id An identifier.
  */
-Blockly.statusButtonCallback = function(id) {
+Blockly.statusButtonCallback = function (id) {
   window.alert('status button was pressed for ' + id);
 };
 
@@ -416,7 +413,7 @@ Blockly.statusButtonCallback = function(id) {
  * Refresh the visual state of a status button in all extension category headers.
  * @param {Blockly.Workspace} workspace A workspace.
  */
-Blockly.refreshStatusButtons = function(workspace) {
+Blockly.refreshStatusButtons = function (workspace) {
   var buttons = workspace.getFlyout().buttons_;
   for (var i = 0; i < buttons.length; i++) {
     if (buttons[i] instanceof Blockly.FlyoutExtensionCategoryHeader) {
@@ -433,8 +430,8 @@ Blockly.refreshStatusButtons = function(workspace) {
  *     of jsonDef.
  * @private
  */
-Blockly.jsonInitFactory_ = function(jsonDef) {
-  return function() {
+Blockly.jsonInitFactory_ = function (jsonDef) {
+  return function () {
     this.jsonInit(jsonDef);
   };
 };
@@ -444,19 +441,15 @@ Blockly.jsonInitFactory_ = function(jsonDef) {
  * by the Blockly Developer Tools.
  * @param {!Array.<!Object>} jsonArray An array of JSON block definitions.
  */
-Blockly.defineBlocksWithJsonArray = function(jsonArray) {
+Blockly.defineBlocksWithJsonArray = function (jsonArray) {
   for (var i = 0; i < jsonArray.length; i++) {
     var elem = jsonArray[i];
     if (!elem) {
-      console.warn(
-          'Block definition #' + i + ' in JSON array is ' + elem + '. ' +
-          'Skipping.');
+      console.warn('Block definition #' + i + ' in JSON array is ' + elem + '. ' + 'Skipping.');
     } else {
       var typename = elem.type;
       if (typename == null || typename === '') {
-        console.warn(
-            'Block definition #' + i +
-            ' in JSON array is missing a type attribute. Skipping.');
+        console.warn('Block definition #' + i + ' in JSON array is missing a type attribute. Skipping.');
       } else {
         Blockly.Blocks[typename] = {
           init: Blockly.jsonInitFactory_(elem)
@@ -483,15 +476,14 @@ Blockly.defineBlocksWithJsonArray = function(jsonArray) {
  *     provided.
  * @return {!Array.<!Array>} Opaque data that can be passed to unbindEvent_.
  */
-Blockly.bindEventWithChecks_ = function(node, name, thisObject, func,
-    opt_noCaptureIdentifier, opt_noPreventDefault) {
+Blockly.bindEventWithChecks_ = function (node, name, thisObject, func, opt_noCaptureIdentifier, opt_noPreventDefault) {
   var handled = false;
-  var wrapFunc = function(e) {
+  var wrapFunc = function (e) {
     var captureIdentifier = !opt_noCaptureIdentifier;
     // Handle each touch point separately.  If the event was a mouse event, this
     // will hand back an array with one element, which we're fine handling.
     var events = Blockly.Touch.splitEventByTouches(e);
-    for (var i = 0, event; event = events[i]; i++) {
+    for (var i = 0, event; (event = events[i]); i++) {
       if (captureIdentifier && !Blockly.Touch.shouldHandleEvent(event)) {
         continue;
       }
@@ -510,7 +502,7 @@ Blockly.bindEventWithChecks_ = function(node, name, thisObject, func,
 
   // Add equivalent touch event.
   if (name in Blockly.Touch.TOUCH_MAP) {
-    var touchWrapFunc = function(e) {
+    var touchWrapFunc = function (e) {
       wrapFunc(e);
       // Calling preventDefault stops the browser from scrolling/zooming the
       // page.
@@ -519,14 +511,13 @@ Blockly.bindEventWithChecks_ = function(node, name, thisObject, func,
         e.preventDefault();
       }
     };
-    for (var i = 0, type; type = Blockly.Touch.TOUCH_MAP[name][i]; i++) {
+    for (var i = 0, type; (type = Blockly.Touch.TOUCH_MAP[name][i]); i++) {
       node.addEventListener(type, touchWrapFunc, false);
       bindData.push([node, type, touchWrapFunc]);
     }
   }
   return bindData;
 };
-
 
 /**
  * Bind an event to a function call.  Handles multitouch events by using the
@@ -541,8 +532,8 @@ Blockly.bindEventWithChecks_ = function(node, name, thisObject, func,
  * @return {!Array.<!Array>} Opaque data that can be passed to unbindEvent_.
  * @private
  */
-Blockly.bindEvent_ = function(node, name, thisObject, func) {
-  var wrapFunc = function(e) {
+Blockly.bindEvent_ = function (node, name, thisObject, func) {
+  var wrapFunc = function (e) {
     if (thisObject) {
       func.call(thisObject, e);
     } else {
@@ -555,7 +546,7 @@ Blockly.bindEvent_ = function(node, name, thisObject, func) {
 
   // Add equivalent touch event.
   if (name in Blockly.Touch.TOUCH_MAP) {
-    var touchWrapFunc = function(e) {
+    var touchWrapFunc = function (e) {
       // Punt on multitouch events.
       if (e.changedTouches.length == 1) {
         // Map the touch event's properties to the event.
@@ -568,7 +559,7 @@ Blockly.bindEvent_ = function(node, name, thisObject, func) {
       // Stop the browser from scrolling/zooming the page.
       e.preventDefault();
     };
-    for (var i = 0, type; type = Blockly.Touch.TOUCH_MAP[name][i]; i++) {
+    for (var i = 0, type; (type = Blockly.Touch.TOUCH_MAP[name][i]); i++) {
       node.addEventListener(type, touchWrapFunc, false);
       bindData.push([node, type, touchWrapFunc]);
     }
@@ -583,7 +574,7 @@ Blockly.bindEvent_ = function(node, name, thisObject, func) {
  * @return {!Function} The function call.
  * @private
  */
-Blockly.unbindEvent_ = function(bindData) {
+Blockly.unbindEvent_ = function (bindData) {
   while (bindData.length) {
     var bindDatum = bindData.pop();
     var node = bindDatum[0];
@@ -599,15 +590,15 @@ Blockly.unbindEvent_ = function(bindData) {
  * @param {string} str Input string.
  * @return {boolean} True if number, false otherwise.
  */
-Blockly.isNumber = function(str) {
+Blockly.isNumber = function (str) {
   return !!str.match(/^\s*-?\d+(\.\d+)?\s*$/);
 };
 
 // IE9 does not have a console.  Create a stub to stop errors.
 if (!goog.global['console']) {
   goog.global['console'] = {
-    'log': function() {},
-    'warn': function() {}
+    log: function () {},
+    warn: function () {}
   };
 }
 

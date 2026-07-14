@@ -9,7 +9,7 @@ let _isScratchDesktop; // undefined = not ready yet
  * @param {boolean} value - the new value which `isScratchDesktop()` should return in the future.
  */
 const setIsScratchDesktop = function (value) {
-    _isScratchDesktop = value;
+  _isScratchDesktop = value;
 };
 
 /**
@@ -17,19 +17,15 @@ const setIsScratchDesktop = function (value) {
  * If `setIsScratchDesktop()` has not yet been called, this can return `undefined`.
  */
 const isScratchDesktop = function () {
-    return _isScratchDesktop;
+  return _isScratchDesktop;
 };
 
 /**
  * @returns {boolean} - false if it seems like the GUI is running under Scratch Desktop; true otherwise.
  */
 const notScratchDesktop = function () {
-    return !isScratchDesktop();
+  return !isScratchDesktop();
 };
 
 export default isScratchDesktop;
-export {
-    isScratchDesktop,
-    notScratchDesktop,
-    setIsScratchDesktop
-};
+export { isScratchDesktop, notScratchDesktop, setIsScratchDesktop };

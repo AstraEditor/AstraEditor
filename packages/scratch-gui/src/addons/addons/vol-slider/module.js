@@ -63,7 +63,7 @@ export const setup = (vm) => {
   if (audioEngine) {
     gotAudioEngine(audioEngine);
   } else {
-    vm.runtime.once("PROJECT_LOADED", () => {
+    vm.runtime.once('PROJECT_LOADED', () => {
       gotAudioEngine(vm.runtime.audioEngine);
     });
   }

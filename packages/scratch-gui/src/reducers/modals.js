@@ -25,233 +25,233 @@ const MODAL_PREVIEW_EXT = 'previewExt';
 const MODAL_AE_FEATURES = 'aeFeaturesModal';
 
 const initialState = {
-    [MODAL_BACKDROP_LIBRARY]: false,
-    [MODAL_COSTUME_LIBRARY]: false,
-    [MODAL_EXTENSION_LIBRARY]: false,
-    [MODAL_EXTENSION_MANAGER]: false,
-    [MODAL_LOADING_PROJECT]: false,
-    [MODAL_TELEMETRY]: false,
-    [MODAL_SOUND_LIBRARY]: false,
-    [MODAL_SPRITE_LIBRARY]: false,
-    [MODAL_SOUND_RECORDER]: false,
-    [MODAL_CONNECTION]: false,
-    [MODAL_TIPS_LIBRARY]: false,
-    [MODAL_USERNAME]: false,
-    [MODAL_SETTINGS]: false,
-    [MODAL_CUSTOM_EXTENSION]: false,
-    [MODAL_RESTORE_POINTS]: false,
-    [MODAL_FONTS]: false,
-    [MODAL_UNKNOWN_PLATFORM]: false,
-    [MODAL_INVALID_PROJECT]: false,
-    [MODAL_README]: false,
-    [MODAL_PREVIEW_EXT]: false,
-    [MODAL_AE_FEATURES]: false
+  [MODAL_BACKDROP_LIBRARY]: false,
+  [MODAL_COSTUME_LIBRARY]: false,
+  [MODAL_EXTENSION_LIBRARY]: false,
+  [MODAL_EXTENSION_MANAGER]: false,
+  [MODAL_LOADING_PROJECT]: false,
+  [MODAL_TELEMETRY]: false,
+  [MODAL_SOUND_LIBRARY]: false,
+  [MODAL_SPRITE_LIBRARY]: false,
+  [MODAL_SOUND_RECORDER]: false,
+  [MODAL_CONNECTION]: false,
+  [MODAL_TIPS_LIBRARY]: false,
+  [MODAL_USERNAME]: false,
+  [MODAL_SETTINGS]: false,
+  [MODAL_CUSTOM_EXTENSION]: false,
+  [MODAL_RESTORE_POINTS]: false,
+  [MODAL_FONTS]: false,
+  [MODAL_UNKNOWN_PLATFORM]: false,
+  [MODAL_INVALID_PROJECT]: false,
+  [MODAL_README]: false,
+  [MODAL_PREVIEW_EXT]: false,
+  [MODAL_AE_FEATURES]: false
 };
 
 const reducer = function (state, action) {
-    if (typeof state === 'undefined') state = initialState;
-    switch (action.type) {
+  if (typeof state === 'undefined') state = initialState;
+  switch (action.type) {
     case OPEN_MODAL:
-        return Object.assign({}, state, {
-            [action.modal]: true
-        });
+      return Object.assign({}, state, {
+        [action.modal]: true
+      });
     case CLOSE_MODAL:
-        return Object.assign({}, state, {
-            [action.modal]: false
-        });
+      return Object.assign({}, state, {
+        [action.modal]: false
+      });
     default:
-        return state;
-    }
+      return state;
+  }
 };
 const openModal = function (modal) {
-    return {
-        type: OPEN_MODAL,
-        modal: modal
-    };
+  return {
+    type: OPEN_MODAL,
+    modal: modal
+  };
 };
 const closeModal = function (modal) {
-    return {
-        type: CLOSE_MODAL,
-        modal: modal
-    };
+  return {
+    type: CLOSE_MODAL,
+    modal: modal
+  };
 };
 const openBackdropLibrary = function () {
-    return openModal(MODAL_BACKDROP_LIBRARY);
+  return openModal(MODAL_BACKDROP_LIBRARY);
 };
 const openCostumeLibrary = function () {
-    return openModal(MODAL_COSTUME_LIBRARY);
+  return openModal(MODAL_COSTUME_LIBRARY);
 };
 const openExtensionLibrary = function () {
-    return openModal(MODAL_EXTENSION_LIBRARY);
+  return openModal(MODAL_EXTENSION_LIBRARY);
 };
 const openExtensionManager = function () {
-    return openModal(MODAL_EXTENSION_MANAGER);
+  return openModal(MODAL_EXTENSION_MANAGER);
 };
 const openPreviewExt = function () {
-    return openModal(MODAL_PREVIEW_EXT);
+  return openModal(MODAL_PREVIEW_EXT);
 };
 const openLoadingProject = function () {
-    return openModal(MODAL_LOADING_PROJECT);
+  return openModal(MODAL_LOADING_PROJECT);
 };
 const openTelemetryModal = function () {
-    return openModal(MODAL_TELEMETRY);
+  return openModal(MODAL_TELEMETRY);
 };
 const openSoundLibrary = function () {
-    return openModal(MODAL_SOUND_LIBRARY);
+  return openModal(MODAL_SOUND_LIBRARY);
 };
 const openSpriteLibrary = function () {
-    return openModal(MODAL_SPRITE_LIBRARY);
+  return openModal(MODAL_SPRITE_LIBRARY);
 };
 const openCustomTheme = function () {
-    return openModal(MODAL_CUSTOM_THEME);
+  return openModal(MODAL_CUSTOM_THEME);
 };
 const closePreviewExt = function () {
-    return closeModal(MODAL_PREVIEW_EXT);
+  return closeModal(MODAL_PREVIEW_EXT);
 };
 const closeCustomTheme = function () {
-    return closeModal(MODAL_CUSTOM_THEME);
+  return closeModal(MODAL_CUSTOM_THEME);
 };
 const openSoundRecorder = function () {
-    return openModal(MODAL_SOUND_RECORDER);
+  return openModal(MODAL_SOUND_RECORDER);
 };
 const openConnectionModal = function () {
-    return openModal(MODAL_CONNECTION);
+  return openModal(MODAL_CONNECTION);
 };
 const openTipsLibrary = function () {
-    return openModal(MODAL_TIPS_LIBRARY);
+  return openModal(MODAL_TIPS_LIBRARY);
 };
 const openUsernameModal = function () {
-    return openModal(MODAL_USERNAME);
+  return openModal(MODAL_USERNAME);
 };
 const openSettingsModal = function () {
-    return openModal(MODAL_SETTINGS);
+  return openModal(MODAL_SETTINGS);
 };
 const openCustomExtensionModal = function () {
-    return openModal(MODAL_CUSTOM_EXTENSION);
+  return openModal(MODAL_CUSTOM_EXTENSION);
 };
 const openRestorePointModal = function () {
-    return openModal(MODAL_RESTORE_POINTS);
+  return openModal(MODAL_RESTORE_POINTS);
 };
 const openFontsModal = function () {
-    return openModal(MODAL_FONTS);
+  return openModal(MODAL_FONTS);
 };
 const openReadme = function () {
-    return openModal(MODAL_README);
+  return openModal(MODAL_README);
 };
-const closeReadme = function() {
-    return closeModal(MODAL_README);
-}
+const closeReadme = function () {
+  return closeModal(MODAL_README);
+};
 const openUnknownPlatformModal = function () {
-    return openModal(MODAL_UNKNOWN_PLATFORM);
+  return openModal(MODAL_UNKNOWN_PLATFORM);
 };
 const openInvalidProjectModal = function () {
-    return openModal(MODAL_INVALID_PROJECT);
+  return openModal(MODAL_INVALID_PROJECT);
 };
 const openAeFeaturesModal = function () {
-    return openModal(MODAL_AE_FEATURES);
+  return openModal(MODAL_AE_FEATURES);
 };
 const closeAeFeaturesModal = function () {
-    return closeModal(MODAL_AE_FEATURES);
+  return closeModal(MODAL_AE_FEATURES);
 };
 const closeBackdropLibrary = function () {
-    return closeModal(MODAL_BACKDROP_LIBRARY);
+  return closeModal(MODAL_BACKDROP_LIBRARY);
 };
 const closeCostumeLibrary = function () {
-    return closeModal(MODAL_COSTUME_LIBRARY);
+  return closeModal(MODAL_COSTUME_LIBRARY);
 };
 const closeExtensionLibrary = function () {
-    return closeModal(MODAL_EXTENSION_LIBRARY);
+  return closeModal(MODAL_EXTENSION_LIBRARY);
 };
 const closeExtensionManager = function () {
-    return closeModal(MODAL_EXTENSION_MANAGER);
+  return closeModal(MODAL_EXTENSION_MANAGER);
 };
 const closeLoadingProject = function () {
-    return closeModal(MODAL_LOADING_PROJECT);
+  return closeModal(MODAL_LOADING_PROJECT);
 };
 const closeTelemetryModal = function () {
-    return closeModal(MODAL_TELEMETRY);
+  return closeModal(MODAL_TELEMETRY);
 };
 const closeSpriteLibrary = function () {
-    return closeModal(MODAL_SPRITE_LIBRARY);
+  return closeModal(MODAL_SPRITE_LIBRARY);
 };
 const closeSoundLibrary = function () {
-    return closeModal(MODAL_SOUND_LIBRARY);
+  return closeModal(MODAL_SOUND_LIBRARY);
 };
 const closeSoundRecorder = function () {
-    return closeModal(MODAL_SOUND_RECORDER);
+  return closeModal(MODAL_SOUND_RECORDER);
 };
 const closeTipsLibrary = function () {
-    return closeModal(MODAL_TIPS_LIBRARY);
+  return closeModal(MODAL_TIPS_LIBRARY);
 };
 const closeConnectionModal = function () {
-    return closeModal(MODAL_CONNECTION);
+  return closeModal(MODAL_CONNECTION);
 };
 const closeUsernameModal = function () {
-    return closeModal(MODAL_USERNAME);
+  return closeModal(MODAL_USERNAME);
 };
 const closeSettingsModal = function () {
-    return closeModal(MODAL_SETTINGS);
+  return closeModal(MODAL_SETTINGS);
 };
 const closeCustomExtensionModal = function () {
-    return closeModal(MODAL_CUSTOM_EXTENSION);
+  return closeModal(MODAL_CUSTOM_EXTENSION);
 };
 const closeRestorePointModal = function () {
-    return closeModal(MODAL_RESTORE_POINTS);
+  return closeModal(MODAL_RESTORE_POINTS);
 };
 const closeFontsModal = function () {
-    return closeModal(MODAL_FONTS);
+  return closeModal(MODAL_FONTS);
 };
 const closeUnknownPlatformModal = function () {
-    return closeModal(MODAL_UNKNOWN_PLATFORM);
+  return closeModal(MODAL_UNKNOWN_PLATFORM);
 };
 const closeInvalidProjectModal = function () {
-    return closeModal(MODAL_INVALID_PROJECT);
+  return closeModal(MODAL_INVALID_PROJECT);
 };
 export {
-    reducer as default,
-    initialState as modalsInitialState,
-    openBackdropLibrary,
-    openCostumeLibrary,
-    openExtensionLibrary,
-    openExtensionManager,
-    openLoadingProject,
-    openSoundLibrary,
-    openSpriteLibrary,
-    openSoundRecorder,
-    openTelemetryModal,
-    openTipsLibrary,
-    openConnectionModal,
-    openUsernameModal,
-    openSettingsModal,
-    openCustomExtensionModal,
-    openRestorePointModal,
-    openFontsModal,
-    openCustomTheme,
-    openUnknownPlatformModal,
-    openInvalidProjectModal,
-    openReadme,
-    openPreviewExt,
-    openAeFeaturesModal,
-    closeAeFeaturesModal,
-    closePreviewExt,
-    closeReadme,
-    closeBackdropLibrary,
-    closeCostumeLibrary,
-    closeExtensionLibrary,
-    closeExtensionManager,
-    closeLoadingProject,
-    closeSpriteLibrary,
-    closeSoundLibrary,
-    closeSoundRecorder,
-    closeTelemetryModal,
-    closeTipsLibrary,
-    closeConnectionModal,
-    closeUsernameModal,
-    closeSettingsModal,
-    closeCustomExtensionModal,
-    closeRestorePointModal,
-    closeFontsModal,
-    closeUnknownPlatformModal,
-    closeInvalidProjectModal,
-    closeCustomTheme
+  reducer as default,
+  initialState as modalsInitialState,
+  openBackdropLibrary,
+  openCostumeLibrary,
+  openExtensionLibrary,
+  openExtensionManager,
+  openLoadingProject,
+  openSoundLibrary,
+  openSpriteLibrary,
+  openSoundRecorder,
+  openTelemetryModal,
+  openTipsLibrary,
+  openConnectionModal,
+  openUsernameModal,
+  openSettingsModal,
+  openCustomExtensionModal,
+  openRestorePointModal,
+  openFontsModal,
+  openCustomTheme,
+  openUnknownPlatformModal,
+  openInvalidProjectModal,
+  openReadme,
+  openPreviewExt,
+  openAeFeaturesModal,
+  closeAeFeaturesModal,
+  closePreviewExt,
+  closeReadme,
+  closeBackdropLibrary,
+  closeCostumeLibrary,
+  closeExtensionLibrary,
+  closeExtensionManager,
+  closeLoadingProject,
+  closeSpriteLibrary,
+  closeSoundLibrary,
+  closeSoundRecorder,
+  closeTelemetryModal,
+  closeTipsLibrary,
+  closeConnectionModal,
+  closeUsernameModal,
+  closeSettingsModal,
+  closeCustomExtensionModal,
+  closeRestorePointModal,
+  closeFontsModal,
+  closeUnknownPlatformModal,
+  closeInvalidProjectModal,
+  closeCustomTheme
 };

@@ -6,72 +6,68 @@ import classNames from 'classnames';
 import styles from './menu-bar.css';
 
 class MenuLabel extends React.Component {
-    constructor (props) {
-        super(props);
-        bindAll(this, [
-            'handleClick',
-            'handleMouseUp',
-            'menuRef'
-        ]);
+  constructor(props) {
+    super(props);
+    bindAll(this, ['handleClick', 'handleMouseUp', 'menuRef']);
+  }
+  componentDidMount() {
+    if (this.props.open) this.addListeners();
+  }
+  componentDidUpdate(prevProps) {
+    if (this.props.open && !prevProps.open) this.addListeners();
+    if (!this.props.open && prevProps.open) this.removeListeners();
+  }
+  componentWillUnmount() {
+    this.removeListeners();
+  }
+  addListeners() {
+    document.addEventListener('mouseup', this.handleMouseUp);
+  }
+  removeListeners() {
+    document.removeEventListener('mouseup', this.handleMouseUp);
+  }
+  handleClick(e) {
+    // this is a bit sketchy, but we want to allow clicking on the menu itself and the images
+    // and text directly inside it, but not the items inside the menu, which are under the button
+    // in the DOM.
+    if (e.target.closest('div') === this.menuEl) {
+      if (this.props.open) {
+        this.props.onClose();
+      } else {
+        this.props.onOpen();
+      }
     }
-    componentDidMount () {
-        if (this.props.open) this.addListeners();
+  }
+  handleMouseUp(e) {
+    if (this.props.open && !this.menuEl.contains(e.target)) {
+      this.props.onClose();
     }
-    componentDidUpdate (prevProps) {
-        if (this.props.open && !prevProps.open) this.addListeners();
-        if (!this.props.open && prevProps.open) this.removeListeners();
-    }
-    componentWillUnmount () {
-        this.removeListeners();
-    }
-    addListeners () {
-        document.addEventListener('mouseup', this.handleMouseUp);
-    }
-    removeListeners () {
-        document.removeEventListener('mouseup', this.handleMouseUp);
-    }
-    handleClick (e) {
-        // this is a bit sketchy, but we want to allow clicking on the menu itself and the images
-        // and text directly inside it, but not the items inside the menu, which are under the button
-        // in the DOM.
-        if (e.target.closest('div') === this.menuEl) {
-            if (this.props.open) {
-                this.props.onClose();
-            } else {
-                this.props.onOpen();
-            }
-        }
-    }
-    handleMouseUp (e) {
-        if (this.props.open && !this.menuEl.contains(e.target)) {
-            this.props.onClose();
-        }
-    }
-    menuRef (c) {
-        this.menuEl = c;
-    }
-    render () {
-        return (
-            <div
-                className={classNames(styles.menuBarItem, styles.hoverable, {
-                    [styles.active]: this.props.open
-                })}
-                data-menu={this.props.dataMenu}
-                onClick={this.handleClick}
-                ref={this.menuRef}
-            >
-                {this.props.children}
-            </div>
-        );
-    }
+  }
+  menuRef(c) {
+    this.menuEl = c;
+  }
+  render() {
+    return (
+      <div
+        className={classNames(styles.menuBarItem, styles.hoverable, {
+          [styles.active]: this.props.open
+        })}
+        data-menu={this.props.dataMenu}
+        onClick={this.handleClick}
+        ref={this.menuRef}
+      >
+        {this.props.children}
+      </div>
+    );
+  }
 }
 
 MenuLabel.propTypes = {
-    children: PropTypes.node,
-    dataMenu: PropTypes.string,
-    open: PropTypes.bool,
-    onOpen: PropTypes.func,
-    onClose: PropTypes.func
+  children: PropTypes.node,
+  dataMenu: PropTypes.string,
+  open: PropTypes.bool,
+  onOpen: PropTypes.func,
+  onClose: PropTypes.func
 };
 
 export default MenuLabel;

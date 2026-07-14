@@ -10,8 +10,8 @@
  *     blocks_compressed +
  *     blocks_compressed_[horizontal, vertical] +
  *     msg/messages
-**/
+ **/
 module.exports = {
-    Horizontal: require('./horizontal'),
-    Vertical: require('./vertical')
+  Horizontal: require('./horizontal'),
+  Vertical: require('./vertical')
 };

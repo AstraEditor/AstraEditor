@@ -1,4 +1,4 @@
-import { addons, initialize } from "../paint-snap/compatibility.js";
+import { addons, initialize } from '../paint-snap/compatibility.js';
 
 export default async function ({ addon }) {
   const paper = await addon.tab.traps.getPaper();
@@ -34,12 +34,12 @@ export default async function ({ addon }) {
         let offcenterPosition;
         if (!this.skewCenter) {
           switch (this._getRectCornerNameByIndex(this.index)) {
-            case "topCenter":
-            case "leftCenter":
+            case 'topCenter':
+            case 'leftCenter':
               offcenterPosition = this.itemGroup.position.add(new paper.Point(bounds.width / 2, bounds.height / 2));
               break;
-            case "bottomCenter":
-            case "rightCenter":
+            case 'bottomCenter':
+            case 'rightCenter':
               offcenterPosition = this.itemGroup.position.subtract(
                 new paper.Point(bounds.width / 2, bounds.height / 2)
               );
@@ -84,18 +84,18 @@ export default async function ({ addon }) {
 
         const delta = event.point.subtract(this.pivot);
         switch (this._getRectCornerNameByIndex(this.index)) {
-          case "topCenter":
+          case 'topCenter':
             delta.x *= -1;
             delta.y = 0;
             break;
-          case "bottomCenter":
+          case 'bottomCenter':
             delta.y = 0;
             break;
-          case "leftCenter":
+          case 'leftCenter':
             delta.y *= -1;
             delta.x = 0;
             break;
-          case "rightCenter":
+          case 'rightCenter':
             delta.x = 0;
             break;
           default:
@@ -118,11 +118,11 @@ export default async function ({ addon }) {
   };
 
   addon.tab.redux.initialize();
-  addon.tab.redux.addEventListener("statechanged", (e) => {
+  addon.tab.redux.addEventListener('statechanged', (e) => {
     const action = e.detail.action;
     if (
-      action.type === "scratch-paint/modes/CHANGE_MODE" &&
-      (action.mode === "BIT_SELECT" || action.mode === "SELECT")
+      action.type === 'scratch-paint/modes/CHANGE_MODE' &&
+      (action.mode === 'BIT_SELECT' || action.mode === 'SELECT')
     ) {
       addSkew();
     }

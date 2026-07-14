@@ -26,13 +26,12 @@
 
 goog.provide('Blockly.BlockAnimations');
 
-
 /**
  * Play some UI effects (sound, animation) when disposing of a block.
  * @param {!Blockly.BlockSvg} block The block being disposed of.
  * @package
  */
-Blockly.BlockAnimations.disposeUiEffect = function(block) {
+Blockly.BlockAnimations.disposeUiEffect = function (block) {
   var workspace = block.workspace;
   var svgGroup = block.getSvgRoot();
   workspace.getAudioManager().play('delete');
@@ -46,8 +45,7 @@ Blockly.BlockAnimations.disposeUiEffect = function(block) {
   workspace.getParentSvg().appendChild(clone);
   clone.bBox_ = clone.getBBox();
   // Start the animation.
-  Blockly.BlockAnimations.disposeUiStep_(clone, workspace.RTL, new Date,
-      workspace.scale);
+  Blockly.BlockAnimations.disposeUiStep_(clone, workspace.RTL, new Date(), workspace.scale);
 };
 
 /**
@@ -60,21 +58,17 @@ Blockly.BlockAnimations.disposeUiEffect = function(block) {
  * @param {number} workspaceScale Scale of workspace.
  * @private
  */
-Blockly.BlockAnimations.disposeUiStep_ = function(clone, rtl, start,
-    workspaceScale) {
-  var ms = new Date - start;
+Blockly.BlockAnimations.disposeUiStep_ = function (clone, rtl, start, workspaceScale) {
+  var ms = new Date() - start;
   var percent = ms / 150;
   if (percent > 1) {
     goog.dom.removeNode(clone);
   } else {
-    var x = clone.translateX_ +
-        (rtl ? -1 : 1) * clone.bBox_.width * workspaceScale / 2 * percent;
+    var x = clone.translateX_ + (((rtl ? -1 : 1) * clone.bBox_.width * workspaceScale) / 2) * percent;
     var y = clone.translateY_ + clone.bBox_.height * workspaceScale * percent;
     var scale = (1 - percent) * workspaceScale;
-    clone.setAttribute('transform', 'translate(' + x + ',' + y + ')' +
-        ' scale(' + scale + ')');
-    setTimeout(Blockly.BlockAnimations.disposeUiStep_, 10, clone, rtl, start,
-        workspaceScale);
+    clone.setAttribute('transform', 'translate(' + x + ',' + y + ')' + ' scale(' + scale + ')');
+    setTimeout(Blockly.BlockAnimations.disposeUiStep_, 10, clone, rtl, start, workspaceScale);
   }
 };
 
@@ -83,7 +77,7 @@ Blockly.BlockAnimations.disposeUiStep_ = function(clone, rtl, start,
  * @param {!Blockly.BlockSvg} block The block being connected.
  * @package
  */
-Blockly.BlockAnimations.connectionUiEffect = function(block) {
+Blockly.BlockAnimations.connectionUiEffect = function (block) {
   block.workspace.getAudioManager().play('click');
 };
 
@@ -93,15 +87,14 @@ Blockly.BlockAnimations.connectionUiEffect = function(block) {
  * @param {!Blockly.BlockSvg} _block The block being disconnected.
  * @package
  */
-Blockly.BlockAnimations.disconnectUiEffect = function(
-    /* eslint-disable no-unused-vars */ _block
-    /* eslint-enable no-unused-vars */) {
-};
+Blockly.BlockAnimations.disconnectUiEffect = function (
+  /* eslint-disable no-unused-vars */ _block
+  /* eslint-enable no-unused-vars */
+) {};
 
 /**
  * Stop the disconnect UI animation immediately.
  * No-op in scratch-blocks, which has no disconnect animation.
  * @package
  */
-Blockly.BlockAnimations.disconnectUiStop = function() {
-};
+Blockly.BlockAnimations.disconnectUiStop = function () {};

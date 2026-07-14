@@ -5,19 +5,19 @@ import ToolSelectComponent from '../tool-select-base/tool-select-base.jsx';
 
 import textIcon from './text.svg';
 
-const TextModeComponent = props => (
-    <ToolSelectComponent
-        imgDescriptor={messages.text}
-        imgSrc={textIcon}
-        isSelected={props.isSelected}
-        onMouseDown={props.onMouseDown}
-        keybinding="T"
-    />
+const TextModeComponent = (props) => (
+  <ToolSelectComponent
+    imgDescriptor={messages.text}
+    imgSrc={textIcon}
+    isSelected={props.isSelected}
+    onMouseDown={props.onMouseDown}
+    keybinding="T"
+  />
 );
 
 TextModeComponent.propTypes = {
-    isSelected: PropTypes.bool.isRequired,
-    onMouseDown: PropTypes.func.isRequired
+  isSelected: PropTypes.bool.isRequired,
+  onMouseDown: PropTypes.func.isRequired
 };
 
 export default TextModeComponent;

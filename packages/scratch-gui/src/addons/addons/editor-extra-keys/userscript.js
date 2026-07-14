@@ -9,68 +9,68 @@ export default async function ({ addon, msg }) {
     if (!addon.self.disabled) {
       keys.push(
         ...[
-          ["-", "-"],
-          [",", ","],
-          [".", "."],
+          ['-', '-'],
+          [',', ','],
+          ['.', '.']
         ]
       );
-      keys.splice(5, 0, [msg("enter-key"), "enter"]);
-      if (addon.settings.get("experimentalKeys")) {
+      keys.splice(5, 0, [msg('enter-key'), 'enter']);
+      if (addon.settings.get('experimentalKeys')) {
         keys.push(
           ...[
-            ["`", "`"],
-            ["=", "="],
-            ["[", "["],
-            ["]", "]"],
-            ["\\", "\\"],
-            [";", ";"],
+            ['`', '`'],
+            ['=', '='],
+            ['[', '['],
+            [']', ']'],
+            ['\\', '\\'],
+            [';', ';'],
             ["'", "'"],
-            ["/", "/"],
+            ['/', '/']
           ]
         );
       }
-      if (enableShiftKeys && addon.settings.get("shiftKeys")) {
+      if (enableShiftKeys && addon.settings.get('shiftKeys')) {
         keys.push(
           ...[
-            ["!", "!"],
-            ["@", "@"],
-            ["#", "#"],
-            ["$", "$"],
-            ["%", "%"],
-            ["^", "^"],
-            ["&", "&"],
-            ["*", "*"],
-            ["(", "("],
-            [")", ")"],
-            ["_", "_"],
-            ["+", "+"],
-            ["{", "{"],
-            ["}", "}"],
-            ["|", "|"],
-            [":", ":"],
+            ['!', '!'],
+            ['@', '@'],
+            ['#', '#'],
+            ['$', '$'],
+            ['%', '%'],
+            ['^', '^'],
+            ['&', '&'],
+            ['*', '*'],
+            ['(', '('],
+            [')', ')'],
+            ['_', '_'],
+            ['+', '+'],
+            ['{', '{'],
+            ['}', '}'],
+            ['|', '|'],
+            [':', ':'],
             ['"', '"'],
-            ["?", "?"],
-            ["<", "<"],
-            [">", ">"],
-            ["~", "~"],
+            ['?', '?'],
+            ['<', '<'],
+            ['>', '>'],
+            ['~', '~']
           ]
         );
       }
-      if (addon.settings.get("twKeys")) {
+      if (addon.settings.get('twKeys')) {
         keys.push(
           ...[
-            ["backspace", "backspace"],
-            ["delete", "delete"],
-            ["shift", "shift"],
-            ["caps lock", "caps lock"],
-            ["scroll lock", "scroll lock"],
-            ["control", "control"],
-            ["escape", "escape"],
-            ["insert", "insert"],
-            ["home", "home"],
-            ["end", "end"],
-            ["page up", "page up"],
-            ["page down", "page down"],
+            ['backspace', 'backspace'],
+            ['delete', 'delete'],
+            ['shift', 'shift'],
+            ['caps lock', 'caps lock'],
+            ['scroll lock', 'scroll lock'],
+            ['control', 'control'],
+            ['escape', 'escape'],
+            ['insert', 'insert'],
+            ['home', 'home'],
+            ['end', 'end'],
+            ['page up', 'page up'],
+            ['page down', 'page down']
           ]
         );
       }
@@ -78,13 +78,13 @@ export default async function ({ addon, msg }) {
     return keys;
   }
 
-  for (const opcode of ["sensing_keyoptions", "event_whenkeypressed"]) {
+  for (const opcode of ['sensing_keyoptions', 'event_whenkeypressed']) {
     const block = ScratchBlocks.Blocks[opcode];
     const originalInit = block.init;
     block.init = function (...args) {
       const originalJsonInit = this.jsonInit;
       this.jsonInit = function (obj) {
-        appendKeys(obj.args0[0].options, opcode === "event_whenkeypressed");
+        appendKeys(obj.args0[0].options, opcode === 'event_whenkeypressed');
         return originalJsonInit.call(this, obj);
       };
       return originalInit.call(this, ...args);
@@ -97,7 +97,7 @@ export default async function ({ addon, msg }) {
     if (workspace && flyout) {
       const allBlocks = [...workspace.getAllBlocks(), ...flyout.getWorkspace().getAllBlocks()];
       for (const block of allBlocks) {
-        if (block.type !== "event_whenkeypressed" && block.type !== "sensing_keyoptions") {
+        if (block.type !== 'event_whenkeypressed' && block.type !== 'sensing_keyoptions') {
           continue;
         }
         const input = block.inputList[0];
@@ -110,14 +110,14 @@ export default async function ({ addon, msg }) {
         }
         field.menuGenerator_ = appendKeys(
           defaultKeys ? [...defaultKeys] : field.menuGenerator_,
-          block.type === "event_whenkeypressed"
+          block.type === 'event_whenkeypressed'
         );
       }
     }
   };
 
   updateExistingBlocks();
-  addon.settings.addEventListener("change", updateExistingBlocks);
-  addon.self.addEventListener("disabled", updateExistingBlocks);
-  addon.self.addEventListener("reenabled", updateExistingBlocks);
+  addon.settings.addEventListener('change', updateExistingBlocks);
+  addon.self.addEventListener('disabled', updateExistingBlocks);
+  addon.self.addEventListener('reenabled', updateExistingBlocks);
 }

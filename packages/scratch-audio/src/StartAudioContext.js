@@ -4,7 +4,7 @@
 const StartAudioContext = require('@turbowarp/startaudiocontext');
 
 module.exports = function (context) {
-    if (typeof document !== 'undefined') {
-        return StartAudioContext(context);
-    }
+  if (typeof document !== 'undefined') {
+    return StartAudioContext(context);
+  }
 };

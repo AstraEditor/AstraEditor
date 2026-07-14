@@ -37,7 +37,7 @@ goog.require('Blockly.DropDownDiv');
  * @extends {Blockly.Field}
  * @constructor
  */
-Blockly.FieldIconMenu = function(icons) {
+Blockly.FieldIconMenu = function (icons) {
   /** @type {object} */
   this.icons_ = icons;
   // Example:
@@ -56,7 +56,7 @@ goog.inherits(Blockly.FieldIconMenu, Blockly.Field);
  * @package
  * @nocollapse
  */
-Blockly.FieldIconMenu.fromJson = function(element) {
+Blockly.FieldIconMenu.fromJson = function (element) {
   return new Blockly.FieldIconMenu(element['options']);
 };
 
@@ -78,7 +78,7 @@ Blockly.FieldIconMenu.savedPrimary_ = null;
  * Called when the field is placed on a block.
  * @param {Block} block The owning block.
  */
-Blockly.FieldIconMenu.prototype.init = function(block) {
+Blockly.FieldIconMenu.prototype.init = function (block) {
   if (this.fieldGroup_) {
     // Icon menu has already been initialized once.
     return;
@@ -96,12 +96,15 @@ Blockly.FieldIconMenu.prototype.init = function(block) {
   }
   /** @type {Element} */
   this.arrowIcon_ = Blockly.utils.createSvgElement('image', {
-    'height': arrowSize + 'px',
-    'width': arrowSize + 'px',
-    'transform': 'translate(' + this.arrowX_ + ',' + this.arrowY_ + ')'
+    height: arrowSize + 'px',
+    width: arrowSize + 'px',
+    transform: 'translate(' + this.arrowX_ + ',' + this.arrowY_ + ')'
   });
-  this.arrowIcon_.setAttributeNS('http://www.w3.org/1999/xlink',
-      'xlink:href', Blockly.mainWorkspace.options.pathToMedia + 'dropdown-arrow.svg');
+  this.arrowIcon_.setAttributeNS(
+    'http://www.w3.org/1999/xlink',
+    'xlink:href',
+    Blockly.mainWorkspace.options.pathToMedia + 'dropdown-arrow.svg'
+  );
   block.getSvgRoot().appendChild(this.arrowIcon_);
   Blockly.FieldIconMenu.superClass_.init.call(this, block);
 };
@@ -113,17 +116,16 @@ Blockly.FieldIconMenu.prototype.init = function(block) {
 Blockly.FieldIconMenu.prototype.CURSOR = 'default';
 
 /**
-* Set the language-neutral value for this icon drop-down menu.
+ * Set the language-neutral value for this icon drop-down menu.
  * @param {?string} newValue New value.
  * @override
  */
-Blockly.FieldIconMenu.prototype.setValue = function(newValue) {
+Blockly.FieldIconMenu.prototype.setValue = function (newValue) {
   if (newValue === null || newValue === this.value_) {
-    return;  // No change
+    return; // No change
   }
   if (this.sourceBlock_ && Blockly.Events.isEnabled()) {
-    Blockly.Events.fire(new Blockly.Events.Change(
-        this.sourceBlock_, 'field', this.name, this.value_, newValue));
+    Blockly.Events.fire(new Blockly.Events.Change(this.sourceBlock_, 'field', this.name, this.value_, newValue));
   }
   this.value_ = newValue;
   // Find the relevant icon in this.icons_ to get the image src.
@@ -131,19 +133,19 @@ Blockly.FieldIconMenu.prototype.setValue = function(newValue) {
 };
 
 /**
-* Find the parent block's FieldImage and set its src.
+ * Find the parent block's FieldImage and set its src.
  * @param {?string} src New src for the parent block FieldImage.
  * @private
  */
-Blockly.FieldIconMenu.prototype.setParentFieldImage = function(src) {
+Blockly.FieldIconMenu.prototype.setParentFieldImage = function (src) {
   // Only attempt if we have a set sourceBlock_ and parentBlock_
   // It's possible that this function could be called before
   // a parent block is set; in that case, fail silently.
   if (this.sourceBlock_ && this.sourceBlock_.parentBlock_) {
     var parentBlock = this.sourceBlock_.parentBlock_;
     // Loop through all inputs' fields to find the first FieldImage
-    for (var i = 0, input; input = parentBlock.inputList[i]; i++) {
-      for (var j = 0, field; field = input.fieldRow[j]; j++) {
+    for (var i = 0, input; (input = parentBlock.inputList[i]); i++) {
+      for (var j = 0, field; (field = input.fieldRow[j]); j++) {
         if (field instanceof Blockly.FieldImage) {
           // Src for a FieldImage is stored in its value.
           field.setValue(src);
@@ -158,7 +160,7 @@ Blockly.FieldIconMenu.prototype.setParentFieldImage = function(src) {
  * Get the language-neutral value from this drop-down menu.
  * @return {string} Current language-neutral value.
  */
-Blockly.FieldIconMenu.prototype.getValue = function() {
+Blockly.FieldIconMenu.prototype.getValue = function () {
   return this.value_;
 };
 
@@ -167,8 +169,8 @@ Blockly.FieldIconMenu.prototype.getValue = function() {
  * @param {string} value Language-neutral value to look up.
  * @return {string} Src to image representing value
  */
-Blockly.FieldIconMenu.prototype.getSrcForValue = function(value) {
-  for (var i = 0, icon; icon = this.icons_[i]; i++) {
+Blockly.FieldIconMenu.prototype.getSrcForValue = function (value) {
+  for (var i = 0, icon; (icon = this.icons_[i]); i++) {
     if (icon.value === value) {
       return icon.src;
     }
@@ -179,7 +181,7 @@ Blockly.FieldIconMenu.prototype.getSrcForValue = function(value) {
  * Show the drop-down menu for editing this field.
  * @private
  */
-Blockly.FieldIconMenu.prototype.showEditor_ = function() {
+Blockly.FieldIconMenu.prototype.showEditor_ = function () {
   // If there is an existing drop-down we own, this is a request to hide the drop-down.
   if (Blockly.DropDownDiv.hideIfOwner(this)) {
     return;
@@ -192,7 +194,7 @@ Blockly.FieldIconMenu.prototype.showEditor_ = function() {
   // Accessibility properties
   contentDiv.setAttribute('role', 'menu');
   contentDiv.setAttribute('aria-haspopup', 'true');
-  for (var i = 0, icon; icon = this.icons_[i]; i++) {
+  for (var i = 0, icon; (icon = this.icons_[i]); i++) {
     // Icons with the type property placeholder take up space but don't have any functionality
     // Use for special-case layouts
     if (icon.type == 'placeholder') {
@@ -223,15 +225,15 @@ Blockly.FieldIconMenu.prototype.showEditor_ = function() {
     // These are applied manually instead of using the :hover pseudoclass
     // because Android has a bad long press "helper" menu and green highlight
     // that we must prevent with ontouchstart preventDefault
-    Blockly.bindEvent_(button, 'mousedown', button, function(e) {
+    Blockly.bindEvent_(button, 'mousedown', button, function (e) {
       this.setAttribute('class', 'blocklyDropDownButton blocklyDropDownButtonHover');
       e.preventDefault();
     });
-    Blockly.bindEvent_(button, 'mouseover', button, function() {
+    Blockly.bindEvent_(button, 'mouseover', button, function () {
       this.setAttribute('class', 'blocklyDropDownButton blocklyDropDownButtonHover');
       contentDiv.setAttribute('aria-activedescendant', this.id);
     });
-    Blockly.bindEvent_(button, 'mouseout', button, function() {
+    Blockly.bindEvent_(button, 'mouseout', button, function () {
       this.setAttribute('class', 'blocklyDropDownButton');
       contentDiv.removeAttribute('aria-activedescendant');
     });
@@ -252,25 +254,29 @@ Blockly.FieldIconMenu.prototype.showEditor_ = function() {
 
   // Update source block colour to look selected
   this.savedPrimary_ = this.sourceBlock_.getColour();
-  this.sourceBlock_.setColour(this.sourceBlock_.getColourSecondary(),
-      this.sourceBlock_.getColourSecondary(),
-      this.sourceBlock_.getColourTertiary(),
-      this.sourceBlock_.getColourQuaternary());
+  this.sourceBlock_.setColour(
+    this.sourceBlock_.getColourSecondary(),
+    this.sourceBlock_.getColourSecondary(),
+    this.sourceBlock_.getColourTertiary(),
+    this.sourceBlock_.getColourQuaternary()
+  );
 
   var scale = this.sourceBlock_.workspace.scale;
   // Offset for icon-type horizontal blocks.
-  var secondaryYOffset = (
-    -(Blockly.BlockSvg.MIN_BLOCK_Y * scale) - (Blockly.BlockSvg.FIELD_Y_OFFSET * scale)
-  );
+  var secondaryYOffset = -(Blockly.BlockSvg.MIN_BLOCK_Y * scale) - Blockly.BlockSvg.FIELD_Y_OFFSET * scale;
   var renderedPrimary = Blockly.DropDownDiv.showPositionedByBlock(
-      this, this.sourceBlock_, this.onHide_.bind(this), secondaryYOffset);
+    this,
+    this.sourceBlock_,
+    this.onHide_.bind(this),
+    secondaryYOffset
+  );
   if (!renderedPrimary) {
     // Adjust for rotation
     var arrowX = this.arrowX_ + Blockly.DropDownDiv.ARROW_SIZE / 1.5 + 1;
     var arrowY = this.arrowY_ + Blockly.DropDownDiv.ARROW_SIZE / 1.5;
     // Flip the arrow on the button
-    this.arrowIcon_.setAttribute('transform',
-        'translate(' + arrowX + ',' + arrowY + ') rotate(180)');}
+    this.arrowIcon_.setAttribute('transform', 'translate(' + arrowX + ',' + arrowY + ') rotate(180)');
+  }
 };
 
 /**
@@ -279,7 +285,7 @@ Blockly.FieldIconMenu.prototype.showEditor_ = function() {
  * @param {Event} e DOM event for the click/touch
  * @private
  */
-Blockly.FieldIconMenu.prototype.buttonClick_ = function(e) {
+Blockly.FieldIconMenu.prototype.buttonClick_ = function (e) {
   var value = e.target.getAttribute('data-value');
   this.setValue(value);
   Blockly.DropDownDiv.hide();
@@ -288,16 +294,18 @@ Blockly.FieldIconMenu.prototype.buttonClick_ = function(e) {
 /**
  * Callback for when the drop-down is hidden.
  */
-Blockly.FieldIconMenu.prototype.onHide_ = function() {
+Blockly.FieldIconMenu.prototype.onHide_ = function () {
   // Reset the button colour and clear accessibility properties
   // Only attempt to do this reset if sourceBlock_ is not disposed.
   // It could become disposed before an onHide_, for example,
   // when a block is dragged from the flyout.
   if (this.sourceBlock_) {
-    this.sourceBlock_.setColour(this.savedPrimary_,
-        this.sourceBlock_.getColourSecondary(),
-        this.sourceBlock_.getColourTertiary(),
-        this.sourceBlock_.getColourQuaternary());
+    this.sourceBlock_.setColour(
+      this.savedPrimary_,
+      this.sourceBlock_.getColourSecondary(),
+      this.sourceBlock_.getColourTertiary(),
+      this.sourceBlock_.getColourQuaternary()
+    );
   }
   Blockly.DropDownDiv.content_.removeAttribute('role');
   Blockly.DropDownDiv.content_.removeAttribute('aria-haspopup');

@@ -11,41 +11,28 @@ import TWRenderRecoloredImage from '../../tw-recolor/render.jsx';
 
 import styles from './labeled-icon-button.css';
 
-const LabeledIconButton = ({
-    className,
-    hideLabel,
-    imgAlt,
-    imgSrc,
-    onClick,
-    title,
-    gray,
-    ...props
-}) => (
-    <Button
-        className={classNames(className, styles.modEditField)}
-        onClick={onClick}
-        {...props}
-    >
-        <TWRenderRecoloredImage
-            alt={imgAlt || title}
-            className={classNames(styles.editFieldIcon, {[styles.gray]: gray})}
-            draggable={false}
-            src={imgSrc}
-            title={title}
-        />
-        {!hideLabel && <span className={styles.editFieldTitle}>{title}</span>}
-    </Button>
+const LabeledIconButton = ({ className, hideLabel, imgAlt, imgSrc, onClick, title, gray, ...props }) => (
+  <Button className={classNames(className, styles.modEditField)} onClick={onClick} {...props}>
+    <TWRenderRecoloredImage
+      alt={imgAlt || title}
+      className={classNames(styles.editFieldIcon, { [styles.gray]: gray })}
+      draggable={false}
+      src={imgSrc}
+      title={title}
+    />
+    {!hideLabel && <span className={styles.editFieldTitle}>{title}</span>}
+  </Button>
 );
 
 LabeledIconButton.propTypes = {
-    className: PropTypes.string,
-    hideLabel: PropTypes.bool,
-    highlighted: PropTypes.bool,
-    imgAlt: PropTypes.string,
-    imgSrc: PropTypes.oneOfType([PropTypes.func, PropTypes.string]),
-    onClick: PropTypes.func.isRequired,
-    title: PropTypes.string.isRequired,
-    gray: PropTypes.bool
+  className: PropTypes.string,
+  hideLabel: PropTypes.bool,
+  highlighted: PropTypes.bool,
+  imgAlt: PropTypes.string,
+  imgSrc: PropTypes.oneOfType([PropTypes.func, PropTypes.string]),
+  onClick: PropTypes.func.isRequired,
+  title: PropTypes.string.isRequired,
+  gray: PropTypes.bool
 };
 
 export default LabeledIconButton;

@@ -24,7 +24,8 @@ goog.require('goog.testing.MockControl');
 
 var mockControl_;
 var workspace;
-var XML_TEXT = ['<xml xmlns="http://www.w3.org/1999/xhtml">',
+var XML_TEXT = [
+  '<xml xmlns="http://www.w3.org/1999/xhtml">',
   '  <block type="controls_repeat_ext" inline="true" x="21" y="23">',
   '    <value name="TIMES">',
   '      <block type="math_number">',
@@ -49,7 +50,8 @@ var XML_TEXT = ['<xml xmlns="http://www.w3.org/1999/xhtml">',
   '      </block>',
   '    </statement>',
   '  </block>',
-  '</xml>'].join('\n');
+  '</xml>'
+].join('\n');
 
 function xmlTest_setUp() {
   workspace = new Blockly.Workspace();
@@ -58,32 +60,34 @@ function xmlTest_setUp() {
 
 function xmlTest_setUpWithMockBlocks() {
   xmlTest_setUp();
-  Blockly.defineBlocksWithJsonArray([{
-    'type': 'field_variable_test_block',
-    'message0': '%1',
-    'args0': [
-      {
-        'type': 'field_variable',
-        'name': 'VAR',
-        'variable': 'item'
-      }
-    ]
-  },
-  {
-    'type': 'field_serializable_test_block',
-    'message0': '%1 %2',
-    'args0': [
-      {
-        'type': 'field_label_serializable',
-        'name': 'FIELD'
-      },
-      {
-        "type": "field_input",
-        "name": "TEXTINPUT",
-        "text": "default"
-      }
-    ]
-  }]);
+  Blockly.defineBlocksWithJsonArray([
+    {
+      type: 'field_variable_test_block',
+      message0: '%1',
+      args0: [
+        {
+          type: 'field_variable',
+          name: 'VAR',
+          variable: 'item'
+        }
+      ]
+    },
+    {
+      type: 'field_serializable_test_block',
+      message0: '%1 %2',
+      args0: [
+        {
+          type: 'field_label_serializable',
+          name: 'FIELD'
+        },
+        {
+          type: 'field_input',
+          name: 'TEXTINPUT',
+          text: 'default'
+        }
+      ]
+    }
+  ]);
 }
 
 function xmlTest_tearDown() {
@@ -146,8 +150,7 @@ function test_textToDom() {
 function test_domToText() {
   var dom = Blockly.Xml.textToDom(XML_TEXT);
   var text = Blockly.Xml.domToText(dom);
-  assertEquals('Round trip', XML_TEXT.replace(/\s+/g, ''),
-      text.replace(/\s+/g, ''));
+  assertEquals('Round trip', XML_TEXT.replace(/\s+/g, ''), text.replace(/\s+/g, ''));
 }
 
 function test_domToWorkspace_BackwardCompatibility() {
@@ -156,11 +159,12 @@ function test_domToWorkspace_BackwardCompatibility() {
   setUpMockMethod(mockControl_, Blockly.utils, 'genUid', null, ['1', '1']);
   try {
     var dom = Blockly.Xml.textToDom(
-        '<xml>' +
+      '<xml>' +
         '  <block type="field_variable_test_block" id="block_id">' +
         '    <field name="VAR">name1</field>' +
         '  </block>' +
-        '</xml>');
+        '</xml>'
+    );
     Blockly.Xml.domToWorkspace(dom, workspace);
     assertEquals('Block count', 1, workspace.getAllBlocks().length);
     checkVariableValues(workspace, 'name1', '', '1');
@@ -174,7 +178,7 @@ function test_domToWorkspace_VariablesAtTop() {
   xmlTest_setUpWithMockBlocks();
   try {
     var dom = Blockly.Xml.textToDom(
-        '<xml>' +
+      '<xml>' +
         '  <variables>' +
         '    <variable type="type1" id="id1">name1</variable>' +
         '    <variable type="type2" id="id2">name2</variable>' +
@@ -183,7 +187,8 @@ function test_domToWorkspace_VariablesAtTop() {
         '  <block type="field_variable_test_block">' +
         '    <field name="VAR" id="id3" variabletype="">name3</field>' +
         '  </block>' +
-        '</xml>');
+        '</xml>'
+    );
     Blockly.Xml.domToWorkspace(dom, workspace);
     assertEquals('Block count', 1, workspace.getAllBlocks().length);
     checkVariableValues(workspace, 'name1', 'type1', 'id1');
@@ -199,16 +204,11 @@ function test_domToWorkspace_VariablesAtTop_DuplicateVariablesTag() {
   xmlTest_setUpWithMockBlocks();
   try {
     var dom = Blockly.Xml.textToDom(
-        '<xml>' +
-        '  <variables>' +
-        '  </variables>' +
-        '  <variables>' +
-        '  </variables>' +
-        '</xml>');
+      '<xml>' + '  <variables>' + '  </variables>' + '  <variables>' + '  </variables>' + '</xml>'
+    );
     Blockly.Xml.domToWorkspace(dom, workspace);
     fail();
-  }
-  catch (e) {
+  } catch (e) {
     // expected
   } finally {
     xmlTest_tearDownWithMockBlocks();
@@ -220,14 +220,15 @@ function test_domToWorkspace_VariablesAtTop_MissingType() {
   workspace = new Blockly.Workspace();
   try {
     var dom = Blockly.Xml.textToDom(
-        '<xml>' +
+      '<xml>' +
         '  <variables>' +
         '    <variable id="id1">name1</variable>' +
         '  </variables>' +
         '  <block type="field_variable_test_block">' +
         '    <field name="VAR" id="id1" variabletype="">name3</field>' +
         '  </block>' +
-        '</xml>');
+        '</xml>'
+    );
     Blockly.Xml.domToWorkspace(dom, workspace);
     fail();
   } catch (e) {
@@ -243,14 +244,15 @@ function test_domToWorkspace_VariablesAtTop_MismatchBlockType() {
   xmlTest_setUpWithMockBlocks();
   try {
     var dom = Blockly.Xml.textToDom(
-        '<xml>' +
+      '<xml>' +
         '  <variables>' +
         '    <variable type="type1" id="id1">name1</variable>' +
         '  </variables>' +
         '  <block type="field_variable_test_block">' +
         '    <field name="VAR" id="id1" variabletype="">name1</field>' +
         '  </block>' +
-        '</xml>');
+        '</xml>'
+    );
     Blockly.Xml.domToWorkspace(dom, workspace);
     fail();
   } catch (e) {
@@ -263,8 +265,7 @@ function test_domToWorkspace_VariablesAtTop_MismatchBlockType() {
 function test_domToPrettyText() {
   var dom = Blockly.Xml.textToDom(XML_TEXT);
   var text = Blockly.Xml.domToPrettyText(dom);
-  assertEquals('Round trip', XML_TEXT.replace(/\s+/g, ''),
-      text.replace(/\s+/g, ''));
+  assertEquals('Round trip', XML_TEXT.replace(/\s+/g, ''), text.replace(/\s+/g, ''));
 }
 
 /**
@@ -273,9 +274,9 @@ function test_domToPrettyText() {
  */
 function test_appendDomToWorkspace() {
   Blockly.Blocks.test_block = {
-    init: function() {
+    init: function () {
       this.jsonInit({
-        message0: 'test',
+        message0: 'test'
       });
     }
   };
@@ -283,16 +284,17 @@ function test_appendDomToWorkspace() {
   var workspace = new Blockly.Workspace();
   try {
     var dom = Blockly.Xml.textToDom(
-        '<xml xmlns="http://www.w3.org/1999/xhtml">' +
+      '<xml xmlns="http://www.w3.org/1999/xhtml">' +
         '  <block type="test_block" inline="true" x="21" y="23">' +
         '  </block>' +
-        '</xml>');
+        '</xml>'
+    );
     workspace = new Blockly.Workspace();
     Blockly.Xml.appendDomToWorkspace(dom, workspace);
     assertEquals('Block count', 1, workspace.getAllBlocks().length);
     var newBlockIds = Blockly.Xml.appendDomToWorkspace(dom, workspace);
     assertEquals('Block count', 2, workspace.getAllBlocks().length);
-    assertEquals('Number of new block ids',1,newBlockIds.length);
+    assertEquals('Number of new block ids', 1, newBlockIds.length);
   } finally {
     delete Blockly.Blocks.test_block;
     workspace.dispose();
@@ -307,8 +309,7 @@ function test_blockToDom_fieldToDom_trivial() {
   var block = new Blockly.Block(workspace, 'field_variable_test_block');
   block.inputList[0].fieldRow[0].setValue('id1');
   var resultFieldDom = Blockly.Xml.blockToDom(block).childNodes[0];
-  xmlTest_checkVariableFieldDomValues(resultFieldDom, 'VAR', '', 'id1',
-    'name1');
+  xmlTest_checkVariableFieldDomValues(resultFieldDom, 'VAR', '', 'id1', 'name1');
   xmlTest_tearDownWithMockBlocks();
 }
 
@@ -332,17 +333,19 @@ function test_blockToDom_fieldToDom_defaultCase() {
 }
 
 function test_blockToDom_fieldToDom_notAFieldVariable() {
-  Blockly.defineBlocksWithJsonArray([{
-    "type": "field_angle_test_block",
-    "message0": "%1",
-    "args0": [
-      {
-        "type": "field_angle",
-        "name": "VAR",
-        "angle": 90
-      }
-    ],
-  }]);
+  Blockly.defineBlocksWithJsonArray([
+    {
+      type: 'field_angle_test_block',
+      message0: '%1',
+      args0: [
+        {
+          type: 'field_angle',
+          name: 'VAR',
+          angle: 90
+        }
+      ]
+    }
+  ]);
   xmlTest_setUpWithMockBlocks();
   var block = new Blockly.Block(workspace, 'field_angle_test_block');
   var resultFieldDom = Blockly.Xml.blockToDom(block).childNodes[0];
@@ -379,10 +382,8 @@ function test_variablesToDom_twoVariables_oneBlock() {
 
   var resultDom = Blockly.Xml.variablesToDom(workspace.getAllVariables());
   assertEquals(2, resultDom.children.length);
-  xmlTest_checkVariableDomValues(resultDom.children[0], '', 'id1',
-      'name1');
-  xmlTest_checkVariableDomValues(resultDom.children[1], 'type2', 'id2',
-      'name2');
+  xmlTest_checkVariableDomValues(resultDom.children[0], '', 'id1', 'name1');
+  xmlTest_checkVariableDomValues(resultDom.children[1], 'type2', 'id2', 'name2');
   xmlTest_tearDownWithMockBlocks();
 }
 
@@ -427,17 +428,13 @@ function test_variableFieldXml_caseSensitive() {
   var mockVariableModel = {
     type: type,
     name: name,
-    getId: function() {
+    getId: function () {
       return id;
     }
   };
 
-  var generatedXml =
-    Blockly.Variables.generateVariableFieldXml_(mockVariableModel);
+  var generatedXml = Blockly.Variables.generateVariableFieldXml_(mockVariableModel);
   var goldenXml =
-      '<field name="VARIABLE"' +
-      ' id="' + id + '"' +
-      ' variabletype="' + type + '"' +
-      '>' + name + '</field>';
+    '<field name="VARIABLE"' + ' id="' + id + '"' + ' variabletype="' + type + '"' + '>' + name + '</field>';
   assertEquals(goldenXml, generatedXml);
 }

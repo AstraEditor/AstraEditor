@@ -21,7 +21,7 @@ Try now?
 
 We use **pnpm** to manage packages, so you nee use `pnpm install` and `pnpm start` to get started.
 
-``` bash
+```bash
 pnpm install
 pnpm start
 ```
@@ -34,7 +34,7 @@ Learn more from https://editors.astras.top/document/development/getting-started 
 
 ## License
 
-AstraEditor's modifications to TurboWarp are licensed under the GNU General Public License v3.0. 
+AstraEditor's modifications to TurboWarp are licensed under the GNU General Public License v3.0.
 
 See LICENSE or https://www.gnu.org/licenses/ for details.
 

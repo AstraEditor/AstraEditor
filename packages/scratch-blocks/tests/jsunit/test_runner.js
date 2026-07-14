@@ -19,12 +19,12 @@ var testHtml = function (htmlString) {
   var numOfFailure = regex.exec(htmlString)[1];
   var regex2 = /Unit Tests for .*]/;
   var testStatus = regex2.exec(htmlString)[0];
-  console.log("============Unit Test Summary=================");
+  console.log('============Unit Test Summary=================');
   console.log(testStatus);
   var regex3 = /\d+ passed,\s\d+ failed/;
   var detail = regex3.exec(htmlString)[0];
   console.log(detail);
-  console.log("============Unit Test Summary=================");
+  console.log('============Unit Test Summary=================');
   if (parseInt(numOfFailure) !== 0) {
     console.log(htmlString);
     process.exit(1);
@@ -37,24 +37,23 @@ var runTests = async function () {
   try {
     var element, text;
 
-    await browser.get("file://" + path + "/tests/jsunit/vertical_tests.html");
+    await browser.get('file://' + path + '/tests/jsunit/vertical_tests.html');
     await browser.sleep(5000);
-    element = await browser.findElement({id: "closureTestRunnerLog"});
+    element = await browser.findElement({ id: 'closureTestRunnerLog' });
     text = await element.getText();
     testHtml(text);
 
-    await browser.get("file://" + path + "/tests/jsunit/horizontal_tests.html");
+    await browser.get('file://' + path + '/tests/jsunit/horizontal_tests.html');
     await browser.sleep(5000);
-    element = await browser.findElement({id: "closureTestRunnerLog"});
+    element = await browser.findElement({ id: 'closureTestRunnerLog' });
     text = await element.getText();
     testHtml(text);
-  }
-  finally {
+  } finally {
     await browser.quit();
   }
 };
 
-runTests().catch(e => {
+runTests().catch((e) => {
   console.error(e);
   process.exit(1);
 });

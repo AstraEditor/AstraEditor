@@ -9,28 +9,28 @@
 .clone-container {
   font-size: 0.625rem;
   font-weight: bold;
-  font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+  font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
   white-space: nowrap;
 }
 
 .clone-icon {
   margin: 0.25rem;
   display: inline-block;
-  background-image: url("./cat.svg");
+  background-image: url('./cat.svg');
   height: 16px;
   width: 16px;
 }
 
-.clone-container-container[data-count="none"] {
+.clone-container-container[data-count='none'] {
   display: none;
 }
 
-.clone-container-container[data-count="full"] {
+.clone-container-container[data-count='full'] {
   color: #ff6680;
 }
 
-.clone-container-container[data-count="full"] .clone-icon {
-  background-image: url("./300cats.svg");
+.clone-container-container[data-count='full'] .clone-icon {
+  background-image: url('./300cats.svg');
 }
 
 .clone-count::after {

@@ -2,7 +2,7 @@ let overridden = false;
 
 export const addons = {
   paintSkew: null,
-  paintSnap: null,
+  paintSnap: null
 };
 
 export function initialize(paper, ScaleTool) {

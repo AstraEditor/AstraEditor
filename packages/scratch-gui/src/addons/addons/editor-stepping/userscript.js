@@ -1,15 +1,15 @@
-import { getRunningThread } from "../debugger/module.js";
-import Highlighter from "./highlighter.js";
+import { getRunningThread } from '../debugger/module.js';
+import Highlighter from './highlighter.js';
 
 export default async function ({ addon, console }) {
   const vm = addon.tab.traps.vm;
 
-  const highlighter = new Highlighter(0, addon.settings.get("highlight-color"));
-  addon.settings.addEventListener("change", () => {
-    highlighter.setColor(addon.settings.get("highlight-color"));
+  const highlighter = new Highlighter(0, addon.settings.get('highlight-color'));
+  addon.settings.addEventListener('change', () => {
+    highlighter.setColor(addon.settings.get('highlight-color'));
   });
 
-  addon.self.addEventListener("disabled", () => {
+  addon.self.addEventListener('disabled', () => {
     highlighter.setGlowingThreads([]);
   });
 

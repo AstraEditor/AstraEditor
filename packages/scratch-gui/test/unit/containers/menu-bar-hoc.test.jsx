@@ -1,5 +1,5 @@
 describe('no-op', () => {
-    test('no-op', () => {});
+  test('no-op', () => {});
 });
 // tw: these seem to be hopelessly broken to the increasing scope of changes we make to the menu bar, disable for now...
 /*

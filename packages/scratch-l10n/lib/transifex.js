@@ -16,14 +16,14 @@ const SOURCE_LOCALE = 'en';
 
 const txToken = process.env.TX_TOKEN || fs.readFileSync(pathUtil.join(__dirname, '..', '.tx_token'), 'utf-8').trim();
 try {
-    transifexApi.setup({
-        auth: txToken
-    });
+  transifexApi.setup({
+    auth: txToken
+  });
 } catch (err) {
-    if (!txToken) {
-        throw new Error('TX_TOKEN is not defined.');
-    }
-    throw err;
+  if (!txToken) {
+    throw new Error('TX_TOKEN is not defined.');
+  }
+  throw err;
 }
 
 /**
@@ -35,33 +35,33 @@ try {
  * @returns {Promise<string>} - id of the created download event
  */
 const downloadResource = async function (projectSlug, resourceSlug, localeCode, mode = 'default') {
-    const resource = {
-        data: {
-            id: `o:${ORG_NAME}:p:${projectSlug}:r:${resourceSlug}`,
-            type: 'resources'
-        }
-    };
-
-    // if locale is English, create a download event of the source file
-    if (localeCode === SOURCE_LOCALE) {
-        return await transifexApi.ResourceStringsAsyncDownload.download({
-            resource
-        });
+  const resource = {
+    data: {
+      id: `o:${ORG_NAME}:p:${projectSlug}:r:${resourceSlug}`,
+      type: 'resources'
     }
+  };
 
-    const language = {
-        data: {
-            id: `l:${localeCode}`,
-            type: 'languages'
-        }
-    };
-
-    // if locale is not English, create a download event of the translation file
-    return await transifexApi.ResourceTranslationsAsyncDownload.download({
-        mode,
-        resource,
-        language
+  // if locale is English, create a download event of the source file
+  if (localeCode === SOURCE_LOCALE) {
+    return await transifexApi.ResourceStringsAsyncDownload.download({
+      resource
     });
+  }
+
+  const language = {
+    data: {
+      id: `l:${localeCode}`,
+      type: 'languages'
+    }
+  };
+
+  // if locale is not English, create a download event of the translation file
+  return await transifexApi.ResourceTranslationsAsyncDownload.download({
+    mode,
+    resource,
+    language
+  });
 };
 
 /**
@@ -74,18 +74,18 @@ const downloadResource = async function (projectSlug, resourceSlug, localeCode, 
  * strings, if the local is the source language)
  */
 const txPull = async function (project, resource, locale, mode = 'default') {
-    const url = await downloadResource(project, resource, locale, mode);
-    let buffer;
-    for (let i = 0; i < 5; i++) {
-        try {
-            buffer = await download(url);
-            // YAML is a superset of JSON, so this will work for JSON files too.
-            return YAML.parse(buffer.toString());
-        } catch (e) {
-            process.stdout.write(`got ${e.message}, retrying after ${i + 1} failed attempt(s)\n`);
-        }
+  const url = await downloadResource(project, resource, locale, mode);
+  let buffer;
+  for (let i = 0; i < 5; i++) {
+    try {
+      buffer = await download(url);
+      // YAML is a superset of JSON, so this will work for JSON files too.
+      return YAML.parse(buffer.toString());
+    } catch (e) {
+      process.stdout.write(`got ${e.message}, retrying after ${i + 1} failed attempt(s)\n`);
     }
-    throw Error('failed to pull after 5 retries');
+  }
+  throw Error('failed to pull after 5 retries');
 };
 
 /**
@@ -94,18 +94,19 @@ const txPull = async function (project, resource, locale, mode = 'default') {
  * @returns {Promise<array>} - array of strings, slugs identifying each resource in the project
  */
 const txResources = async function (project) {
-    const resources = await transifexApi.Resource.filter({
-        project: `o:${ORG_NAME}:p:${project}`
-    });
+  const resources = await transifexApi.Resource.filter({
+    project: `o:${ORG_NAME}:p:${project}`
+  });
 
-    await resources.fetch();
+  await resources.fetch();
 
-    const slugs = resources.data.map(r =>
-        // r.id is a longer id string, like "o:llk:p:scratch-website:r:about-l10njson"
-        // We just want the slug that comes after ":r:" ("about-l10njson")
-        r.id.split(':r:')[1]
-    );
-    return slugs;
+  const slugs = resources.data.map(
+    (r) =>
+      // r.id is a longer id string, like "o:llk:p:scratch-website:r:about-l10njson"
+      // We just want the slug that comes after ":r:" ("about-l10njson")
+      r.id.split(':r:')[1]
+  );
+  return slugs;
 };
 
 /**
@@ -113,12 +114,12 @@ const txResources = async function (project) {
  * @returns {object[]} - array of resource objects
  */
 const txResourcesObjects = async function (project) {
-    const resources = await transifexApi.Resource.filter({
-        project: `o:${ORG_NAME}:p:${project}`
-    });
+  const resources = await transifexApi.Resource.filter({
+    project: `o:${ORG_NAME}:p:${project}`
+  });
 
-    await resources.fetch();
-    return resources.data;
+  await resources.fetch();
+  return resources.data;
 };
 
 /**
@@ -127,15 +128,14 @@ const txResourcesObjects = async function (project) {
  * @returns {Promise<string[]>} - list of language codes
  */
 const txAvailableLanguages = async function (slug) {
-    const project = await transifexApi.Project.get({
-        organization: `o:${ORG_NAME}`,
-        slug: slug
-    });
+  const project = await transifexApi.Project.get({
+    organization: `o:${ORG_NAME}`,
+    slug: slug
+  });
 
-    const languages = await project.fetch('languages');
-    await languages.fetch();
-    return languages.data.map(l => l.attributes.code);
-
+  const languages = await project.fetch('languages');
+  await languages.fetch();
+  return languages.data.map((l) => l.attributes.code);
 };
 
 /**
@@ -145,17 +145,17 @@ const txAvailableLanguages = async function (slug) {
  * @param {object} sourceStrings - json of source strings
  */
 const txPush = async function (project, resource, sourceStrings) {
-    const resourceObj = {
-        data: {
-            id: `o:${ORG_NAME}:p:${project}:r:${resource}`,
-            type: 'resources'
-        }
-    };
+  const resourceObj = {
+    data: {
+      id: `o:${ORG_NAME}:p:${project}:r:${resource}`,
+      type: 'resources'
+    }
+  };
 
-    await transifexApi.ResourceStringsAsyncUpload.upload({
-        resource: resourceObj,
-        content: JSON.stringify(sourceStrings)
-    });
+  await transifexApi.ResourceStringsAsyncUpload.upload({
+    resource: resourceObj,
+    content: JSON.stringify(sourceStrings)
+  });
 };
 
 /**
@@ -167,32 +167,32 @@ const txPush = async function (project, resource, sourceStrings) {
  * @param {string} resource.i18nType - i18n format id
  * @param {object} resource.sourceStrings - json object of source strings
  */
-const txCreateResource = async function (project, {slug, name, i18nType, sourceStrings}) {
-    const i18nFormat = {
-        data: {
-            id: i18nType || 'KEYVALUEJSON',
-            type: 'i18n_formats'
-        }
-    };
-
-    const projectObj = {
-        data: {
-            id: `o:${ORG_NAME}:p:${project}`,
-            type: 'projects'
-        }
-    };
-
-    await transifexApi.Resource.create({
-        attributes: {slug: slug, name: name},
-        relationships: {
-            i18n_format: i18nFormat,
-            project: projectObj
-        }
-    });
-
-    if (sourceStrings) {
-        await txPush(project, slug, sourceStrings);
+const txCreateResource = async function (project, { slug, name, i18nType, sourceStrings }) {
+  const i18nFormat = {
+    data: {
+      id: i18nType || 'KEYVALUEJSON',
+      type: 'i18n_formats'
     }
+  };
+
+  const projectObj = {
+    data: {
+      id: `o:${ORG_NAME}:p:${project}`,
+      type: 'projects'
+    }
+  };
+
+  await transifexApi.Resource.create({
+    attributes: { slug: slug, name: name },
+    relationships: {
+      i18n_format: i18nFormat,
+      project: projectObj
+    }
+  });
+
+  if (sourceStrings) {
+    await txPush(project, slug, sourceStrings);
+  }
 };
 
 /**
@@ -202,29 +202,31 @@ const txCreateResource = async function (project, {slug, name, i18nType, sourceS
  * @returns {Promise<Record<string, number>>} Map of Transifex language code to number of translated strings.
  */
 const txGetResourceStatistics = async (project, resource) => {
-    const iterator = transifexApi.resource_language_stats.filter({
-        project: `o:${ORG_NAME}:p:${project}`,
-        resource: `o:${ORG_NAME}:p:${project}:r:${resource}`
-    }).all();
-    const locales = {};
-    for await (const languageData of iterator) {
-        const localeCode = languageData.id.match(/\bl:([\w\d-]+)/)[1];
-        const translatedStrings = languageData.attributes.translated_strings;
-        locales[localeCode] = translatedStrings;
-    }
-    const sortedLocales = {};
-    for (const locale of Object.keys(locales).sort()) {
-        sortedLocales[locale] = locales[locale];
-    }
-    return sortedLocales;
+  const iterator = transifexApi.resource_language_stats
+    .filter({
+      project: `o:${ORG_NAME}:p:${project}`,
+      resource: `o:${ORG_NAME}:p:${project}:r:${resource}`
+    })
+    .all();
+  const locales = {};
+  for await (const languageData of iterator) {
+    const localeCode = languageData.id.match(/\bl:([\w\d-]+)/)[1];
+    const translatedStrings = languageData.attributes.translated_strings;
+    locales[localeCode] = translatedStrings;
+  }
+  const sortedLocales = {};
+  for (const locale of Object.keys(locales).sort()) {
+    sortedLocales[locale] = locales[locale];
+  }
+  return sortedLocales;
 };
 
 module.exports = {
-    txPull,
-    txPush,
-    txResources,
-    txResourcesObjects,
-    txCreateResource,
-    txAvailableLanguages,
-    txGetResourceStatistics
+  txPull,
+  txPush,
+  txResources,
+  txResourcesObjects,
+  txCreateResource,
+  txAvailableLanguages,
+  txGetResourceStatistics
 };

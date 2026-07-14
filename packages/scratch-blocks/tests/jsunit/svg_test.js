@@ -22,8 +22,7 @@
 var svgTest_workspace;
 
 function svgTest_setUp() {
-  svgTest_workspace = Blockly.inject('blocklyDiv',
-      {toolbox: document.getElementById('toolbox')});
+  svgTest_workspace = Blockly.inject('blocklyDiv', { toolbox: document.getElementById('toolbox') });
 }
 
 function svgTest_tearDown() {
@@ -37,13 +36,13 @@ function svgTest_tearDown() {
  */
 function svgTest_newOneFieldBlock() {
   Blockly.Blocks['one_field_block'] = {
-    init: function() {
+    init: function () {
       this.jsonInit({
-        'message0': '%1',
-        'args0': [
+        message0: '%1',
+        args0: [
           {
-            'type': 'field_input',
-            'name': 'FIELD'
+            type: 'field_input',
+            name: 'FIELD'
           }
         ]
       });
@@ -62,13 +61,13 @@ function svgTest_newOneFieldBlock() {
  */
 function svgTest_newTwoFieldBlock() {
   Blockly.Blocks['two_field_block'] = {
-    init: function() {
+    init: function () {
       this.jsonInit({
-        'message0': 'text_field %1',
-        'args0': [
+        message0: 'text_field %1',
+        args0: [
           {
-            'type': 'field_input',
-            'name': 'FIELD'
+            type: 'field_input',
+            name: 'FIELD'
           }
         ]
       });

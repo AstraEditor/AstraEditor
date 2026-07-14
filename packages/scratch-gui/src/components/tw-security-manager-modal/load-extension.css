@@ -1,27 +1,27 @@
-@import "../../css/colors.css";
+@import '../../css/colors.css';
 
 .code,
 .unsandboxed-container,
 .unsandboxed-warning,
 .sandboxed {
-    margin: 8px 0;
+  margin: 8px 0;
 }
 
 .unsandboxed-container {
-    display: flex;
-    align-items: center;
+  display: flex;
+  align-items: center;
 }
 .unsandboxed-checkbox {
-    margin-right: 8px;
+  margin-right: 8px;
 }
 .unsandboxed-warning {
-    padding: 0.5rem;
-    border-radius: 0.25rem;
-    background-color: rgba(255, 81, 81, 0.25);
-    border: 1px solid red;
+  padding: 0.5rem;
+  border-radius: 0.25rem;
+  background-color: rgba(255, 81, 81, 0.25);
+  border: 1px solid red;
 }
 
-.extensionsIDs{
-    max-height: 25vh;
-    overflow: auto;
+.extensionsIDs {
+  max-height: 25vh;
+  overflow: auto;
 }

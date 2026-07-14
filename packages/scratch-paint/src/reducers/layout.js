@@ -1,21 +1,21 @@
 import log from '../log/log';
 const SET_LAYOUT = 'scratch-paint/layout/SET_LAYOUT';
-const initialState = {rtl: false};
+const initialState = { rtl: false };
 
 const layouts = ['ltr', 'rtl'];
 
 const reducer = function (state, action) {
-    if (typeof state === 'undefined') state = initialState;
-    switch (action.type) {
+  if (typeof state === 'undefined') state = initialState;
+  switch (action.type) {
     case SET_LAYOUT:
-        if (layouts.indexOf(action.layout) === -1) {
-            log.warn(`Unrecognized layout provided: ${action.layout}`);
-            return state;
-        }
-        return {rtl: action.layout === 'rtl'};
-    default:
+      if (layouts.indexOf(action.layout) === -1) {
+        log.warn(`Unrecognized layout provided: ${action.layout}`);
         return state;
-    }
+      }
+      return { rtl: action.layout === 'rtl' };
+    default:
+      return state;
+  }
 };
 
 // Action creators ==================================
@@ -25,15 +25,10 @@ const reducer = function (state, action) {
  * @return {object} Redux action to change the selected items.
  */
 const setLayout = function (layout) {
-    return {
-        type: SET_LAYOUT,
-        layout: layout
-    };
+  return {
+    type: SET_LAYOUT,
+    layout: layout
+  };
 };
 
-
-export {
-    reducer as default,
-    setLayout,
-    SET_LAYOUT
-};
+export { reducer as default, setLayout, SET_LAYOUT };

@@ -1,9 +1,9 @@
 //@ts-check
 
-import WorkspaceQuerier, { QueryResult } from "./WorkspaceQuerier.js";
-import renderBlock, { BlockComponent, getBlockHeight } from "./BlockRenderer.js";
-import { BlockInstance, BlockShape, BlockTypeInfo } from "./BlockTypeInfo.js";
-import { onClearTextWidthCache } from "./module.js";
+import WorkspaceQuerier, { QueryResult } from './WorkspaceQuerier.js';
+import renderBlock, { BlockComponent, getBlockHeight } from './BlockRenderer.js';
+import { BlockInstance, BlockShape, BlockTypeInfo } from './BlockTypeInfo.js';
+import { onClearTextWidthCache } from './module.js';
 
 export default async function ({ addon, msg, console }) {
   const Blockly = await addon.tab.traps.getBlockly();
@@ -11,67 +11,71 @@ export default async function ({ addon, msg, console }) {
 
   const PREVIEW_LIMIT = 50;
 
-  const popupRoot = document.body.appendChild(document.createElement("div"));
-  popupRoot.classList.add("sa-mcp-root");
+  const popupRoot = document.body.appendChild(document.createElement('div'));
+  popupRoot.classList.add('sa-mcp-root');
   popupRoot.dir = addon.tab.direction;
-  popupRoot.style.display = "none";
+  popupRoot.style.display = 'none';
 
-  const popupContainer = popupRoot.appendChild(document.createElement("div"));
-  popupContainer.classList.add("sa-mcp-container");
+  const popupContainer = popupRoot.appendChild(document.createElement('div'));
+  popupContainer.classList.add('sa-mcp-container');
 
-  const popupInputContainer = popupContainer.appendChild(document.createElement("div"));
-  popupInputContainer.classList.add(addon.tab.scratchClass("input_input-form"));
-  popupInputContainer.classList.add("sa-mcp-input-wrapper");
+  const popupInputContainer = popupContainer.appendChild(document.createElement('div'));
+  popupInputContainer.classList.add(addon.tab.scratchClass('input_input-form'));
+  popupInputContainer.classList.add('sa-mcp-input-wrapper');
 
-  const popupInputSuggestion = popupInputContainer.appendChild(document.createElement("input"));
-  popupInputSuggestion.classList.add("sa-mcp-input-suggestion");
+  const popupInputSuggestion = popupInputContainer.appendChild(document.createElement('input'));
+  popupInputSuggestion.classList.add('sa-mcp-input-suggestion');
 
-  const popupInput = popupInputContainer.appendChild(document.createElement("input"));
-  popupInput.classList.add("sa-mcp-input");
-  popupInput.setAttribute("autocomplete", "off");
+  const popupInput = popupInputContainer.appendChild(document.createElement('input'));
+  popupInput.classList.add('sa-mcp-input');
+  popupInput.setAttribute('autocomplete', 'off');
 
-  const popupPreviewContainer = popupContainer.appendChild(document.createElement("div"));
-  popupPreviewContainer.classList.add("sa-mcp-preview-container");
+  const popupPreviewContainer = popupContainer.appendChild(document.createElement('div'));
+  popupPreviewContainer.classList.add('sa-mcp-preview-container');
 
   const popupPreviewScrollbarSVG = popupContainer.appendChild(
-    document.createElementNS("http://www.w3.org/2000/svg", "svg")
+    document.createElementNS('http://www.w3.org/2000/svg', 'svg')
   );
   popupPreviewScrollbarSVG.classList.add(
-    "sa-mcp-preview-scrollbar",
-    "blocklyScrollbarVertical",
-    "blocklyMainWorkspaceScrollbar"
+    'sa-mcp-preview-scrollbar',
+    'blocklyScrollbarVertical',
+    'blocklyMainWorkspaceScrollbar'
   );
-  popupPreviewScrollbarSVG.style.display = "none";
+  popupPreviewScrollbarSVG.style.display = 'none';
 
   const popupPreviewScrollbarBackground = popupPreviewScrollbarSVG.appendChild(
-    document.createElementNS("http://www.w3.org/2000/svg", "rect")
+    document.createElementNS('http://www.w3.org/2000/svg', 'rect')
   );
-  popupPreviewScrollbarBackground.setAttribute("width", "11");
-  popupPreviewScrollbarBackground.classList.add("blocklyScrollbarBackground");
+  popupPreviewScrollbarBackground.setAttribute('width', '11');
+  popupPreviewScrollbarBackground.classList.add('blocklyScrollbarBackground');
 
   const popupPreviewScrollbarHandle = popupPreviewScrollbarSVG.appendChild(
-    document.createElementNS("http://www.w3.org/2000/svg", "rect")
+    document.createElementNS('http://www.w3.org/2000/svg', 'rect')
   );
-  popupPreviewScrollbarHandle.setAttribute("rx", "3");
-  popupPreviewScrollbarHandle.setAttribute("ry", "3");
-  popupPreviewScrollbarHandle.setAttribute("width", "6");
-  popupPreviewScrollbarHandle.setAttribute("x", "2.5");
-  popupPreviewScrollbarHandle.classList.add("blocklyScrollbarHandle");
+  popupPreviewScrollbarHandle.setAttribute('rx', '3');
+  popupPreviewScrollbarHandle.setAttribute('ry', '3');
+  popupPreviewScrollbarHandle.setAttribute('width', '6');
+  popupPreviewScrollbarHandle.setAttribute('x', '2.5');
+  popupPreviewScrollbarHandle.classList.add('blocklyScrollbarHandle');
 
   const popupPreviewBlocks = popupPreviewContainer.appendChild(
-    document.createElementNS("http://www.w3.org/2000/svg", "svg")
+    document.createElementNS('http://www.w3.org/2000/svg', 'svg')
   );
-  popupPreviewBlocks.classList.add("sa-mcp-preview-blocks");
+  popupPreviewBlocks.classList.add('sa-mcp-preview-blocks');
 
   const querier = new WorkspaceQuerier();
 
   let mousePosition = { x: 0, y: 0 };
-  document.addEventListener("mousemove", (e) => {
+  document.addEventListener('mousemove', (e) => {
     mousePosition = { x: e.clientX, y: e.clientY };
   });
-  document.addEventListener("mousedown", (e) => {
-    mousePosition = { x: e.clientX, y: e.clientY };
-  }, { capture: true });
+  document.addEventListener(
+    'mousedown',
+    (e) => {
+      mousePosition = { x: e.clientX, y: e.clientY };
+    },
+    { capture: true }
+  );
 
   onClearTextWidthCache(closePopup);
 
@@ -109,25 +113,25 @@ export default async function ({ addon, msg, console }) {
     if (addon.self.disabled) return;
 
     // Don't show the menu if we're not in the code editor
-    if (addon.tab.editorMode !== "editor") return;
+    if (addon.tab.editorMode !== 'editor') return;
     if (addon.tab.redux.state.scratchGui.editorTab.activeTabIndex !== 0) return;
 
     blockTypes = BlockTypeInfo.getBlocks(Blockly, vm, Blockly.getMainWorkspace(), msg);
     querier.indexWorkspace([...blockTypes]);
     blockTypes.sort((a, b) => {
-      const prio = (block) => ["operators", "data"].indexOf(block.category.name) - block.id.startsWith("data_");
+      const prio = (block) => ['operators', 'data'].indexOf(block.category.name) - block.id.startsWith('data_');
       return prio(b) - prio(a);
     });
 
-    previewScale = window.innerWidth * 0.00005 + addon.settings.get("popup_scale") / 100;
-    previewWidth = (window.innerWidth * addon.settings.get("popup_width")) / 100;
-    previewMaxHeight = (window.innerHeight * addon.settings.get("popup_max_height")) / 100;
+    previewScale = window.innerWidth * 0.00005 + addon.settings.get('popup_scale') / 100;
+    previewWidth = (window.innerWidth * addon.settings.get('popup_width')) / 100;
+    previewMaxHeight = (window.innerHeight * addon.settings.get('popup_max_height')) / 100;
 
-    popupContainer.style.width = previewWidth + "px";
+    popupContainer.style.width = previewWidth + 'px';
 
     popupOrigin = { x: mousePosition.x, y: mousePosition.y };
-    popupRoot.style.display = "";
-    popupInput.value = "";
+    popupRoot.style.display = '';
+    popupInput.value = '';
     popupInput.focus();
     updateInput();
   }
@@ -136,13 +140,13 @@ export default async function ({ addon, msg, console }) {
     if (allowMenuClose) {
       popupOrigin = null;
       popupPosition = null;
-      popupRoot.style.display = "none";
+      popupRoot.style.display = 'none';
       blockTypes = null;
       querier.clearWorkspaceIndex();
     }
   }
 
-  popupInput.addEventListener("input", updateInput);
+  popupInput.addEventListener('input', updateInput);
 
   function updateInput() {
     /**
@@ -158,7 +162,7 @@ export default async function ({ addon, msg, console }) {
       if (blockTypes)
         for (const blockType of blockTypes) {
           blockList.push({
-            block: blockType.createBlock(),
+            block: blockType.createBlock()
           });
         }
       limited = false;
@@ -174,7 +178,7 @@ export default async function ({ addon, msg, console }) {
       for (const queryResult of queryResults) {
         blockList.push({
           block: queryResult.getBlock(),
-          autocompleteFactory: (endOnly) => queryResult.toText(endOnly),
+          autocompleteFactory: (endOnly) => queryResult.toText(endOnly)
         });
       }
     }
@@ -203,29 +207,32 @@ export default async function ({ addon, msg, console }) {
       };
 
       const svgBackground = popupPreviewBlocks.appendChild(
-        document.createElementNS("http://www.w3.org/2000/svg", "rect")
+        document.createElementNS('http://www.w3.org/2000/svg', 'rect')
       );
 
       const height = getBlockHeight(result.block);
-      svgBackground.setAttribute("transform", `translate(0, ${(y + height / 10) * previewScale})`);
-      svgBackground.setAttribute("height", height * previewScale + "px");
-      svgBackground.classList.add("sa-mcp-preview-block-bg");
-      svgBackground.addEventListener("mousemove", mouseMoveListener);
-      svgBackground.addEventListener("mousedown", mouseDownListener);
+      svgBackground.setAttribute('transform', `translate(0, ${(y + height / 10) * previewScale})`);
+      svgBackground.setAttribute('height', height * previewScale + 'px');
+      svgBackground.classList.add('sa-mcp-preview-block-bg');
+      svgBackground.addEventListener('mousemove', mouseMoveListener);
+      svgBackground.addEventListener('mousedown', mouseDownListener);
 
-      const svgBlock = popupPreviewBlocks.appendChild(document.createElementNS("http://www.w3.org/2000/svg", "g"));
-      svgBlock.addEventListener("mousemove", mouseMoveListener);
-      svgBlock.addEventListener("mousedown", mouseDownListener);
-      svgBlock.classList.add("sa-mcp-preview-block");
+      const svgBlock = popupPreviewBlocks.appendChild(document.createElementNS('http://www.w3.org/2000/svg', 'g'));
+      svgBlock.addEventListener('mousemove', mouseMoveListener);
+      svgBlock.addEventListener('mousedown', mouseDownListener);
+      svgBlock.classList.add('sa-mcp-preview-block');
 
       const renderedBlock = renderBlock(result.block, svgBlock);
 
       queryPreviews.push({
         block: result.block,
-        autocompleteFactory: result.autocompleteFactory !== undefined && result.autocompleteFactory !== null ? result.autocompleteFactory : null,
+        autocompleteFactory:
+          result.autocompleteFactory !== undefined && result.autocompleteFactory !== null
+            ? result.autocompleteFactory
+            : null,
         renderedBlock,
         svgBlock,
-        svgBackground,
+        svgBackground
       });
 
       y += height;
@@ -237,11 +244,11 @@ export default async function ({ addon, msg, console }) {
     else if (height > previewMaxHeight) previewHeight = previewMaxHeight;
     else previewHeight = height;
 
-    popupPreviewBlocks.setAttribute("height", `${height}px`);
-    popupPreviewContainer.style.height = previewHeight + "px";
-    popupPreviewScrollbarSVG.style.height = previewHeight + "px";
-    popupPreviewScrollbarBackground.setAttribute("height", "" + previewHeight);
-    popupInputContainer.dataset["error"] = "" + limited;
+    popupPreviewBlocks.setAttribute('height', `${height}px`);
+    popupPreviewContainer.style.height = previewHeight + 'px';
+    popupPreviewScrollbarSVG.style.height = previewHeight + 'px';
+    popupPreviewScrollbarBackground.setAttribute('height', '' + previewHeight);
+    popupInputContainer.dataset['error'] = '' + limited;
 
     popupPosition = { x: popupOrigin.x + 16, y: popupOrigin.y - 8 };
 
@@ -251,8 +258,8 @@ export default async function ({ addon, msg, console }) {
       popupPosition.y -= popupBottom - window.innerHeight;
     }
 
-    popupRoot.style.top = popupPosition.y + "px";
-    popupRoot.style.left = popupPosition.x + "px";
+    popupRoot.style.top = popupPosition.y + 'px';
+    popupRoot.style.left = popupPosition.x + 'px';
 
     selectedPreviewIdx = -1;
     updateSelection(0);
@@ -265,8 +272,8 @@ export default async function ({ addon, msg, console }) {
 
     const oldSelection = queryPreviews[selectedPreviewIdx];
     if (oldSelection) {
-      oldSelection.svgBackground.classList.remove("sa-mcp-preview-block-bg-selection");
-      oldSelection.svgBlock.classList.remove("sa-mcp-preview-block-selection");
+      oldSelection.svgBackground.classList.remove('sa-mcp-preview-block-bg-selection');
+      oldSelection.svgBlock.classList.remove('sa-mcp-preview-block-selection');
     }
 
     if (queryPreviews.length === 0 && queryIllegalResult) {
@@ -277,25 +284,25 @@ export default async function ({ addon, msg, console }) {
 
     const newSelection = queryPreviews[newIdx];
     if (newSelection && newSelection.autocompleteFactory) {
-      newSelection.svgBackground.classList.add("sa-mcp-preview-block-bg-selection");
-      newSelection.svgBlock.classList.add("sa-mcp-preview-block-selection");
+      newSelection.svgBackground.classList.add('sa-mcp-preview-block-bg-selection');
+      newSelection.svgBlock.classList.add('sa-mcp-preview-block-selection');
 
       newSelection.svgBackground.scrollIntoView({
-        block: "nearest",
-        behavior: Math.abs(newIdx - selectedPreviewIdx) > 1 ? "smooth" : "auto",
+        block: 'nearest',
+        behavior: Math.abs(newIdx - selectedPreviewIdx) > 1 ? 'smooth' : 'auto'
       });
 
       popupInputSuggestion.value =
         popupInput.value + newSelection.autocompleteFactory(true).substring(popupInput.value.length);
     } else {
-      popupInputSuggestion.value = "";
+      popupInputSuggestion.value = '';
     }
 
     selectedPreviewIdx = newIdx;
   }
 
   // @ts-ignore
-  document.addEventListener("selectionchange", updateCursor);
+  document.addEventListener('selectionchange', updateCursor);
 
   function updateCursor() {
     const cursorPos = popupInput.selectionStart ?? 0;
@@ -310,7 +317,7 @@ export default async function ({ addon, msg, console }) {
         blockX += (previewWidth / previewScale - blockX - preview.renderedBlock.width) * previewScale * cursorPosRel;
       var blockY = (y + 30) * previewScale;
 
-      preview.svgBlock.setAttribute("transform", `translate(${blockX}, ${blockY}) scale(${previewScale})`);
+      preview.svgBlock.setAttribute('transform', `translate(${blockX}, ${blockY}) scale(${previewScale})`);
 
       y += getBlockHeight(preview.block);
     }
@@ -318,23 +325,23 @@ export default async function ({ addon, msg, console }) {
     popupInputSuggestion.scrollLeft = popupInput.scrollLeft;
   }
 
-  popupPreviewContainer.addEventListener("scroll", updateScrollbar);
+  popupPreviewContainer.addEventListener('scroll', updateScrollbar);
 
   function updateScrollbar() {
     const scrollTop = popupPreviewContainer.scrollTop;
     const scrollY = popupPreviewContainer.scrollHeight;
 
     if (scrollY <= previewHeight) {
-      popupPreviewScrollbarSVG.style.display = "none";
+      popupPreviewScrollbarSVG.style.display = 'none';
       return;
     }
 
     const scrollbarHeight = (previewHeight / scrollY) * previewHeight;
     const scrollbarY = (scrollTop / scrollY) * previewHeight;
 
-    popupPreviewScrollbarSVG.style.display = "";
-    popupPreviewScrollbarHandle.setAttribute("height", "" + scrollbarHeight);
-    popupPreviewScrollbarHandle.setAttribute("y", "" + scrollbarY);
+    popupPreviewScrollbarSVG.style.display = '';
+    popupPreviewScrollbarHandle.setAttribute('height', '' + scrollbarHeight);
+    popupPreviewScrollbarHandle.setAttribute('y', '' + scrollbarY);
   }
 
   function selectBlock() {
@@ -354,7 +361,7 @@ export default async function ({ addon, msg, console }) {
 
       var svgRootNew = newBlock.getSvgRoot();
       if (!svgRootNew) {
-        throw new Error("newBlock is not rendered.");
+        throw new Error('newBlock is not rendered.');
       }
 
       let blockBounds = newBlock.svgPath_.getBoundingClientRect();
@@ -371,10 +378,10 @@ export default async function ({ addon, msg, console }) {
     let fakeEvent = {
       clientX: mousePosition.x,
       clientY: mousePosition.y,
-      type: "mousedown",
+      type: 'mousedown',
       stopPropagation: function () {},
       preventDefault: function () {},
-      target: selectedPreview.svgBlock,
+      target: selectedPreview.svgBlock
     };
     if (workspace.getGesture(fakeEvent)) {
       workspace.startDragWithFakeEvent(fakeEvent, newBlock);
@@ -392,12 +399,12 @@ export default async function ({ addon, msg, console }) {
     updateInput();
   }
 
-  popupInput.addEventListener("keydown", (e) => {
+  popupInput.addEventListener('keydown', (e) => {
     switch (e.key) {
-      case "Escape":
+      case 'Escape':
         // If there's something in the input, clear it
         if (popupInput.value.length > 0) {
-          popupInput.value = "";
+          popupInput.value = '';
           updateInput();
         } else {
           // If not, close the menu
@@ -406,24 +413,24 @@ export default async function ({ addon, msg, console }) {
         e.stopPropagation();
         e.preventDefault();
         break;
-      case "Tab":
+      case 'Tab':
         acceptAutocomplete();
         e.stopPropagation();
         e.preventDefault();
         break;
-      case "Enter":
+      case 'Enter':
         selectBlock();
         closePopup();
         e.stopPropagation();
         e.preventDefault();
         break;
-      case "ArrowDown":
+      case 'ArrowDown':
         if (selectedPreviewIdx + 1 >= queryPreviews.length) updateSelection(0);
         else updateSelection(selectedPreviewIdx + 1);
         e.stopPropagation();
         e.preventDefault();
         break;
-      case "ArrowUp":
+      case 'ArrowUp':
         if (selectedPreviewIdx - 1 < 0) updateSelection(queryPreviews.length - 1);
         else updateSelection(selectedPreviewIdx - 1);
         e.stopPropagation();
@@ -432,11 +439,11 @@ export default async function ({ addon, msg, console }) {
     }
   });
 
-  popupInput.addEventListener("focusout", closePopup);
+  popupInput.addEventListener('focusout', closePopup);
 
   // Open on ctrl + space
-  document.addEventListener("keydown", (e) => {
-    if (e.key === " " && (e.ctrlKey || e.metaKey)) {
+  document.addEventListener('keydown', (e) => {
+    if (e.key === ' ' && (e.ctrlKey || e.metaKey)) {
       openPopup();
       e.preventDefault();
       e.stopPropagation();

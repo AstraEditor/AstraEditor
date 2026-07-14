@@ -16,13 +16,13 @@ export function setDuplication(newEnabled) {
 let ctrlOrMetaPressed = false;
 let altPressed = false;
 document.addEventListener(
-  "mousedown",
+  'mousedown',
   function (e) {
     ctrlOrMetaPressed = e.ctrlKey || e.metaKey;
     altPressed = e.altKey;
   },
   {
-    capture: true,
+    capture: true
   }
 );
 
@@ -50,7 +50,7 @@ export async function load(addon) {
       !isRightClickDuplicate &&
       !this.flyout_ &&
       !this.shouldDuplicateOnDrag_ &&
-      this.targetBlock_.type !== "procedures_definition";
+      this.targetBlock_.type !== 'procedures_definition';
 
     const isCherryPickingInverted = invertCherryPicking && !isRightClickDuplicate && block.getParent();
     const canCherryPick = enableCherryPicking || isDuplicating;

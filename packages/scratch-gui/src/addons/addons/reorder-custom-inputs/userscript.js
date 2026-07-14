@@ -1,20 +1,20 @@
-import { modifiedCreateAllInputs, modifiedUpdateDeclarationProcCode } from "./modified-funcs.js";
+import { modifiedCreateAllInputs, modifiedUpdateDeclarationProcCode } from './modified-funcs.js';
 
 export default async function ({ addon, console }) {
   function createArrow(direction, callback) {
-    const path = direction === "left" ? "M 17 13 L 9 21 L 17 30" : "M 9 13 L 17 21 L 9 30";
+    const path = direction === 'left' ? 'M 17 13 L 9 21 L 17 30' : 'M 9 13 L 17 21 L 9 30';
 
     Blockly.WidgetDiv.DIV.insertAdjacentHTML(
-      "beforeend",
+      'beforeend',
       `
             <svg width="20px" height="40px" 
-                 style="left: ${direction === "left" ? "calc(50% - 20px)" : "calc(50% + 20px)"}" 
+                 style="left: ${direction === 'left' ? 'calc(50% - 20px)' : 'calc(50% + 20px)'}" 
                  class="blocklyTextShiftArrow">
                 <path d="${path}" fill="none" stroke="#FF661A" stroke-width="2"></path>
             </svg>`
     );
 
-    Blockly.WidgetDiv.DIV.lastChild.addEventListener("click", callback);
+    Blockly.WidgetDiv.DIV.lastChild.addEventListener('click', callback);
   }
 
   //https://github.com/scratchfoundation/scratch-blocks/blob/f210e042988b91bcdc2abeca7a2d85e178edadb2/blocks_vertical/procedures.js#L674
@@ -54,15 +54,15 @@ export default async function ({ addon, console }) {
 
       // if a label is added, scratch's code will directly append the label text to the procCode
       // We account for this with a hacky method of adding the delimiter at the end of the last label input
-      if (fnName === "addLabelExternal") {
+      if (fnName === 'addLabelExternal') {
         const lastInput = proc.inputList[proc.inputList.length - 1];
         if (lastInput.type === Blockly.DUMMY_INPUT) {
-          lastInput.fieldRow[0].setValue(lastInput.fieldRow[0].getValue() + " %l");
+          lastInput.fieldRow[0].setValue(lastInput.fieldRow[0].getValue() + ' %l');
         }
       }
 
       proc.onChangeFn(true);
-      if (sourceBlock === null || sourceBlock === undefined || !addon.settings.get("InsertInputsAfter"))
+      if (sourceBlock === null || sourceBlock === undefined || !addon.settings.get('InsertInputsAfter'))
         return addInputFn.call(this, ...arguments);
 
       let newPosition = getFieldInputNameAndIndex(selectedField, proc.inputList).index + 1;
@@ -83,7 +83,7 @@ export default async function ({ addon, console }) {
       if (isTargetField) {
         return {
           name: input.name,
-          index: i,
+          index: i
         };
       }
     }
@@ -118,7 +118,7 @@ export default async function ({ addon, console }) {
       input.fieldRow[0].showEditor_();
     } else if (input.type === Blockly.INPUT_VALUE) {
       const target = input.connection.targetBlock();
-      target.getField("TEXT").showEditor_();
+      target.getField('TEXT').showEditor_();
     }
   }
 
@@ -129,7 +129,7 @@ export default async function ({ addon, console }) {
     if (proc.inputList.length <= 1) return;
 
     const { name, index } = getFieldInputNameAndIndex(field, proc.inputList);
-    const newPosition = direction === "left" ? index - 1 : index + 1;
+    const newPosition = direction === 'left' ? index - 1 : index + 1;
     shiftInput(proc, name, newPosition);
   }
 
@@ -138,7 +138,7 @@ export default async function ({ addon, console }) {
     procedureDeclaration.onChangeFn = modifiedUpdateDeclarationProcCode;
     procedureDeclaration.removeFieldCallback = modifiedRemoveFieldCallback;
 
-    for (const inputFn of ["addLabelExternal", "addBooleanExternal", "addStringNumberExternal"]) {
+    for (const inputFn of ['addLabelExternal', 'addBooleanExternal', 'addStringNumberExternal']) {
       if (save_original) {
         originalAddFns[inputFn] = procedureDeclaration[inputFn];
       }
@@ -161,12 +161,12 @@ export default async function ({ addon, console }) {
     // for future reference "upgrading" to addon.tab.traps.getWorkspace() will cause bugs.
     return Blockly.getMainWorkspace()
       .getAllBlocks()
-      .find((block) => block.type === "procedures_declaration");
+      .find((block) => block.type === 'procedures_declaration');
   }
 
   function enableAddon() {
     // pollute the procedures_declaration prototype with a modified version that prevents merging, and allows inserting after
-    polluteProcedureDeclaration(Blockly.Blocks["procedures_declaration"]);
+    polluteProcedureDeclaration(Blockly.Blocks['procedures_declaration']);
 
     // if custom procedures modal is already open we also directly pollute the existing procedures_declaration block
     if (addon.tab.redux.state.scratchGui.customProcedures.active) {
@@ -175,15 +175,15 @@ export default async function ({ addon, console }) {
 
     Blockly.FieldTextInputRemovable.prototype.showEditor_ = function () {
       originalShowEditor.call(this);
-      createArrow("left", () => shiftFieldCallback(this.sourceBlock_, this, "left"));
-      createArrow("right", () => shiftFieldCallback(this.sourceBlock_, this, "right"));
+      createArrow('left', () => shiftFieldCallback(this.sourceBlock_, this, 'left'));
+      createArrow('right', () => shiftFieldCallback(this.sourceBlock_, this, 'right'));
       selectedField = this;
     };
   }
 
   function disableAddon() {
     // depollute the procedures_declaration prototype
-    depolluteProcedureDeclaration(Blockly.Blocks["procedures_declaration"]);
+    depolluteProcedureDeclaration(Blockly.Blocks['procedures_declaration']);
 
     // if custom procedures modal is already open we also directly depollute the existing procedures_declaration block
     if (addon.tab.redux.state.scratchGui.customProcedures.active) {
@@ -191,18 +191,18 @@ export default async function ({ addon, console }) {
     }
 
     Blockly.FieldTextInputRemovable.prototype.showEditor_ = originalShowEditor;
-    Blockly.WidgetDiv.DIV.querySelectorAll(".blocklyTextShiftArrow").forEach((e) => e.remove());
+    Blockly.WidgetDiv.DIV.querySelectorAll('.blocklyTextShiftArrow').forEach((e) => e.remove());
   }
 
   const Blockly = await addon.tab.traps.getBlockly();
-  const originalCreateAllInputs = Blockly.Blocks["procedures_declaration"].createAllInputs_;
-  const originalUpdateDeclarationProcCode = Blockly.Blocks["procedures_declaration"].onChangeFn;
-  const originalRemoveFieldCallback = Blockly.Blocks["procedures_declaration"].removeFieldCallback;
+  const originalCreateAllInputs = Blockly.Blocks['procedures_declaration'].createAllInputs_;
+  const originalUpdateDeclarationProcCode = Blockly.Blocks['procedures_declaration'].onChangeFn;
+  const originalRemoveFieldCallback = Blockly.Blocks['procedures_declaration'].removeFieldCallback;
   const originalShowEditor = Blockly.FieldTextInputRemovable.prototype.showEditor_;
   let originalAddFns = {};
   let selectedField = null;
 
-  addon.self.addEventListener("disabled", disableAddon);
-  addon.self.addEventListener("reenabled", enableAddon);
+  addon.self.addEventListener('disabled', disableAddon);
+  addon.self.addEventListener('reenabled', enableAddon);
   enableAddon();
 }

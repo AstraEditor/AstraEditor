@@ -3,15 +3,15 @@ export default async function ({ addon, console, msg }) {
   // amount of CPU time so let's delay that for as long as possible.
   await addon.tab.traps.getPaper();
 
-  const hexComponent = (str) => Math.round(+str).toString(16).toUpperCase().padStart(2, "0");
+  const hexComponent = (str) => Math.round(+str).toString(16).toUpperCase().padStart(2, '0');
 
   const parseColor = (color) => {
     if (color === null) {
       return null;
     }
-    if (typeof color === "string") {
+    if (typeof color === 'string') {
       // TW natively supports hex color codes with or without transparency
-      if (color.startsWith("#")) {
+      if (color.startsWith('#')) {
         return color.substring(0, 9).toUpperCase();
       }
       // Sometimes paper gives us rgb() colors which have to be converted to hex
@@ -27,7 +27,7 @@ export default async function ({ addon, console, msg }) {
         return `#${hexComponent(r)}${hexComponent(g)}${hexComponent(b)}${hexComponent(a * 255)}`;
       }
     }
-    console.log("Could not normalize color", color);
+    console.log('Could not normalize color', color);
     return null;
   };
 
@@ -38,76 +38,76 @@ export default async function ({ addon, console, msg }) {
 
   // Special value Scratch uses as color when objects with different colors are selected
   // https://github.com/scratchfoundation/scratch-paint/blob/6733e20b56f52d139f9885952a57c7da012a542f/src/helper/style-path.js#L10
-  const MIXED = "scratch-paint/style-path/mixed";
+  const MIXED = 'scratch-paint/style-path/mixed';
 
-  const SCRATCH_DEFAULT_FILL = parseColor("#9966FF");
-  const SCRATCH_DEFAULT_STROKE = parseColor("#000000");
+  const SCRATCH_DEFAULT_FILL = parseColor('#9966FF');
+  const SCRATCH_DEFAULT_STROKE = parseColor('#000000');
 
   const TOOL_INFO = Object.assign(Object.create(null), {
     // Tool names and gradient info defined in https://github.com/scratchfoundation/scratch-paint/blob/develop/src/lib/modes.js
     // Search for activateTool() in matching file in https://github.com/scratchfoundation/scratch-paint/tree/develop/src/containers
     BRUSH: {
-      resetsFill: true,
+      resetsFill: true
     },
     ERASER: {},
     LINE: {
       resetsStroke: true,
       requiresNonZeroStrokeWidth: true,
-      supportsGradient: true,
+      supportsGradient: true
     },
     FILL: {
       resetsFill: true,
-      supportsGradient: true,
+      supportsGradient: true
     },
     SELECT: {
-      supportsGradient: true,
+      supportsGradient: true
     },
     RESHAPE: {
-      supportsGradient: true,
+      supportsGradient: true
     },
     OVAL: {
       resetsFill: true,
       resetsStroke: true,
-      supportsGradient: true,
+      supportsGradient: true
     },
     RECT: {
       resetsFill: true,
       resetsStroke: true,
-      supportsGradient: true,
+      supportsGradient: true
     },
     TEXT: {
       resetsFill: true,
-      resetsStroke: true,
+      resetsStroke: true
     },
     BIT_BRUSH: {
-      resetsFill: true,
+      resetsFill: true
     },
     BIT_LINE: {
       resetsFill: true,
-      requiresNonZeroStrokeWidth: true,
+      requiresNonZeroStrokeWidth: true
     },
     BIT_OVAL: {
       resetsFill: true,
       resetsStroke: true,
-      supportsGradient: true,
+      supportsGradient: true
     },
     BIT_RECT: {
       resetsFill: true,
       resetsStroke: true,
-      supportsGradient: true,
+      supportsGradient: true
     },
     BIT_TEXT: {
       resetsFill: true,
-      resetsStroke: true,
+      resetsStroke: true
     },
     BIT_FILL: {
       resetsFill: true,
-      supportsGradient: true,
+      supportsGradient: true
     },
     BIT_ERASER: {},
     BIT_SELECT: {
-      supportsGradient: true,
-    },
+      supportsGradient: true
+    }
   });
 
   const getToolInfo = () => TOOL_INFO[addon.tab.redux.state.scratchPaint.mode];
@@ -130,7 +130,7 @@ export default async function ({ addon, console, msg }) {
       if (state.primary !== newPrimary) {
         addon.tab.redux.dispatch({
           type: this.primaryAction,
-          color: newPrimary,
+          color: newPrimary
         });
       }
       const toolInfo = getToolInfo();
@@ -140,13 +140,13 @@ export default async function ({ addon, console, msg }) {
         if (state.secondary !== newSecondary) {
           addon.tab.redux.dispatch({
             type: this.secondaryAction,
-            color: newSecondary,
+            color: newSecondary
           });
         }
         if (state.gradientType !== newColor.gradientType) {
           addon.tab.redux.dispatch({
             type: this.gradientTypeAction,
-            gradientType: newColor.gradientType,
+            gradientType: newColor.gradientType
           });
         }
       }
@@ -154,31 +154,31 @@ export default async function ({ addon, console, msg }) {
   }
 
   const fillStyle = new ColorStyleReducerWrapper(
-    "fillColor",
-    "scratch-paint/fill-style/CHANGE_FILL_COLOR",
-    "scratch-paint/fill-style/CHANGE_FILL_COLOR_2",
-    "scratch-paint/fill-style/CHANGE_FILL_GRADIENT_TYPE"
+    'fillColor',
+    'scratch-paint/fill-style/CHANGE_FILL_COLOR',
+    'scratch-paint/fill-style/CHANGE_FILL_COLOR_2',
+    'scratch-paint/fill-style/CHANGE_FILL_GRADIENT_TYPE'
   );
   const strokeStyle = new ColorStyleReducerWrapper(
-    "strokeColor",
-    "scratch-paint/stroke-style/CHANGE_STROKE_COLOR",
-    "scratch-paint/stroke-style/CHANGE_STROKE_COLOR_2",
-    "scratch-paint/stroke-style/CHANGE_STROKE_GRADIENT_TYPE"
+    'strokeColor',
+    'scratch-paint/stroke-style/CHANGE_STROKE_COLOR',
+    'scratch-paint/stroke-style/CHANGE_STROKE_COLOR_2',
+    'scratch-paint/stroke-style/CHANGE_STROKE_GRADIENT_TYPE'
   );
 
   const simpleHexColor = (hex) => ({
     primary: hex,
     secondary: null,
-    gradientType: "SOLID",
+    gradientType: 'SOLID'
   });
 
   let defaultFillColor;
   let defaultStrokeColor;
   let defaultStrokeWidth;
   const setDefaultColorsToSettings = () => {
-    defaultFillColor = simpleHexColor(parseColor(addon.settings.get("fill")));
-    defaultStrokeColor = simpleHexColor(parseColor(addon.settings.get("stroke")));
-    defaultStrokeWidth = addon.settings.get("strokeSize");
+    defaultFillColor = simpleHexColor(parseColor(addon.settings.get('fill')));
+    defaultStrokeColor = simpleHexColor(parseColor(addon.settings.get('stroke')));
+    defaultStrokeWidth = addon.settings.get('strokeSize');
   };
   setDefaultColorsToSettings();
 
@@ -195,8 +195,8 @@ export default async function ({ addon, console, msg }) {
     }
     if (addon.tab.redux.state.scratchPaint.color.strokeWidth !== width) {
       addon.tab.redux.dispatch({
-        type: "scratch-paint/stroke-width/CHANGE_STROKE_WIDTH",
-        strokeWidth: width,
+        type: 'scratch-paint/stroke-width/CHANGE_STROKE_WIDTH',
+        strokeWidth: width
       });
     }
   };
@@ -207,8 +207,8 @@ export default async function ({ addon, console, msg }) {
     applyStrokeWidth(false);
   }
 
-  addon.settings.addEventListener("change", () => {
-    if (!addon.settings.get("persistence")) {
+  addon.settings.addEventListener('change', () => {
+    if (!addon.settings.get('persistence')) {
       setDefaultColorsToSettings();
     }
   });
@@ -217,13 +217,13 @@ export default async function ({ addon, console, msg }) {
 
   let activatingTool = false;
   addon.tab.redux.initialize();
-  addon.tab.redux.addEventListener("statechanged", ({ detail }) => {
+  addon.tab.redux.addEventListener('statechanged', ({ detail }) => {
     if (addon.self.disabled) {
       return;
     }
     const action = detail.action;
 
-    if (!activatingTool && addon.settings.get("persistence")) {
+    if (!activatingTool && addon.settings.get('persistence')) {
       // We always want to check for changes instead of filtering to just certain actions because quite a few
       // actions can change these.
       const newFill = fillStyle.get();
@@ -236,20 +236,20 @@ export default async function ({ addon, console, msg }) {
       }
 
       const newStrokeWidth = detail.next.scratchPaint.color.strokeWidth;
-      if (typeof newStrokeWidth === "number") {
+      if (typeof newStrokeWidth === 'number') {
         defaultStrokeWidth = newStrokeWidth;
       }
     }
 
-    if (action.type === "scratch-paint/modes/CHANGE_MODE") {
+    if (action.type === 'scratch-paint/modes/CHANGE_MODE') {
       activatingTool = true;
       queueMicrotask(() => {
         activatingTool = false;
-        if (addon.settings.get("persistence")) {
+        if (addon.settings.get('persistence')) {
           // In persistence, we always want to re-apply the previous stroke and fill.
           const toolInfo = getToolInfo();
           if (!toolInfo) {
-            console.warn("unknown tool", addon.tab.redux.state.scratchPaint.mode);
+            console.warn('unknown tool', addon.tab.redux.state.scratchPaint.mode);
             return;
           }
           if (toolInfo.resetsFill) {

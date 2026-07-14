@@ -17,107 +17,118 @@
  *    they use. Can not rely on the default JS generator.
  */
 
-const {InputOpcode, InputType} = require('./enums');
+const { InputOpcode, InputType } = require('./enums');
 // eslint-disable-next-line no-unused-vars
-const {IntermediateInput, IntermediateStackBlock, IntermediateStack} = require('./intermediate');
+const { IntermediateInput, IntermediateStackBlock, IntermediateStack } = require('./intermediate');
 
 class IRGeneratorStub {
-    // Doesn't seem like extensions override anything, though the class may
-    // still need to exist to avoid type errors.
+  // Doesn't seem like extensions override anything, though the class may
+  // still need to exist to avoid type errors.
 }
 
 class ScriptTreeGeneratorStub {
+  /**
+   * @param {import("./irgen").ScriptTreeGenerator} real
+   */
+  constructor(real) {
     /**
-     * @param {import("./irgen").ScriptTreeGenerator} real
+     * @type {import("./irgen").ScriptTreeGenerator}
      */
-    constructor (real) {
-        /**
-         * @type {import("./irgen").ScriptTreeGenerator}
-         */
-        this.real = real;
+    this.real = real;
 
-        this.fakeThis = {
-            thread: real.thread,
-            target: real.target,
-            blocks: real.blocks,
-            runtime: real.runtime,
-            stage: real.stage,
-            script: real.script,
+    this.fakeThis = {
+      thread: real.thread,
+      target: real.target,
+      blocks: real.blocks,
+      runtime: real.runtime,
+      stage: real.stage,
+      script: real.script,
 
-            /**
-             * @param parentBlock Parent VM block.
-             * @param {string} inputName Name of input.
-             * @returns opaque object
-             */
-            descendInputOfBlock (parentBlock, inputName) {
-                const node = real.descendInputOfBlock(parentBlock, inputName, true);
-                return node;
-            },
+      /**
+       * @param parentBlock Parent VM block.
+       * @param {string} inputName Name of input.
+       * @returns opaque object
+       */
+      descendInputOfBlock(parentBlock, inputName) {
+        const node = real.descendInputOfBlock(parentBlock, inputName, true);
+        return node;
+      },
 
-            /**
-             * @param {*} parentBlock Parent VM block.
-             * @param {*} substackName Name of substack.
-             * @returns opaque object
-             */
-            descendSubstack (parentBlock, substackName) {
-                const substack = real.descendSubstack(parentBlock, substackName);
-                return substack;
-            },
+      /**
+       * @param {*} parentBlock Parent VM block.
+       * @param {*} substackName Name of substack.
+       * @returns opaque object
+       */
+      descendSubstack(parentBlock, substackName) {
+        const substack = real.descendSubstack(parentBlock, substackName);
+        return substack;
+      },
 
-            analyzeLoop () {
-                // TODO: not always necessary
-                real.script.yields = true;
-            }
-        };
+      analyzeLoop() {
+        // TODO: not always necessary
+        real.script.yields = true;
+      }
+    };
+  }
+
+  /**
+   * Intended for extensions to override.
+   * Always call from `fakeThis` context.
+   * @param {{opcode: string}} block VM block
+   * @returns {{kind: string}} Node object from old compiler.
+   */
+  descendInput(block) {
+    // eslint-disable-line no-unused-vars
+    return null;
+  }
+
+  /**
+   * Intended for extensions to override.
+   * Always call from `fakeThis` context.
+   * @param {{opcode: string}} block VM block
+   * @returns {{kind: string}} Node object from old compiler.
+   */
+  descendStackedBlock(block) {
+    // eslint-disable-line no-unused-vars
+    return null;
+  }
+
+  /**
+   * @param block VM block
+   * @returns {IntermediateInput|null}
+   */
+  descendInputFromNewCompiler(block) {
+    const node = this.descendInput.call(this.fakeThis, block);
+    if (node) {
+      return new IntermediateInput(
+        InputOpcode.OLD_COMPILER_COMPATIBILITY_LAYER,
+        InputType.ANY,
+        {
+          oldNode: node
+        },
+        true
+      );
     }
+    return null;
+  }
 
-    /**
-     * Intended for extensions to override.
-     * Always call from `fakeThis` context.
-     * @param {{opcode: string}} block VM block
-     * @returns {{kind: string}} Node object from old compiler.
-     */
-    descendInput (block) { // eslint-disable-line no-unused-vars
-        return null;
+  /**
+   * @param block VM block
+   * @returns {IntermediateStackBlock|null}
+   */
+  descendStackedBlockFromNewCompiler(block) {
+    const node = this.descendStackedBlock.call(this.fakeThis, block);
+    if (node) {
+      return new IntermediateStackBlock(
+        InputOpcode.OLD_COMPILER_COMPATIBILITY_LAYER,
+        {
+          oldNode: node
+        },
+        true
+      );
     }
-
-    /**
-     * Intended for extensions to override.
-     * Always call from `fakeThis` context.
-     * @param {{opcode: string}} block VM block
-     * @returns {{kind: string}} Node object from old compiler.
-     */
-    descendStackedBlock (block) { // eslint-disable-line no-unused-vars
-        return null;
-    }
-
-    /**
-     * @param block VM block
-     * @returns {IntermediateInput|null}
-     */
-    descendInputFromNewCompiler (block) {
-        const node = this.descendInput.call(this.fakeThis, block);
-        if (node) {
-            return new IntermediateInput(InputOpcode.OLD_COMPILER_COMPATIBILITY_LAYER, InputType.ANY, {
-                oldNode: node
-            }, true);
-        }
-        return null;
-    }
-
-    /**
-     * @param block VM block
-     * @returns {IntermediateStackBlock|null}
-     */
-    descendStackedBlockFromNewCompiler (block) {
-        const node = this.descendStackedBlock.call(this.fakeThis, block);
-        if (node) {
-            return new IntermediateStackBlock(InputOpcode.OLD_COMPILER_COMPATIBILITY_LAYER, {
-                oldNode: node
-            }, true);
-        }
-        return null;
-    }
+    return null;
+  }
 }
 
 // These are part of the old compiler's API.
@@ -131,219 +142,219 @@ const TYPE_NUMBER_NAN = 5;
  * Part of the old compiler's API.
  */
 class TypedInput {
+  /**
+   * @param {string} source JavaScript
+   * @param {number|IntermediateInput} typeOrIntermediate
+   */
+  constructor(source, typeOrIntermediate) {
     /**
-     * @param {string} source JavaScript
-     * @param {number|IntermediateInput} typeOrIntermediate
+     * JavaScript.
+     * @type {string}
      */
-    constructor (source, typeOrIntermediate) {
-        /**
-         * JavaScript.
-         * @type {string}
-         */
-        this.source = source;
+    this.source = source;
 
-        if (typeOrIntermediate instanceof IntermediateInput) {
-            // Path used by the compatibility layer itself
+    if (typeOrIntermediate instanceof IntermediateInput) {
+      // Path used by the compatibility layer itself
 
-            /**
-             * @type {IntermediateInput}
-             */
-            this.intermediate = typeOrIntermediate;
+      /**
+       * @type {IntermediateInput}
+       */
+      this.intermediate = typeOrIntermediate;
 
-            /**
-             * @type {number} See TYPE_* constants above
-             */
-            this.type = TYPE_UNKNOWN;
-        } else {
-            // Path used by extensions
-            this.intermediate = null;
-            this.type = typeOrIntermediate;
-        }
+      /**
+       * @type {number} See TYPE_* constants above
+       */
+      this.type = TYPE_UNKNOWN;
+    } else {
+      // Path used by extensions
+      this.intermediate = null;
+      this.type = typeOrIntermediate;
     }
+  }
 
-    asNumber () {
-        return `(+${this.source} || 0)`;
-    }
+  asNumber() {
+    return `(+${this.source} || 0)`;
+  }
 
-    asNumberOrNaN () {
-        return `(+${this.source})`;
-    }
+  asNumberOrNaN() {
+    return `(+${this.source})`;
+  }
 
-    asString () {
-        return `("" + ${this.source})`;
-    }
+  asString() {
+    return `("" + ${this.source})`;
+  }
 
-    asBoolean () {
-        return `toBoolean(${this.source})`;
-    }
+  asBoolean() {
+    return `toBoolean(${this.source})`;
+  }
 
-    asColor () {
-        return this.asUnknown();
-    }
+  asColor() {
+    return this.asUnknown();
+  }
 
-    asUnknown () {
-        return this.source;
-    }
+  asUnknown() {
+    return this.source;
+  }
 
-    asSafe () {
-        return this.asUnknown();
-    }
+  asSafe() {
+    return this.asUnknown();
+  }
 
-    isAlwaysNumber () {
-        // TODO
-        return false;
-    }
+  isAlwaysNumber() {
+    // TODO
+    return false;
+  }
 
-    isAlwaysNumberOrNaN () {
-        // TODO
-        return false;
-    }
+  isAlwaysNumberOrNaN() {
+    // TODO
+    return false;
+  }
 
-    isNeverNumber () {
-        // TODO
-        return false;
-    }
+  isNeverNumber() {
+    // TODO
+    return false;
+  }
 }
 
 /**
  * Part of the old compiler's API.
  */
 class VariablePool {
-    constructor (prefix) {
-        this.prefix = prefix;
-        this.count = 0;
-    }
+  constructor(prefix) {
+    this.prefix = prefix;
+    this.count = 0;
+  }
 
-    next () {
-        return `${this.prefix}${this.count++}`;
-    }
+  next() {
+    return `${this.prefix}${this.count++}`;
+  }
 }
 
 /**
  * Part of the old compiler's API.
  */
 class Frame {
-    constructor (isLoop) {
-        this.isLoop = isLoop;
-        this.isLastBlock = false;
-    }
+  constructor(isLoop) {
+    this.isLoop = isLoop;
+    this.isLastBlock = false;
+  }
 }
 
 class JSGeneratorStub {
+  /**
+   * @param {import("./jsgen")} real
+   */
+  constructor(real) {
     /**
-     * @param {import("./jsgen")} real
+     * @type {import("./jsgen")}
      */
-    constructor (real) {
-        /**
-         * @type {import("./jsgen")}
-         */
-        this.real = real;
+    this.real = real;
 
-        this.fakeThis = {
-            script: real.script,
-            ir: real.ir,
-            target: real.target,
+    this.fakeThis = {
+      script: real.script,
+      ir: real.ir,
+      target: real.target,
 
-            get frames () {
-                return real.frames;
-            },
-            get currentFrame () {
-                return real.currentFrame;
-            },
+      get frames() {
+        return real.frames;
+      },
+      get currentFrame() {
+        return real.currentFrame;
+      },
 
-            get source () {
-                return real.source;
-            },
-            set source (newSource) {
-                real.source = newSource;
-            },
+      get source() {
+        return real.source;
+      },
+      set source(newSource) {
+        real.source = newSource;
+      },
 
-            localVariables: new VariablePool('oldCompilerLocal'),
+      localVariables: new VariablePool('oldCompilerLocal'),
 
-            /**
-             * @param {IntermediateInput} intermediate
-             * @returns {void} output is concatenated in this.source
-             */
-            descendInput (intermediate) {
-                const js = real.descendInput(intermediate);
-                return new TypedInput(js, intermediate);
-            },
+      /**
+       * @param {IntermediateInput} intermediate
+       * @returns {void} output is concatenated in this.source
+       */
+      descendInput(intermediate) {
+        const js = real.descendInput(intermediate);
+        return new TypedInput(js, intermediate);
+      },
 
-            /**
-             * @param {IntermediateStack} stack Stack of blocks.
-             * @param {Frame} frame New frame
-             */
-            descendStack (stack, frame) {
-                real.descendStack(stack, frame);
-            },
+      /**
+       * @param {IntermediateStack} stack Stack of blocks.
+       * @param {Frame} frame New frame
+       */
+      descendStack(stack, frame) {
+        real.descendStack(stack, frame);
+      },
 
-            yieldLoop: () => real.yieldLoop(),
-            yieldNotWarp: () => real.yieldNotWarp(),
-            yieldStuckOrNotWarp: () => real.yieldStuckOrNotWarp(),
-            yielded: () => real.yielded(),
-            requestRedraw: () => real.requestRedraw()
-        };
-    }
+      yieldLoop: () => real.yieldLoop(),
+      yieldNotWarp: () => real.yieldNotWarp(),
+      yieldStuckOrNotWarp: () => real.yieldStuckOrNotWarp(),
+      yielded: () => real.yielded(),
+      requestRedraw: () => real.requestRedraw()
+    };
+  }
 
-    /**
-     * Intended for extensions to override.
-     * Always call from `fakeThis` context.
-     * @param {{kind: string}} node Old compiler AST node.
-     * @returns {TypedInput} Old compiler TypedInput.
-     */
-    descendInput (node) {
-        throw new Error(`Unknown input: ${node.kind}`);
-    }
+  /**
+   * Intended for extensions to override.
+   * Always call from `fakeThis` context.
+   * @param {{kind: string}} node Old compiler AST node.
+   * @returns {TypedInput} Old compiler TypedInput.
+   */
+  descendInput(node) {
+    throw new Error(`Unknown input: ${node.kind}`);
+  }
 
-    /**
-     * Intended for extensions to override.
-     * Always call from `fakeThis` context.
-     * @param {{kind: string}} node Old compiler AST node.
-     */
-    descendStackedBlock (node) {
-        throw new Error(`Unknown stacked block: ${node.kind}`);
-    }
+  /**
+   * Intended for extensions to override.
+   * Always call from `fakeThis` context.
+   * @param {{kind: string}} node Old compiler AST node.
+   */
+  descendStackedBlock(node) {
+    throw new Error(`Unknown stacked block: ${node.kind}`);
+  }
 
-    /**
-     * @param {IntermediateInput} intermediate
-     * @returns {string} JavaScript
-     */
-    descendInputFromNewCompiler (intermediate) {
-        const oldNode = intermediate.inputs.oldNode;
-        const typedInput = this.descendInput.call(this.fakeThis, oldNode);
-        return typedInput.asSafe();
-    }
+  /**
+   * @param {IntermediateInput} intermediate
+   * @returns {string} JavaScript
+   */
+  descendInputFromNewCompiler(intermediate) {
+    const oldNode = intermediate.inputs.oldNode;
+    const typedInput = this.descendInput.call(this.fakeThis, oldNode);
+    return typedInput.asSafe();
+  }
 
-    /**
-     * @param {IntermediateStackBlock} intermediate
-     * @returns {void} source property on real JSGenerator is modified directly
-     */
-    descendStackedBlockFromNewCompiler (intermediate) {
-        const oldNode = intermediate.inputs.oldNode;
-        this.descendStackedBlock.call(this.fakeThis, oldNode);
-    }
+  /**
+   * @param {IntermediateStackBlock} intermediate
+   * @returns {void} source property on real JSGenerator is modified directly
+   */
+  descendStackedBlockFromNewCompiler(intermediate) {
+    const oldNode = intermediate.inputs.oldNode;
+    this.descendStackedBlock.call(this.fakeThis, oldNode);
+  }
 }
 
 /**
  * Part of old compiler's API.
  */
 JSGeneratorStub.unstable_exports = {
-    TYPE_NUMBER,
-    TYPE_STRING,
-    TYPE_BOOLEAN,
-    TYPE_UNKNOWN,
-    TYPE_NUMBER_NAN,
-    VariablePool,
-    TypedInput,
-    Frame
+  TYPE_NUMBER,
+  TYPE_STRING,
+  TYPE_BOOLEAN,
+  TYPE_UNKNOWN,
+  TYPE_NUMBER_NAN,
+  VariablePool,
+  TypedInput,
+  Frame
 };
 
 const oldCompilerCompatibility = {
-    enabled: false,
-    IRGeneratorStub,
-    ScriptTreeGeneratorStub,
-    TypedInput,
-    JSGeneratorStub
+  enabled: false,
+  IRGeneratorStub,
+  ScriptTreeGeneratorStub,
+  TypedInput,
+  JSGeneratorStub
 };
 
 module.exports = oldCompilerCompatibility;

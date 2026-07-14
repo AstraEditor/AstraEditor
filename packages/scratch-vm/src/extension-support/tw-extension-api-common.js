@@ -6,12 +6,12 @@ const Cast = require('../util/cast');
 const external = require('./tw-external');
 
 const Scratch = {
-    ArgumentType,
-    BlockType,
-    BlockShape,
-    TargetType,
-    Cast,
-    external
+  ArgumentType,
+  BlockType,
+  BlockShape,
+  TargetType,
+  Cast,
+  external
 };
 
 module.exports = Scratch;

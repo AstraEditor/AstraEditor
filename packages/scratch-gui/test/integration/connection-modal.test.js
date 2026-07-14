@@ -1,14 +1,7 @@
 import path from 'path';
 import SeleniumHelper from '../helpers/selenium-helper';
 
-const {
-    clickText,
-    clickXpath,
-    findByText,
-    getDriver,
-    getLogs,
-    loadUri
-} = new SeleniumHelper();
+const { clickText, clickXpath, findByText, getDriver, getLogs, loadUri } = new SeleniumHelper();
 
 const uri = path.resolve(__dirname, '../../build/index.html');
 
@@ -24,44 +17,44 @@ const websocketFakeoutJs = `var RealWebSocket = WebSocket;
     }`;
 
 describe('Hardware extension connection modal', () => {
-    beforeAll(() => {
-        driver = getDriver();
-    });
+  beforeAll(() => {
+    driver = getDriver();
+  });
 
-    afterAll(async () => {
-        await driver.quit();
-    });
+  afterAll(async () => {
+    await driver.quit();
+  });
 
-    test('Message saying Scratch Link is unavailable (BLE)', async () => {
-        await driver.quit();
-        driver = getDriver();
+  test('Message saying Scratch Link is unavailable (BLE)', async () => {
+    await driver.quit();
+    driver = getDriver();
 
-        await loadUri(uri);
+    await loadUri(uri);
 
-        await driver.executeScript(websocketFakeoutJs);
+    await driver.executeScript(websocketFakeoutJs);
 
-        await clickXpath('//button[@title="Add Extension"]');
+    await clickXpath('//button[@title="Add Extension"]');
 
-        await clickText('micro:bit');
-        await new Promise(resolve => setTimeout(resolve, 1000)); // Wait for modal to open
-        findByText('Scratch Link'); // Scratch Link is mentioned in the error modal
+    await clickText('micro:bit');
+    await new Promise((resolve) => setTimeout(resolve, 1000)); // Wait for modal to open
+    findByText('Scratch Link'); // Scratch Link is mentioned in the error modal
 
-        const logs = await getLogs();
-        await expect(logs).toEqual([]);
-    });
+    const logs = await getLogs();
+    await expect(logs).toEqual([]);
+  });
 
-    test('Message saying Scratch Link is unavailable (BT)', async () => {
-        await loadUri(uri);
+  test('Message saying Scratch Link is unavailable (BT)', async () => {
+    await loadUri(uri);
 
-        await driver.executeScript(websocketFakeoutJs);
+    await driver.executeScript(websocketFakeoutJs);
 
-        await clickXpath('//button[@title="Add Extension"]');
+    await clickXpath('//button[@title="Add Extension"]');
 
-        await clickText('EV3');
-        await new Promise(resolve => setTimeout(resolve, 1000)); // Wait for modal to open
-        findByText('Scratch Link'); // Scratch Link is mentioned in the error modal
+    await clickText('EV3');
+    await new Promise((resolve) => setTimeout(resolve, 1000)); // Wait for modal to open
+    findByText('Scratch Link'); // Scratch Link is mentioned in the error modal
 
-        const logs = await getLogs();
-        await expect(logs).toEqual([]);
-    });
+    const logs = await getLogs();
+    await expect(logs).toEqual([]);
+  });
 });

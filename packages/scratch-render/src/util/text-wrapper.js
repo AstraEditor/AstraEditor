@@ -20,93 +20,93 @@ const GraphemeBreaker = require('!ify-loader!grapheme-breaker');
  * - "JavaScript has a Unicode problem" by Mathias Bynens: https://mathiasbynens.be/notes/javascript-unicode
  */
 class TextWrapper {
-    /**
-     * Construct a text wrapper which will measure text using the specified measurement provider.
-     * @param {MeasurementProvider} measurementProvider - a helper object to provide text measurement services.
-     */
-    constructor (measurementProvider) {
-        this._measurementProvider = measurementProvider;
-        this._cache = {};
+  /**
+   * Construct a text wrapper which will measure text using the specified measurement provider.
+   * @param {MeasurementProvider} measurementProvider - a helper object to provide text measurement services.
+   */
+  constructor(measurementProvider) {
+    this._measurementProvider = measurementProvider;
+    this._cache = {};
+  }
+
+  /**
+   * Wrap the provided text into lines restricted to a maximum width. See Unicode Standard Annex (UAX) #14.
+   * @param {number} maxWidth - the maximum allowed width of a line.
+   * @param {string} text - the text to be wrapped. Will be split on whitespace.
+   * @returns {Array.<string>} an array containing the wrapped lines of text.
+   */
+  wrapText(maxWidth, text) {
+    // Normalize to canonical composition (see Unicode Standard Annex (UAX) #15)
+    text = text.normalize();
+
+    const cacheKey = `${maxWidth}-${text}`;
+    if (this._cache[cacheKey]) {
+      return this._cache[cacheKey];
     }
 
-    /**
-     * Wrap the provided text into lines restricted to a maximum width. See Unicode Standard Annex (UAX) #14.
-     * @param {number} maxWidth - the maximum allowed width of a line.
-     * @param {string} text - the text to be wrapped. Will be split on whitespace.
-     * @returns {Array.<string>} an array containing the wrapped lines of text.
-     */
-    wrapText (maxWidth, text) {
-        // Normalize to canonical composition (see Unicode Standard Annex (UAX) #15)
-        text = text.normalize();
+    const measurementSession = this._measurementProvider.beginMeasurementSession();
 
-        const cacheKey = `${maxWidth}-${text}`;
-        if (this._cache[cacheKey]) {
-            return this._cache[cacheKey];
-        }
+    const breaker = new LineBreaker(text);
+    let lastPosition = 0;
+    let nextBreak;
+    let currentLine = null;
+    const lines = [];
 
-        const measurementSession = this._measurementProvider.beginMeasurementSession();
+    while ((nextBreak = breaker.nextBreak())) {
+      const word = text.slice(lastPosition, nextBreak.position).replace(/\n+$/, '');
 
-        const breaker = new LineBreaker(text);
-        let lastPosition = 0;
-        let nextBreak;
-        let currentLine = null;
-        const lines = [];
+      let proposedLine = (currentLine || '').concat(word);
+      let proposedLineWidth = this._measurementProvider.measureText(proposedLine);
 
-        while ((nextBreak = breaker.nextBreak())) {
-            const word = text.slice(lastPosition, nextBreak.position).replace(/\n+$/, '');
-
-            let proposedLine = (currentLine || '').concat(word);
-            let proposedLineWidth = this._measurementProvider.measureText(proposedLine);
-
-            if (proposedLineWidth > maxWidth) {
-                // The next word won't fit on this line. Will it fit on a line by itself?
-                const wordWidth = this._measurementProvider.measureText(word);
-                if (wordWidth > maxWidth) {
-                    // The next word can't even fit on a line by itself. Consume it one grapheme cluster at a time.
-                    let lastCluster = 0;
-                    let nextCluster;
-                    while (lastCluster !== (nextCluster = GraphemeBreaker.nextBreak(word, lastCluster))) {
-                        const cluster = word.substring(lastCluster, nextCluster);
-                        proposedLine = (currentLine || '').concat(cluster);
-                        proposedLineWidth = this._measurementProvider.measureText(proposedLine);
-                        if ((currentLine === null) || (proposedLineWidth <= maxWidth)) {
-                            // first cluster of a new line or the cluster fits
-                            currentLine = proposedLine;
-                        } else {
-                            // no more can fit
-                            lines.push(currentLine);
-                            currentLine = cluster;
-                        }
-                        lastCluster = nextCluster;
-                    }
-                } else {
-                    // The next word can fit on the next line. Finish the current line and move on.
-                    if (currentLine !== null) lines.push(currentLine);
-                    currentLine = word;
-                }
+      if (proposedLineWidth > maxWidth) {
+        // The next word won't fit on this line. Will it fit on a line by itself?
+        const wordWidth = this._measurementProvider.measureText(word);
+        if (wordWidth > maxWidth) {
+          // The next word can't even fit on a line by itself. Consume it one grapheme cluster at a time.
+          let lastCluster = 0;
+          let nextCluster;
+          while (lastCluster !== (nextCluster = GraphemeBreaker.nextBreak(word, lastCluster))) {
+            const cluster = word.substring(lastCluster, nextCluster);
+            proposedLine = (currentLine || '').concat(cluster);
+            proposedLineWidth = this._measurementProvider.measureText(proposedLine);
+            if (currentLine === null || proposedLineWidth <= maxWidth) {
+              // first cluster of a new line or the cluster fits
+              currentLine = proposedLine;
             } else {
-                // The next word fits on this line. Just keep going.
-                currentLine = proposedLine;
+              // no more can fit
+              lines.push(currentLine);
+              currentLine = cluster;
             }
-
-            // Did we find a \n or similar?
-            if (nextBreak.required) {
-                if (currentLine !== null) lines.push(currentLine);
-                currentLine = null;
-            }
-
-            lastPosition = nextBreak.position;
+            lastCluster = nextCluster;
+          }
+        } else {
+          // The next word can fit on the next line. Finish the current line and move on.
+          if (currentLine !== null) lines.push(currentLine);
+          currentLine = word;
         }
+      } else {
+        // The next word fits on this line. Just keep going.
+        currentLine = proposedLine;
+      }
 
-        currentLine = currentLine || '';
-        if (currentLine.length > 0 || lines.length === 0) {
-            lines.push(currentLine);
-        }
+      // Did we find a \n or similar?
+      if (nextBreak.required) {
+        if (currentLine !== null) lines.push(currentLine);
+        currentLine = null;
+      }
 
-        this._cache[cacheKey] = lines;
-        this._measurementProvider.endMeasurementSession(measurementSession);
-        return lines;
+      lastPosition = nextBreak.position;
     }
+
+    currentLine = currentLine || '';
+    if (currentLine.length > 0 || lines.length === 0) {
+      lines.push(currentLine);
+    }
+
+    this._cache[cacheKey] = lines;
+    this._measurementProvider.endMeasurementSession(measurementSession);
+    return lines;
+  }
 }
 
 module.exports = TextWrapper;

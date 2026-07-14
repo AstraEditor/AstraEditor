@@ -16,53 +16,50 @@ import UpdatePeripheralStep from './update-peripheral-step.jsx';
 import styles from './connection-modal.css';
 
 const PHASES = keyMirror({
-    scanning: null,
-    connecting: null,
-    connected: null,
-    error: null,
-    unavailable: null,
-    updatePeripheral: null
+  scanning: null,
+  connecting: null,
+  connected: null,
+  error: null,
+  unavailable: null,
+  updatePeripheral: null
 });
 
-const ConnectionModalComponent = props => (
-    <Modal
-        className={styles.modalContent}
-        contentLabel={props.name}
-        headerClassName={styles.header}
-        headerImage={props.connectionSmallIconURL}
-        id="connectionModal"
-        onHelp={props.onHelp}
-        onRequestClose={props.onCancel}
-    >
-        <Box className={styles.body}>
-            {props.phase === PHASES.scanning && !props.useAutoScan && <ScanningStep {...props} />}
-            {props.phase === PHASES.scanning && props.useAutoScan && <AutoScanningStep {...props} />}
-            {props.phase === PHASES.connecting && <ConnectingStep {...props} />}
-            {props.phase === PHASES.connected && <ConnectedStep {...props} />}
-            {props.phase === PHASES.error && <ErrorStep {...props} />}
-            {props.phase === PHASES.unavailable && <UnavailableStep {...props} />}
-            {props.phase === PHASES.updatePeripheral && <UpdatePeripheralStep {...props} />}
-        </Box>
-    </Modal>
+const ConnectionModalComponent = (props) => (
+  <Modal
+    className={styles.modalContent}
+    contentLabel={props.name}
+    headerClassName={styles.header}
+    headerImage={props.connectionSmallIconURL}
+    id="connectionModal"
+    onHelp={props.onHelp}
+    onRequestClose={props.onCancel}
+  >
+    <Box className={styles.body}>
+      {props.phase === PHASES.scanning && !props.useAutoScan && <ScanningStep {...props} />}
+      {props.phase === PHASES.scanning && props.useAutoScan && <AutoScanningStep {...props} />}
+      {props.phase === PHASES.connecting && <ConnectingStep {...props} />}
+      {props.phase === PHASES.connected && <ConnectedStep {...props} />}
+      {props.phase === PHASES.error && <ErrorStep {...props} />}
+      {props.phase === PHASES.unavailable && <UnavailableStep {...props} />}
+      {props.phase === PHASES.updatePeripheral && <UpdatePeripheralStep {...props} />}
+    </Box>
+  </Modal>
 );
 
 ConnectionModalComponent.propTypes = {
-    connectingMessage: PropTypes.node.isRequired,
-    connectionSmallIconURL: PropTypes.string,
-    connectionTipIconURL: PropTypes.string,
-    name: PropTypes.node,
-    onCancel: PropTypes.func.isRequired,
-    onHelp: PropTypes.func.isRequired,
-    phase: PropTypes.oneOf(Object.keys(PHASES)).isRequired,
-    title: PropTypes.string.isRequired,
-    useAutoScan: PropTypes.bool.isRequired
+  connectingMessage: PropTypes.node.isRequired,
+  connectionSmallIconURL: PropTypes.string,
+  connectionTipIconURL: PropTypes.string,
+  name: PropTypes.node,
+  onCancel: PropTypes.func.isRequired,
+  onHelp: PropTypes.func.isRequired,
+  phase: PropTypes.oneOf(Object.keys(PHASES)).isRequired,
+  title: PropTypes.string.isRequired,
+  useAutoScan: PropTypes.bool.isRequired
 };
 
 ConnectionModalComponent.defaultProps = {
-    connectingMessage: 'Connecting'
+  connectingMessage: 'Connecting'
 };
 
-export {
-    ConnectionModalComponent as default,
-    PHASES
-};
+export { ConnectionModalComponent as default, PHASES };

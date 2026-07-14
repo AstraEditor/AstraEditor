@@ -18,14 +18,13 @@
  * limitations under the License.
  */
 
- /**
+/**
  * @fileoverview Test utilities.
  * @author marisaleung@google.com (Marisa Leung)
  */
 'use strict';
 
 goog.require('goog.testing');
-
 
 /**
  * The normal blockly event fire function.  We sometimes override this.  This
@@ -67,15 +66,13 @@ function isEqualArrays(array1, array2) {
  * @param {Array<!Object>} return_values The values to return when called.
  * @return {!goog.testing.MockInterface} The mocked method.
  */
-function setUpMockMethod(mockControl, scope, funcName, parameters,
-	return_values) {
+function setUpMockMethod(mockControl, scope, funcName, parameters, return_values) {
   var mockMethod = mockControl.createMethodMock(scope, funcName);
   if (return_values) {
-    for (var i = 0, return_value; return_value = return_values[i]; i++) {
+    for (var i = 0, return_value; (return_value = return_values[i]); i++) {
       if (parameters && i < parameters.length) {
         mockMethod(parameters[i]).$returns(return_value);
-      }
-      else {
+      } else {
         mockMethod().$returns(return_value);
       }
     }
@@ -141,17 +138,19 @@ function createVariableAndBlock(workspace) {
 }
 
 function defineGetVarBlock() {
-  Blockly.defineBlocksWithJsonArray([{
-    "type": "get_var_block",
-    "message0": "%1",
-    "args0": [
-      {
-        "type": "field_variable",
-        "name": "VAR",
-        "variableTypes": ["", "type1", "type2"]
-      }
-    ]
-  }]);
+  Blockly.defineBlocksWithJsonArray([
+    {
+      type: 'get_var_block',
+      message0: '%1',
+      args0: [
+        {
+          type: 'field_variable',
+          name: 'VAR',
+          variableTypes: ['', 'type1', 'type2']
+        }
+      ]
+    }
+  ]);
 }
 
 function undefineGetVarBlock() {

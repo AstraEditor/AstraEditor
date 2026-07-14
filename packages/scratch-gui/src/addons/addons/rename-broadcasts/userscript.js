@@ -3,7 +3,7 @@ export default async function ({ addon, msg, console }) {
   const Blockly = await addon.tab.traps.getBlockly();
 
   // editor-searchable-dropdowns relies on this value
-  const RENAME_BROADCAST_MESSAGE_ID = "RENAME_BROADCAST_MESSAGE_ID";
+  const RENAME_BROADCAST_MESSAGE_ID = 'RENAME_BROADCAST_MESSAGE_ID';
 
   const BROADCAST_MESSAGE_TYPE = Blockly.BROADCAST_MESSAGE_VARIABLE_TYPE;
 
@@ -14,9 +14,9 @@ export default async function ({ addon, msg, console }) {
       !addon.self.disabled &&
       this.defaultType_ === BROADCAST_MESSAGE_TYPE &&
       // Disable when workspace has no actual broadcast to rename
-      this.sourceBlock_.workspace.getVariableTypes().includes("broadcast_msg")
+      this.sourceBlock_.workspace.getVariableTypes().includes('broadcast_msg')
     ) {
-      options.push([msg("RENAME_BROADCAST"), RENAME_BROADCAST_MESSAGE_ID]);
+      options.push([msg('RENAME_BROADCAST'), RENAME_BROADCAST_MESSAGE_ID]);
     }
     return options;
   };
@@ -99,7 +99,7 @@ export default async function ({ addon, msg, console }) {
     for (const block of workspace.getAllBlocks()) {
       for (const input of block.inputList) {
         for (const field of input.fieldRow) {
-          if (field.name === "BROADCAST_OPTION" && field.getValue() === oldId) {
+          if (field.name === 'BROADCAST_OPTION' && field.getValue() === oldId) {
             field.setValue(newId);
           }
         }
@@ -143,10 +143,10 @@ export default async function ({ addon, msg, console }) {
   };
 
   const promptRenameBroadcast = (workspace, variable) => {
-    const modalTitle = msg("RENAME_BROADCAST_MODAL_TITLE");
+    const modalTitle = msg('RENAME_BROADCAST_MODAL_TITLE');
     const oldName = variable.name;
     const id = variable.getId();
-    const promptText = msg("RENAME_BROADCAST_TITLE", { name: oldName });
+    const promptText = msg('RENAME_BROADCAST_TITLE', { name: oldName });
     const promptDefaultText = oldName;
 
     Blockly.prompt(

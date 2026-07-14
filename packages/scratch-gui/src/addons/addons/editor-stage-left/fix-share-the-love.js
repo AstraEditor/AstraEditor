@@ -2,10 +2,10 @@ export default async function ({ addon, console }) {
   const ScratchBlocks = await addon.tab.traps.getBlockly();
   const resize = () => {
     const workspace = Blockly.getMainWorkspace();
-    if (workspace) window.dispatchEvent(new Event("resize"));
+    if (workspace) window.dispatchEvent(new Event('resize'));
   };
-  addon.self.addEventListener("disabled", resize);
-  addon.self.addEventListener("reenabled", resize);
+  addon.self.addEventListener('disabled', resize);
+  addon.self.addEventListener('reenabled', resize);
   const originalGetClientRect = ScratchBlocks.VerticalFlyout.prototype.getClientRect;
   ScratchBlocks.VerticalFlyout.prototype.getClientRect = function () {
     const rect = originalGetClientRect.call(this);

@@ -15,67 +15,53 @@ import classNames from 'classnames';
 
 import styles from './progress-ring.css';
 
-const ProgressRingComponent = ({
-    className,
-    max = 1,
-    sizePx,
-    strokeWidthPx,
-    value,
-    ...props
-}) => {
-    if (typeof strokeWidthPx === 'undefined') {
-        strokeWidthPx = sizePx / 6;
-    }
+const ProgressRingComponent = ({ className, max = 1, sizePx, strokeWidthPx, value, ...props }) => {
+  if (typeof strokeWidthPx === 'undefined') {
+    strokeWidthPx = sizePx / 6;
+  }
 
-    const center = sizePx / 2;
-    const diameter = (sizePx - strokeWidthPx);
-    const radius = diameter / 2;
-    const circumference = Math.PI * diameter;
-    const offset = circumference * (1 - (value / max));
-    const ringSvgProps = {
-        cx: center,
-        cy: center,
-        r: radius
-    };
+  const center = sizePx / 2;
+  const diameter = sizePx - strokeWidthPx;
+  const radius = diameter / 2;
+  const circumference = Math.PI * diameter;
+  const offset = circumference * (1 - value / max);
+  const ringSvgProps = {
+    cx: center,
+    cy: center,
+    r: radius
+  };
 
-    return (
-        <div
-            className={classNames(styles.progressRing, className)}
-            style={{width: sizePx, height: sizePx}}
-            {...props}
-        >
-            <svg
-                className={classNames(styles.progressRingSvg, className)}
-                viewBox={`0 0 ${sizePx} ${sizePx}`}
-            >
-                <circle
-                    className={styles.progressRingRing}
-                    {...ringSvgProps}
-                    style={{
-                        strokeWidth: `${strokeWidthPx}px`
-                    }}
-                />
-                <circle
-                    className={styles.progressRingValue}
-                    {...ringSvgProps}
-                    style={{
-                        strokeDasharray: circumference,
-                        strokeDashoffset: offset,
-                        strokeWidth: `${strokeWidthPx}px`
-                    }}
-                    transform={`rotate(-90 ${center} ${center})`}
-                />
-            </svg>
-        </div>
-    );
+  return (
+    <div className={classNames(styles.progressRing, className)} style={{ width: sizePx, height: sizePx }} {...props}>
+      <svg className={classNames(styles.progressRingSvg, className)} viewBox={`0 0 ${sizePx} ${sizePx}`}>
+        <circle
+          className={styles.progressRingRing}
+          {...ringSvgProps}
+          style={{
+            strokeWidth: `${strokeWidthPx}px`
+          }}
+        />
+        <circle
+          className={styles.progressRingValue}
+          {...ringSvgProps}
+          style={{
+            strokeDasharray: circumference,
+            strokeDashoffset: offset,
+            strokeWidth: `${strokeWidthPx}px`
+          }}
+          transform={`rotate(-90 ${center} ${center})`}
+        />
+      </svg>
+    </div>
+  );
 };
 
 ProgressRingComponent.propTypes = {
-    className: PropTypes.string,
-    max: PropTypes.number, // default = 1
-    sizePx: PropTypes.number.isRequired,
-    strokeWidthPx: PropTypes.number, // default = sizePx/6
-    value: PropTypes.number.isRequired
+  className: PropTypes.string,
+  max: PropTypes.number, // default = 1
+  sizePx: PropTypes.number.isRequired,
+  strokeWidthPx: PropTypes.number, // default = sizePx/6
+  value: PropTypes.number.isRequired
 };
 
 export default ProgressRingComponent;

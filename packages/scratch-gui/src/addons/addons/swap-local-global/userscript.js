@@ -5,7 +5,7 @@ export default async function ({ addon, msg, console }) {
   const getTargetName = (target) => {
     if (target.isStage) {
       // Stage always has an internal name of "Stage", but we want a translatable name
-      return ScratchBlocks.ScratchMsgs.translate("SENSING_OF_STAGE", "Stage");
+      return ScratchBlocks.ScratchMsgs.translate('SENSING_OF_STAGE', 'Stage');
     }
     return target.getName();
   };
@@ -30,7 +30,7 @@ export default async function ({ addon, msg, console }) {
 
   const deleteVariableWithoutDeletingBlocks = (workspace, variable) => {
     // variable can be an ID or an actual Blockly variable object
-    if (typeof variable === "string") {
+    if (typeof variable === 'string') {
       variable = workspace.getVariableById(variable);
     }
     workspace.variableMap_.deleteVariable(variable);
@@ -94,25 +94,25 @@ export default async function ({ addon, msg, console }) {
         if (oldMonitorState.visible) {
           vm.runtime.monitorBlocks.changeBlock({
             id,
-            element: "checkbox",
-            value: true,
+            element: 'checkbox',
+            value: true
           });
         }
         const isLocal = !vm.runtime.getTargetForStage().variables[id];
         let newMonitorState = oldMonitorState;
         if (isLocal) {
           const target = vm.editingTarget;
-          newMonitorState = newMonitorState.set("targetId", target.id);
-          newMonitorState = newMonitorState.set("spriteName", target.getName());
+          newMonitorState = newMonitorState.set('targetId', target.id);
+          newMonitorState = newMonitorState.set('spriteName', target.getName());
         } else {
-          newMonitorState = newMonitorState.set("targetId", null);
-          newMonitorState = newMonitorState.set("spriteName", null);
+          newMonitorState = newMonitorState.set('targetId', null);
+          newMonitorState = newMonitorState.set('spriteName', null);
         }
         if (newVmVariable.name !== oldVmVariable.name) {
           const monitorBlocks = vm.runtime.monitorBlocks;
           const block = monitorBlocks.getBlock(id);
           if (block) {
-            newMonitorState = newMonitorState.set("params", monitorBlocks._getBlockParams(block));
+            newMonitorState = newMonitorState.set('params', monitorBlocks._getBlockParams(block));
           }
         }
         vm.runtime.requestAddMonitor(newMonitorState);
@@ -125,7 +125,7 @@ export default async function ({ addon, msg, console }) {
   };
 
   const convertVariable = (oldBlocklyVariable, newLocal, newCloud) => {
-    const CLOUD_PREFIX = "☁ ";
+    const CLOUD_PREFIX = '☁ ';
 
     const name = oldBlocklyVariable.name;
     const id = oldBlocklyVariable.getId();
@@ -138,7 +138,7 @@ export default async function ({ addon, msg, console }) {
 
     // Cloud variables must always be global
     if (newCloud && newLocal) {
-      alert(msg("cant-convert-cloud"));
+      alert(msg('cant-convert-cloud'));
       return;
     }
 
@@ -147,7 +147,7 @@ export default async function ({ addon, msg, console }) {
       if (newLocal) {
         // Stage cannot have local variables
         if (isStageSelected()) {
-          alert(msg("cant-convert-stage"));
+          alert(msg('cant-convert-stage'));
           return;
         }
         // Variables used by unfocused sprites cannot be made local
@@ -156,14 +156,14 @@ export default async function ({ addon, msg, console }) {
         if (!targets.every((i) => i === editingTarget)) {
           if (targets.length > 1) {
             alert(
-              msg("cant-convert-to-local", {
-                sprites: targets.map(getTargetName).join(", "),
+              msg('cant-convert-to-local', {
+                sprites: targets.map(getTargetName).join(', ')
               })
             );
           } else {
             alert(
-              msg("cant-convert-used-elsewhere", {
-                sprite: getTargetName(targets[0]),
+              msg('cant-convert-used-elsewhere', {
+                sprite: getTargetName(targets[0])
               })
             );
           }
@@ -174,8 +174,8 @@ export default async function ({ addon, msg, console }) {
         const targets = getTargetsWithLocalVariableNamed(name, type).filter((target) => target !== editingTarget);
         if (targets.length > 0) {
           alert(
-            msg("cant-convert-conflict", {
-              sprites: targets.map(getTargetName).join(", "),
+            msg('cant-convert-conflict', {
+              sprites: targets.map(getTargetName).join(', ')
             })
           );
           return;
@@ -188,7 +188,7 @@ export default async function ({ addon, msg, console }) {
       if (newCloud) {
         newName = CLOUD_PREFIX + name;
       } else if (name.startsWith(CLOUD_PREFIX)) {
-        newName = name.replace(CLOUD_PREFIX, "");
+        newName = name.replace(CLOUD_PREFIX, '');
       }
     }
 
@@ -227,8 +227,9 @@ export default async function ({ addon, msg, console }) {
       if (!internalNode) {
         return false;
       }
-      const canUseCloud = internalNode.stateNode && internalNode.stateNode.props && internalNode.stateNode.props.canUseCloud;
-      if (typeof canUseCloud === "boolean") {
+      const canUseCloud =
+        internalNode.stateNode && internalNode.stateNode.props && internalNode.stateNode.props.canUseCloud;
+      if (typeof canUseCloud === 'boolean') {
         return canUseCloud;
       }
       internalNode = internalNode.child;
@@ -247,66 +248,66 @@ export default async function ({ addon, msg, console }) {
 
     const headerTitle = promptBody.parentElement.querySelector('[class^="modal_header-item_"]');
     if (headerTitle) {
-      if (variable.type === "") {
-        headerTitle.textContent = msg("edit-variable-header");
+      if (variable.type === '') {
+        headerTitle.textContent = msg('edit-variable-header');
       } else {
-        headerTitle.textContent = msg("edit-list-header");
+        headerTitle.textContent = msg('edit-list-header');
       }
     }
 
-    const root = document.createElement("div");
+    const root = document.createElement('div');
     addon.tab.displayNoneWhileDisabled(root);
 
     const createLabeledInput = (text, value) => {
-      const outer = document.createElement("label");
-      const input = document.createElement("input");
-      if (value === "checkbox") {
-        input.type = "checkbox";
+      const outer = document.createElement('label');
+      const input = document.createElement('input');
+      if (value === 'checkbox') {
+        input.type = 'checkbox';
       } else {
-        input.name = "variableScopeOption";
-        input.type = "radio";
+        input.name = 'variableScopeOption';
+        input.type = 'radio';
         input.value = value;
       }
       outer.appendChild(input);
-      const label = document.createElement("span");
+      const label = document.createElement('span');
       label.textContent = text;
       outer.appendChild(label);
       return {
         outer,
         label,
-        input,
+        input
       };
     };
-    const promptDisabledClass = addon.tab.scratchClass("prompt_disabled-label");
+    const promptDisabledClass = addon.tab.scratchClass('prompt_disabled-label');
 
-    const noLocalsInStageSection = document.createElement("div");
-    noLocalsInStageSection.className = addon.tab.scratchClass("prompt_info-message", "prompt_cloud-option", {
-      others: "sa-swap-local-global-stage",
+    const noLocalsInStageSection = document.createElement('div');
+    noLocalsInStageSection.className = addon.tab.scratchClass('prompt_info-message', 'prompt_cloud-option', {
+      others: 'sa-swap-local-global-stage'
     });
     noLocalsInStageSection.appendChild(
-      Object.assign(document.createElement("span"), {
-        textContent: addon.tab.scratchMessage("gui.gui.variablePromptAllSpritesMessage"),
+      Object.assign(document.createElement('span'), {
+        textContent: addon.tab.scratchMessage('gui.gui.variablePromptAllSpritesMessage')
       })
     );
 
-    const scopeSection = document.createElement("div");
-    scopeSection.className = addon.tab.scratchClass("prompt_options-row", "prompt_cloud-option");
+    const scopeSection = document.createElement('div');
+    scopeSection.className = addon.tab.scratchClass('prompt_options-row', 'prompt_cloud-option');
     const forAllSprites = createLabeledInput(
-      addon.tab.scratchMessage("gui.gui.variableScopeOptionAllSprites"),
-      "global"
+      addon.tab.scratchMessage('gui.gui.variableScopeOptionAllSprites'),
+      'global'
     );
     const forThisSpriteOnly = createLabeledInput(
-      addon.tab.scratchMessage("gui.gui.variableScopeOptionSpriteOnly"),
-      "local"
+      addon.tab.scratchMessage('gui.gui.variableScopeOptionSpriteOnly'),
+      'local'
     );
     forAllSprites.input.checked = !variable.isLocal;
     forThisSpriteOnly.input.checked = variable.isLocal;
     scopeSection.appendChild(forAllSprites.outer);
     scopeSection.appendChild(forThisSpriteOnly.outer);
 
-    const cloudSection = document.createElement("div");
-    cloudSection.className = addon.tab.scratchClass("prompt_cloud-option");
-    const cloudCheckbox = createLabeledInput(addon.tab.scratchMessage("gui.gui.cloudVariableOption"), "checkbox");
+    const cloudSection = document.createElement('div');
+    cloudSection.className = addon.tab.scratchClass('prompt_cloud-option');
+    const cloudCheckbox = createLabeledInput(addon.tab.scratchMessage('gui.gui.cloudVariableOption'), 'checkbox');
     cloudCheckbox.input.checked = variable.isCloud;
     if (!vm.runtime.canAddCloudVariable() && !variable.isCloud) {
       cloudCheckbox.input.disabled = true;
@@ -321,7 +322,7 @@ export default async function ({ addon, msg, console }) {
         forAllSprites.input.click();
       }
     };
-    cloudCheckbox.input.addEventListener("change", updateDisabledInputs);
+    cloudCheckbox.input.addEventListener('change', updateDisabledInputs);
     updateDisabledInputs();
 
     let isAnythingConfigurable = false;
@@ -331,15 +332,15 @@ export default async function ({ addon, msg, console }) {
       isAnythingConfigurable = true;
       root.appendChild(scopeSection);
     }
-    if (variable.type === "" && canUserUseCloudVariables()) {
+    if (variable.type === '' && canUserUseCloudVariables()) {
       isAnythingConfigurable = true;
       root.appendChild(cloudSection);
     }
     if (isAnythingConfigurable) {
       root.prepend(
-        Object.assign(document.createElement("div"), {
-          textContent: msg("edit"),
-          className: "sa-swap-local-global-hint",
+        Object.assign(document.createElement('div'), {
+          textContent: msg('edit'),
+          className: 'sa-swap-local-global-hint'
         })
       );
     }
@@ -347,7 +348,7 @@ export default async function ({ addon, msg, console }) {
 
     return {
       isLocal: () => forThisSpriteOnly.input.checked,
-      isCloud: () => cloudCheckbox.input.checked,
+      isCloud: () => cloudCheckbox.input.checked
     };
   };
 
@@ -368,21 +369,21 @@ export default async function ({ addon, msg, console }) {
 
   addon.tab.createBlockContextMenu(
     (items, block) => {
-      if (!addon.self.disabled && (block.getCategory() === "data" || block.getCategory() === "data-lists")) {
+      if (!addon.self.disabled && (block.getCategory() === 'data' || block.getCategory() === 'data-lists')) {
         const variable = block.workspace.getVariableById(block.getVars()[0]);
         if (variable) {
           if (items.length > 0) {
-            if (items[0].text === ScratchBlocks.ScratchMsgs.translate("RENAME_VARIABLE")) {
-              items[0].text = msg("edit-variable-option");
-            } else if (items[0].text === ScratchBlocks.ScratchMsgs.translate("RENAME_LIST")) {
-              items[0].text = msg("edit-list-option");
+            if (items[0].text === ScratchBlocks.ScratchMsgs.translate('RENAME_VARIABLE')) {
+              items[0].text = msg('edit-variable-option');
+            } else if (items[0].text === ScratchBlocks.ScratchMsgs.translate('RENAME_LIST')) {
+              items[0].text = msg('edit-list-option');
             }
           }
           items.push({
             enabled: true,
             separator: true,
-            text: msg(`to-${variable.isLocal ? "global" : "local"}`),
-            callback: () => convertVariable(variable, !variable.isLocal, variable.isCloud),
+            text: msg(`to-${variable.isLocal ? 'global' : 'local'}`),
+            callback: () => convertVariable(variable, !variable.isLocal, variable.isCloud)
           });
         }
       }
@@ -390,7 +391,7 @@ export default async function ({ addon, msg, console }) {
     },
     {
       flyout: true,
-      blocks: true,
+      blocks: true
     }
   );
 }

@@ -1,10 +1,10 @@
-import EventTarget from "../../event-target.js"; /* inserted by pull.js */
+import EventTarget from '../../event-target.js'; /* inserted by pull.js */
 
 const textWidthCache = new Map();
 const textWidthCacheSize = 1000;
 
 const eventTarget = new EventTarget();
-const eventClearTextCache = "clearTextCache";
+const eventClearTextCache = 'clearTextCache';
 
 /**
  * Gets the width of an svg text element, with caching.

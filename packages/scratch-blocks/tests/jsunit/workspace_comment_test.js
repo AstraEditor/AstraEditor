@@ -67,7 +67,7 @@ function test_getWorkspaceCommentById() {
     assertEquals('Getting a comment by id.', comment, workspace.getCommentById('comment id'));
     assertEquals('No comment found.', null, workspace.getCommentById('not a comment'));
     comment.dispose();
-    assertEquals('Can\'t find the comment.', null, workspace.getCommentById('comment id'));
+    assertEquals("Can't find the comment.", null, workspace.getCommentById('comment id'));
   } finally {
     workspaceCommentTest_tearDown();
   }
@@ -80,7 +80,7 @@ function test_disposeWsCommentTwice() {
     comment.dispose();
     // Nothing should go wrong the second time dispose is called.
     comment.dispose();
-  }finally {
+  } finally {
     workspaceCommentTest_tearDown();
   }
 }
@@ -88,8 +88,7 @@ function test_disposeWsCommentTwice() {
 function test_wsCommentHeightWidth() {
   workspaceCommentTest_setUp();
   try {
-    var comment =
-        new Blockly.WorkspaceComment(workspace, 'comment text', 10, 20, false, 'comment id');
+    var comment = new Blockly.WorkspaceComment(workspace, 'comment text', 10, 20, false, 'comment id');
     assertEquals('Initial width', 20, comment.getWidth());
     assertEquals('Initial height', 10, comment.getHeight());
 
@@ -109,8 +108,7 @@ function test_wsCommentHeightWidth() {
 function test_wsCommentXY() {
   workspaceCommentTest_setUp();
   try {
-    var comment =
-        new Blockly.WorkspaceComment(workspace, 'comment text', 10, 20, false, 'comment id');
+    var comment = new Blockly.WorkspaceComment(workspace, 'comment text', 10, 20, false, 'comment id');
     var xy = comment.getXY();
     assertEquals('Initial X position', 0, xy.x);
     assertEquals('Initial Y position', 0, xy.y);
@@ -131,25 +129,18 @@ function test_wsCommentText() {
   Blockly.Events.fire = temporary_fireEvent;
   temporary_fireEvent.firedEvents_ = [];
   try {
-    var comment =
-        new Blockly.WorkspaceComment(workspace, 'comment text', 10, 20, false, 'comment id');
-    assertEquals(
-        'Check comment text', 'comment text', comment.getText());
-    assertEquals(
-        'Workspace undo stack has one event', 1, workspace.undoStack_.length);
+    var comment = new Blockly.WorkspaceComment(workspace, 'comment text', 10, 20, false, 'comment id');
+    assertEquals('Check comment text', 'comment text', comment.getText());
+    assertEquals('Workspace undo stack has one event', 1, workspace.undoStack_.length);
 
     comment.setText('comment text');
-    assertEquals(
-        'Comment text has not changed', 'comment text', comment.getText());
+    assertEquals('Comment text has not changed', 'comment text', comment.getText());
     // Setting the text to the old value does not fire an event.
-    assertEquals(
-        'Workspace undo stack has one event', 1, workspace.undoStack_.length);
+    assertEquals('Workspace undo stack has one event', 1, workspace.undoStack_.length);
 
     comment.setText('new comment text');
-    assertEquals(
-        'Comment text has changed', 'new comment text', comment.getText());
-    assertEquals(
-        'Workspace undo stack has two events', 2, workspace.undoStack_.length);
+    assertEquals('Comment text has changed', 'new comment text', comment.getText());
+    assertEquals('Workspace undo stack has two events', 2, workspace.undoStack_.length);
     comment.dispose();
   } finally {
     workspaceCommentTest_tearDown();
@@ -178,7 +169,7 @@ function test_workspaceCommentMinimizedFromXml() {
     assertEquals('Comment is no longer on workspace', null, workspace.getCommentById('comment id'));
     Blockly.Xml.domToWorkspace(xml, workspace);
     var importedComment = workspace.getCommentById('comment id');
-    assertNotEquals('Comment loaded from xml is on workspace', null, importedComment)
+    assertNotEquals('Comment loaded from xml is on workspace', null, importedComment);
     assertEquals('Imported comment is minimized', true, importedComment.isMinimized());
   } finally {
     workspaceCommentTest_tearDown();

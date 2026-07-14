@@ -2,7 +2,7 @@
 
 const OLD_PRIMARY_COLOR = '#855cd6';
 
-const loader = source => `
+const loader = (source) => `
     const original = ${JSON.stringify(source)};
 
     const getSRC = () => {

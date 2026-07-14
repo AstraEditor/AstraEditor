@@ -47,8 +47,7 @@ function test_emptyWorkspace() {
     assertEquals('Empty workspace (4).', 0, workspace.getTopBlocks(true).length);
     assertEquals('Empty workspace (5).', 0, workspace.getTopBlocks(false).length);
     assertEquals('Empty workspace (6).', 0, workspace.getAllBlocks().length);
-  }
-  finally {
+  } finally {
     workspaceTest_tearDown();
   }
 }
@@ -81,17 +80,12 @@ function test_getWorkspaceById() {
   var workspaceA = new Blockly.Workspace();
   var workspaceB = new Blockly.Workspace();
   try {
-    assertEquals('Find workspaceA.', workspaceA,
-        Blockly.Workspace.getById(workspaceA.id));
-    assertEquals('Find workspaceB.', workspaceB,
-        Blockly.Workspace.getById(workspaceB.id));
-    assertEquals('No workspace found.', null,
-        Blockly.Workspace.getById('I do not exist.'));
+    assertEquals('Find workspaceA.', workspaceA, Blockly.Workspace.getById(workspaceA.id));
+    assertEquals('Find workspaceB.', workspaceB, Blockly.Workspace.getById(workspaceB.id));
+    assertEquals('No workspace found.', null, Blockly.Workspace.getById('I do not exist.'));
     workspaceA.dispose();
-    assertEquals('Can\'t find workspaceA.', null,
-        Blockly.Workspace.getById(workspaceA.id));
-    assertEquals('WorkspaceB exists.', workspaceB,
-        Blockly.Workspace.getById(workspaceB.id));
+    assertEquals("Can't find workspaceA.", null, Blockly.Workspace.getById(workspaceA.id));
+    assertEquals('WorkspaceB exists.', workspaceB, Blockly.Workspace.getById(workspaceB.id));
   } finally {
     workspaceB.dispose();
     workspaceA.dispose();
@@ -105,13 +99,12 @@ function test_getBlockById() {
     var blockB = workspace.newBlock('');
     assertEquals('Find blockA.', blockA, workspace.getBlockById(blockA.id));
     assertEquals('Find blockB.', blockB, workspace.getBlockById(blockB.id));
-    assertEquals('No block found.', null,
-        workspace.getBlockById('I do not exist.'));
+    assertEquals('No block found.', null, workspace.getBlockById('I do not exist.'));
     blockA.dispose();
-    assertEquals('Can\'t find blockA.', null, workspace.getBlockById(blockA.id));
+    assertEquals("Can't find blockA.", null, workspace.getBlockById(blockA.id));
     assertEquals('BlockB exists.', blockB, workspace.getBlockById(blockB.id));
     workspace.clear();
-    assertEquals('Can\'t find blockB.', null, workspace.getBlockById(blockB.id));
+    assertEquals("Can't find blockB.", null, workspace.getBlockById(blockB.id));
   } finally {
     workspaceTest_tearDown();
   }
@@ -166,8 +159,7 @@ function test_clear_Trivial() {
   workspaceTest_setUp();
   workspace.createVariable('name1', 'type1', 'id1');
   workspace.createVariable('name2', 'type2', 'id2');
-  setUpMockMethod(mockControl_, Blockly.Events, 'setGroup', [true, false],
-    null);
+  setUpMockMethod(mockControl_, Blockly.Events, 'setGroup', [true, false], null);
 
   try {
     workspace.clear();
@@ -175,16 +167,14 @@ function test_clear_Trivial() {
     var varMapLength = Object.keys(workspace.variableMap_.variableMap_).length;
     assertEquals(0, topBlocks_length);
     assertEquals(0, varMapLength);
-  }
-  finally {
+  } finally {
     workspaceTest_tearDown();
   }
 }
 
 function test_clear_NoVariables() {
   workspaceTest_setUp();
-  setUpMockMethod(mockControl_, Blockly.Events, 'setGroup', [true, false],
-    null);
+  setUpMockMethod(mockControl_, Blockly.Events, 'setGroup', [true, false], null);
 
   try {
     workspace.clear();
@@ -192,8 +182,7 @@ function test_clear_NoVariables() {
     var varMapLength = Object.keys(workspace.variableMap_.variableMap_).length;
     assertEquals(0, topBlocks_length);
     assertEquals(0, varMapLength);
-  }
-  finally {
+  } finally {
     workspaceTest_tearDown();
   }
 }

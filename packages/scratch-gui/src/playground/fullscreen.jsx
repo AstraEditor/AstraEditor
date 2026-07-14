@@ -21,7 +21,4 @@ import React from 'react';
 import Interface from './render-interface.jsx';
 import render from './app-target';
 
-render(<Interface
-    isPlayerOnly
-    isFullScreen
-/>);
+render(<Interface isPlayerOnly isFullScreen />);

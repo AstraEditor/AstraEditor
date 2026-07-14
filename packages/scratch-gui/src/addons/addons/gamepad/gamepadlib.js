@@ -1,4 +1,4 @@
-import EventTarget from "../../event-target.js"; /* inserted by pull.js */
+import EventTarget from '../../event-target.js'; /* inserted by pull.js */
 
 let console = window.console;
 
@@ -27,93 +27,93 @@ low: "+y"/"-y"/"+x"/"-x" defines what happens when an axis reads low
 const defaultAxesMappings = {
   arrows: [
     {
-      type: "key",
-      high: "ArrowRight",
-      low: "ArrowLeft",
-      deadZone: 0.5,
+      type: 'key',
+      high: 'ArrowRight',
+      low: 'ArrowLeft',
+      deadZone: 0.5
     },
     {
-      type: "key",
-      high: "ArrowDown",
-      low: "ArrowUp",
-      deadZone: 0.5,
-    },
+      type: 'key',
+      high: 'ArrowDown',
+      low: 'ArrowUp',
+      deadZone: 0.5
+    }
   ],
   wasd: [
     {
-      type: "key",
-      high: "d",
-      low: "a",
-      deadZone: 0.5,
+      type: 'key',
+      high: 'd',
+      low: 'a',
+      deadZone: 0.5
     },
     {
-      type: "key",
-      high: "s",
-      low: "w",
-      deadZone: 0.5,
-    },
+      type: 'key',
+      high: 's',
+      low: 'w',
+      deadZone: 0.5
+    }
   ],
   cursor: [
     {
-      type: "virtual_cursor",
-      high: "+x",
-      low: "-x",
+      type: 'virtual_cursor',
+      high: '+x',
+      low: '-x',
       sensitivity: 0.6,
-      deadZone: 0.2,
+      deadZone: 0.2
     },
     {
-      type: "virtual_cursor",
-      high: "-y",
-      low: "+y",
+      type: 'virtual_cursor',
+      high: '-y',
+      low: '+y',
       sensitivity: 0.6,
-      deadZone: 0.2,
-    },
-  ],
+      deadZone: 0.2
+    }
+  ]
 };
 
 const emptyMapping = () => ({
-  type: "key",
+  type: 'key',
   high: null,
-  low: null,
+  low: null
 });
 const transformAndCopyMapping = (mapping) => {
-  if (typeof mapping !== "object" || !mapping) {
-    console.warn("invalid mapping", mapping);
+  if (typeof mapping !== 'object' || !mapping) {
+    console.warn('invalid mapping', mapping);
     return emptyMapping();
   }
   const copy = Object.assign({}, mapping);
-  if (copy.type === "key") {
-    if (typeof copy.deadZone === "undefined") {
+  if (copy.type === 'key') {
+    if (typeof copy.deadZone === 'undefined') {
       copy.deadZone = 0.5;
     }
-    if (typeof copy.high === "undefined") {
-      copy.high = "";
+    if (typeof copy.high === 'undefined') {
+      copy.high = '';
     }
-    if (typeof copy.low === "undefined") {
-      copy.low = "";
+    if (typeof copy.low === 'undefined') {
+      copy.low = '';
     }
-  } else if (copy.type === "mousedown") {
-    if (typeof copy.deadZone === "undefined") {
+  } else if (copy.type === 'mousedown') {
+    if (typeof copy.deadZone === 'undefined') {
       copy.deadZone = 0.5;
     }
-    if (typeof copy.button === "undefined") {
+    if (typeof copy.button === 'undefined') {
       copy.button = 0;
     }
-  } else if (copy.type === "virtual_cursor") {
-    if (typeof copy.high === "undefined") {
-      copy.high = "";
+  } else if (copy.type === 'virtual_cursor') {
+    if (typeof copy.high === 'undefined') {
+      copy.high = '';
     }
-    if (typeof copy.low === "undefined") {
-      copy.low = "";
+    if (typeof copy.low === 'undefined') {
+      copy.low = '';
     }
-    if (typeof copy.sensitivity === "undefined") {
+    if (typeof copy.sensitivity === 'undefined') {
       copy.sensitivity = 10;
     }
-    if (typeof copy.deadZone === "undefined") {
+    if (typeof copy.deadZone === 'undefined') {
       copy.deadZone = 0.5;
     }
   } else {
-    console.warn("unknown mapping type", copy.type);
+    console.warn('unknown mapping type', copy.type);
     return emptyMapping();
   }
   return copy;
@@ -141,8 +141,8 @@ const createEmptyMappingList = (length) => padWithEmptyMappings([], length);
 
 const getMovementConfiguration = (usedKeys) => ({
   usesArrows:
-    usedKeys.has("ArrowUp") || usedKeys.has("ArrowDown") || usedKeys.has("ArrowRight") || usedKeys.has("ArrowLeft"),
-  usesWASD: (usedKeys.has("w") && usedKeys.has("s")) || (usedKeys.has("a") && usedKeys.has("d")),
+    usedKeys.has('ArrowUp') || usedKeys.has('ArrowDown') || usedKeys.has('ArrowRight') || usedKeys.has('ArrowLeft'),
+  usesWASD: (usedKeys.has('w') && usedKeys.has('s')) || (usedKeys.has('a') && usedKeys.has('d'))
 });
 
 const getGamepadId = (gamepad) => `${gamepad.id} (${gamepad.index})`;
@@ -178,26 +178,26 @@ class GamepadData {
       const alreadyUsedKeys = new Set();
       const { usesArrows, usesWASD } = getMovementConfiguration(usedKeys);
       if (usesWASD) {
-        alreadyUsedKeys.add("w");
-        alreadyUsedKeys.add("a");
-        alreadyUsedKeys.add("s");
-        alreadyUsedKeys.add("d");
+        alreadyUsedKeys.add('w');
+        alreadyUsedKeys.add('a');
+        alreadyUsedKeys.add('s');
+        alreadyUsedKeys.add('d');
       }
       const possiblePauseKeys = [
         // Restart keys, pause keys, other potentially dangerous keys
-        "p",
-        "q",
-        "r",
+        'p',
+        'q',
+        'r'
       ];
       const possibleActionKeys = [
-        " ",
-        "Enter",
-        "e",
-        "f",
-        "z",
-        "x",
-        "c",
-        ...Array.from(usedKeys).filter((i) => i.length === 1 && !possiblePauseKeys.includes(i)),
+        ' ',
+        'Enter',
+        'e',
+        'f',
+        'z',
+        'x',
+        'c',
+        ...Array.from(usedKeys).filter((i) => i.length === 1 && !possiblePauseKeys.includes(i))
       ];
 
       const findKey = (keys) => {
@@ -210,31 +210,31 @@ class GamepadData {
         return null;
       };
       const getPrimaryAction = () => {
-        if (usesArrows && usedKeys.has("ArrowUp")) {
-          return "ArrowUp";
+        if (usesArrows && usedKeys.has('ArrowUp')) {
+          return 'ArrowUp';
         }
-        if (usesWASD && usedKeys.has("w")) {
-          return "w";
+        if (usesWASD && usedKeys.has('w')) {
+          return 'w';
         }
         return findKey(possibleActionKeys);
       };
       const getSecondaryAction = () => findKey(possibleActionKeys);
       const getPauseKey = () => findKey(possiblePauseKeys);
       const getUp = () => {
-        if (usesArrows || !usesWASD) return "ArrowUp";
-        return "w";
+        if (usesArrows || !usesWASD) return 'ArrowUp';
+        return 'w';
       };
       const getDown = () => {
-        if (usesArrows || !usesWASD) return "ArrowDown";
-        return "s";
+        if (usesArrows || !usesWASD) return 'ArrowDown';
+        return 's';
       };
       const getRight = () => {
-        if (usesArrows || !usesWASD) return "ArrowRight";
-        return "d";
+        if (usesArrows || !usesWASD) return 'ArrowRight';
+        return 'd';
       };
       const getLeft = () => {
-        if (usesArrows || !usesWASD) return "ArrowLeft";
-        return "a";
+        if (usesArrows || !usesWASD) return 'ArrowLeft';
+        return 'a';
       };
 
       const action1 = getPrimaryAction();
@@ -259,74 +259,74 @@ class GamepadData {
         Xbox: A
         SNES-like: B
         */
-        type: "key",
-        high: action1,
+        type: 'key',
+        high: action1
       };
       buttons[1] = {
         /*
         Xbox: B
         SNES-like: A
         */
-        type: "key",
-        high: action2,
+        type: 'key',
+        high: action2
       };
       buttons[2] = {
         /*
         Xbox: X
         SNES-like: Y
         */
-        type: "key",
-        high: action3,
+        type: 'key',
+        high: action3
       };
       buttons[3] = {
         /*
         Xbox: Y
         SNES-like: X
         */
-        type: "key",
-        high: action4,
+        type: 'key',
+        high: action4
       };
       buttons[4] = {
         /*
         Xbox: LB
         SNES-like: Left trigger
         */
-        type: "mousedown",
+        type: 'mousedown'
       };
       buttons[5] = {
         /*
         Xbox: RB
         */
-        type: "mousedown",
+        type: 'mousedown'
       };
       buttons[6] = {
         /*
         Xbox: LT
         */
-        type: "mousedown",
+        type: 'mousedown'
       };
       buttons[7] = {
         /*
         Xbox: RT
         SNES-like: Right trigger
         */
-        type: "mousedown",
+        type: 'mousedown'
       };
       buttons[9] = {
         /*
         Xbox: Menu
         SNES-like: Start
         */
-        type: "key",
-        high: getPauseKey(),
+        type: 'key',
+        high: getPauseKey()
       };
       buttons[8] = {
         /*
         Xbox: Change view
         SNES-like: Select
         */
-        type: "key",
-        high: getPauseKey(),
+        type: 'key',
+        high: getPauseKey()
       };
       // Xbox: Left analog press
       buttons[10] = emptyMapping();
@@ -336,29 +336,29 @@ class GamepadData {
         /*
         Xbox: D-pad up
         */
-        type: "key",
-        high: getUp(),
+        type: 'key',
+        high: getUp()
       };
       buttons[13] = {
         /*
         Xbox: D-pad down
         */
-        type: "key",
-        high: getDown(),
+        type: 'key',
+        high: getDown()
       };
       buttons[14] = {
         /*
         Xbox: D-pad left
         */
-        type: "key",
-        high: getLeft(),
+        type: 'key',
+        high: getLeft()
       };
       buttons[15] = {
         /*
         Xbox: D-pad right
         */
-        type: "key",
-        high: getRight(),
+        type: 'key',
+        high: getRight()
       };
     }
     return padWithEmptyMappings(buttons, this.gamepad.buttons.length);
@@ -396,7 +396,7 @@ class GamepadData {
 const defaultHints = () => ({
   usedKeys: new Set(),
   importedSettings: null,
-  generated: false,
+  generated: false
 });
 
 class GamepadLib extends EventTarget {
@@ -421,7 +421,7 @@ class GamepadLib extends EventTarget {
       minX: -Infinity,
       maxY: Infinity,
       minY: -Infinity,
-      modified: false,
+      modified: false
     };
 
     this._editor = null;
@@ -438,13 +438,13 @@ class GamepadLib extends EventTarget {
   }
 
   addEventHandlers() {
-    window.addEventListener("gamepadconnected", this.handleConnect);
-    window.addEventListener("gamepaddisconnected", this.handleDisconnect);
+    window.addEventListener('gamepadconnected', this.handleConnect);
+    window.addEventListener('gamepaddisconnected', this.handleDisconnect);
   }
 
   removeEventHandlers() {
-    window.removeEventListener("gamepadconnected", this.handleConnect);
-    window.removeEventListener("gamepaddisconnected", this.handleDisconnect);
+    window.removeEventListener('gamepadconnected', this.handleConnect);
+    window.removeEventListener('gamepaddisconnected', this.handleDisconnect);
   }
 
   gamepadConnected() {
@@ -484,22 +484,22 @@ class GamepadLib extends EventTarget {
     this.connectCallbacks = [];
     const gamepad = e.gamepad;
     const id = getGamepadId(gamepad);
-    console.log("connected", gamepad);
+    console.log('connected', gamepad);
     const gamepadData = new GamepadData(gamepad, this);
     this.gamepads.set(id, gamepadData);
     if (this.animationFrame === null) {
       this.animationFrame = requestAnimationFrame(this.update);
     }
-    this.dispatchEvent(new CustomEvent("gamepadconnected", { detail: gamepadData }));
+    this.dispatchEvent(new CustomEvent('gamepadconnected', { detail: gamepadData }));
   }
 
   handleDisconnect(e) {
     const gamepad = e.gamepad;
     const id = getGamepadId(gamepad);
-    console.log("disconnected", gamepad);
+    console.log('disconnected', gamepad);
     const gamepadData = this.gamepads.get(id);
     this.gamepads.delete(id);
-    this.dispatchEvent(new CustomEvent("gamepaddisconnected", { detail: gamepadData }));
+    this.dispatchEvent(new CustomEvent('gamepaddisconnected', { detail: gamepadData }));
     if (this.gamepads.size === 0) {
       cancelAnimationFrame(this.animationFrame);
       this.animationFrame = null;
@@ -509,26 +509,26 @@ class GamepadLib extends EventTarget {
 
   dispatchKey(key, pressed) {
     if (pressed) {
-      this.dispatchEvent(new CustomEvent("keydown", { detail: key }));
+      this.dispatchEvent(new CustomEvent('keydown', { detail: key }));
     } else {
-      this.dispatchEvent(new CustomEvent("keyup", { detail: key }));
+      this.dispatchEvent(new CustomEvent('keyup', { detail: key }));
     }
   }
 
   dispatchMouse(button, down) {
     if (down) {
-      this.dispatchEvent(new CustomEvent("mousedown", { detail: button }));
+      this.dispatchEvent(new CustomEvent('mousedown', { detail: button }));
     } else {
-      this.dispatchEvent(new CustomEvent("mouseup", { detail: button }));
+      this.dispatchEvent(new CustomEvent('mouseup', { detail: button }));
     }
   }
 
   dispatchMouseMove(x, y) {
-    this.dispatchEvent(new CustomEvent("mousemove", { detail: { x, y } }));
+    this.dispatchEvent(new CustomEvent('mousemove', { detail: { x, y } }));
   }
 
   updateButton(value, mapping) {
-    if (mapping.type === "key") {
+    if (mapping.type === 'key') {
       if (value >= mapping.deadZone) {
         if (mapping.high) {
           this.keysPressedThisFrame.add(mapping.high);
@@ -538,12 +538,12 @@ class GamepadLib extends EventTarget {
           this.keysPressedThisFrame.add(mapping.low);
         }
       }
-    } else if (mapping.type === "mousedown") {
+    } else if (mapping.type === 'mousedown') {
       const isDown = Math.abs(value) >= mapping.deadZone;
       if (isDown) {
         this.mouseButtonsPressedThisFrame.add(mapping.button);
       }
-    } else if (mapping.type === "virtual_cursor") {
+    } else if (mapping.type === 'virtual_cursor') {
       const deadZone = mapping.deadZone;
       let action;
       if (value >= deadZone) action = mapping.high;
@@ -552,13 +552,13 @@ class GamepadLib extends EventTarget {
         // an axis value just beyond the deadzone should have a multiplier near 0, a high value should have a multiplier of 1
         const multiplier = (Math.abs(value) - deadZone) / (1 - deadZone);
         const speed = multiplier * multiplier * mapping.sensitivity * this.deltaTime;
-        if (action === "+x") {
+        if (action === '+x') {
           this.virtualCursor.x += speed;
-        } else if (action === "-x") {
+        } else if (action === '-x') {
           this.virtualCursor.x -= speed;
-        } else if (action === "+y") {
+        } else if (action === '+y') {
           this.virtualCursor.y += speed;
-        } else if (action === "-y") {
+        } else if (action === '-y') {
           this.virtualCursor.y -= speed;
         }
         this.virtualCursor.modified = true;
@@ -665,7 +665,7 @@ GamepadLib.browserHasBrokenGamepadAPI = () => {
   // Firefox on Linux before version 123 has a broken gamepad API that results in strange and unusable mappings
   // https://bugzilla.mozilla.org/show_bug.cgi?id=1680982
   // https://bugzilla.mozilla.org/show_bug.cgi?id=1643835
-  if (navigator.userAgent.includes("Firefox") && navigator.userAgent.includes("Linux")) {
+  if (navigator.userAgent.includes('Firefox') && navigator.userAgent.includes('Linux')) {
     const agentMatch = navigator.userAgent.match(/Firefox\/(\d+)/);
     // If we couldn't find the version number, we'll assume that this is some distant future version of
     // Firefox that we just can't comprehend with the technology of today. Surely gamepad will work well
@@ -675,7 +675,7 @@ GamepadLib.browserHasBrokenGamepadAPI = () => {
   }
   // Firefox on macOS has other bugs that result in strange and unusable mappings
   // eg. https://bugzilla.mozilla.org/show_bug.cgi?id=1434408
-  if (navigator.userAgent.includes("Firefox") && navigator.userAgent.includes("Mac OS")) {
+  if (navigator.userAgent.includes('Firefox') && navigator.userAgent.includes('Mac OS')) {
     return true;
   }
   return false;
@@ -698,14 +698,14 @@ class GamepadEditor extends EventTarget {
     /** @type {GamepadLib} */
     this.gamepadLib = gamepadLib;
 
-    this.root = Object.assign(document.createElement("div"), {
-      className: "gamepadlib-root",
+    this.root = Object.assign(document.createElement('div'), {
+      className: 'gamepadlib-root'
     });
-    this.selector = Object.assign(document.createElement("select"), {
-      className: "gamepadlib-selector",
+    this.selector = Object.assign(document.createElement('select'), {
+      className: 'gamepadlib-selector'
     });
-    this.content = Object.assign(document.createElement("div"), {
-      className: "gamepadlib-content",
+    this.content = Object.assign(document.createElement('div'), {
+      className: 'gamepadlib-content'
     });
 
     this.root.appendChild(this.selector);
@@ -714,9 +714,9 @@ class GamepadEditor extends EventTarget {
     this.onSelectorChange = this.onSelectorChange.bind(this);
     this.onGamepadsChange = this.onGamepadsChange.bind(this);
 
-    this.selector.addEventListener("change", this.onSelectorChange);
-    this.gamepadLib.addEventListener("gamepadconnected", this.onGamepadsChange);
-    this.gamepadLib.addEventListener("gamepaddisconnected", this.onGamepadsChange);
+    this.selector.addEventListener('change', this.onSelectorChange);
+    this.gamepadLib.addEventListener('gamepadconnected', this.onGamepadsChange);
+    this.gamepadLib.addEventListener('gamepaddisconnected', this.onGamepadsChange);
 
     this.buttonIdToElement = new Map();
     this.axisIdToElement = new Map();
@@ -729,12 +729,12 @@ class GamepadEditor extends EventTarget {
 
   onSelectorChange() {
     this.updateContent();
-    this.dispatchEvent(new CustomEvent("gamepad-changed"));
+    this.dispatchEvent(new CustomEvent('gamepad-changed'));
   }
 
   onGamepadsChange() {
     this.updateAllContent();
-    this.dispatchEvent(new CustomEvent("gamepad-changed"));
+    this.dispatchEvent(new CustomEvent('gamepad-changed'));
   }
 
   updateAllContent() {
@@ -753,7 +753,7 @@ class GamepadEditor extends EventTarget {
     }
     this.selector.hidden = false;
     for (const [id, _] of gamepads) {
-      const option = document.createElement("option");
+      const option = document.createElement('option');
       option.textContent = id;
       option.value = id;
       this.selector.appendChild(option);
@@ -761,38 +761,38 @@ class GamepadEditor extends EventTarget {
   }
 
   keyToString(key) {
-    if (key === " ") return this.msg("key-space");
-    if (key === "ArrowUp") return this.msg("key-up");
-    if (key === "ArrowDown") return this.msg("key-down");
-    if (key === "ArrowLeft") return this.msg("key-left");
-    if (key === "ArrowRight") return this.msg("key-right");
-    if (key === "Enter") return this.msg("key-enter");
+    if (key === ' ') return this.msg('key-space');
+    if (key === 'ArrowUp') return this.msg('key-up');
+    if (key === 'ArrowDown') return this.msg('key-down');
+    if (key === 'ArrowLeft') return this.msg('key-left');
+    if (key === 'ArrowRight') return this.msg('key-right');
+    if (key === 'Enter') return this.msg('key-enter');
     if (key.length === 1) {
       return key.toUpperCase();
     }
     // Convert eg. "PageUp" -> "Page Up"
-    return key.replace(/[a-z]([A-Z])/, (n) => `${n[0]} ${n[1]}`)
+    return key.replace(/[a-z]([A-Z])/, (n) => `${n[0]} ${n[1]}`);
   }
 
-  createButtonMapping(mappingList, index, { property = "high", allowClick = true } = {}) {
-    const input = document.createElement("input");
+  createButtonMapping(mappingList, index, { property = 'high', allowClick = true } = {}) {
+    const input = document.createElement('input');
     input.readOnly = true;
-    input.className = "gamepadlib-keyinput";
-    input.title = this.msg("keyinput-title");
+    input.className = 'gamepadlib-keyinput';
+    input.title = this.msg('keyinput-title');
     input.dataset.index = index;
 
     const update = () => {
       const mapping = mappingList[index];
       input.dataset.empty = false;
-      if (mapping.type === "key") {
+      if (mapping.type === 'key') {
         if (mapping[property] === null) {
-          input.value = this.msg("key-none");
+          input.value = this.msg('key-none');
           input.dataset.empty = true;
         } else {
           input.value = this.keyToString(mapping[property]);
         }
-      } else if (mapping.type === "mousedown") {
-        let value = this.msg("key-click");
+      } else if (mapping.type === 'mousedown') {
+        let value = this.msg('key-click');
         if (mapping.button !== 0) {
           value += ` (${mapping.button})`;
         }
@@ -808,7 +808,7 @@ class GamepadEditor extends EventTarget {
       isAcceptingInput = false;
       input.blur();
       update();
-      input.dispatchEvent(new CustomEvent("mapping-changed"));
+      input.dispatchEvent(new CustomEvent('mapping-changed'));
       this.changed();
     };
 
@@ -819,14 +819,14 @@ class GamepadEditor extends EventTarget {
       if (isAcceptingInput) {
         if (allowClick) {
           const mapping = mappingList[index];
-          mapping.type = "mousedown";
+          mapping.type = 'mousedown';
           mapping.button = e.button;
           changedMapping();
         } else {
           handleBlur();
         }
       } else {
-        input.value = "...";
+        input.value = '...';
         input.dataset.acceptingInput = true;
         isAcceptingInput = true;
       }
@@ -837,45 +837,45 @@ class GamepadEditor extends EventTarget {
         e.preventDefault();
         const key = e.key;
         // TW: We allow binding to control and shift
-        if (["Alt"].includes(key)) {
+        if (['Alt'].includes(key)) {
           return;
         }
         const mapping = mappingList[index];
         const KEYS = [
-          "ArrowUp",
-          "ArrowDown",
-          "ArrowRight",
-          "ArrowLeft",
-          "Enter",
+          'ArrowUp',
+          'ArrowDown',
+          'ArrowRight',
+          'ArrowLeft',
+          'Enter',
           // TW: We support more keys
           // "Backspace",
           // "Delete",
-          "Shift",
-          "CapsLock",
-          "ScrollLock",
-          "Control",
+          'Shift',
+          'CapsLock',
+          'ScrollLock',
+          'Control',
           // "Escape",
-          "Insert",
-          "Home",
-          "End",
-          "PageUp",
-          "PageDown",
+          'Insert',
+          'Home',
+          'End',
+          'PageUp',
+          'PageDown'
         ];
         if (key.length === 1 || KEYS.includes(key)) {
-          mapping.type = "key";
+          mapping.type = 'key';
           mapping[property] = key;
-        } else if (key !== "Escape") {
-          mapping.type = "key";
+        } else if (key !== 'Escape') {
+          mapping.type = 'key';
           mapping[property] = null;
         }
         changedMapping();
-      } else if (e.key === "Enter") {
+      } else if (e.key === 'Enter') {
         e.preventDefault();
         e.target.click();
       }
     };
 
-    const MODIFIER_KEYS = ["Shift", "Control"];
+    const MODIFIER_KEYS = ['Shift', 'Control'];
     const handleKeyDown = (e) => {
       if (!MODIFIER_KEYS.includes(e.key)) handleKeyEvent(e);
     };
@@ -892,124 +892,124 @@ class GamepadEditor extends EventTarget {
       }
     };
 
-    input.addEventListener("contextmenu", (e) => {
+    input.addEventListener('contextmenu', (e) => {
       e.preventDefault();
     });
 
-    input.addEventListener("mouseup", handleClick);
-    input.addEventListener("keydown", handleKeyDown);
-    input.addEventListener("keyup", handleKeyUp);
-    input.addEventListener("blur", handleBlur);
+    input.addEventListener('mouseup', handleClick);
+    input.addEventListener('keydown', handleKeyDown);
+    input.addEventListener('keyup', handleKeyUp);
+    input.addEventListener('blur', handleBlur);
     update();
 
     return input;
   }
 
   createAxisMapping(mappingList, index) {
-    const selector = document.createElement("select");
-    selector.className = "gamepadlib-axis-mapping";
+    const selector = document.createElement('select');
+    selector.className = 'gamepadlib-axis-mapping';
     selector.id = axisHtmlId(index);
     selector.appendChild(
-      Object.assign(document.createElement("option"), {
-        textContent: this.msg("axis-none"),
-        value: "none",
+      Object.assign(document.createElement('option'), {
+        textContent: this.msg('axis-none'),
+        value: 'none'
       })
     );
     selector.appendChild(
-      Object.assign(document.createElement("option"), {
-        textContent: this.msg("axis-cursor"),
-        value: "cursor",
+      Object.assign(document.createElement('option'), {
+        textContent: this.msg('axis-cursor'),
+        value: 'cursor'
       })
     );
     selector.appendChild(
-      Object.assign(document.createElement("option"), {
+      Object.assign(document.createElement('option'), {
         // doesn't really make sense to translate
-        textContent: "WASD",
-        value: "wasd",
+        textContent: 'WASD',
+        value: 'wasd'
       })
     );
     selector.appendChild(
-      Object.assign(document.createElement("option"), {
-        textContent: this.msg("axis-arrows"),
-        value: "arrows",
+      Object.assign(document.createElement('option'), {
+        textContent: this.msg('axis-arrows'),
+        value: 'arrows'
       })
     );
     selector.appendChild(
-      Object.assign(document.createElement("option"), {
-        textContent: this.msg("axis-custom"),
-        value: "custom",
+      Object.assign(document.createElement('option'), {
+        textContent: this.msg('axis-custom'),
+        value: 'custom'
       })
     );
 
     const updateDropdownValue = () => {
-      if (mappingList[index].type === "key" || mappingList[index].type === "mousedown") {
+      if (mappingList[index].type === 'key' || mappingList[index].type === 'mousedown') {
         if (
           mappingList[index].high === null &&
           mappingList[index].low === null &&
           mappingList[index + 1].high === null &&
           mappingList[index + 1].low === null
         ) {
-          selector.value = "none";
+          selector.value = 'none';
         } else if (
           mappingList[index].high === defaultAxesMappings.wasd[0].high &&
           mappingList[index].low === defaultAxesMappings.wasd[0].low &&
           mappingList[index + 1].high === defaultAxesMappings.wasd[1].high &&
           mappingList[index + 1].low === defaultAxesMappings.wasd[1].low
         ) {
-          selector.value = "wasd";
+          selector.value = 'wasd';
         } else if (
           mappingList[index].high === defaultAxesMappings.arrows[0].high &&
           mappingList[index].low === defaultAxesMappings.arrows[0].low &&
           mappingList[index + 1].high === defaultAxesMappings.arrows[1].high &&
           mappingList[index + 1].low === defaultAxesMappings.arrows[1].low
         ) {
-          selector.value = "arrows";
+          selector.value = 'arrows';
         } else {
-          selector.value = "custom";
+          selector.value = 'custom';
         }
-      } else if (mappingList[index].type === "virtual_cursor") {
-        selector.value = "cursor";
+      } else if (mappingList[index].type === 'virtual_cursor') {
+        selector.value = 'cursor';
       } else {
         // should never happen
-        selector.value = "none";
+        selector.value = 'none';
       }
     };
     updateDropdownValue();
 
-    const circleOverlay = document.createElement("div");
-    circleOverlay.className = "gamepadlib-axis-circle-overlay";
+    const circleOverlay = document.createElement('div');
+    circleOverlay.className = 'gamepadlib-axis-circle-overlay';
     const updateOverlay = () => {
       removeAllChildren(circleOverlay);
-      if (mappingList[index].type === "key") {
+      if (mappingList[index].type === 'key') {
         const buttons = [
-          this.createButtonMapping(mappingList, index + 1, { property: "low", allowClick: false }),
-          this.createButtonMapping(mappingList, index, { property: "low", allowClick: false }),
-          this.createButtonMapping(mappingList, index, { property: "high", allowClick: false }),
-          this.createButtonMapping(mappingList, index + 1, { property: "high", allowClick: false }),
+          this.createButtonMapping(mappingList, index + 1, { property: 'low', allowClick: false }),
+          this.createButtonMapping(mappingList, index, { property: 'low', allowClick: false }),
+          this.createButtonMapping(mappingList, index, { property: 'high', allowClick: false }),
+          this.createButtonMapping(mappingList, index + 1, { property: 'high', allowClick: false })
         ];
         for (const button of buttons) {
-          button.classList.add("gamepadlib-axis-mapper");
-          button.addEventListener("mapping-changed", updateDropdownValue);
+          button.classList.add('gamepadlib-axis-mapper');
+          button.addEventListener('mapping-changed', updateDropdownValue);
           circleOverlay.appendChild(button);
         }
       }
     };
     updateOverlay();
 
-    selector.addEventListener("change", () => {
-      if (selector.value === "custom") {
+    selector.addEventListener('change', () => {
+      if (selector.value === 'custom') {
         // If key mappings already exist, leave them as-is
-        if (mappingList[index].type !== "key") {
+        if (mappingList[index].type !== 'key') {
           mappingList[index] = transformAndCopyMapping(defaultAxesMappings.arrows[0]);
           mappingList[index + 1] = transformAndCopyMapping(defaultAxesMappings.arrows[1]);
         }
-      } else if (selector.value === "arrows") {
+      } else if (selector.value === 'arrows') {
         mappingList[index] = transformAndCopyMapping(defaultAxesMappings.arrows[0]);
         mappingList[index + 1] = transformAndCopyMapping(defaultAxesMappings.arrows[1]);
-      } else if (selector.value === "wasd") {
+      } else if (selector.value === 'wasd') {
         mappingList[index] = transformAndCopyMapping(defaultAxesMappings.wasd[0]);
         mappingList[index + 1] = transformAndCopyMapping(defaultAxesMappings.wasd[1]);
-      } else if (selector.value === "cursor") {
+      } else if (selector.value === 'cursor') {
         mappingList[index] = transformAndCopyMapping(defaultAxesMappings.cursor[0]);
         mappingList[index + 1] = transformAndCopyMapping(defaultAxesMappings.cursor[1]);
       } else {
@@ -1022,7 +1022,7 @@ class GamepadEditor extends EventTarget {
 
     return {
       circleOverlay,
-      selector,
+      selector
     };
   }
 
@@ -1039,8 +1039,8 @@ class GamepadEditor extends EventTarget {
 
     const selectedId = this.selector.value;
     if (!selectedId) {
-      const message = document.createElement("div");
-      message.textContent = this.msg("no-controllers");
+      const message = document.createElement('div');
+      message.textContent = this.msg('no-controllers');
       this.content.appendChild(message);
       return;
     }
@@ -1048,7 +1048,7 @@ class GamepadEditor extends EventTarget {
     const gamepadData = this.gamepadLib.gamepads.get(selectedId);
     if (!gamepadData) {
       // Users should never be able to see this
-      const message = document.createElement("div");
+      const message = document.createElement('div');
       message.textContent = `Cannot find controller: ${selectedId}`;
       this.content.appendChild(message);
       return;
@@ -1057,20 +1057,20 @@ class GamepadEditor extends EventTarget {
     this.buttonIdToElement.clear();
     this.axisIdToElement.clear();
 
-    const mappingsContainer = document.createElement("div");
-    mappingsContainer.className = "gamepadlib-content-buttons";
+    const mappingsContainer = document.createElement('div');
+    mappingsContainer.className = 'gamepadlib-content-buttons';
     const buttonMappings = gamepadData.buttonMappings;
     for (let i = 0; i < buttonMappings.length; i++) {
-      const container = document.createElement("div");
-      container.className = "gamepadlib-mapping";
+      const container = document.createElement('div');
+      container.className = 'gamepadlib-mapping';
       container.dataset.id = i;
-      const label = document.createElement("label");
-      label.className = "gamepadlib-mapping-label";
-      label.textContent = this.msg("button-n", { n: i });
+      const label = document.createElement('label');
+      label.className = 'gamepadlib-mapping-label';
+      label.textContent = this.msg('button-n', { n: i });
       const id = buttonHtmlId(i);
       label.htmlFor = id;
-      const options = document.createElement("div");
-      options.className = "gamepadlib-mapping-options";
+      const options = document.createElement('div');
+      options.className = 'gamepadlib-mapping-options';
       const mappingInput = this.createButtonMapping(buttonMappings, i);
       mappingInput.id = id;
       options.appendChild(mappingInput);
@@ -1080,21 +1080,21 @@ class GamepadEditor extends EventTarget {
       this.buttonIdToElement.set(i, container);
     }
 
-    const axesContainer = document.createElement("div");
-    axesContainer.className = "gamepadlib-content-axes";
+    const axesContainer = document.createElement('div');
+    axesContainer.className = 'gamepadlib-content-axes';
     const axesMappings = gamepadData.axesMappings;
     for (let i = 0; i < axesMappings.length; i += 2) {
-      const container = document.createElement("div");
-      container.className = "gamepadlib-axis";
-      const label = document.createElement("label");
-      label.textContent = this.msg("axes-a-b", { a: i, b: i + 1 });
+      const container = document.createElement('div');
+      container.className = 'gamepadlib-axis';
+      const label = document.createElement('label');
+      label.textContent = this.msg('axes-a-b', { a: i, b: i + 1 });
       label.htmlFor = axisHtmlId(i);
-      const circle = document.createElement("div");
-      circle.className = "gamepadlib-axis-circle";
+      const circle = document.createElement('div');
+      circle.className = 'gamepadlib-axis-circle';
       const { circleOverlay, selector } = this.createAxisMapping(axesMappings, i);
       circle.appendChild(circleOverlay);
-      const dot = document.createElement("div");
-      dot.className = "gamepadlib-axis-dot";
+      const dot = document.createElement('div');
+      dot.className = 'gamepadlib-axis-dot';
       circle.appendChild(dot);
       container.appendChild(label);
       container.appendChild(circle);
@@ -1151,12 +1151,12 @@ class GamepadEditor extends EventTarget {
     }
     return {
       axes: gamepadData.axesMappings.map(prepareAxisMappingForExport),
-      buttons: gamepadData.buttonMappings.map(prepareButtonMappingForExport),
+      buttons: gamepadData.buttonMappings.map(prepareButtonMappingForExport)
     };
   }
 
   changed() {
-    this.dispatchEvent(new CustomEvent("mapping-changed"));
+    this.dispatchEvent(new CustomEvent('mapping-changed'));
   }
 
   hide() {

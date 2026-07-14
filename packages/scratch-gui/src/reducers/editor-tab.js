@@ -6,34 +6,34 @@ const SOUNDS_TAB_INDEX = 2;
 const MONACO_EDITOR_TAB_INDEX = 3;
 
 const initialState = {
-    activeTabIndex: BLOCKS_TAB_INDEX
+  activeTabIndex: BLOCKS_TAB_INDEX
 };
 
 const reducer = function (state, action) {
-    if (typeof state === 'undefined') state = initialState;
-    switch (action.type) {
+  if (typeof state === 'undefined') state = initialState;
+  switch (action.type) {
     case ACTIVATE_TAB:
-        return Object.assign({}, state, {
-            activeTabIndex: action.activeTabIndex
-        });
+      return Object.assign({}, state, {
+        activeTabIndex: action.activeTabIndex
+      });
     default:
-        return state;
-    }
+      return state;
+  }
 };
 
 const activateTab = function (tab) {
-    return {
-        type: ACTIVATE_TAB,
-        activeTabIndex: tab
-    };
+  return {
+    type: ACTIVATE_TAB,
+    activeTabIndex: tab
+  };
 };
 
 export {
-    reducer as default,
-    initialState as editorTabInitialState,
-    activateTab,
-    BLOCKS_TAB_INDEX,
-    COSTUMES_TAB_INDEX,
-    SOUNDS_TAB_INDEX,
-    MONACO_EDITOR_TAB_INDEX
+  reducer as default,
+  initialState as editorTabInitialState,
+  activateTab,
+  BLOCKS_TAB_INDEX,
+  COSTUMES_TAB_INDEX,
+  SOUNDS_TAB_INDEX,
+  MONACO_EDITOR_TAB_INDEX
 };

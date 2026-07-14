@@ -12,7 +12,7 @@
  * @return {object.<MessageDescriptor>} - the input, unprocessed
  */
 const defineMessages = function (messages) {
-    return messages;
+  return messages;
 };
 
 module.exports = defineMessages;

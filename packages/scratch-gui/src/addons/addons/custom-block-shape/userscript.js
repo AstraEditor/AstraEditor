@@ -1,4 +1,4 @@
-import { updateAllBlocks } from "./update-all-blocks.js";
+import { updateAllBlocks } from './update-all-blocks.js';
 
 export default async function ({ addon, console }) {
   var BlocklyInstance = await addon.tab.traps.getBlockly();
@@ -11,9 +11,9 @@ export default async function ({ addon, console }) {
     const { GRID_UNIT } = BlockSvg;
 
     function applyChanges(
-      paddingSize = addon.settings.get("paddingSize"),
-      cornerSize = addon.settings.get("cornerSize"),
-      notchSize = addon.settings.get("notchSize")
+      paddingSize = addon.settings.get('paddingSize'),
+      cornerSize = addon.settings.get('cornerSize'),
+      notchSize = addon.settings.get('notchSize')
     ) {
       let multiplier = paddingSize / 100;
       cornerSize = cornerSize / 100;
@@ -33,116 +33,116 @@ export default async function ({ addon, console }) {
       BlockSvg.NOTCH_START_PADDING = 3 * GRID_UNIT; //* multiplier
       BlockSvg.ICON_SEPARATOR_HEIGHT = 10 * GRID_UNIT * multiplier;
       BlockSvg.NOTCH_PATH_LEFT =
-        "c 2,0 3," +
+        'c 2,0 3,' +
         1 * notchSize +
-        " 4," +
+        ' 4,' +
         2 * notchSize +
-        " l " +
+        ' l ' +
         4 * multiplier * notchSize +
-        "," +
+        ',' +
         4 * multiplier * notchSize +
-        " c 1," +
+        ' c 1,' +
         1 * notchSize +
-        " 2," +
+        ' 2,' +
         2 * notchSize +
-        " 4," +
+        ' 4,' +
         2 * notchSize +
-        " h " +
+        ' h ' +
         24 * (multiplier - 0.5) +
-        " c 2,0 3,-" +
+        ' c 2,0 3,-' +
         1 * notchSize +
-        " 4,-" +
+        ' 4,-' +
         2 * notchSize +
-        " l " +
+        ' l ' +
         4 * multiplier * notchSize +
-        "," +
+        ',' +
         -4 * multiplier * notchSize +
-        "c 1,-" +
+        'c 1,-' +
         1 * notchSize +
-        " 2,-" +
+        ' 2,-' +
         2 * notchSize +
-        " 4,-" +
+        ' 4,-' +
         2 * notchSize;
       BlockSvg.NOTCH_PATH_RIGHT =
-        "h " +
+        'h ' +
         (-4 * (cornerSize - 1) - 5 * (1 - notchSize)) +
-        "c -2,0 -3," +
+        'c -2,0 -3,' +
         1 * notchSize +
-        " -4," +
+        ' -4,' +
         2 * notchSize +
-        " l " +
+        ' l ' +
         -4 * multiplier * notchSize +
-        "," +
+        ',' +
         4 * multiplier * notchSize +
-        " c -1," +
+        ' c -1,' +
         1 * notchSize +
-        " -2," +
+        ' -2,' +
         2 * notchSize +
-        " -4," +
+        ' -4,' +
         2 * notchSize +
-        " h " +
+        ' h ' +
         -24 * (multiplier - 0.5) +
-        " c -2,0 -3,-" +
+        ' c -2,0 -3,-' +
         1 * notchSize +
-        " -4,-" +
+        ' -4,-' +
         2 * notchSize +
-        " l " +
+        ' l ' +
         -4 * multiplier * notchSize +
-        "," +
+        ',' +
         -4 * multiplier * notchSize +
-        "c -1,-" +
+        'c -1,-' +
         1 * notchSize +
-        " -2,-" +
+        ' -2,-' +
         2 * notchSize +
-        " -4,-" +
+        ' -4,-' +
         2 * notchSize;
       BlockSvg.INPUT_SHAPE_HEXAGONAL =
-        "M " +
+        'M ' +
         4 * GRID_UNIT * multiplier +
-        ",0 " +
-        " h " +
+        ',0 ' +
+        ' h ' +
         4 * GRID_UNIT +
-        " l " +
+        ' l ' +
         4 * GRID_UNIT * multiplier +
-        "," +
+        ',' +
         4 * GRID_UNIT * multiplier +
-        " l " +
+        ' l ' +
         -4 * GRID_UNIT * multiplier +
-        "," +
+        ',' +
         4 * GRID_UNIT * multiplier +
-        " h " +
+        ' h ' +
         -4 * GRID_UNIT +
-        " l " +
+        ' l ' +
         -4 * GRID_UNIT * multiplier +
-        "," +
+        ',' +
         -4 * GRID_UNIT * multiplier +
-        " l " +
+        ' l ' +
         4 * GRID_UNIT * multiplier +
-        "," +
+        ',' +
         -4 * GRID_UNIT * multiplier +
-        " z";
+        ' z';
       BlockSvg.INPUT_SHAPE_HEXAGONAL_WIDTH = 12 * GRID_UNIT * multiplier;
       BlockSvg.INPUT_SHAPE_ROUND =
-        "M " +
+        'M ' +
         4 * GRID_UNIT * multiplier +
-        ",0" +
-        " h " +
+        ',0' +
+        ' h ' +
         4 * GRID_UNIT * multiplier +
-        " a " +
+        ' a ' +
         4 * GRID_UNIT * multiplier +
-        " " +
+        ' ' +
         4 * GRID_UNIT * multiplier +
-        " 0 0 1 0 " +
+        ' 0 0 1 0 ' +
         8 * GRID_UNIT * multiplier +
-        " h " +
+        ' h ' +
         -4 * GRID_UNIT * multiplier +
-        " a " +
+        ' a ' +
         4 * GRID_UNIT * multiplier +
-        " " +
+        ' ' +
         4 * GRID_UNIT * multiplier +
-        " 0 0 1 0 -" +
+        ' 0 0 1 0 -' +
         8 * GRID_UNIT * multiplier +
-        " z";
+        ' z';
       BlockSvg.INPUT_SHAPE_ROUND_WIDTH = 12 * GRID_UNIT * multiplier;
       BlockSvg.INPUT_SHAPE_HEIGHT = 8 * GRID_UNIT * multiplier;
       BlockSvg.FIELD_HEIGHT = 8 * GRID_UNIT * multiplier; // NOTE: Determines string input heights
@@ -167,71 +167,71 @@ export default async function ({ addon, console }) {
       // Corner setting
       BlockSvg.CORNER_RADIUS = (1 * GRID_UNIT * cornerSize * 100) / 100;
 
-      BlockSvg.TOP_LEFT_CORNER_START = "m 0," + BlockSvg.CORNER_RADIUS;
+      BlockSvg.TOP_LEFT_CORNER_START = 'm 0,' + BlockSvg.CORNER_RADIUS;
 
       BlockSvg.TOP_LEFT_CORNER =
-        "A " + BlockSvg.CORNER_RADIUS + "," + BlockSvg.CORNER_RADIUS + " 0 0,1 " + BlockSvg.CORNER_RADIUS + ",0";
+        'A ' + BlockSvg.CORNER_RADIUS + ',' + BlockSvg.CORNER_RADIUS + ' 0 0,1 ' + BlockSvg.CORNER_RADIUS + ',0';
 
       BlockSvg.TOP_RIGHT_CORNER =
-        "a " +
+        'a ' +
         BlockSvg.CORNER_RADIUS +
-        "," +
+        ',' +
         BlockSvg.CORNER_RADIUS +
-        " 0 0,1 " +
+        ' 0 0,1 ' +
         BlockSvg.CORNER_RADIUS +
-        "," +
+        ',' +
         BlockSvg.CORNER_RADIUS;
 
       BlockSvg.BOTTOM_RIGHT_CORNER =
-        " a " +
+        ' a ' +
         BlockSvg.CORNER_RADIUS +
-        "," +
+        ',' +
         BlockSvg.CORNER_RADIUS +
-        " 0 0,1 -" +
+        ' 0 0,1 -' +
         BlockSvg.CORNER_RADIUS +
-        "," +
+        ',' +
         BlockSvg.CORNER_RADIUS;
 
       BlockSvg.BOTTOM_LEFT_CORNER =
-        "a " +
+        'a ' +
         BlockSvg.CORNER_RADIUS +
-        "," +
+        ',' +
         BlockSvg.CORNER_RADIUS +
-        " 0 0,1 -" +
+        ' 0 0,1 -' +
         BlockSvg.CORNER_RADIUS +
-        ",-" +
+        ',-' +
         BlockSvg.CORNER_RADIUS;
 
       BlockSvg.INNER_TOP_LEFT_CORNER =
-        " a " +
+        ' a ' +
         BlockSvg.CORNER_RADIUS +
-        "," +
+        ',' +
         BlockSvg.CORNER_RADIUS +
-        " 0 0,0 -" +
+        ' 0 0,0 -' +
         BlockSvg.CORNER_RADIUS +
-        "," +
+        ',' +
         BlockSvg.CORNER_RADIUS;
 
       BlockSvg.INNER_BOTTOM_LEFT_CORNER =
-        "a " +
+        'a ' +
         BlockSvg.CORNER_RADIUS +
-        "," +
+        ',' +
         BlockSvg.CORNER_RADIUS +
-        " 0 0,0 " +
+        ' 0 0,0 ' +
         BlockSvg.CORNER_RADIUS +
-        "," +
+        ',' +
         BlockSvg.CORNER_RADIUS;
 
       BlockSvg.TOP_RIGHT_CORNER_DEFINE_HAT =
-        "a " +
+        'a ' +
         BlockSvg.DEFINE_HAT_CORNER_RADIUS +
-        "," +
+        ',' +
         BlockSvg.DEFINE_HAT_CORNER_RADIUS +
-        " 0 0,1 " +
+        ' 0 0,1 ' +
         BlockSvg.DEFINE_HAT_CORNER_RADIUS +
-        "," +
+        ',' +
         BlockSvg.DEFINE_HAT_CORNER_RADIUS +
-        " v " +
+        ' v ' +
         (1 * GRID_UNIT - BlockSvg.CORNER_RADIUS);
 
       BlockSvg.STATEMENT_INPUT_INNER_SPACE = 2.8 * GRID_UNIT - 0.9 * GRID_UNIT * cornerSize;
@@ -242,14 +242,14 @@ export default async function ({ addon, console }) {
       updateAllBlocks(vm, addon.tab.traps.getWorkspace(), BlocklyInstance);
     }
 
-    addon.settings.addEventListener("change", () => applyAndUpdate());
+    addon.settings.addEventListener('change', () => applyAndUpdate());
 
-    addon.self.addEventListener("disabled", () => {
+    addon.self.addEventListener('disabled', () => {
       // Scratch 3.0 blocks
       applyAndUpdate(100, 100, 100);
     });
 
-    addon.self.addEventListener("reenabled", () => applyAndUpdate());
+    addon.self.addEventListener('reenabled', () => applyAndUpdate());
 
     applyAndUpdate();
   })(window.Blockly);

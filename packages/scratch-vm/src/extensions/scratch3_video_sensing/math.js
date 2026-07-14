@@ -9,7 +9,7 @@ const TO_DEGREE = 180 / Math.PI;
  * motionVector.
  * @type {UV}
  */
-const _motionVectorOut = {u: 0, v: 0};
+const _motionVectorOut = { u: 0, v: 0 };
 
 /**
  * Determine a motion vector combinations of the color component difference on
@@ -23,29 +23,29 @@ const _motionVectorOut = {u: 0, v: 0};
  * @returns {UV} a uv vector representing the motion for the given input
  */
 const motionVector = function (A2, A1B2, B1, C2, C1, out = _motionVectorOut) {
-    // Compare sums of X * Y and sums of X squared and Y squared.
-    const delta = ((A1B2 * A1B2) - (A2 * B1));
-    if (delta) {
-        // System is not singular - solving by Kramer method.
-        const deltaX = -((C1 * A1B2) - (C2 * B1));
-        const deltaY = -((A1B2 * C2) - (A2 * C1));
-        const Idelta = 8 / delta;
-        out.u = deltaX * Idelta;
-        out.v = deltaY * Idelta;
+  // Compare sums of X * Y and sums of X squared and Y squared.
+  const delta = A1B2 * A1B2 - A2 * B1;
+  if (delta) {
+    // System is not singular - solving by Kramer method.
+    const deltaX = -(C1 * A1B2 - C2 * B1);
+    const deltaY = -(A1B2 * C2 - A2 * C1);
+    const Idelta = 8 / delta;
+    out.u = deltaX * Idelta;
+    out.v = deltaY * Idelta;
+  } else {
+    // Singular system - find optical flow in gradient direction.
+    const Norm = (A1B2 + A2) * (A1B2 + A2) + (B1 + A1B2) * (B1 + A1B2);
+    if (Norm) {
+      const IGradNorm = 8 / Norm;
+      const temp = -(C1 + C2) * IGradNorm;
+      out.u = (A1B2 + A2) * temp;
+      out.v = (B1 + A1B2) * temp;
     } else {
-        // Singular system - find optical flow in gradient direction.
-        const Norm = ((A1B2 + A2) * (A1B2 + A2)) + ((B1 + A1B2) * (B1 + A1B2));
-        if (Norm) {
-            const IGradNorm = 8 / Norm;
-            const temp = -(C1 + C2) * IGradNorm;
-            out.u = (A1B2 + A2) * temp;
-            out.v = (B1 + A1B2) * temp;
-        } else {
-            out.u = 0;
-            out.v = 0;
-        }
+      out.u = 0;
+      out.v = 0;
     }
-    return out;
+  }
+  return out;
 };
 
 /**
@@ -55,7 +55,7 @@ const motionVector = function (A2, A1B2, B1, C2, C1, out = _motionVectorOut) {
  * @returns {number} angle from Scratch's reference angle
  */
 const scratchDegrees = function (degrees) {
-    return ((degrees + 270) % 360) - 180;
+  return ((degrees + 270) % 360) - 180;
 };
 
 /**
@@ -66,11 +66,11 @@ const scratchDegrees = function (degrees) {
  * @returns {number} angle in degrees in Scratch's coordinate plane
  */
 const scratchAtan2 = function (y, x) {
-    return scratchDegrees(Math.atan2(y, x) * TO_DEGREE);
+  return scratchDegrees(Math.atan2(y, x) * TO_DEGREE);
 };
 
 module.exports = {
-    motionVector,
-    scratchDegrees,
-    scratchAtan2
+  motionVector,
+  scratchDegrees,
+  scratchAtan2
 };

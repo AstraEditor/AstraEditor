@@ -1,47 +1,47 @@
 .contextMenu {
-    position: fixed;
-    z-index: 1000;
-    user-select: none;
-    min-width: 130px;
-    padding: 5px 0;
-    margin: 2px 0 0;
-    font-size: 0.85rem;
-    text-align: left;
-    background-color: var(--ui-white);
-    border: 1px solid var(--ui-black-transparent);
-    border-radius: 0.25rem;
-    box-shadow: 0px 0px 5px 1px var(--shadow);
-    transition: opacity 0.2s ease;
-    z-index: var(--z-index-context-menu);
-    -webkit-border-radius: 0.25rem;
-    -moz-border-radius: 0.25rem;
-    -ms-border-radius: 0.25rem;
-    -o-border-radius: 0.25rem;
-    -webkit-transition: opacity 0.2s ease;
-    -moz-transition: opacity 0.2s ease;
-    -ms-transition: opacity 0.2s ease;
-    -o-transition: opacity 0.2s ease;
+  position: fixed;
+  z-index: 1000;
+  user-select: none;
+  min-width: 130px;
+  padding: 5px 0;
+  margin: 2px 0 0;
+  font-size: 0.85rem;
+  text-align: left;
+  background-color: var(--ui-white);
+  border: 1px solid var(--ui-black-transparent);
+  border-radius: 0.25rem;
+  box-shadow: 0px 0px 5px 1px var(--shadow);
+  transition: opacity 0.2s ease;
+  z-index: var(--z-index-context-menu);
+  -webkit-border-radius: 0.25rem;
+  -moz-border-radius: 0.25rem;
+  -ms-border-radius: 0.25rem;
+  -o-border-radius: 0.25rem;
+  -webkit-transition: opacity 0.2s ease;
+  -moz-transition: opacity 0.2s ease;
+  -ms-transition: opacity 0.2s ease;
+  -o-transition: opacity 0.2s ease;
 }
 
 .menuItem {
-    padding: 8px 12px;
-    white-space: nowrap;
-    cursor: pointer;
-    transition: 0.1s ease;
+  padding: 8px 12px;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: 0.1s ease;
 }
 
 .menuItem:hover {
-    background: var(--looks-secondary);
-    color: white;
+  background: var(--looks-secondary);
+  color: white;
 }
 
 .menuIcon {
-    width: 16px;
-    height: 16px;
-    margin-right: 8px;
-    flex-shrink: 0;
+  width: 16px;
+  height: 16px;
+  margin-right: 8px;
+  flex-shrink: 0;
 }
 
 .menuLabel {
-    flex: 1;
+  flex: 1;
 }

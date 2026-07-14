@@ -5,7 +5,7 @@
 
 // TODO: ja-Hira are copies of ja, replace with real ja-Hira when available.
 const videos = {
-    // tw: we don't use the videos, remove them
+  // tw: we don't use the videos, remove them
 };
 
 /**
@@ -15,14 +15,12 @@ const videos = {
  * @return {string} identifier for the video on our video hosting service.
  */
 const translateVideo = (videoId, locale) => {
-    // if the videoId is not recognized in the videos object, assume it's already a video id on wistia
-    if (!Object.prototype.hasOwnProperty.call(videos, videoId)) return videoId;
-    if (Object.prototype.hasOwnProperty.call(videos[videoId], locale)) {
-        return videos[videoId][locale];
-    }
-    return videos[videoId].en;
+  // if the videoId is not recognized in the videos object, assume it's already a video id on wistia
+  if (!Object.prototype.hasOwnProperty.call(videos, videoId)) return videoId;
+  if (Object.prototype.hasOwnProperty.call(videos[videoId], locale)) {
+    return videos[videoId][locale];
+  }
+  return videos[videoId].en;
 };
 
-export {
-    translateVideo
-};
+export { translateVideo };

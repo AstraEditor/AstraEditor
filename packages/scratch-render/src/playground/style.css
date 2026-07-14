@@ -1,11 +1,11 @@
 body {
-	background: lightsteelblue;
+  background: lightsteelblue;
 }
 
 canvas {
-	border: 3px dashed black;
+  border: 3px dashed black;
 }
 
 #debug-canvas {
-	border-color: red;
+  border-color: red;
 }

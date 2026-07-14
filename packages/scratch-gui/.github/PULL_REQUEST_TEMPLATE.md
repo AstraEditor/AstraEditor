@@ -17,23 +17,29 @@ _Explain why these changes should be made_
 _Please show how you have added tests to cover your changes_
 
 ### Browser Coverage
+
 Check the OS/browser combinations tested (At least 2)
 
 Mac
- * [ ] Chrome 
- * [ ] Firefox 
- * [ ] Safari
- 
+
+- [ ] Chrome
+- [ ] Firefox
+- [ ] Safari
+
 Windows
- * [ ] Chrome 
- * [ ] Firefox 
- * [ ] Edge
- 
+
+- [ ] Chrome
+- [ ] Firefox
+- [ ] Edge
+
 Chromebook
- * [ ] Chrome
- 
+
+- [ ] Chrome
+
 iPad
-* [ ] Safari
+
+- [ ] Safari
 
 Android Tablet
-* [ ] Chrome
+
+- [ ] Chrome

@@ -23,16 +23,16 @@ const usage = `
  `;
 // Fail immediately if the TX_TOKEN is not defined
 if (!process.env.TX_TOKEN || args.length < 1) {
-    process.stdout.write(usage);
-    process.exit(1);
+  process.stdout.write(usage);
+  process.exit(1);
 }
 
 import fs from 'fs';
 import path from 'path';
 import mkdirp from 'mkdirp';
-import {txPull, txResources} from '../lib/transifex.js';
-import locales, {localeMap} from '../src/supported-locales.js';
-import {batchMap} from '../lib/batch.js';
+import { txPull, txResources } from '../lib/transifex.js';
+import locales, { localeMap } from '../src/supported-locales.js';
+import { batchMap } from '../lib/batch.js';
 
 // Globals
 const PROJECT = 'scratch-website';
@@ -43,56 +43,53 @@ const CONCURRENCY_LIMIT = 36;
 const lang = args.length === 2 ? args[1] : '';
 
 const getLocaleData = async function (item) {
-    const locale = item.locale;
-    const resource = item.resource;
-    let txLocale = localeMap[locale] || locale;
-    for (let i = 0; i < 5; i++) {
-        try {
-            const translations = await txPull(PROJECT, resource, txLocale);
-            
-            const txOutdir = `${OUTPUT_DIR}/${PROJECT}.${resource}`;
-            mkdirp.sync(txOutdir);
-            const fileName = `${txOutdir}/${locale}.json`;
-            fs.writeFileSync(
-                fileName,
-                JSON.stringify(translations, null, 4)
-            );
-            return {
-                resource: resource,
-                locale: locale,
-                file: fileName
-            };
-        } catch (e) {
-            process.stdout.write(`got ${e.message}, retrying after ${i + 1} attempt(s)\n`);
-        }
+  const locale = item.locale;
+  const resource = item.resource;
+  let txLocale = localeMap[locale] || locale;
+  for (let i = 0; i < 5; i++) {
+    try {
+      const translations = await txPull(PROJECT, resource, txLocale);
+
+      const txOutdir = `${OUTPUT_DIR}/${PROJECT}.${resource}`;
+      mkdirp.sync(txOutdir);
+      const fileName = `${txOutdir}/${locale}.json`;
+      fs.writeFileSync(fileName, JSON.stringify(translations, null, 4));
+      return {
+        resource: resource,
+        locale: locale,
+        file: fileName
+      };
+    } catch (e) {
+      process.stdout.write(`got ${e.message}, retrying after ${i + 1} attempt(s)\n`);
     }
-    throw Error('failed to pull translations after 5 retries');
+  }
+  throw Error('failed to pull translations after 5 retries');
 };
 
 const expandResourceFiles = (resources) => {
-    let items = [];
-    for (let resource of resources) {
-        if (lang) {
-            items.push({resource: resource, locale: lang});
-        } else {
-            for (let locale of Object.keys(locales)) {
-                items.push({resource: resource, locale: locale});
-            }
-        }
+  let items = [];
+  for (let resource of resources) {
+    if (lang) {
+      items.push({ resource: resource, locale: lang });
+    } else {
+      for (let locale of Object.keys(locales)) {
+        items.push({ resource: resource, locale: locale });
+      }
     }
-    return items;
+  }
+  return items;
 };
 
 const pullTranslations = async function () {
-    const resources = await txResources('scratch-website');
-    const allFiles = expandResourceFiles(resources);
+  const resources = await txResources('scratch-website');
+  const allFiles = expandResourceFiles(resources);
 
-    try {
-        await batchMap(allFiles, CONCURRENCY_LIMIT, getLocaleData);
-    } catch (err) {
-        console.error(err); // eslint-disable-line no-console
-        process.exit(1);
-    }
+  try {
+    await batchMap(allFiles, CONCURRENCY_LIMIT, getLocaleData);
+  } catch (err) {
+    console.error(err); // eslint-disable-line no-console
+    process.exit(1);
+  }
 };
 
 pullTranslations();

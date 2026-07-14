@@ -1,23 +1,23 @@
-@import url("../editor-theme3/compatibility.css");
+@import url('../editor-theme3/compatibility.css');
 
-[dir="ltr"] .sa-debugger-container {
+[dir='ltr'] .sa-debugger-container {
   margin-right: 0.2rem;
 }
 
-[dir="rtl"] .sa-debugger-container {
+[dir='rtl'] .sa-debugger-container {
   margin-left: 0.2rem;
 }
 
-.sa-small-stage [class*="gui_body-wrapper_"]:not(.sa-stage-hidden) .sa-debugger-container {
+.sa-small-stage [class*='gui_body-wrapper_']:not(.sa-stage-hidden) .sa-debugger-container {
   display: none !important;
 }
 
-.sa-debugger-container [class*="button_content_"] {
+.sa-debugger-container [class*='button_content_'] {
   position: relative;
 }
 
 .sa-debugger-unread::after {
-  content: "";
+  content: '';
   position: absolute;
   top: 1px;
   right: 0;
@@ -26,7 +26,6 @@
   height: 6px;
   background-color: var(--editorDarkMode-highlightText, #855cd6);
   border-radius: 50%;
-
 }
 
 .sa-debugger-interface {
@@ -45,9 +44,9 @@
   min-height: 120px;
 }
 
-.sa-debugger-interface [class*="card_header-buttons_"] {
+.sa-debugger-interface [class*='card_header-buttons_'] {
   background-color: var(--looks-secondary);
-  border-color:var(--looks-transparent);
+  border-color: var(--looks-transparent);
 }
 
 .sa-debugger-interface h1 {
@@ -175,11 +174,11 @@
   padding-left: 4px;
   font-family: monospace;
 }
-.sa-debugger-log[data-type="warn"] {
+.sa-debugger-log[data-type='warn'] {
   border-color: hsla(56deg, 100%, 69%, 0.5);
   background-color: hsla(56deg, 100%, 69%, 0.3);
 }
-.sa-debugger-log[data-type="error"] {
+.sa-debugger-log[data-type='error'] {
   border-color: hsla(0deg, 100%, 69%, 0.5);
   color: red;
   background-color: hsla(0deg, 100%, 69%, 0.3);
@@ -198,10 +197,10 @@
   height: 16px;
   margin-right: 4px;
 }
-[data-type="warn"] .sa-debugger-log-icon {
+[data-type='warn'] .sa-debugger-log-icon {
   background-image: url(./icons/warning.svg);
 }
-[data-type="error"] .sa-debugger-log-icon {
+[data-type='error'] .sa-debugger-log-icon {
   background-image: url(./icons/error.svg);
 }
 .sa-debugger-threads .sa-debugger-log-icon {
@@ -263,10 +262,10 @@
   background-color: var(--sa-block-colored-background);
   color: var(--sa-block-text);
 }
-.sa-debugger-block-preview[data-shape="round"] {
+.sa-debugger-block-preview[data-shape='round'] {
   border-radius: 100px;
 }
-.sa-debugger-block-preview[data-shape="stacked"] {
+.sa-debugger-block-preview[data-shape='stacked'] {
   border-radius: 3px;
 }
 
@@ -304,7 +303,7 @@
   font-size: 0.75rem;
 }
 
-[dir="rtl"] .sa-debugger-variables-searchbox {
+[dir='rtl'] .sa-debugger-variables-searchbox {
   padding-right: 8px;
   padding-left: 32px;
   background-position: 7px center;
@@ -375,10 +374,10 @@
 .sa-debugger-variables-too-big:hover {
   text-decoration: underline;
 }
-[data-too-big="true"] .sa-debugger-variables-too-big {
+[data-too-big='true'] .sa-debugger-variables-too-big {
   display: block;
 }
-[data-too-big="true"] .sa-debugger-variables-value-input {
+[data-too-big='true'] .sa-debugger-variables-value-input {
   display: none;
 }
 

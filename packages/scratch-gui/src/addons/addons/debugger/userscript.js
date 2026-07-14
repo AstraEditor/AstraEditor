@@ -1,10 +1,10 @@
-import { isPaused, setPaused, onPauseChanged, setup } from "./module.js";
-import createLogsTab from "./logs.js";
-import createThreadsTab from "./threads.js";
-import createPerformanceTab from "./performance.js";
-import createVariablesTab from "./variables.js";
-import Utils from "../find-bar/blockly/Utils.js";
-import addSmallStageClass from "../../libraries/common/cs/small-stage.js";
+import { isPaused, setPaused, onPauseChanged, setup } from './module.js';
+import createLogsTab from './logs.js';
+import createThreadsTab from './threads.js';
+import createPerformanceTab from './performance.js';
+import createVariablesTab from './variables.js';
+import Utils from '../find-bar/blockly/Utils.js';
+import addSmallStageClass from '../../libraries/common/cs/small-stage.js';
 
 const removeAllChildren = (element) => {
   while (element.firstChild) {
@@ -29,7 +29,7 @@ export default async function ({ addon, console, msg }) {
   const pause = (_, thread) => {
     if (addon.tab.redux.state.scratchGui.mode.isPlayerOnly) {
       if (!hasLoggedPauseError) {
-        logMessage(msg("cannot-pause-player"), thread, "error");
+        logMessage(msg('cannot-pause-player'), thread, 'error');
         hasLoggedPauseError = true;
       }
       return;
@@ -37,94 +37,94 @@ export default async function ({ addon, console, msg }) {
     setPaused(true);
     setInterfaceVisible(true);
   };
-  addon.tab.addBlock("\u200B\u200Bbreakpoint\u200B\u200B", {
+  addon.tab.addBlock('\u200B\u200Bbreakpoint\u200B\u200B', {
     args: [],
-    displayName: msg("block-breakpoint"),
-    callback: pause,
+    displayName: msg('block-breakpoint'),
+    callback: pause
   });
-  addon.tab.addBlock("\u200B\u200Blog\u200B\u200B %s", {
-    args: ["content"],
-    displayName: msg("block-log"),
+  addon.tab.addBlock('\u200B\u200Blog\u200B\u200B %s', {
+    args: ['content'],
+    displayName: msg('block-log'),
     callback: ({ content }, thread) => {
-      logMessage(content, thread, "log");
-    },
+      logMessage(content, thread, 'log');
+    }
   });
-  addon.tab.addBlock("\u200B\u200Bwarn\u200B\u200B %s", {
-    args: ["content"],
-    displayName: msg("block-warn"),
+  addon.tab.addBlock('\u200B\u200Bwarn\u200B\u200B %s', {
+    args: ['content'],
+    displayName: msg('block-warn'),
     callback: ({ content }, thread) => {
-      logMessage(content, thread, "warn");
-    },
+      logMessage(content, thread, 'warn');
+    }
   });
-  addon.tab.addBlock("\u200B\u200Berror\u200B\u200B %s", {
-    args: ["content"],
-    displayName: msg("block-error"),
+  addon.tab.addBlock('\u200B\u200Berror\u200B\u200B %s', {
+    args: ['content'],
+    displayName: msg('block-error'),
     callback: ({ content }, thread) => {
-      logMessage(content, thread, "error");
-    },
+      logMessage(content, thread, 'error');
+    }
   });
 
   const vm = addon.tab.traps.vm;
   await new Promise((resolve, reject) => {
     if (vm.editingTarget) return resolve();
-    vm.runtime.once("PROJECT_LOADED", resolve);
+    vm.runtime.once('PROJECT_LOADED', resolve);
   });
   const ScratchBlocks = await addon.tab.traps.getBlockly();
 
-  const debuggerButtonOuter = document.createElement("div");
-  debuggerButtonOuter.className = "sa-debugger-container";
-  const debuggerButton = document.createElement("div");
-  debuggerButton.className = addon.tab.scratchClass("button_outlined-button", "stage-header_stage-button");
-  const debuggerButtonContent = document.createElement("div");
-  debuggerButtonContent.className = addon.tab.scratchClass("button_content");
-  const debuggerButtonImage = document.createElement("img");
-  debuggerButtonImage.className = addon.tab.scratchClass("stage-header_stage-button-icon");
+  const debuggerButtonOuter = document.createElement('div');
+  debuggerButtonOuter.className = 'sa-debugger-container';
+  const debuggerButton = document.createElement('div');
+  debuggerButton.className = addon.tab.scratchClass('button_outlined-button', 'stage-header_stage-button');
+  const debuggerButtonContent = document.createElement('div');
+  debuggerButtonContent.className = addon.tab.scratchClass('button_content');
+  const debuggerButtonImage = document.createElement('img');
+  debuggerButtonImage.className = addon.tab.scratchClass('stage-header_stage-button-icon');
   debuggerButtonImage.draggable = false;
-  debuggerButtonImage.src = addon.self.getResource("/icons/debug.svg") /* rewritten by pull.js */;
+  debuggerButtonImage.src = addon.self.getResource('/icons/debug.svg'); /* rewritten by pull.js */
   debuggerButtonContent.appendChild(debuggerButtonImage);
   debuggerButton.appendChild(debuggerButtonContent);
   debuggerButtonOuter.appendChild(debuggerButton);
-  debuggerButton.addEventListener("click", () => setInterfaceVisible(true));
+  debuggerButton.addEventListener('click', () => setInterfaceVisible(true));
 
   const setHasUnreadMessage = (unreadMessage) => {
-    debuggerButtonContent.classList.toggle("sa-debugger-unread", unreadMessage);
+    debuggerButtonContent.classList.toggle('sa-debugger-unread', unreadMessage);
   };
 
-  const interfaceContainer = Object.assign(document.createElement("div"), {
-    className: addon.tab.scratchClass("card_card", { others: "sa-debugger-interface" }),
+  const interfaceContainer = Object.assign(document.createElement('div'), {
+    className: addon.tab.scratchClass('card_card', { others: 'sa-debugger-interface' })
   });
-  const interfaceHeader = Object.assign(document.createElement("div"), {
-    className: addon.tab.scratchClass("card_header-buttons"),
+  const interfaceHeader = Object.assign(document.createElement('div'), {
+    className: addon.tab.scratchClass('card_header-buttons')
   });
-  const tabListElement = Object.assign(document.createElement("ul"), {
-    className: "sa-debugger-tabs",
+  const tabListElement = Object.assign(document.createElement('ul'), {
+    className: 'sa-debugger-tabs'
   });
-  const buttonContainerElement = Object.assign(document.createElement("div"), {
-    className: addon.tab.scratchClass("card_header-buttons-right", { others: "sa-debugger-header-buttons" }),
+  const buttonContainerElement = Object.assign(document.createElement('div'), {
+    className: addon.tab.scratchClass('card_header-buttons-right', { others: 'sa-debugger-header-buttons' })
   });
-  const tabContentContainer = Object.assign(document.createElement("div"), {
-    className: "sa-debugger-tab-content",
+  const tabContentContainer = Object.assign(document.createElement('div'), {
+    className: 'sa-debugger-tab-content'
   });
 
-  const compilerWarning = document.createElement("a");
-  compilerWarning.addEventListener("click", () => {
+  const compilerWarning = document.createElement('a');
+  compilerWarning.addEventListener('click', () => {
     addon.tab.redux.dispatch({
-      type: "scratch-gui/modals/OPEN_MODAL",
-      modal: "settingsModal"
+      type: 'scratch-gui/modals/OPEN_MODAL',
+      modal: 'settingsModal'
     });
   });
-  compilerWarning.className = "sa-debugger-log sa-debugger-compiler-warning";
-  compilerWarning.textContent = msg("compiler-warning");
+  compilerWarning.className = 'sa-debugger-log sa-debugger-compiler-warning';
+  compilerWarning.textContent = msg('compiler-warning');
   const updateCompilerWarningVisibility = () => {
     compilerWarning.hidden = !vm.runtime.compilerOptions.enabled;
   };
-  vm.on("COMPILER_OPTIONS_CHANGED", updateCompilerWarningVisibility);
+  vm.on('COMPILER_OPTIONS_CHANGED', updateCompilerWarningVisibility);
   updateCompilerWarningVisibility();
 
   let isInterfaceVisible = false;
   const setInterfaceVisible = (_isVisible) => {
     isInterfaceVisible = _isVisible;
-    interfaceContainer.style.display = isInterfaceVisible ? "flex" : "";
+    interfaceContainer.style.display = isInterfaceVisible ? 'flex' : '';
     if (isInterfaceVisible) {
       activeTab.show();
     } else {
@@ -143,12 +143,12 @@ export default async function ({ addon, console, msg }) {
     mouseOffsetY = e.clientY - interfaceContainer.offsetTop;
     lastX = e.clientX;
     lastY = e.clientY;
-    document.addEventListener("mouseup", handleStopDrag);
-    document.addEventListener("mousemove", handleDragInterface);
+    document.addEventListener('mouseup', handleStopDrag);
+    document.addEventListener('mousemove', handleDragInterface);
   };
   const handleStopDrag = () => {
-    document.removeEventListener("mouseup", handleStopDrag);
-    document.removeEventListener("mousemove", handleDragInterface);
+    document.removeEventListener('mouseup', handleStopDrag);
+    document.removeEventListener('mousemove', handleDragInterface);
   };
   const moveInterface = (x, y) => {
     lastX = x;
@@ -157,84 +157,84 @@ export default async function ({ addon, console, msg }) {
     const height = (document.documentElement.clientHeight || document.body.clientHeight) - 1;
     const clampedX = Math.max(0, Math.min(x - mouseOffsetX, width - interfaceContainer.offsetWidth));
     const clampedY = Math.max(0, Math.min(y - mouseOffsetY, height - interfaceContainer.offsetHeight));
-    interfaceContainer.style.left = clampedX + "px";
-    interfaceContainer.style.top = clampedY + "px";
+    interfaceContainer.style.left = clampedX + 'px';
+    interfaceContainer.style.top = clampedY + 'px';
   };
   const handleDragInterface = (e) => {
     e.preventDefault();
     hasBeenDragged = true;
     moveInterface(e.clientX, e.clientY);
   };
-  window.addEventListener("resize", () => {
+  window.addEventListener('resize', () => {
     if (hasBeenDragged) {
       moveInterface(lastX, lastY);
     }
   });
-  interfaceHeader.addEventListener("mousedown", handleStartDrag);
+  interfaceHeader.addEventListener('mousedown', handleStartDrag);
 
   interfaceHeader.append(tabListElement, buttonContainerElement);
   interfaceContainer.append(interfaceHeader, compilerWarning, tabContentContainer);
   document.body.append(interfaceContainer);
 
   const createHeaderButton = ({ text, icon, description }) => {
-    const button = Object.assign(document.createElement("div"), {
-      className: addon.tab.scratchClass("card_shrink-expand-button"),
-      draggable: false,
+    const button = Object.assign(document.createElement('div'), {
+      className: addon.tab.scratchClass('card_shrink-expand-button'),
+      draggable: false
     });
     if (description) {
       button.title = description;
     }
-    const imageElement = Object.assign(document.createElement("img"), {
+    const imageElement = Object.assign(document.createElement('img'), {
       src: icon,
-      draggable: false,
+      draggable: false
     });
-    const textElement = Object.assign(document.createElement("span"), {
-      textContent: text,
+    const textElement = Object.assign(document.createElement('span'), {
+      textContent: text
     });
     button.appendChild(imageElement);
     button.appendChild(textElement);
     return {
       element: button,
       image: imageElement,
-      text: textElement,
+      text: textElement
     };
   };
 
   const createHeaderTab = ({ text, icon }) => {
-    const tab = document.createElement("li");
+    const tab = document.createElement('li');
     const imageElement = Object.assign(addon.tab.recolorable(), {
       src: icon,
-      draggable: false,
+      draggable: false
     });
-    const textElement = Object.assign(document.createElement("span"), {
-      textContent: text,
+    const textElement = Object.assign(document.createElement('span'), {
+      textContent: text
     });
     tab.appendChild(imageElement);
     tab.appendChild(textElement);
     return {
       element: tab,
       image: imageElement,
-      text: textElement,
+      text: textElement
     };
   };
 
   const unpauseButton = createHeaderButton({
-    text: msg("unpause"),
-    icon: addon.self.getResource("/icons/play.svg") /* rewritten by pull.js */,
+    text: msg('unpause'),
+    icon: addon.self.getResource('/icons/play.svg') /* rewritten by pull.js */
   });
-  unpauseButton.element.classList.add("sa-debugger-unpause");
-  unpauseButton.element.addEventListener("click", () => setPaused(false));
+  unpauseButton.element.classList.add('sa-debugger-unpause');
+  unpauseButton.element.addEventListener('click', () => setPaused(false));
   const updateUnpauseVisibility = (paused) => {
-    unpauseButton.element.style.display = paused ? "" : "none";
+    unpauseButton.element.style.display = paused ? '' : 'none';
   };
   updateUnpauseVisibility(isPaused());
   onPauseChanged(updateUnpauseVisibility);
 
   const closeButton = createHeaderButton({
-    text: msg("close"),
-    icon: addon.self.getResource("/icons/close.svg") /* rewritten by pull.js */,
+    text: msg('close'),
+    icon: addon.self.getResource('/icons/close.svg') /* rewritten by pull.js */
   });
-  closeButton.element.addEventListener("click", () => setInterfaceVisible(false));
+  closeButton.element.addEventListener('click', () => setInterfaceVisible(false));
 
   const originalStep = vm.runtime._step;
   const afterStepCallbacks = [];
@@ -257,39 +257,39 @@ export default async function ({ addon, console, msg }) {
       let name = target.getName();
       let original = target;
       if (!target.isOriginal) {
-        name = msg("clone-of", {
-          sprite: name,
+        name = msg('clone-of', {
+          sprite: name
         });
         original = target.sprite.clones[0];
       }
       return {
         exists: true,
         originalId: original.id,
-        name,
+        name
       };
     }
     return {
       exists: false,
       original: null,
-      name: msg("unknown-sprite"),
+      name: msg('unknown-sprite')
     };
   };
 
   const createBlockLink = (targetInfo, blockId) => {
-    const link = document.createElement("a");
-    link.className = "sa-debugger-log-link";
+    const link = document.createElement('a');
+    link.className = 'sa-debugger-log-link';
 
     const { exists, name, originalId } = targetInfo;
     link.textContent = name;
     if (exists) {
       // We use mousedown instead of click so that you can still go to blocks when logs are rapidly scrolling
-      link.addEventListener("mousedown", () => {
+      link.addEventListener('mousedown', () => {
         switchToSprite(originalId);
         activateCodeTab();
         goToBlock(blockId);
       });
     } else {
-      link.classList.add("sa-debugger-log-link-unknown");
+      link.classList.add('sa-debugger-log-link-unknown');
     }
 
     return link;
@@ -307,8 +307,8 @@ export default async function ({ addon, console, msg }) {
     const redux = addon.tab.redux;
     if (redux.state.scratchGui.editorTab.activeTabIndex !== 0) {
       redux.dispatch({
-        type: "scratch-gui/navigation/ACTIVATE_TAB",
-        activeTabIndex: 0,
+        type: 'scratch-gui/navigation/ACTIVATE_TAB',
+        activeTabIndex: 0
       });
     }
   };
@@ -334,7 +334,7 @@ export default async function ({ addon, console, msg }) {
       procedureCode = customBlock.displayName;
     }
     // May be slightly incorrect in some edge cases.
-    return procedureCode.replace(/%[nbs]/g, "()");
+    return procedureCode.replace(/%[nbs]/g, '()');
   };
 
   // May be slightly incorrect in some edge cases.
@@ -350,25 +350,25 @@ export default async function ({ addon, console, msg }) {
         return null;
       }
       const parts = message.split(/%\d+/g);
-      let formattedMessage = "";
+      let formattedMessage = '';
       for (let i = 0; i < parts.length; i++) {
         formattedMessage += parts[i];
         const argInfo = args && args[i];
         if (argInfo) {
           const type = argInfo.type;
-          if (type === "field_vertical_separator") {
+          if (type === 'field_vertical_separator') {
             // no-op
-          } else if (type === "field_image") {
+          } else if (type === 'field_image') {
             const src = argInfo.src;
-            if (src.endsWith("rotate-left.svg")) {
-              formattedMessage += msg("/_general/blocks/anticlockwise");
-            } else if (src.endsWith("rotate-right.svg")) {
-              formattedMessage += msg("/_general/blocks/clockwise");
-            } else if (src.endsWith("green-flag.svg")) {
-              formattedMessage += msg("/_general/blocks/green-flag");
+            if (src.endsWith('rotate-left.svg')) {
+              formattedMessage += msg('/_general/blocks/anticlockwise');
+            } else if (src.endsWith('rotate-right.svg')) {
+              formattedMessage += msg('/_general/blocks/clockwise');
+            } else if (src.endsWith('green-flag.svg')) {
+              formattedMessage += msg('/_general/blocks/green-flag');
             }
           } else {
-            formattedMessage += "()";
+            formattedMessage += '()';
           }
         }
       }
@@ -388,7 +388,7 @@ export default async function ({ addon, console, msg }) {
       }
       i++;
     }
-    return parts.join(" ");
+    return parts.join(' ');
   };
 
   const createBlockPreview = (targetId, blockId) => {
@@ -398,7 +398,7 @@ export default async function ({ addon, console, msg }) {
     }
 
     const block = getBlock(target, blockId);
-    if (!block || block.opcode === "text") {
+    if (!block || block.opcode === 'text') {
       return null;
     }
 
@@ -407,45 +407,45 @@ export default async function ({ addon, console, msg }) {
     let shape;
     let color;
     if (
-      block.opcode === "data_variable" ||
-      block.opcode === "data_listcontents" ||
-      block.opcode === "argument_reporter_string_number" ||
-      block.opcode === "argument_reporter_boolean"
+      block.opcode === 'data_variable' ||
+      block.opcode === 'data_listcontents' ||
+      block.opcode === 'argument_reporter_string_number' ||
+      block.opcode === 'argument_reporter_boolean'
     ) {
       text = Object.values(block.fields)[0].value;
-      if (block.opcode === "data_variable") {
-        category = "data";
-      } else if (block.opcode === "data_listcontents") {
-        category = "list";
+      if (block.opcode === 'data_variable') {
+        category = 'data';
+      } else if (block.opcode === 'data_listcontents') {
+        category = 'list';
       } else {
-        category = "more";
+        category = 'more';
       }
-      shape = "round";
-    } else if (block.opcode === "procedures_call") {
+      shape = 'round';
+    } else if (block.opcode === 'procedures_call') {
       const proccode = block.mutation.proccode;
       text = formatProcedureCode(proccode);
       const customBlock = addon.tab.getCustomBlock(proccode);
       if (customBlock) {
-        category = "addon-custom-block";
+        category = 'addon-custom-block';
       } else {
-        category = "more";
+        category = 'more';
       }
-    } else if (block.opcode === "procedures_definition") {
+    } else if (block.opcode === 'procedures_definition') {
       const prototypeBlockId = block.inputs.custom_block.block;
       const prototypeBlock = getBlock(target, prototypeBlockId);
       const proccode = prototypeBlock.mutation.proccode;
-      text = ScratchBlocks.ScratchMsgs.translate("PROCEDURES_DEFINITION", "define %1").replace(
-        "%1",
+      text = ScratchBlocks.ScratchMsgs.translate('PROCEDURES_DEFINITION', 'define %1').replace(
+        '%1',
         formatProcedureCode(proccode)
       );
-      category = "more";
+      category = 'more';
     } else {
       // Try to call things like https://github.com/scratchfoundation/scratch-blocks/blob/0bd1a17e66a779ec5d11f4a00c43784e3ac7a7b8/blocks_vertical/operators.js#L36
       var jsonData;
       const fakeBlock = {
         jsonInit(data) {
           jsonData = data;
-        },
+        }
       };
       const blockConstructor = ScratchBlocks.Blocks[block.opcode];
       if (blockConstructor) {
@@ -462,15 +462,15 @@ export default async function ({ addon, console, msg }) {
       if (!text) {
         return null;
       }
-      category = jsonData?.extensions.includes("default_extension_colors") ? "pen" : jsonData.category;
+      category = jsonData?.extensions.includes('default_extension_colors') ? 'pen' : jsonData.category;
       const isStatement =
         (jsonData.extensions &&
-          (jsonData.extensions.includes("shape_statement") ||
-            jsonData.extensions.includes("shape_hat") ||
-            jsonData.extensions.includes("shape_end"))) ||
-        "previousStatement" in jsonData ||
-        "nextStatement" in jsonData;
-      shape = isStatement ? "stacked" : "round";
+          (jsonData.extensions.includes('shape_statement') ||
+            jsonData.extensions.includes('shape_hat') ||
+            jsonData.extensions.includes('shape_end'))) ||
+        'previousStatement' in jsonData ||
+        'nextStatement' in jsonData;
+      shape = isStatement ? 'stacked' : 'round';
       color = jsonData.colour;
     }
 
@@ -478,25 +478,25 @@ export default async function ({ addon, console, msg }) {
       return null;
     }
 
-    const element = document.createElement("span");
-    element.className = "sa-debugger-block-preview sa-block-color";
+    const element = document.createElement('span');
+    element.className = 'sa-debugger-block-preview sa-block-color';
     element.textContent = text;
     element.dataset.shape = shape;
 
     const COLOR_CLASSES = [
-      "motion",
-      "looks",
-      "sounds",
-      "events",
-      "control",
-      "sensing",
-      "operators",
-      "data",
-      "data-lists",
-      "list",
-      "more",
-      "pen",
-      "addon-custom-block"
+      'motion',
+      'looks',
+      'sounds',
+      'events',
+      'control',
+      'sensing',
+      'operators',
+      'data',
+      'data-lists',
+      'list',
+      'more',
+      'pen',
+      'addon-custom-block'
     ];
     if (COLOR_CLASSES.includes(category)) {
       element.classList.add(`sa-block-color-${category}`);
@@ -516,11 +516,11 @@ export default async function ({ addon, console, msg }) {
       getBlock,
       getTargetInfoById,
       createBlockLink,
-      createBlockPreview,
+      createBlockPreview
     },
     addon,
     msg,
-    console,
+    console
   };
   logsTab = await createLogsTab(api);
   const threadsTab = await createThreadsTab(api);
@@ -536,7 +536,7 @@ export default async function ({ addon, console, msg }) {
   let activeTab;
   const setActiveTab = (tab) => {
     if (tab === activeTab) return;
-    const selectedClass = "sa-debugger-tab-selected";
+    const selectedClass = 'sa-debugger-tab-selected';
     if (activeTab) {
       activeTab.hide();
       activeTab.tab.element.classList.remove(selectedClass);
@@ -559,7 +559,7 @@ export default async function ({ addon, console, msg }) {
     }
   };
   for (const tab of allTabs) {
-    tab.tab.element.addEventListener("click", () => {
+    tab.tab.element.addEventListener('click', () => {
       setActiveTab(tab);
     });
     tabListElement.appendChild(tab.tab.element);
@@ -570,30 +570,30 @@ export default async function ({ addon, console, msg }) {
 
   const ogGreenFlag = vm.runtime.greenFlag;
   vm.runtime.greenFlag = function (...args) {
-    if (addon.settings.get("log_clear_greenflag")) {
+    if (addon.settings.get('log_clear_greenflag')) {
       logsTab.clearLogs();
     }
-    if (addon.settings.get("log_greenflag")) {
-      logsTab.addLog(msg("log-msg-flag-clicked"), null, "internal");
+    if (addon.settings.get('log_greenflag')) {
+      logsTab.addLog(msg('log-msg-flag-clicked'), null, 'internal');
     }
     return ogGreenFlag.call(this, ...args);
   };
 
   const ogMakeClone = vm.runtime.targets[0].constructor.prototype.makeClone;
   vm.runtime.targets[0].constructor.prototype.makeClone = function (...args) {
-    if (addon.settings.get("log_failed_clone_creation") && !vm.runtime.clonesAvailable()) {
+    if (addon.settings.get('log_failed_clone_creation') && !vm.runtime.clonesAvailable()) {
       logsTab.addLog(
-        msg("log-msg-clone-cap", { sprite: this.getName() }),
+        msg('log-msg-clone-cap', { sprite: this.getName() }),
         vm.runtime.sequencer.activeThread,
-        "internal-warn"
+        'internal-warn'
       );
     }
     var clone = ogMakeClone.call(this, ...args);
-    if (addon.settings.get("log_clone_create") && clone) {
+    if (addon.settings.get('log_clone_create') && clone) {
       logsTab.addLog(
-        msg("log-msg-clone-created", { sprite: this.getName() }),
+        msg('log-msg-clone-created', { sprite: this.getName() }),
         vm.runtime.sequencer.activeThread,
-        "internal"
+        'internal'
       );
     }
     return clone;
@@ -601,11 +601,11 @@ export default async function ({ addon, console, msg }) {
 
   const ogStartHats = vm.runtime.startHats;
   vm.runtime.startHats = function (hat, optMatchFields, ...args) {
-    if (addon.settings.get("log_broadcasts") && hat === "event_whenbroadcastreceived") {
+    if (addon.settings.get('log_broadcasts') && hat === 'event_whenbroadcastreceived') {
       logsTab.addLog(
-        msg("log-msg-broadcasted", { broadcast: optMatchFields.BROADCAST_OPTION }),
+        msg('log-msg-broadcasted', { broadcast: optMatchFields.BROADCAST_OPTION }),
         vm.runtime.sequencer.activeThread,
-        "internal"
+        'internal'
       );
     }
     return ogStartHats.call(this, hat, optMatchFields, ...args);
@@ -617,15 +617,15 @@ export default async function ({ addon, console, msg }) {
       {
         markAsSeen: true,
         reduxEvents: [
-          "scratch-gui/mode/SET_PLAYER",
-          "scratch-gui/mode/SET_FULL_SCREEN",
-          "fontsLoaded/SET_FONTS_LOADED",
-          "scratch-gui/locales/SELECT_LOCALE",
-        ],
+          'scratch-gui/mode/SET_PLAYER',
+          'scratch-gui/mode/SET_FULL_SCREEN',
+          'fontsLoaded/SET_FONTS_LOADED',
+          'scratch-gui/locales/SELECT_LOCALE'
+        ]
       }
     );
-    if (addon.tab.editorMode === "editor") {
-      addon.tab.appendToSharedSpace({ space: "stageHeader", element: debuggerButtonOuter, order: 0 });
+    if (addon.tab.editorMode === 'editor') {
+      addon.tab.appendToSharedSpace({ space: 'stageHeader', element: debuggerButtonOuter, order: 0 });
     } else {
       debuggerButtonOuter.remove();
       setInterfaceVisible(false);

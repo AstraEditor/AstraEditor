@@ -32,7 +32,6 @@ goog.provide('Blockly.ScratchMsgs');
 
 goog.require('Blockly.Msg');
 
-
 /**
  * The object containing messages for all locales - loaded from msg/scratch_msgs.
  * @type {Object}
@@ -52,7 +51,7 @@ Blockly.ScratchMsgs.currentLocale_ = 'en';
  * @param {string} locale E.g., 'de', or 'zh-tw'
  * @package
  */
-Blockly.ScratchMsgs.setLocale = function(locale) {
+Blockly.ScratchMsgs.setLocale = function (locale) {
   if (Object.keys(Blockly.ScratchMsgs.locales).includes(locale)) {
     Blockly.ScratchMsgs.currentLocale_ = locale;
     Blockly.Msg = Object.assign({}, Blockly.Msg, Blockly.ScratchMsgs.locales[locale]);
@@ -72,7 +71,7 @@ Blockly.ScratchMsgs.setLocale = function(locale) {
  * @return {string} message with placeholders filled.
  * @package
  */
-Blockly.ScratchMsgs.translate = function(msgId, defaultMsg, useLocale) {
+Blockly.ScratchMsgs.translate = function (msgId, defaultMsg, useLocale) {
   var locale = useLocale || Blockly.ScratchMsgs.currentLocale_;
 
   if (Object.keys(Blockly.ScratchMsgs.locales).includes(locale)) {

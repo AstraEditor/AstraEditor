@@ -11,16 +11,16 @@
   filter: var(--zebraStriping-filter);
 }
 
-.sa-zebra-stripe[filter*="#blocklyReplacementGlowFilter"] {
+.sa-zebra-stripe[filter*='#blocklyReplacementGlowFilter'] {
   filter: var(--zebraStriping-filter) var(--zebraStriping-replacementGlow);
 }
 
 /* editor-stepping and debugger compatibility */
 /* this is pretty horrible */
-.sa-zebra-stripe[style*="#sa_glower_filter0"] {
+.sa-zebra-stripe[style*='#sa_glower_filter0'] {
   /* !important because editor-stepping Highlighter uses inline styles */
-  filter: var(--zebraStriping-filter) url("#sa_glower_filter0") !important;
+  filter: var(--zebraStriping-filter) url('#sa_glower_filter0') !important;
 }
-.sa-zebra-stripe[style*="#sa_glower_filter1"] {
-  filter: var(--zebraStriping-filter) url("#sa_glower_filter1") !important;
+.sa-zebra-stripe[style*='#sa_glower_filter1'] {
+  filter: var(--zebraStriping-filter) url('#sa_glower_filter1') !important;
 }

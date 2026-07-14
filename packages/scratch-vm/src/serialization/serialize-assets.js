@@ -9,24 +9,24 @@
  * @returns {Array<object>} An array of file descriptors for each asset
  */
 const serializeAssets = function (runtime, assetType, optTargetId) {
-    const targets = optTargetId ? [runtime.getTargetById(optTargetId)] : runtime.targets;
-    const assetDescs = [];
-    for (let i = 0; i < targets.length; i++) {
-        const currTarget = targets[i];
-        const currAssets = currTarget.sprite[assetType];
-        for (let j = 0; j < currAssets.length; j++) {
-            const currAsset = currAssets[j];
-            const asset = currAsset.broken ? currAsset.broken.asset : currAsset.asset;
-            if (asset) {
-                // Serialize asset if it exists, otherwise skip
-                assetDescs.push({
-                    fileName: `${asset.assetId}.${asset.dataFormat}`,
-                    fileContent: asset.data
-                });
-            }
-        }
+  const targets = optTargetId ? [runtime.getTargetById(optTargetId)] : runtime.targets;
+  const assetDescs = [];
+  for (let i = 0; i < targets.length; i++) {
+    const currTarget = targets[i];
+    const currAssets = currTarget.sprite[assetType];
+    for (let j = 0; j < currAssets.length; j++) {
+      const currAsset = currAssets[j];
+      const asset = currAsset.broken ? currAsset.broken.asset : currAsset.asset;
+      if (asset) {
+        // Serialize asset if it exists, otherwise skip
+        assetDescs.push({
+          fileName: `${asset.assetId}.${asset.dataFormat}`,
+          fileContent: asset.data
+        });
+      }
     }
-    return assetDescs;
+  }
+  return assetDescs;
 };
 
 /**
@@ -39,7 +39,7 @@ const serializeAssets = function (runtime, assetType, optTargetId) {
  * @returns {Array<object>} An array of file descriptors for each sound
  */
 const serializeSounds = function (runtime, optTargetId) {
-    return serializeAssets(runtime, 'sounds', optTargetId);
+  return serializeAssets(runtime, 'sounds', optTargetId);
 };
 
 /**
@@ -51,10 +51,10 @@ const serializeSounds = function (runtime, optTargetId) {
  * @returns {Array<object>} An array of file descriptors for each costume
  */
 const serializeCostumes = function (runtime, optTargetId) {
-    return serializeAssets(runtime, 'costumes', optTargetId);
+  return serializeAssets(runtime, 'costumes', optTargetId);
 };
 
 module.exports = {
-    serializeSounds,
-    serializeCostumes
+  serializeSounds,
+  serializeCostumes
 };

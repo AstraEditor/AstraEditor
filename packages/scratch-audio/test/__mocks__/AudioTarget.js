@@ -1,21 +1,21 @@
 const AudioNodeMock = require('./AudioNode');
 
 class AudioTargetMock {
-    constructor () {
-        this.inputNode = new AudioNodeMock();
-    }
+  constructor() {
+    this.inputNode = new AudioNodeMock();
+  }
 
-    connect (target) {
-        this.inputNode.connect(target.getInputNode());
-    }
+  connect(target) {
+    this.inputNode.connect(target.getInputNode());
+  }
 
-    getInputNode () {
-        return this.inputNode;
-    }
+  getInputNode() {
+    return this.inputNode;
+  }
 
-    getSoundPlayers () {
-        return {};
-    }
+  getSoundPlayers() {
+    return {};
+  }
 }
 
 module.exports = AudioTargetMock;

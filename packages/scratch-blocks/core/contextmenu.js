@@ -42,7 +42,6 @@ goog.require('goog.ui.Menu');
 goog.require('goog.ui.MenuItem');
 goog.require('goog.userAgent');
 
-
 /**
  * Which block is the context menu attached to?
  * @type {Blockly.Block}
@@ -70,14 +69,15 @@ Blockly.ContextMenu.show = function (e, options, rtl) {
   }
   var menu = Blockly.ContextMenu.populate_(options, rtl);
 
-  goog.events.listen(
-    menu, goog.ui.Component.EventType.ACTION, Blockly.ContextMenu.hide);
+  goog.events.listen(menu, goog.ui.Component.EventType.ACTION, Blockly.ContextMenu.hide);
 
   Blockly.ContextMenu.position_(menu, e, rtl);
   // 1ms delay is required for focusing on context menus because some other
   // mouse event is still waiting in the queue and clears focus.
-  setTimeout(function () { menu.getElement().focus(); }, 1);
-  Blockly.ContextMenu.currentBlock = null;  // May be set by Blockly.Block.
+  setTimeout(function () {
+    menu.getElement().focus();
+  }, 1);
+  Blockly.ContextMenu.currentBlock = null; // May be set by Blockly.Block.
 };
 
 /**
@@ -104,14 +104,13 @@ Blockly.ContextMenu.populate_ = function (options, rtl) {
     acceptContextMenuEvents = true;
   });
 
-  for (var i = 0, option; option = options[i]; i++) {
+  for (var i = 0, option; (option = options[i]); i++) {
     var menuItem = new goog.ui.MenuItem(option.text);
     menuItem.setRightToLeft(rtl);
     menu.addChild(menuItem, true);
     menuItem.setEnabled(option.enabled);
     if (option.enabled) {
-      goog.events.listen(
-        menuItem, goog.ui.Component.EventType.ACTION, option.callback);
+      goog.events.listen(menuItem, goog.ui.Component.EventType.ACTION, option.callback);
       menuItem.handleContextMenu = function (/* e */) {
         if (!acceptContextMenuEvents) {
           return;
@@ -172,8 +171,7 @@ Blockly.ContextMenu.createWidget_ = function (menu) {
   var menuDom = menu.getElement();
   Blockly.utils.addClass(menuDom, 'blocklyContextMenu');
   // Prevent system context menu when right-clicking a Blockly context menu.
-  Blockly.bindEventWithChecks_(
-    menuDom, 'contextmenu', null, Blockly.utils.noEvent);
+  Blockly.bindEventWithChecks_(menuDom, 'contextmenu', null, Blockly.utils.noEvent);
   // Enable autofocus after the initial render to avoid issue #1329.
   menu.setAllowAutoFocus(true);
 };
@@ -239,8 +237,10 @@ Blockly.ContextMenu.blockDeleteOption = function (block) {
     descendantCount -= nextBlock.getDescendants(false, true).length;
   }
   var deleteOption = {
-    text: descendantCount == 1 ? Blockly.Msg.DELETE_BLOCK :
-      Blockly.Msg.DELETE_X_BLOCKS.replace('%1', String(descendantCount)),
+    text:
+      descendantCount == 1
+        ? Blockly.Msg.DELETE_BLOCK
+        : Blockly.Msg.DELETE_X_BLOCKS.replace('%1', String(descendantCount)),
     enabled: true,
     callback: function () {
       Blockly.Events.setGroup(true);
@@ -280,8 +280,7 @@ Blockly.ContextMenu.blockDuplicateOption = function (block, event) {
   var duplicateOption = {
     text: Blockly.Msg.DUPLICATE,
     enabled: true,
-    callback:
-      Blockly.scratchBlocksUtils.duplicateAndDragCallback(block, event)
+    callback: Blockly.scratchBlocksUtils.duplicateAndDragCallback(block, event)
   };
   return duplicateOption;
 };
@@ -485,8 +484,12 @@ Blockly.ContextMenu.workspaceCommentOption = function (ws, e) {
       disabled = true;
     }
     var comment = new Blockly.WorkspaceCommentSvg(
-      ws, '', Blockly.WorkspaceCommentSvg.DEFAULT_SIZE,
-      Blockly.WorkspaceCommentSvg.DEFAULT_SIZE, false);
+      ws,
+      '',
+      Blockly.WorkspaceCommentSvg.DEFAULT_SIZE,
+      Blockly.WorkspaceCommentSvg.DEFAULT_SIZE,
+      false
+    );
 
     var injectionDiv = ws.getInjectionDiv();
     // Bounding rect coordinates are in client coordinates, meaning that they
@@ -495,8 +498,7 @@ Blockly.ContextMenu.workspaceCommentOption = function (ws, e) {
     var boundingRect = injectionDiv.getBoundingClientRect();
 
     // The client coordinates offset by the injection div's upper left corner.
-    var clientOffsetPixels = new goog.math.Coordinate(
-      e.clientX - boundingRect.left, e.clientY - boundingRect.top);
+    var clientOffsetPixels = new goog.math.Coordinate(e.clientX - boundingRect.left, e.clientY - boundingRect.top);
 
     // The offset in pixels between the main workspace's origin and the upper
     // left corner of the injection div.
@@ -504,8 +506,7 @@ Blockly.ContextMenu.workspaceCommentOption = function (ws, e) {
 
     // The position of the new comment in pixels relative to the origin of the
     // main workspace.
-    var finalOffsetPixels = goog.math.Coordinate.difference(clientOffsetPixels,
-      mainOffsetPixels);
+    var finalOffsetPixels = goog.math.Coordinate.difference(clientOffsetPixels, mainOffsetPixels);
 
     // The position of the new comment in main workspace coordinates.
     var finalOffsetMainWs = finalOffsetPixels.scale(1 / ws.scale);
@@ -556,8 +557,12 @@ Blockly.ContextMenu.workspaceREADMEOption = function (ws, e) {
       disabled = true;
     }
     var README = new Blockly.WorkspaceCommentSvg(
-      ws, `#README #${Blockly.Msg.ADD_README_TITLE}\n\n`, Blockly.WorkspaceCommentSvg.DEFAULT_SIZE,
-      Blockly.WorkspaceCommentSvg.README_DEFAULT_SIZE, false);
+      ws,
+      `#README #${Blockly.Msg.ADD_README_TITLE}\n\n`,
+      Blockly.WorkspaceCommentSvg.DEFAULT_SIZE,
+      Blockly.WorkspaceCommentSvg.README_DEFAULT_SIZE,
+      false
+    );
 
     var injectionDiv = ws.getInjectionDiv();
     // Bounding rect coordinates are in client coordinates, meaning that they
@@ -566,8 +571,7 @@ Blockly.ContextMenu.workspaceREADMEOption = function (ws, e) {
     var boundingRect = injectionDiv.getBoundingClientRect();
 
     // The client coordinates offset by the injection div's upper left corner.
-    var clientOffsetPixels = new goog.math.Coordinate(
-      e.clientX - boundingRect.left, e.clientY - boundingRect.top);
+    var clientOffsetPixels = new goog.math.Coordinate(e.clientX - boundingRect.left, e.clientY - boundingRect.top);
 
     // The offset in pixels between the main workspace's origin and the upper
     // left corner of the injection div.
@@ -575,8 +579,7 @@ Blockly.ContextMenu.workspaceREADMEOption = function (ws, e) {
 
     // The position of the new README in pixels relative to the origin of the
     // main workspace.
-    var finalOffsetPixels = goog.math.Coordinate.difference(clientOffsetPixels,
-      mainOffsetPixels);
+    var finalOffsetPixels = goog.math.Coordinate.difference(clientOffsetPixels, mainOffsetPixels);
 
     // The position of the new README in main workspace coordinates.
     var finalOffsetMainWs = finalOffsetPixels.scale(1 / ws.scale);

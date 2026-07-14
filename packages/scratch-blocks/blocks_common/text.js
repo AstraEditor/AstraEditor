@@ -37,21 +37,21 @@ Blockly.Blocks['text'] = {
    * Block for text value.
    * @this Blockly.Block
    */
-  init: function() {
+  init: function () {
     this.jsonInit({
-      "message0": "%1",
-      "args0": [
+      message0: '%1',
+      args0: [
         {
-          "type": "field_input",
-          "name": "TEXT"
+          type: 'field_input',
+          name: 'TEXT'
         }
       ],
-      "output": "String",
-      "outputShape": Blockly.OUTPUT_SHAPE_ROUND,
-      "colour": Blockly.Colours.textField,
-      "colourSecondary": Blockly.Colours.textField,
-      "colourTertiary": Blockly.Colours.textField,
-      "colourQuaternary": Blockly.Colours.textField
+      output: 'String',
+      outputShape: Blockly.OUTPUT_SHAPE_ROUND,
+      colour: Blockly.Colours.textField,
+      colourSecondary: Blockly.Colours.textField,
+      colourTertiary: Blockly.Colours.textField,
+      colourQuaternary: Blockly.Colours.textField
     });
   }
 };

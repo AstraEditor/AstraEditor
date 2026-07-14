@@ -1,50 +1,50 @@
-import { onPauseChanged, isPaused } from "./module.js";
-import "../../libraries/thirdparty/cs/chart.min.js";
+import { onPauseChanged, isPaused } from './module.js';
+import '../../libraries/thirdparty/cs/chart.min.js';
 
 export default async function createPerformanceTab({ debug, addon, console, msg }) {
   const vm = addon.tab.traps.vm;
 
   // In optimized graphs everything still looks good
-  const fancyGraphs = addon.settings.get("fancy_graphs");
+  const fancyGraphs = addon.settings.get('fancy_graphs');
   const lineWidth = fancyGraphs ? 1 : 2;
-  const lineColor = fancyGraphs ? "hsla(163, 85%, 40%, 0.5)" : "hsla(163, 85%, 40%, 1)";
+  const lineColor = fancyGraphs ? 'hsla(163, 85%, 40%, 0.5)' : 'hsla(163, 85%, 40%, 1)';
 
   const tab = debug.createHeaderTab({
-    text: msg("tab-performance"),
-    icon: addon.self.getResource("/icons/performance.svg") /* rewritten by pull.js */,
+    text: msg('tab-performance'),
+    icon: addon.self.getResource('/icons/performance.svg') /* rewritten by pull.js */
   });
 
-  const content = Object.assign(document.createElement("div"), {
-    className: "sa-performance-tab-content",
+  const content = Object.assign(document.createElement('div'), {
+    className: 'sa-performance-tab-content'
   });
 
   const createChart = ({ title }) => {
-    const titleElement = Object.assign(document.createElement("h2"), {
-      textContent: title,
+    const titleElement = Object.assign(document.createElement('h2'), {
+      textContent: title
     });
-    const canvas = Object.assign(document.createElement("canvas"), {
-      className: "sa-debugger-chart",
+    const canvas = Object.assign(document.createElement('canvas'), {
+      className: 'sa-debugger-chart'
     });
     return {
       title: titleElement,
-      canvas,
+      canvas
     };
   };
 
   const now = () => performance.now();
 
   // We'll guess that requestAnimationFrame is probably 60, but even if it's not, it's not a big deal.
-  const getMaxFps = () => vm.runtime.frameLoop.framerate === 0 ? 60 : vm.runtime.frameLoop.framerate;
+  const getMaxFps = () => (vm.runtime.frameLoop.framerate === 0 ? 60 : vm.runtime.frameLoop.framerate);
 
   const NUMBER_OF_POINTS = 20;
   // An array like [9, 8, 7, 6, 5, 4, 3, 2, 1, 0]
   const labels = Array.from(Array(NUMBER_OF_POINTS).keys()).reverse();
 
   const fpsElements = createChart({
-    title: msg("performance-framerate-title"),
+    title: msg('performance-framerate-title')
   });
-  const fpsChart = new Chart(fpsElements.canvas.getContext("2d"), {
-    type: "line",
+  const fpsChart = new Chart(fpsElements.canvas.getContext('2d'), {
+    type: 'line',
     data: {
       labels,
       datasets: [
@@ -52,37 +52,37 @@ export default async function createPerformanceTab({ debug, addon, console, msg 
           data: Array(NUMBER_OF_POINTS).fill(-1),
           borderWidth: lineWidth,
           fill: fancyGraphs,
-          backgroundColor: "#29beb8",
-          borderColor: lineColor,
-        },
-      ],
+          backgroundColor: '#29beb8',
+          borderColor: lineColor
+        }
+      ]
     },
     options: {
       animation: fancyGraphs,
       scales: {
         y: {
           suggestedMax: getMaxFps(),
-          min: 0,
-        },
+          min: 0
+        }
       },
       plugins: {
         legend: {
-          display: false,
+          display: false
         },
         tooltip: {
           callbacks: {
-            label: (context) => msg("performance-framerate-graph-tooltip", { fps: context.parsed.y }),
-          },
-        },
-      },
-    },
+            label: (context) => msg('performance-framerate-graph-tooltip', { fps: context.parsed.y })
+          }
+        }
+      }
+    }
   });
 
   const clonesElements = createChart({
-    title: msg("performance-clonecount-title"),
+    title: msg('performance-clonecount-title')
   });
-  const performanceClonesChart = new Chart(clonesElements.canvas.getContext("2d"), {
-    type: "line",
+  const performanceClonesChart = new Chart(clonesElements.canvas.getContext('2d'), {
+    type: 'line',
     data: {
       labels,
       datasets: [
@@ -90,30 +90,30 @@ export default async function createPerformanceTab({ debug, addon, console, msg 
           data: Array(NUMBER_OF_POINTS).fill(-1),
           borderWidth: lineWidth,
           fill: fancyGraphs,
-          backgroundColor: "#29beb8",
-          borderColor: lineColor,
-        },
-      ],
+          backgroundColor: '#29beb8',
+          borderColor: lineColor
+        }
+      ]
     },
     options: {
       animation: fancyGraphs,
       scales: {
         y: {
           suggestedMax: 300,
-          min: 0,
-        },
+          min: 0
+        }
       },
       plugins: {
         legend: {
-          display: false,
+          display: false
         },
         tooltip: {
           callbacks: {
-            label: (context) => msg("performance-clonecount-graph-tooltip", { clones: context.parsed.y }),
-          },
-        },
-      },
-    },
+            label: (context) => msg('performance-clonecount-graph-tooltip', { clones: context.parsed.y })
+          }
+        }
+      }
+    }
   });
 
   // Holds the times of each frame drawn in the last second.
@@ -185,6 +185,6 @@ export default async function createPerformanceTab({ debug, addon, console, msg 
     content,
     buttons: [],
     show,
-    hide,
+    hide
   };
 }

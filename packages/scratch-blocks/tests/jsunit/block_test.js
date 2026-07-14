@@ -23,68 +23,76 @@ function test_appendField_FieldIconMenu() {
   var workspace = new Blockly.Workspace();
   var block_name = 'test_jsonInit_FieldIconMenu';
   var field_name = 'TEST_FIELD';
-  var dropdown_options = [{
-    value: 'VALUE'
-  }];
+  var dropdown_options = [
+    {
+      value: 'VALUE'
+    }
+  ];
 
   Blockly.Blocks[block_name] = {
-    init: function() {
-      this.appendDummyInput()
-          .appendField(new Blockly.FieldIconMenu(dropdown_options),
-              field_name);
+    init: function () {
+      this.appendDummyInput().appendField(new Blockly.FieldIconMenu(dropdown_options), field_name);
       this.setOutput(true);
     }
   };
 
   var block = workspace.newBlock(block_name);
-  assertTrue('IconMenu field not added to block by appendField',
-      block.getField(field_name) instanceof Blockly.FieldIconMenu);
+  assertTrue(
+    'IconMenu field not added to block by appendField',
+    block.getField(field_name) instanceof Blockly.FieldIconMenu
+  );
 }
 
 function test_jsonInit_FieldIconMenu() {
   var workspace = new Blockly.Workspace();
   var block_name = 'test_jsonInit_FieldIconMenu';
   var field_name = 'TEST_FIELD';
-  var dropdown_options = [{
-    value: 'VALUE'
-  }];
+  var dropdown_options = [
+    {
+      value: 'VALUE'
+    }
+  ];
 
   Blockly.Blocks[block_name] = {
-    init: function() {
+    init: function () {
       this.jsonInit({
         message0: '%1',
-        args0: [{
-          type: 'field_iconmenu',
-          name: field_name,
-          options: dropdown_options
-        }],
+        args0: [
+          {
+            type: 'field_iconmenu',
+            name: field_name,
+            options: dropdown_options
+          }
+        ],
         output: null
       });
     }
   };
 
   var block = workspace.newBlock(block_name);
-  assertTrue('IconMenu field not added to block by jsonInit',
-      block.getField(field_name) instanceof Blockly.FieldIconMenu);
+  assertTrue(
+    'IconMenu field not added to block by jsonInit',
+    block.getField(field_name) instanceof Blockly.FieldIconMenu
+  );
 }
 
 function test_jsonInit_colors() {
   var workspace = new Blockly.Workspace();
   var block_name = 'test_jsonInit_FieldDropdown_colors';
   var field_name = 'TEST_FIELD';
-  var dropdown_options = [
-    ['value', 'VALUE']
-  ];
+  var dropdown_options = [['value', 'VALUE']];
 
   Blockly.Blocks[block_name] = {
-    init: function() {
+    init: function () {
       this.jsonInit({
         message0: '%1',
-        args0: [{
-          type: 'field_dropdown',
-          name: field_name,
-          options: dropdown_options
-        }],
+        args0: [
+          {
+            type: 'field_dropdown',
+            name: field_name,
+            options: dropdown_options
+          }
+        ],
         output: null,
         colour: '#111111',
         colourSecondary: '#222222',
@@ -95,7 +103,7 @@ function test_jsonInit_colors() {
   };
 
   var block = workspace.newBlock(block_name);
-  var field =  block.getField(field_name);
+  var field = block.getField(field_name);
 
   assertEquals('Block primary colour not set', block.getColour(), '#111111');
   assertEquals('Block secondary colour not set', block.getColourSecondary(), '#222222');

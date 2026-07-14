@@ -1,5 +1,5 @@
-import { updateAllBlocks } from "../custom-block-shape/update-all-blocks.js";
-import { clearTextWidthCache } from "../middle-click-popup/module.js";
+import { updateAllBlocks } from '../custom-block-shape/update-all-blocks.js';
+import { clearTextWidthCache } from '../middle-click-popup/module.js';
 
 export default async function ({ addon, console }) {
   let currentTextSize = 100;
@@ -12,7 +12,7 @@ export default async function ({ addon, console }) {
   // This way, we can clearly control the execution order of style operations.
   // For example, we always want to call updateAllBlocks() after the styles
   // were updated according to the user's settings, not before.
-  const fontSizeCss = document.createElement("style");
+  const fontSizeCss = document.createElement('style');
   // Be careful with specificity because we're adding this userstyle manually
   // to the <head> without checking if other styles are above or below.
   fontSizeCss.textContent = `
@@ -26,7 +26,7 @@ export default async function ({ addon, console }) {
   fontSizeCss.disabled = true;
   document.head.appendChild(fontSizeCss);
   //
-  const boldCss = document.createElement("style");
+  const boldCss = document.createElement('style');
   boldCss.textContent = `
     .blocklyText,
     .blocklyHtmlInput {
@@ -35,7 +35,7 @@ export default async function ({ addon, console }) {
   boldCss.disabled = true;
   document.head.appendChild(boldCss);
   //
-  const textShadowCss = document.createElement("style");
+  const textShadowCss = document.createElement('style');
   textShadowCss.textContent = `
     .blocklyDraggable > .blocklyText,
     .blocklyDraggable > g > text {
@@ -53,7 +53,7 @@ export default async function ({ addon, console }) {
   };
 
   const setFontSize = (wantedSize) => {
-    if (wantedSize !== 100) document.documentElement.style.setProperty("--customBlockText-sizeSetting", wantedSize);
+    if (wantedSize !== 100) document.documentElement.style.setProperty('--customBlockText-sizeSetting', wantedSize);
 
     if (wantedSize === 100) {
       fontSizeCss.disabled = true;
@@ -71,28 +71,28 @@ export default async function ({ addon, console }) {
     textShadowCss.disabled = !bool;
   };
 
-  addon.settings.addEventListener("change", () => {
-    setFontSize(addon.settings.get("size"));
-    setBold(addon.settings.get("bold"));
-    setTextShadow(addon.settings.get("shadow"));
+  addon.settings.addEventListener('change', () => {
+    setFontSize(addon.settings.get('size'));
+    setBold(addon.settings.get('bold'));
+    setTextShadow(addon.settings.get('shadow'));
     updateBlockly();
   });
 
-  addon.self.addEventListener("disabled", () => {
+  addon.self.addEventListener('disabled', () => {
     setFontSize(100);
     setBold(false);
     setTextShadow(false);
     updateBlockly();
   });
-  addon.self.addEventListener("reenabled", () => {
-    setFontSize(addon.settings.get("size"));
-    setBold(addon.settings.get("bold"));
-    setTextShadow(addon.settings.get("shadow"));
+  addon.self.addEventListener('reenabled', () => {
+    setFontSize(addon.settings.get('size'));
+    setBold(addon.settings.get('bold'));
+    setTextShadow(addon.settings.get('shadow'));
     updateBlockly();
   });
 
-  setFontSize(addon.settings.get("size"));
-  setBold(addon.settings.get("bold"));
-  setTextShadow(addon.settings.get("shadow"));
+  setFontSize(addon.settings.get('size'));
+  setBold(addon.settings.get('bold'));
+  setTextShadow(addon.settings.get('shadow'));
   updateBlockly();
 }

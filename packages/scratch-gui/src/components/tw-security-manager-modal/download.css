@@ -1,23 +1,21 @@
 .file-name {
-    font-family: monospace;
-    user-select: text;
-    word-wrap: break-word;
+  font-family: monospace;
+  user-select: text;
+  word-wrap: break-word;
 }
 .file-name::before {
-    content: '"';
+  content: '"';
 }
 .file-name::after {
-    content: '"';
+  content: '"';
 }
 
 .name {
-
 }
 
 .dot {
-
 }
 
 .extension {
-    text-decoration: underline;
+  text-decoration: underline;
 }

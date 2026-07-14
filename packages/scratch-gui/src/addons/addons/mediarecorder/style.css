@@ -22,7 +22,7 @@
   margin-left: 1rem;
 }
 
-.mediaRecorderPopup[dir="rtl"] p :last-child {
+.mediaRecorderPopup[dir='rtl'] p :last-child {
   margin-left: 0;
   margin-right: 1rem;
 }
@@ -32,7 +32,7 @@ p.mediaRecorderPopupOption {
   align-items: center;
 }
 
-.mediaRecorderPopupOption input[type="checkbox"] {
+.mediaRecorderPopupOption input[type='checkbox'] {
   height: 1.5rem;
 }
 

@@ -1,6 +1,6 @@
 // import ShowBroadcast from "./show-broadcast.js";
-import DomHelpers from "./DomHelpers.js";
-import UndoGroup from "./UndoGroup.js";
+import DomHelpers from './DomHelpers.js';
+import UndoGroup from './UndoGroup.js';
 
 export default class DevTools {
   constructor(addon, msg, m) {
@@ -24,14 +24,14 @@ export default class DevTools {
   async init() {
     this.addContextMenus();
     while (true) {
-      const root = await this.addon.tab.waitForElement("ul[class*=gui_tab-list_]", {
+      const root = await this.addon.tab.waitForElement('ul[class*=gui_tab-list_]', {
         markAsSeen: true,
         reduxEvents: [
-          "scratch-gui/mode/SET_PLAYER",
-          "fontsLoaded/SET_FONTS_LOADED",
-          "scratch-gui/locales/SELECT_LOCALE",
+          'scratch-gui/mode/SET_PLAYER',
+          'fontsLoaded/SET_FONTS_LOADED',
+          'scratch-gui/locales/SELECT_LOCALE'
         ],
-        reduxCondition: (state) => !state.scratchGui.mode.isPlayerOnly,
+        reduxCondition: (state) => !state.scratchGui.mode.isPlayerOnly
       });
       this.initInner(root);
     }
@@ -41,7 +41,7 @@ export default class DevTools {
     const oldCleanUpFunc = blockly.WorkspaceSvg.prototype.cleanUp;
     const self = this;
     blockly.WorkspaceSvg.prototype.cleanUp = function () {
-      if (self.addon.settings.get("enableCleanUpPlus")) {
+      if (self.addon.settings.get('enableCleanUpPlus')) {
         self.doCleanUp();
       } else {
         oldCleanUpFunc.call(this);
@@ -49,9 +49,9 @@ export default class DevTools {
     };
 
     let originalMsg = blockly.Msg.CLEAN_UP;
-    if (this.addon.settings.get("enableCleanUpPlus")) blockly.Msg.CLEAN_UP = this.m("clean-plus");
-    this.addon.settings.addEventListener("change", () => {
-      if (this.addon.settings.get("enableCleanUpPlus")) blockly.Msg.CLEAN_UP = this.m("clean-plus");
+    if (this.addon.settings.get('enableCleanUpPlus')) blockly.Msg.CLEAN_UP = this.m('clean-plus');
+    this.addon.settings.addEventListener('change', () => {
+      if (this.addon.settings.get('enableCleanUpPlus')) blockly.Msg.CLEAN_UP = this.m('clean-plus');
       else blockly.Msg.CLEAN_UP = originalMsg;
     });
 
@@ -59,24 +59,24 @@ export default class DevTools {
       (items, block) => {
         items.push({
           enabled: blockly.clipboardXml_,
-          text: this.m("paste"),
+          text: this.m('paste'),
           separator: true,
           _isDevtoolsFirstItem: true,
           callback: () => {
             let ids = this.getTopBlockIDs();
 
             document.dispatchEvent(
-              new KeyboardEvent("keydown", {
+              new KeyboardEvent('keydown', {
                 keyCode: 86,
                 ctrlKey: true,
-                griff: true,
+                griff: true
               })
             );
 
             setTimeout(() => {
               this.beginDragOfNewBlocksNotInIDs(ids);
             }, 10);
-          },
+          }
         });
         return items;
       },
@@ -87,34 +87,34 @@ export default class DevTools {
         items.push(
           {
             enabled: true,
-            text: this.m("make-space"),
+            text: this.m('make-space'),
             _isDevtoolsFirstItem: true,
             callback: () => {
               this.doCleanUp(block);
             },
-            separator: true,
+            separator: true
           },
           {
             enabled: true,
-            text: this.m("copy-all"),
+            text: this.m('copy-all'),
             callback: () => {
               this.eventCopyClick(block);
             },
-            separator: true,
+            separator: true
           },
           {
             enabled: true,
-            text: this.m("copy-block"),
+            text: this.m('copy-block'),
             callback: () => {
               this.eventCopyClick(block, 1);
-            },
+            }
           },
           {
             enabled: true,
-            text: this.m("cut-block"),
+            text: this.m('cut-block'),
             callback: () => {
               this.eventCopyClick(block, 2);
-            },
+            }
           }
         );
         // const BROADCAST_BLOCKS = ["event_whenbroadcastreceived", "event_broadcast", "event_broadcastandwait"];
@@ -140,21 +140,21 @@ export default class DevTools {
     );
     this.addon.tab.createBlockContextMenu(
       (items, block) => {
-        if (block.getCategory() === "data" || block.getCategory() === "data-lists") {
+        if (block.getCategory() === 'data' || block.getCategory() === 'data-lists') {
           this.selVarID = block.getVars()[0];
           items.push({
             enabled: true,
-            text: this.m("swap", { var: block.getCategory() === "data" ? this.m("variables") : this.m("lists") }),
+            text: this.m('swap', { var: block.getCategory() === 'data' ? this.m('variables') : this.m('lists') }),
             callback: async () => {
               let wksp = this.getWorkspace();
               let v = wksp.getVariableById(this.selVarID);
               // prompt() returns Promise in desktop app
-              let varName = await window.prompt(this.msg("replace", { name: v.name }));
+              let varName = await window.prompt(this.msg('replace', { name: v.name }));
               if (varName) {
                 this.doReplaceVariable(this.selVarID, varName, v.type);
               }
             },
-            separator: true,
+            separator: true
           });
         }
         return items;
@@ -168,7 +168,7 @@ export default class DevTools {
   }
 
   isCostumeEditor() {
-    return this.costTab.className.indexOf("gui_is-selected") >= 0;
+    return this.costTab.className.indexOf('gui_is-selected') >= 0;
   }
 
   /**
@@ -201,8 +201,8 @@ export default class DevTools {
     let columns = result.cols;
     let orphanCount = result.orphans.blocks.length;
     if (orphanCount > 0 && !block) {
-      let message = this.msg("orphaned", {
-        count: orphanCount,
+      let message = this.msg('orphaned', {
+        count: orphanCount
       });
       if (confirm(message)) {
         for (const block of result.orphans.blocks) {
@@ -251,7 +251,7 @@ export default class DevTools {
       // Locate unused local variables...
       let workspace = this.getWorkspace();
       let map = workspace.getVariableMap();
-      let vars = map.getVariablesOfType("");
+      let vars = map.getVariablesOfType('');
       let unusedLocals = [];
 
       for (const row of vars) {
@@ -265,13 +265,13 @@ export default class DevTools {
 
       if (unusedLocals.length > 0) {
         const unusedCount = unusedLocals.length;
-        let message = this.msg("unused-var", {
-          count: unusedCount,
+        let message = this.msg('unused-var', {
+          count: unusedCount
         });
         for (let i = 0; i < unusedLocals.length; i++) {
           let orphan = unusedLocals[i];
           if (i > 0) {
-            message += ", ";
+            message += ', ';
           }
           message += orphan.name;
         }
@@ -283,7 +283,7 @@ export default class DevTools {
       }
 
       // Locate unused local lists...
-      let lists = map.getVariablesOfType("list");
+      let lists = map.getVariablesOfType('list');
       let unusedLists = [];
 
       for (const row of lists) {
@@ -296,13 +296,13 @@ export default class DevTools {
       }
       if (unusedLists.length > 0) {
         const unusedCount = unusedLists.length;
-        let message = this.msg("unused-list", {
-          count: unusedCount,
+        let message = this.msg('unused-list', {
+          count: unusedCount
         });
         for (let i = 0; i < unusedLists.length; i++) {
           let orphan = unusedLists[i];
           if (i > 0) {
-            message += ", ";
+            message += ', ';
           }
           message += orphan.name;
         }
@@ -452,7 +452,7 @@ export default class DevTools {
     let wksp = this.getWorkspace();
     let v = wksp.getVariable(newVarName, type);
     if (!v) {
-      alert(this.msg("var-not-exist"));
+      alert(this.msg('var-not-exist'));
       return;
     }
     let newVId = v.getId();
@@ -461,10 +461,10 @@ export default class DevTools {
     let blocks = this.getVariableUsesById(varId);
     for (const block of blocks) {
       try {
-        if (type === "") {
-          block.getField("VARIABLE").setValue(newVId);
+        if (type === '') {
+          block.getField('VARIABLE').setValue(newVId);
         } else {
-          block.getField("LIST").setValue(newVId);
+          block.getField('LIST').setValue(newVId);
         }
       } catch (e) {
         // ignore
@@ -586,7 +586,7 @@ export default class DevTools {
    * @param ids Set of previously known ids
    */
   beginDragOfNewBlocksNotInIDs(ids) {
-    if (!this.addon.settings.get("enablePasteBlocksAtMouse")) {
+    if (!this.addon.settings.get('enablePasteBlocksAtMouse')) {
       return;
     }
     let wksp = this.getWorkspace();
@@ -617,26 +617,26 @@ export default class DevTools {
       let selected = this.costTabBody.querySelector("div[class*='sprite-selector-item_is-selected']");
       let node = up ? selected.parentNode.previousSibling : selected.parentNode.nextSibling;
       if (node) {
-        let wrapper = node.closest("div[class*=gui_flex-wrapper]");
+        let wrapper = node.closest('div[class*=gui_flex-wrapper]');
         node.querySelector("div[class^='sprite-selector-item_sprite-name']").click();
         node.scrollIntoView({
-          behavior: "auto",
-          block: "center",
-          inline: "start",
+          behavior: 'auto',
+          block: 'center',
+          inline: 'start'
         });
         wrapper.scrollTop = 0;
       }
     };
 
-    if (document.URL.indexOf("editor") <= 0) {
+    if (document.URL.indexOf('editor') <= 0) {
       return;
     }
 
     let ctrlKey = e.ctrlKey || e.metaKey;
 
-    if (e.key === "ArrowLeft" && ctrlKey) {
+    if (e.key === 'ArrowLeft' && ctrlKey) {
       // Ctrl + Left Arrow Key
-      if (document.activeElement.tagName === "INPUT") {
+      if (document.activeElement.tagName === 'INPUT') {
         return;
       }
 
@@ -648,9 +648,9 @@ export default class DevTools {
       }
     }
 
-    if (e.key === "ArrowRight" && ctrlKey) {
+    if (e.key === 'ArrowRight' && ctrlKey) {
       // Ctrl + Right Arrow Key
-      if (document.activeElement.tagName === "INPUT") {
+      if (document.activeElement.tagName === 'INPUT') {
         return;
       }
 
@@ -687,7 +687,7 @@ export default class DevTools {
       }
 
       // separate child temporarily
-      document.dispatchEvent(new KeyboardEvent("keydown", { keyCode: 67, ctrlKey: true }));
+      document.dispatchEvent(new KeyboardEvent('keydown', { keyCode: 67, ctrlKey: true }));
       if (next || blockOnly === 2) {
         setTimeout(() => {
           if (next) {
@@ -721,12 +721,12 @@ export default class DevTools {
 
     this.codeTab = guiTabs[0];
     this.costTab = guiTabs[1];
-    this.costTabBody = document.querySelector("div[aria-labelledby=" + this.costTab.id + "]");
+    this.costTabBody = document.querySelector('div[aria-labelledby=' + this.costTab.id + ']');
 
-    this.domHelpers.bindOnce(document, "keydown", (...e) => this.eventKeyDown(...e), true);
-    this.domHelpers.bindOnce(document, "mousemove", (...e) => this.eventMouseMove(...e), true);
-    this.domHelpers.bindOnce(document, "mousedown", (...e) => this.eventMouseDown(...e), true); // true to capture all mouse downs 'before' the dom events handle them
-    this.domHelpers.bindOnce(document, "mouseup", (...e) => this.eventMouseUp(...e), true);
+    this.domHelpers.bindOnce(document, 'keydown', (...e) => this.eventKeyDown(...e), true);
+    this.domHelpers.bindOnce(document, 'mousemove', (...e) => this.eventMouseMove(...e), true);
+    this.domHelpers.bindOnce(document, 'mousedown', (...e) => this.eventMouseDown(...e), true); // true to capture all mouse downs 'before' the dom events handle them
+    this.domHelpers.bindOnce(document, 'mouseup', (...e) => this.eventMouseUp(...e), true);
   }
 }
 

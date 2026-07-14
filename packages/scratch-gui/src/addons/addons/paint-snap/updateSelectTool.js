@@ -1,7 +1,7 @@
-import createSnapPoints from "./genSnapPoints.js";
-import { loadModules, Modes, BitmapModes } from "./helpers.js";
+import createSnapPoints from './genSnapPoints.js';
+import { loadModules, Modes, BitmapModes } from './helpers.js';
 
-import { snapOn, threshold, guideColor } from "./state.js";
+import { snapOn, threshold, guideColor } from './state.js';
 
 const getMoveTool = (tool) => {
   return tool.boundingBoxTool._modeMap.MOVE;
@@ -13,7 +13,7 @@ export const updateSelectTool = (paper, tool, vm) => {
     math: { checkPointsClose, snapDeltaToAngle },
     view: { getActionBounds, CENTER },
     layer: { getDragCrosshairLayer, CROSSHAIR_FULL_OPACITY, getLayer },
-    guide: { hoverBounds },
+    guide: { hoverBounds }
   } = lib;
 
   const moveTool = getMoveTool(tool);
@@ -32,14 +32,14 @@ export const updateSelectTool = (paper, tool, vm) => {
       isHelperItem: true,
       noSelect: true,
       noHover: true,
-      saPaintSnapGuide: true,
+      saPaintSnapGuide: true
     },
-    selected: false,
+    selected: false
   });
 
   const guidePointParts = {
     shadow: null,
-    circle: null,
+    circle: null
   };
   const guidePoint = new paper.Group({ children: [], visible: false });
 
@@ -53,16 +53,16 @@ export const updateSelectTool = (paper, tool, vm) => {
     guidePointParts.shadow = new paper.Path.Circle({
       center: new paper.Point(0, 0),
       radius: 5.5 / paper.view.zoom,
-      fillColor: "black",
+      fillColor: 'black',
       opacity: 0.12,
       data: {
         isHelperItem: true,
         noSelect: true,
         noHover: true,
-        saPaintSnapGuide: true,
+        saPaintSnapGuide: true
       },
       visible: true,
-      guide: true,
+      guide: true
     });
     guidePointParts.circle = new paper.Path.Circle({
       center: new paper.Point(0, 0),
@@ -73,10 +73,10 @@ export const updateSelectTool = (paper, tool, vm) => {
         isHelperItem: true,
         noSelect: true,
         noHover: true,
-        saPaintSnapGuide: true,
+        saPaintSnapGuide: true
       },
       visible: true,
-      guide: true,
+      guide: true
     });
     guidePoint.removeChildren();
     guidePoint.addChildren([guidePointParts.shadow, guidePointParts.circle]);
@@ -84,7 +84,7 @@ export const updateSelectTool = (paper, tool, vm) => {
     guideLine.strokeColor = new paper.Color(guideColor);
     guideLine.bringToFront();
     guidePoint.bringToFront();
-    getLayer("isGuideLayer").addChildren([guideLine, guidePoint]);
+    getLayer('isGuideLayer').addChildren([guideLine, guidePoint]);
   };
 
   let removeGuides;
@@ -110,8 +110,9 @@ export const updateSelectTool = (paper, tool, vm) => {
       return p1.getDistance(p2);
     };
 
-    const found = getLayer("isGuideLayer").children.find((c) => c.data.isSelectionBound);
-    const selectionAnchor = found && found.selectionAnchor !== undefined && found.selectionAnchor !== null ? found.selectionAnchor : {};
+    const found = getLayer('isGuideLayer').children.find((c) => c.data.isSelectionBound);
+    const selectionAnchor =
+      found && found.selectionAnchor !== undefined && found.selectionAnchor !== null ? found.selectionAnchor : {};
 
     const resetAnchorColor = () => {
       selectionAnchor.strokeColor = new paper.Color(0.30196078431372547, 0.592156862745098, 1);
@@ -131,7 +132,7 @@ export const updateSelectTool = (paper, tool, vm) => {
     removeGuides();
 
     if (!event.modifiers.shift && this.mode !== Modes.RESHAPE) {
-      const paintLayer = getLayer("isPaintingLayer");
+      const paintLayer = getLayer('isPaintingLayer');
 
       const snapPoints = createSnapPoints(paper, selectionBounds, lib, paintLayer.children);
       const fromPoints = snapPoints.from;
@@ -141,16 +142,16 @@ export const updateSelectTool = (paper, tool, vm) => {
         if (!pointDef.clamp)
           pointDef.clamp = {
             min: -Infinity,
-            max: Infinity,
+            max: Infinity
           };
-        if (pointDef.type === "point") return () => pointDef.value;
-        if (pointDef.type === "xcoord" || pointDef.type === "itemSideVert")
+        if (pointDef.type === 'point') return () => pointDef.value;
+        if (pointDef.type === 'xcoord' || pointDef.type === 'itemSideVert')
           return (point) =>
             new paper.Point(pointDef.value, Math.min(Math.max(point.y, pointDef.clamp.min), pointDef.clamp.max));
-        if (pointDef.type === "ycoord" || pointDef.type === "itemSideHoriz")
+        if (pointDef.type === 'ycoord' || pointDef.type === 'itemSideHoriz')
           return (point) =>
             new paper.Point(Math.min(Math.max(point.x, pointDef.clamp.min), pointDef.clamp.max), pointDef.value);
-        if (pointDef.type === "generator") return pointDef.value;
+        if (pointDef.type === 'generator') return pointDef.value;
       };
       const generateSnapPointsFor = (point) =>
         Object.fromEntries(
@@ -161,10 +162,10 @@ export const updateSelectTool = (paper, tool, vm) => {
         pointPos,
         origPoint: point,
         point: point.add(dragVector),
-        snapPoints: generateSnapPointsFor(point.add(dragVector)),
+        snapPoints: generateSnapPointsFor(point.add(dragVector))
       }));
 
-      const priority = ["point", "itemSideVert", "itemSideHoriz", "xcoord", "ycoord", "generated", undefined];
+      const priority = ['point', 'itemSideVert', 'itemSideHoriz', 'xcoord', 'ycoord', 'generated', undefined];
 
       const sortByPrioOrDist = (a, b) => {
         const prioDiff = priority.indexOf(a.snapPointType) - priority.indexOf(b.snapPointType);
@@ -179,12 +180,12 @@ export const updateSelectTool = (paper, tool, vm) => {
             .map(([pos, snapPoint]) => ({
               pos,
               distance: getDist(snapPoint.point, point),
-              snapPointType: snapPoint.type,
+              snapPointType: snapPoint.type
             }));
 
           const closestSnapPoint = snappablePoints.sort(sortByPrioOrDist)[0] || {
-            pos: "",
-            distance: Infinity,
+            pos: '',
+            distance: Infinity
           };
 
           return {
@@ -192,7 +193,7 @@ export const updateSelectTool = (paper, tool, vm) => {
             snapPoint: snapPoints[closestSnapPoint.pos]?.point,
             snapPointType: snapPoints[closestSnapPoint.pos]?.type,
             distance: closestSnapPoint.distance,
-            pos: closestSnapPoint.pos,
+            pos: closestSnapPoint.pos
           };
         })
         .sort(sortByPrioOrDist);
@@ -205,34 +206,34 @@ export const updateSelectTool = (paper, tool, vm) => {
         const itemID = closestSnapPoint.pos.match(/item_(\d+)_/)?.[1];
         if (itemID) {
           const item = paper.project.getItem({
-            id: parseInt(itemID, 10),
+            id: parseInt(itemID, 10)
           });
 
           if (item) {
             itemIndicator = hoverBounds(item);
           }
         }
-        if (closestSnapPoint.point.equals(this.selectionCenter) && closestSnapPoint.snapPointType === "point") {
+        if (closestSnapPoint.point.equals(this.selectionCenter) && closestSnapPoint.snapPointType === 'point') {
           selectionAnchor.fillColor = selectionAnchor.strokeColor = new paper.Color(guideColor);
         } else {
           resetAnchorColor();
           switch (closestSnapPoint.snapPointType) {
-            case "point": {
+            case 'point': {
               guidePoint.visible = true;
               guidePoint.position = closestSnapPoint.snapPoint;
               guidePoint.bringToFront();
               break;
             }
-            case "xcoord":
-            case "itemSideVert": {
+            case 'xcoord':
+            case 'itemSideVert': {
               guideLine.firstSegment.point = new paper.Point(closestSnapPoint.snapPoint.x, actionBounds.top);
               guideLine.lastSegment.point = new paper.Point(closestSnapPoint.snapPoint.x, actionBounds.bottom);
               guideLine.visible = true;
               guideLine.bringToFront();
               break;
             }
-            case "ycoord":
-            case "itemSideHoriz": {
+            case 'ycoord':
+            case 'itemSideHoriz': {
               guideLine.firstSegment.point = new paper.Point(actionBounds.left, closestSnapPoint.snapPoint.y);
               guideLine.lastSegment.point = new paper.Point(actionBounds.right, closestSnapPoint.snapPoint.y);
               guideLine.visible = true;
@@ -322,5 +323,5 @@ export const updateSelectTool = (paper, tool, vm) => {
 };
 
 export const isSelectTool = (tool) => {
-  return "selectionBoxTool" in tool && "boundingBoxTool" in tool;
+  return 'selectionBoxTool' in tool && 'boundingBoxTool' in tool;
 };

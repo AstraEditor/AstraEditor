@@ -18,7 +18,7 @@
  * limitations under the License.
  */
 
- /**
+/**
  * @fileoverview Tests for gesture.
  * @author marisaleung@google.com (Marisa Leung)
  */
@@ -26,7 +26,6 @@
 
 var e;
 var workspace;
-
 
 function gestureTest_setUp() {
   workspace = new Blockly.Workspace();
@@ -57,7 +56,7 @@ function test_gestureIsField_ClickInWorkspace() {
   gestureTest_tearDown();
 }
 
-function gestureIsFieldClick_InFlyoutHelper(flyout, expectedResult){
+function gestureIsFieldClick_InFlyoutHelper(flyout, expectedResult) {
   // Assign workspace flyout
   workspace.flyout_ = flyout;
   // Create a Field inside of a Block

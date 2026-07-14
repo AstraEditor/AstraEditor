@@ -29,7 +29,6 @@ goog.provide('Blockly.FieldNumberDropdown');
 goog.require('Blockly.FieldTextDropdown');
 goog.require('goog.userAgent');
 
-
 /**
  * Class for a combination number + drop-down field.
  * @param {number|string} value The initial content of the field.
@@ -45,16 +44,11 @@ goog.require('goog.userAgent');
  * @extends {Blockly.FieldTextInput}
  * @constructor
  */
-Blockly.FieldNumberDropdown = function(value, menuGenerator, opt_min, opt_max,
-    opt_precision, opt_validator) {
+Blockly.FieldNumberDropdown = function (value, menuGenerator, opt_min, opt_max, opt_precision, opt_validator) {
   this.setConstraints_ = Blockly.FieldNumber.prototype.setConstraints_;
 
-  var numRestrictor = Blockly.FieldNumber.prototype.getNumRestrictor.call(
-      this, opt_min, opt_max, opt_precision
-  );
-  Blockly.FieldNumberDropdown.superClass_.constructor.call(
-      this, value, menuGenerator, opt_validator, numRestrictor
-  );
+  var numRestrictor = Blockly.FieldNumber.prototype.getNumRestrictor.call(this, opt_min, opt_max, opt_precision);
+  Blockly.FieldNumberDropdown.superClass_.constructor.call(this, value, menuGenerator, opt_validator, numRestrictor);
   this.addArgType('numberdropdown');
 };
 goog.inherits(Blockly.FieldNumberDropdown, Blockly.FieldTextDropdown);
@@ -67,10 +61,13 @@ goog.inherits(Blockly.FieldNumberDropdown, Blockly.FieldTextDropdown);
  * @package
  * @nocollapse
  */
-Blockly.FieldNumberDropdown.fromJson = function(element) {
+Blockly.FieldNumberDropdown.fromJson = function (element) {
   return new Blockly.FieldNumberDropdown(
-      element['value'], element['options'],
-      element['min'], element['max'], element['precision']
+    element['value'],
+    element['options'],
+    element['min'],
+    element['max'],
+    element['precision']
   );
 };
 

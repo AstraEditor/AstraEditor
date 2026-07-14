@@ -31,22 +31,22 @@ Blockly.Blocks['extension_pen_down'] = {
   /**
    * @this Blockly.Block
    */
-  init: function() {
+  init: function () {
     this.jsonInit({
-      "message0": "%1 %2 pen down",
-      "args0": [
+      message0: '%1 %2 pen down',
+      args0: [
         {
-          "type": "field_image",
-          "src": Blockly.mainWorkspace.options.pathToMedia + "extensions/pen-block-icon.svg",
-          "width": 40,
-          "height": 40
+          type: 'field_image',
+          src: Blockly.mainWorkspace.options.pathToMedia + 'extensions/pen-block-icon.svg',
+          width: 40,
+          height: 40
         },
         {
-          "type": "field_vertical_separator"
+          type: 'field_vertical_separator'
         }
       ],
-      "category": Blockly.Categories.more,
-      "extensions": ["colours_more", "shape_statement", "scratch_extension"]
+      category: Blockly.Categories.more,
+      extensions: ['colours_more', 'shape_statement', 'scratch_extension']
     });
   }
 };
@@ -55,26 +55,26 @@ Blockly.Blocks['extension_music_drum'] = {
   /**
    * @this Blockly.Block
    */
-  init: function() {
+  init: function () {
     this.jsonInit({
-      "message0": "%1 %2 play drum %3",
-      "args0": [
+      message0: '%1 %2 play drum %3',
+      args0: [
         {
-          "type": "field_image",
-          "src": Blockly.mainWorkspace.options.pathToMedia + "extensions/music-block-icon.svg",
-          "width": 40,
-          "height": 40
+          type: 'field_image',
+          src: Blockly.mainWorkspace.options.pathToMedia + 'extensions/music-block-icon.svg',
+          width: 40,
+          height: 40
         },
         {
-          "type": "field_vertical_separator"
+          type: 'field_vertical_separator'
         },
         {
-          "type": "input_value",
-          "name": "NUMBER"
+          type: 'input_value',
+          name: 'NUMBER'
         }
       ],
-      "category": Blockly.Categories.more,
-      "extensions": ["colours_more", "shape_statement", "scratch_extension"]
+      category: Blockly.Categories.more,
+      extensions: ['colours_more', 'shape_statement', 'scratch_extension']
     });
   }
 };
@@ -83,28 +83,28 @@ Blockly.Blocks['extension_wedo_motor'] = {
   /**
    * @this Blockly.Block
    */
-  init: function() {
+  init: function () {
     this.jsonInit({
-      "message0": "%1 %2 turn a motor %3",
-      "args0": [
+      message0: '%1 %2 turn a motor %3',
+      args0: [
         {
-          "type": "field_image",
-          "src": Blockly.mainWorkspace.options.pathToMedia + "extensions/wedo2-block-icon.svg",
-          "width": 40,
-          "height": 40
+          type: 'field_image',
+          src: Blockly.mainWorkspace.options.pathToMedia + 'extensions/wedo2-block-icon.svg',
+          width: 40,
+          height: 40
         },
         {
-          "type": "field_vertical_separator"
+          type: 'field_vertical_separator'
         },
         {
-          "type": "field_image",
-          "src": Blockly.mainWorkspace.options.pathToMedia + "rotate-right.svg",
-          "width": 24,
-          "height": 24
+          type: 'field_image',
+          src: Blockly.mainWorkspace.options.pathToMedia + 'rotate-right.svg',
+          width: 24,
+          height: 24
         }
       ],
-      "category": Blockly.Categories.more,
-      "extensions": ["colours_more", "shape_statement", "scratch_extension"]
+      category: Blockly.Categories.more,
+      extensions: ['colours_more', 'shape_statement', 'scratch_extension']
     });
   }
 };
@@ -113,22 +113,22 @@ Blockly.Blocks['extension_wedo_hat'] = {
   /**
    * @this Blockly.Block
    */
-  init: function() {
+  init: function () {
     this.jsonInit({
-      "message0": "%1 %2 when I am wearing a hat",
-      "args0": [
+      message0: '%1 %2 when I am wearing a hat',
+      args0: [
         {
-          "type": "field_image",
-          "src": Blockly.mainWorkspace.options.pathToMedia + "extensions/wedo2-block-icon.svg",
-          "width": 40,
-          "height": 40
+          type: 'field_image',
+          src: Blockly.mainWorkspace.options.pathToMedia + 'extensions/wedo2-block-icon.svg',
+          width: 40,
+          height: 40
         },
         {
-          "type": "field_vertical_separator"
+          type: 'field_vertical_separator'
         }
       ],
-      "category": Blockly.Categories.more,
-      "extensions": ["colours_more", "shape_hat", "scratch_extension"]
+      category: Blockly.Categories.more,
+      extensions: ['colours_more', 'shape_hat', 'scratch_extension']
     });
   }
 };
@@ -137,22 +137,22 @@ Blockly.Blocks['extension_wedo_boolean'] = {
   /**
    * @this Blockly.Block
    */
-  init: function() {
+  init: function () {
     this.jsonInit({
-      "message0": "%1 %2 O RLY?",
-      "args0": [
+      message0: '%1 %2 O RLY?',
+      args0: [
         {
-          "type": "field_image",
-          "src": Blockly.mainWorkspace.options.pathToMedia + "extensions/wedo2-block-icon.svg",
-          "width": 40,
-          "height": 40
+          type: 'field_image',
+          src: Blockly.mainWorkspace.options.pathToMedia + 'extensions/wedo2-block-icon.svg',
+          width: 40,
+          height: 40
         },
         {
-          "type": "field_vertical_separator"
+          type: 'field_vertical_separator'
         }
       ],
-      "category": Blockly.Categories.more,
-      "extensions": ["colours_more", "output_boolean", "scratch_extension"]
+      category: Blockly.Categories.more,
+      extensions: ['colours_more', 'output_boolean', 'scratch_extension']
     });
   }
 };
@@ -161,26 +161,26 @@ Blockly.Blocks['extension_wedo_tilt_reporter'] = {
   /**
    * @this Blockly.Block
    */
-  init: function() {
+  init: function () {
     this.jsonInit({
-      "message0": "%1 %2 tilt angle %3",
-      "args0": [
+      message0: '%1 %2 tilt angle %3',
+      args0: [
         {
-          "type": "field_image",
-          "src": Blockly.mainWorkspace.options.pathToMedia + "extensions/wedo2-block-icon.svg",
-          "width": 40,
-          "height": 40
+          type: 'field_image',
+          src: Blockly.mainWorkspace.options.pathToMedia + 'extensions/wedo2-block-icon.svg',
+          width: 40,
+          height: 40
         },
         {
-          "type": "field_vertical_separator"
+          type: 'field_vertical_separator'
         },
         {
-          "type": "input_value",
-          "name": "TILT"
+          type: 'input_value',
+          name: 'TILT'
         }
       ],
-      "category": Blockly.Categories.more,
-      "extensions": ["colours_more", "output_number", "scratch_extension"]
+      category: Blockly.Categories.more,
+      extensions: ['colours_more', 'output_number', 'scratch_extension']
     });
   }
 };
@@ -189,14 +189,14 @@ Blockly.Blocks['extension_wedo_tilt_menu'] = {
   /**
    * @this Blockly.Block
    */
-  init: function() {
+  init: function () {
     this.jsonInit({
-      "message0": "%1",
-      "args0": [
+      message0: '%1',
+      args0: [
         {
-          "type": "field_dropdown",
-          "name": "TILT",
-          "options": [
+          type: 'field_dropdown',
+          name: 'TILT',
+          options: [
             ['Any', 'Any'],
             ['Whirl', 'Whirl'],
             ['South', 'South'],
@@ -204,7 +204,7 @@ Blockly.Blocks['extension_wedo_tilt_menu'] = {
           ]
         }
       ],
-      "extensions": ["colours_more", "output_string"]
+      extensions: ['colours_more', 'output_string']
     });
   }
 };
@@ -213,22 +213,22 @@ Blockly.Blocks['extension_music_reporter'] = {
   /**
    * @this Blockly.Block
    */
-  init: function() {
+  init: function () {
     this.jsonInit({
-      "message0": "%1 %2 hey now, you're an all-star",
-      "args0": [
+      message0: "%1 %2 hey now, you're an all-star",
+      args0: [
         {
-          "type": "field_image",
-          "src": Blockly.mainWorkspace.options.pathToMedia + "extensions/music-block-icon.svg",
-          "width": 40,
-          "height": 40
+          type: 'field_image',
+          src: Blockly.mainWorkspace.options.pathToMedia + 'extensions/music-block-icon.svg',
+          width: 40,
+          height: 40
         },
         {
-          "type": "field_vertical_separator"
+          type: 'field_vertical_separator'
         }
       ],
-      "category": Blockly.Categories.more,
-      "extensions": ["colours_more", "output_number", "scratch_extension"]
+      category: Blockly.Categories.more,
+      extensions: ['colours_more', 'output_number', 'scratch_extension']
     });
   }
 };
@@ -237,26 +237,26 @@ Blockly.Blocks['extension_microbit_display'] = {
   /**
    * @this Blockly.Block
    */
-  init: function() {
+  init: function () {
     this.jsonInit({
-      "message0": "%1 %2 display %3",
-      "args0": [
+      message0: '%1 %2 display %3',
+      args0: [
         {
-          "type": "field_image",
-          "src": Blockly.mainWorkspace.options.pathToMedia + "extensions/microbit-block-icon.svg",
-          "width": 40,
-          "height": 40
+          type: 'field_image',
+          src: Blockly.mainWorkspace.options.pathToMedia + 'extensions/microbit-block-icon.svg',
+          width: 40,
+          height: 40
         },
         {
-          "type": "field_vertical_separator"
+          type: 'field_vertical_separator'
         },
         {
-          "type": "input_value",
-          "name": "MATRIX"
-        },
+          type: 'input_value',
+          name: 'MATRIX'
+        }
       ],
-      "category": Blockly.Categories.pen,
-      "extensions": ["colours_pen", "shape_statement", "scratch_extension"]
+      category: Blockly.Categories.pen,
+      extensions: ['colours_pen', 'shape_statement', 'scratch_extension']
     });
   }
 };
@@ -265,30 +265,30 @@ Blockly.Blocks['extension_music_play_note'] = {
   /**
    * @this Blockly.Block
    */
-  init: function() {
+  init: function () {
     this.jsonInit({
-      "message0": "%1 %2 play note %3 for %4 beats",
-      "args0": [
+      message0: '%1 %2 play note %3 for %4 beats',
+      args0: [
         {
-          "type": "field_image",
-          "src": Blockly.mainWorkspace.options.pathToMedia + "extensions/music-block-icon.svg",
-          "width": 40,
-          "height": 40
+          type: 'field_image',
+          src: Blockly.mainWorkspace.options.pathToMedia + 'extensions/music-block-icon.svg',
+          width: 40,
+          height: 40
         },
         {
-          "type": "field_vertical_separator"
+          type: 'field_vertical_separator'
         },
         {
-          "type": "input_value",
-          "name": "NOTE"
+          type: 'input_value',
+          name: 'NOTE'
         },
         {
-          "type": "input_value",
-          "name": "BEATS"
+          type: 'input_value',
+          name: 'BEATS'
         }
       ],
-      "category": Blockly.Categories.pen,
-      "extensions": ["colours_pen", "shape_statement", "scratch_extension"]
+      category: Blockly.Categories.pen,
+      extensions: ['colours_pen', 'shape_statement', 'scratch_extension']
     });
   }
 };

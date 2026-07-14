@@ -2,7 +2,7 @@
 
 Initialize a Rectangle to a 1 unit square centered at 0 x 0 transformed by a model matrix.
 
------
+---
 
 Every drawable is a 1 x 1 unit square that is rotated by its direction, scaled by its skin size and scale, and offset by its rotation center and position. The square representation is made up of 4 points that are transformed by the drawable properties. Often we want a shape that simplifies those 4 points into a non-rotated shape, a axis aligned bounding box.
 
@@ -17,10 +17,10 @@ const v0 = v[0];
 const v1 = v[1];
 const v2 = v[2];
 
-const d = v0 * m[(0 * 4) + 3] + v1 * m[(1 * 4) + 3] + v2 * m[(2 * 4) + 3] + m[(3 * 4) + 3];
-dst[0] = (v0 * m[(0 * 4) + 0] + v1 * m[(1 * 4) + 0] + v2 * m[(2 * 4) + 0] + m[(3 * 4) + 0]) / d;
-dst[1] = (v0 * m[(0 * 4) + 1] + v1 * m[(1 * 4) + 1] + v2 * m[(2 * 4) + 1] + m[(3 * 4) + 1]) / d;
-dst[2] = (v0 * m[(0 * 4) + 2] + v1 * m[(1 * 4) + 2] + v2 * m[(2 * 4) + 2] + m[(3 * 4) + 2]) / d;
+const d = v0 * m[0 * 4 + 3] + v1 * m[1 * 4 + 3] + v2 * m[2 * 4 + 3] + m[3 * 4 + 3];
+dst[0] = (v0 * m[0 * 4 + 0] + v1 * m[1 * 4 + 0] + v2 * m[2 * 4 + 0] + m[3 * 4 + 0]) / d;
+dst[1] = (v0 * m[0 * 4 + 1] + v1 * m[1 * 4 + 1] + v2 * m[2 * 4 + 1] + m[3 * 4 + 1]) / d;
+dst[2] = (v0 * m[0 * 4 + 2] + v1 * m[1 * 4 + 2] + v2 * m[2 * 4 + 2] + m[3 * 4 + 2]) / d;
 ```
 
 As this is a 2D rectangle we can cancel out the third dimension, and the determinant, 'd'.
@@ -38,12 +38,12 @@ dst = [
 Let's set the matrix points to shorter names for convenience.
 
 ```js
-const m00 = m[(0 * 4) + 0];
-const m01 = m[(0 * 4) + 1];
-const m10 = m[(1 * 4) + 0];
-const m11 = m[(1 * 4) + 1];
-const m30 = m[(3 * 4) + 0];
-const m31 = m[(3 * 4) + 1];
+const m00 = m[0 * 4 + 0];
+const m01 = m[0 * 4 + 1];
+const m10 = m[1 * 4 + 0];
+const m11 = m[1 * 4 + 1];
+const m30 = m[3 * 4 + 0];
+const m31 = m[3 * 4 + 1];
 ```
 
 We need 4 points with positive and negative 0.5 values so the square has sides of length 1.
@@ -58,22 +58,10 @@ let s = [0.5, -0.5];
 Transform the points by the matrix.
 
 ```js
-p = [
-    0.5 * m00 + 0.5 * m10 + m30,
-    0.5 * m01 + 0.5 * m11 + m31
-];
-q = [
-    -0.5 * m00 + -0.5 * m10 + m30,
-    0.5 * m01 + 0.5 * m11 + m31
-];
-r = [
-    -0.5 * m00 + -0.5 * m10 + m30,
-    -0.5 * m01 + -0.5 * m11 + m31
-];
-s = [
-    0.5 * m00 + 0.5 * m10 + m30,
-    -0.5 * m01 + -0.5 * m11 + m31
-];
+p = [0.5 * m00 + 0.5 * m10 + m30, 0.5 * m01 + 0.5 * m11 + m31];
+q = [-0.5 * m00 + -0.5 * m10 + m30, 0.5 * m01 + 0.5 * m11 + m31];
+r = [-0.5 * m00 + -0.5 * m10 + m30, -0.5 * m01 + -0.5 * m11 + m31];
+s = [0.5 * m00 + 0.5 * m10 + m30, -0.5 * m01 + -0.5 * m11 + m31];
 ```
 
 With 4 transformed points we can build the left, right, top, and bottom values for the Rectangle. Each will use the minimum or the maximum of one of the components of all points.
@@ -89,28 +77,28 @@ Fill those calls with the vector expressions.
 
 ```js
 const left = Math.min(
-    0.5 * m00 + 0.5 * m10 + m30,
-    -0.5 * m00 + 0.5 * m10 + m30,
-    -0.5 * m00 + -0.5 * m10 + m30,
-    0.5 * m00 + -0.5 * m10 + m30
+  0.5 * m00 + 0.5 * m10 + m30,
+  -0.5 * m00 + 0.5 * m10 + m30,
+  -0.5 * m00 + -0.5 * m10 + m30,
+  0.5 * m00 + -0.5 * m10 + m30
 );
 const right = Math.max(
-    0.5 * m00 + 0.5 * m10 + m30,
-    -0.5 * m00 + 0.5 * m10 + m30,
-    -0.5 * m00 + -0.5 * m10 + m30,
-    0.5 * m00 + -0.5 * m10 + m30
+  0.5 * m00 + 0.5 * m10 + m30,
+  -0.5 * m00 + 0.5 * m10 + m30,
+  -0.5 * m00 + -0.5 * m10 + m30,
+  0.5 * m00 + -0.5 * m10 + m30
 );
 const top = Math.max(
-    0.5 * m01 + 0.5 * m11 + m31,
-    -0.5 * m01 + 0.5 * m11 + m31,
-    -0.5 * m01 + -0.5 * m11 + m31,
-    0.5 * m01 + -0.5 * m11 + m31
+  0.5 * m01 + 0.5 * m11 + m31,
+  -0.5 * m01 + 0.5 * m11 + m31,
+  -0.5 * m01 + -0.5 * m11 + m31,
+  0.5 * m01 + -0.5 * m11 + m31
 );
 const bottom = Math.min(
-    0.5 * m01 + 0.5 * m11 + m31,
-    -0.5 * m01 + 0.5 * m11 + m31,
-    -0.5 * m01 + -0.5 * m11 + m31,
-    0.5 * m01 + -0.5 * m11 + m31
+  0.5 * m01 + 0.5 * m11 + m31,
+  -0.5 * m01 + 0.5 * m11 + m31,
+  -0.5 * m01 + -0.5 * m11 + m31,
+  0.5 * m01 + -0.5 * m11 + m31
 );
 ```
 
@@ -179,11 +167,11 @@ const bottom = -y + m31;
 This lets us arrive at our goal. Inlining some of our variables we get this block that will initialize a Rectangle to a unit square transformed by a matrix.
 
 ```js
-const m30 = m[(3 * 4) + 0];
-const m31 = m[(3 * 4) + 1];
+const m30 = m[3 * 4 + 0];
+const m31 = m[3 * 4 + 1];
 
-const x = Math.abs(0.5 * m[(0 * 4) + 0]) + Math.abs(0.5 * m[(1 * 4) + 0]);
-const y = Math.abs(0.5 * m[(0 * 4) + 1]) + Math.abs(0.5 * m[(1 * 4) + 1]);
+const x = Math.abs(0.5 * m[0 * 4 + 0]) + Math.abs(0.5 * m[1 * 4 + 0]);
+const y = Math.abs(0.5 * m[0 * 4 + 1]) + Math.abs(0.5 * m[1 * 4 + 1]);
 
 const left = -x + m30;
 const right = x + m30;

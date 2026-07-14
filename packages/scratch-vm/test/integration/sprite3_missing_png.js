@@ -13,7 +13,7 @@ const FakeRenderer = require('../fixtures/fake-renderer');
 const FakeBitmapAdapter = require('../fixtures/fake-bitmap-adapter');
 const readFileToBuffer = require('../fixtures/readProjectFile').readFileToBuffer;
 const VirtualMachine = require('../../src/index');
-const {serializeCostumes} = require('../../src/serialization/serialize-assets');
+const { serializeCostumes } = require('../../src/serialization/serialize-assets');
 
 // The particular project that we're loading doesn't matter for this test
 const projectUri = path.resolve(__dirname, '../fixtures/default.sb3');
@@ -25,21 +25,21 @@ const sprite = readFileToBuffer(spriteUri);
 const missingCostumeAssetId = 'e1320c21995dcf6de10119be7f08c26b';
 
 global.Image = function () {
-    const image = {
-        width: 1,
-        height: 1
-    };
-    setTimeout(() => image.onload(), 100);
-    return image;
+  const image = {
+    width: 1,
+    height: 1
+  };
+  setTimeout(() => image.onload(), 100);
+  return image;
 };
 
 global.document = {
-    createElement: () => ({
-        // Create mock canvas
-        getContext: () => ({
-            drawImage: () => ({})
-        })
+  createElement: () => ({
+    // Create mock canvas
+    getContext: () => ({
+      drawImage: () => ({})
     })
+  })
 };
 
 let vm;
@@ -47,62 +47,62 @@ let vm;
 tap.setTimeout(30000);
 
 tap.beforeEach(() => {
-    const storage = makeTestStorage();
+  const storage = makeTestStorage();
 
-    vm = new VirtualMachine();
-    vm.attachStorage(storage);
-    vm.attachRenderer(new FakeRenderer());
-    vm.attachV2BitmapAdapter(new FakeBitmapAdapter());
+  vm = new VirtualMachine();
+  vm.attachStorage(storage);
+  vm.attachRenderer(new FakeRenderer());
+  vm.attachV2BitmapAdapter(new FakeBitmapAdapter());
 
-    return vm.loadProject(project).then(() => vm.addSprite(sprite));
+  return vm.loadProject(project).then(() => vm.addSprite(sprite));
 });
 
 const test = tap.test;
 
-test('loading sprite3 with missing bitmap costume file', t => {
-    t.equal(vm.runtime.targets.length, 3);
+test('loading sprite3 with missing bitmap costume file', (t) => {
+  t.equal(vm.runtime.targets.length, 3);
 
-    const stage = vm.runtime.targets[0];
-    t.ok(stage.isStage);
+  const stage = vm.runtime.targets[0];
+  t.ok(stage.isStage);
 
-    const greenGuySprite = vm.runtime.targets[2];
-    t.equal(greenGuySprite.getName(), 'Green Guy');
-    t.equal(greenGuySprite.getCostumes().length, 1);
+  const greenGuySprite = vm.runtime.targets[2];
+  t.equal(greenGuySprite.getName(), 'Green Guy');
+  t.equal(greenGuySprite.getCostumes().length, 1);
 
-    const missingCostume = greenGuySprite.getCostumes()[0];
-    t.equal(missingCostume.name, 'Green Guy');
-    // Costume should have both default cosutme (e.g. Gray Question Mark) data and original data
-    const defaultBitmapAssetId = vm.runtime.storage.defaultAssetId.ImageBitmap;
-    t.equal(missingCostume.assetId, defaultBitmapAssetId);
-    t.equal(missingCostume.dataFormat, 'png');
-    // Runtime should have info about broken asset
-    t.ok(missingCostume.broken);
-    t.equal(missingCostume.broken.assetId, missingCostumeAssetId);
+  const missingCostume = greenGuySprite.getCostumes()[0];
+  t.equal(missingCostume.name, 'Green Guy');
+  // Costume should have both default cosutme (e.g. Gray Question Mark) data and original data
+  const defaultBitmapAssetId = vm.runtime.storage.defaultAssetId.ImageBitmap;
+  t.equal(missingCostume.assetId, defaultBitmapAssetId);
+  t.equal(missingCostume.dataFormat, 'png');
+  // Runtime should have info about broken asset
+  t.ok(missingCostume.broken);
+  t.equal(missingCostume.broken.assetId, missingCostumeAssetId);
 
-    t.end();
+  t.end();
 });
 
-test('load and then save sprite3 with missing bitmap costume file', t => {
-    const resavedSprite = JSON.parse(vm.toJSON(vm.runtime.targets[2].id));
+test('load and then save sprite3 with missing bitmap costume file', (t) => {
+  const resavedSprite = JSON.parse(vm.toJSON(vm.runtime.targets[2].id));
 
-    t.equal(resavedSprite.name, 'Green Guy');
-    t.equal(resavedSprite.costumes.length, 1);
+  t.equal(resavedSprite.name, 'Green Guy');
+  t.equal(resavedSprite.costumes.length, 1);
 
-    const missingCostume = resavedSprite.costumes[0];
-    t.equal(missingCostume.name, 'Green Guy');
-    // Costume should have both default cosutme (e.g. Gray Question Mark) data and original data
-    t.equal(missingCostume.assetId, missingCostumeAssetId);
-    t.equal(missingCostume.dataFormat, 'png');
-    // Test that we didn't save any data about the costume being broken
-    t.notOk(missingCostume.broken);
+  const missingCostume = resavedSprite.costumes[0];
+  t.equal(missingCostume.name, 'Green Guy');
+  // Costume should have both default cosutme (e.g. Gray Question Mark) data and original data
+  t.equal(missingCostume.assetId, missingCostumeAssetId);
+  t.equal(missingCostume.dataFormat, 'png');
+  // Test that we didn't save any data about the costume being broken
+  t.notOk(missingCostume.broken);
 
-    t.end();
+  t.end();
 });
 
-test('serializeCostume does not save data for missing costume', t => {
-    const costumeDescs = serializeCostumes(vm.runtime, vm.runtime.targets[2].id);
+test('serializeCostume does not save data for missing costume', (t) => {
+  const costumeDescs = serializeCostumes(vm.runtime, vm.runtime.targets[2].id);
 
-    t.equal(costumeDescs.length, 0);
+  t.equal(costumeDescs.length, 0);
 
-    t.end();
+  t.end();
 });

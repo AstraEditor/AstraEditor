@@ -12,32 +12,28 @@ import classNames from 'classnames';
 
 import styles from './input.css';
 
-const Input = props => {
-    const {small, range, ...componentProps} = props;
-    return (
-        <input
-            {...componentProps}
-            className={classNames(
-                styles.inputForm,
-                props.className,
-                {
-                    [styles.inputSmall]: small && !range,
-                    [styles.inputSmallRange]: small && range
-                }
-            )}
-        />
-    );
+const Input = (props) => {
+  const { small, range, ...componentProps } = props;
+  return (
+    <input
+      {...componentProps}
+      className={classNames(styles.inputForm, props.className, {
+        [styles.inputSmall]: small && !range,
+        [styles.inputSmallRange]: small && range
+      })}
+    />
+  );
 };
 
 Input.propTypes = {
-    className: PropTypes.string,
-    range: PropTypes.bool,
-    small: PropTypes.bool
+  className: PropTypes.string,
+  range: PropTypes.bool,
+  small: PropTypes.bool
 };
 
 Input.defaultProps = {
-    range: false,
-    small: false
+  range: false,
+  small: false
 };
 
 export default Input;

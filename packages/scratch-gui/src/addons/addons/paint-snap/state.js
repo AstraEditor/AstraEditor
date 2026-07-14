@@ -10,12 +10,12 @@ export const snapTo = {
   objectEdges: true,
   objectCenters: true,
   objectMidlines: true,
-  objectCorners: false,
+  objectCorners: false
 };
 export const snapFrom = {
   boxCenter: true,
   boxCorners: false,
-  boxEdgeMids: false,
+  boxEdgeMids: false
 };
 
 export let threshold = 10;
@@ -33,8 +33,8 @@ export function loadSettings({ settings }) {
   for (const point in snapFrom) {
     if (Object.prototype.hasOwnProperty.call(snapFrom, point)) setSnapFrom(point, settings.get(point));
   }
-  setThreshold(settings.get("threshold"));
-  toggle(settings.get("enable-default"));
+  setThreshold(settings.get('threshold'));
+  toggle(settings.get('enable-default'));
 }
 
 // Will update for addon storage api, but not yet.

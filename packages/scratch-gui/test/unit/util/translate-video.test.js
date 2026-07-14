@@ -1,5 +1,5 @@
 describe('no-op', () => {
-    test('no-op', () => {});
+  test('no-op', () => {});
 });
 // tw: we intentionally break this test
 /*

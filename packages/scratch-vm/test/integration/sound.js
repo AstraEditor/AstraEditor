@@ -12,32 +12,32 @@ const project = readFileToBuffer(uri);
 // By default Central Dispatch works with the Worker class built into the browser. Tell it to use TinyWorker instead.
 dispatch.workerClass = Worker;
 
-test('sound', t => {
-    const vm = new VirtualMachine();
-    vm.attachStorage(makeTestStorage());
+test('sound', (t) => {
+  const vm = new VirtualMachine();
+  vm.attachStorage(makeTestStorage());
 
-    // Evaluate playground data and exit
-    vm.on('playgroundData', e => {
-        const threads = JSON.parse(e.threads);
-        t.ok(threads.length > 0);
-        vm.quit();
-        t.end();
+  // Evaluate playground data and exit
+  vm.on('playgroundData', (e) => {
+    const threads = JSON.parse(e.threads);
+    t.ok(threads.length > 0);
+    vm.quit();
+    t.end();
+  });
+
+  // Start VM, load project, and run
+  t.doesNotThrow(() => {
+    vm.start();
+    vm.clear();
+    vm.setCompatibilityMode(false);
+    vm.setTurboMode(false);
+    vm.loadProject(project).then(() => {
+      vm.greenFlag();
+
+      // After two seconds, get playground data and stop
+      setTimeout(() => {
+        vm.getPlaygroundData();
+        vm.stopAll();
+      }, 2000);
     });
-
-    // Start VM, load project, and run
-    t.doesNotThrow(() => {
-        vm.start();
-        vm.clear();
-        vm.setCompatibilityMode(false);
-        vm.setTurboMode(false);
-        vm.loadProject(project).then(() => {
-            vm.greenFlag();
-
-            // After two seconds, get playground data and stop
-            setTimeout(() => {
-                vm.getPlaygroundData();
-                vm.stopAll();
-            }, 2000);
-        });
-    });
+  });
 });

@@ -16,8 +16,8 @@ let myFetch = global.fetch;
  * If there is no global `fetch`, then `fetchWithTimeout` will fail unless provided with an alternative.
  * @param {FetchFunction} newFetch The new `fetch` function to use within fetchWithTimeout.
  */
-const setFetch = newFetch => {
-    myFetch = newFetch;
+const setFetch = (newFetch) => {
+  myFetch = newFetch;
 };
 
 /**
@@ -28,29 +28,32 @@ const setFetch = newFetch => {
  * @returns {Promise<Response>} The response from the server.
  */
 const fetchWithTimeout = (resource, init, timeout) => {
-    let timeoutID = null;
-    // Not supported in Safari <11
-    const controller = window.AbortController ? new window.AbortController() : null;
-    const signal = controller ? controller.signal : null;
-    // The fetch call races a timer.
-    return Promise.race([
-        myFetch(resource, Object.assign({signal}, init)).then(response => {
-            clearTimeout(timeoutID);
-            return response;
-        }, error => {
-            clearTimeout(timeoutID);
-            throw error;
-        }),
-        new Promise((resolve, reject) => {
-            timeoutID = setTimeout(() => {
-                if (controller) controller.abort();
-                reject(new Error(`Fetch timed out after ${timeout} ms`));
-            }, timeout);
-        })
-    ]);
+  let timeoutID = null;
+  // Not supported in Safari <11
+  const controller = window.AbortController ? new window.AbortController() : null;
+  const signal = controller ? controller.signal : null;
+  // The fetch call races a timer.
+  return Promise.race([
+    myFetch(resource, Object.assign({ signal }, init)).then(
+      (response) => {
+        clearTimeout(timeoutID);
+        return response;
+      },
+      (error) => {
+        clearTimeout(timeoutID);
+        throw error;
+      }
+    ),
+    new Promise((resolve, reject) => {
+      timeoutID = setTimeout(() => {
+        if (controller) controller.abort();
+        reject(new Error(`Fetch timed out after ${timeout} ms`));
+      }, timeout);
+    })
+  ]);
 };
 
 module.exports = {
-    fetchWithTimeout,
-    setFetch
+  fetchWithTimeout,
+  setFetch
 };

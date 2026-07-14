@@ -4,69 +4,69 @@ export default async function ({ addon }) {
     hundredth: 0.01,
     tenth: 0.1,
     one: 1,
-    ten: 10,
+    ten: 10
   };
   const inputMap = new WeakMap();
 
   const amountOfDecimals = (numStr) => {
-    if (!numStr.includes(".")) return 0;
-    return numStr.toString().split(".")[1].length;
+    if (!numStr.includes('.')) return 0;
+    return numStr.toString().split('.')[1].length;
   };
 
   const shiftDecimalPointToRight = (num, times) => {
-    const isNumberNegative = num[0] === "-";
+    const isNumberNegative = num[0] === '-';
     let numStr = isNumberNegative ? num.substring(1) : num;
     for (let i = 0; i < times; i++) {
-      if (numStr.indexOf(".") === -1) numStr += 0;
-      else if (numStr.indexOf(".") === numStr.length - 2) numStr = numStr.replace(".", "");
+      if (numStr.indexOf('.') === -1) numStr += 0;
+      else if (numStr.indexOf('.') === numStr.length - 2) numStr = numStr.replace('.', '');
       else {
-        const index = numStr.indexOf(".");
-        const numArrFiltered = Array.from(numStr.replace(".", ""));
-        numArrFiltered.splice(index + 1, 0, ".");
-        numStr = numArrFiltered.join("");
+        const index = numStr.indexOf('.');
+        const numArrFiltered = Array.from(numStr.replace('.', ''));
+        numArrFiltered.splice(index + 1, 0, '.');
+        numStr = numArrFiltered.join('');
       }
     }
     return BigInt(numStr) * (isNumberNegative ? -1n : 1n);
   };
   const shiftDecimalPointToLeft = (num, times) => {
-    const isNumberNegative = num[0] === "-";
+    const isNumberNegative = num[0] === '-';
     let numStr = isNumberNegative ? num.substring(1) : num;
     for (let i = 0; i < times; i++) {
-      if (numStr.indexOf(".") === 0) numStr = ".0" + numStr.substring(1);
-      else if (numStr.indexOf(".") === -1) {
+      if (numStr.indexOf('.') === 0) numStr = '.0' + numStr.substring(1);
+      else if (numStr.indexOf('.') === -1) {
         const numArr = Array.from(numStr);
-        numArr.splice(numArr.length - 1, 0, ".");
-        numStr = numArr.join("");
+        numArr.splice(numArr.length - 1, 0, '.');
+        numStr = numArr.join('');
       } else {
-        const index = numStr.indexOf(".");
-        const numArrFiltered = Array.from(numStr.replace(".", ""));
-        numArrFiltered.splice(index - 1, 0, ".");
-        numStr = numArrFiltered.join("");
+        const index = numStr.indexOf('.');
+        const numArrFiltered = Array.from(numStr.replace('.', ''));
+        numArrFiltered.splice(index - 1, 0, '.');
+        numStr = numArrFiltered.join('');
       }
     }
 
     // Adds zero before the decimal point if necessary (.1 → 0.1)
-    if (numStr[0] === ".") {
-      numStr = "0" + numStr;
+    if (numStr[0] === '.') {
+      numStr = '0' + numStr;
     }
 
     // Removes trailing zeros (2.250 → 2.25)
-    if (numStr.includes(".")) {
-      numStr = numStr.replace(/0*$/, "");
+    if (numStr.includes('.')) {
+      numStr = numStr.replace(/0*$/, '');
     }
 
     // Removes the decimal point if it's the last character (2. → 2)
-    if (numStr.endsWith(".")) {
+    if (numStr.endsWith('.')) {
       numStr = numStr.slice(0, -1);
     }
 
-    return numStr ? (isNumberNegative ? "-" : "") + numStr : 0;
+    return numStr ? (isNumberNegative ? '-' : '') + numStr : 0;
   };
 
   const isValidNumber = (numStr) => {
     if (numStr.length > 30) return false;
     try {
-      BigInt(numStr.replace(".", ""));
+      BigInt(numStr.replace('.', ''));
     } catch {
       return false; // Even though an error would occur later anyway, we still catch now to abort before e.preventDefault().
     }
@@ -74,15 +74,15 @@ export default async function ({ addon }) {
   };
 
   const isSupportedElement = (el) => {
-    if (el.classList.contains("blocklyHtmlInput")) return true;
-    else if (el.matches(".mediaRecorderPopupContent input[type=number]")) {
+    if (el.classList.contains('blocklyHtmlInput')) return true;
+    else if (el.matches('.mediaRecorderPopupContent input[type=number]')) {
       // Number inputs in `mediarecorder` addon modal
       return true;
-    } else if (el.className.includes("input_input-form_")) {
-      if (el.matches("[class*=sprite-info_sprite-info_] [class*=input_input-small_]")) {
+    } else if (el.className.includes('input_input-form_')) {
+      if (el.matches('[class*=sprite-info_sprite-info_] [class*=input_input-small_]')) {
         // Sprite X/Y coordinates, size and direction (excludes sprite name)
         return true;
-      } else if (el.matches("[class*=paint-editor_editor-container-top_] input[type=number]")) {
+      } else if (el.matches('[class*=paint-editor_editor-container-top_] input[type=number]')) {
         // Number inputs in costume editor (note that browsers already provide up/down clickable buttons for these)
         return true;
       } else return false;
@@ -90,9 +90,9 @@ export default async function ({ addon }) {
     return false;
   };
 
-  document.body.addEventListener("keydown", (e) => {
+  document.body.addEventListener('keydown', (e) => {
     if (addon.self.disabled) return;
-    if (!["ArrowUp", "ArrowDown"].includes(e.key)) return;
+    if (!['ArrowUp', 'ArrowDown'].includes(e.key)) return;
     if (!isSupportedElement(e.target)) return;
     if (!e.target.value) return;
     if (!isValidNumber(e.target.value)) return;
@@ -102,14 +102,14 @@ export default async function ({ addon }) {
     // If this is a number input, it will prevent the default browser behavior when pressing up/down in a
     // number input (increase or decrease by 1). If we didn't prevent, the user would be increasing twice.
 
-    let changeBy = e.key === "ArrowUp" ? 1 : -1;
-    if (addon.settings.get("useCustom")) {
+    let changeBy = e.key === 'ArrowUp' ? 1 : -1;
+    if (addon.settings.get('useCustom')) {
       let settingValue = e.shiftKey
-        ? addon.settings.get("shiftCustom")
+        ? addon.settings.get('shiftCustom')
         : e.altKey
-          ? addon.settings.get("altCustom")
-          : addon.settings.get("regularCustom");
-      if (settingValue === "") settingValue = 0;
+          ? addon.settings.get('altCustom')
+          : addon.settings.get('regularCustom');
+      if (settingValue === '') settingValue = 0;
       let valueAsFloat = parseFloat(settingValue);
       if (valueAsFloat < 0) valueAsFloat *= -1; // If user typed a negative number, we make it positive
       if (Number.isNaN(valueAsFloat)) {
@@ -122,10 +122,10 @@ export default async function ({ addon }) {
       }
     } else {
       changeBy *= e.shiftKey
-        ? settings[addon.settings.get("shift")]
+        ? settings[addon.settings.get('shift')]
         : e.altKey
-          ? settings[addon.settings.get("alt")]
-          : settings[addon.settings.get("regular")];
+          ? settings[addon.settings.get('alt')]
+          : settings[addon.settings.get('regular')];
     }
 
     const decimalCount = Math.max(amountOfDecimals(e.target.value), amountOfDecimals(changeBy.toString()));
@@ -134,9 +134,9 @@ export default async function ({ addon }) {
       shiftDecimalPointToRight(changeBy.toString(), decimalCount);
     const newValue = shiftDecimalPointToLeft(newValueAsBigInt.toString(), decimalCount);
 
-    if (e.target.className.includes("input_input-form_")) {
-      Object.getOwnPropertyDescriptor(e.target.constructor.prototype, "value").set.call(e.target, newValue.toString());
-      e.target.dispatchEvent(new Event("input", { bubbles: true }));
+    if (e.target.className.includes('input_input-form_')) {
+      Object.getOwnPropertyDescriptor(e.target.constructor.prototype, 'value').set.call(e.target, newValue.toString());
+      e.target.dispatchEvent(new Event('input', { bubbles: true }));
 
       // The user probably wants to visualize how the sprite changes size, coordinates, direction, etc.
       // without having to press Enter. But updating in realtime could be bad for performance.
@@ -146,7 +146,7 @@ export default async function ({ addon }) {
 
       // https://github.com/scratchfoundation/scratch-gui/blob/develop/src/components/forms/buffered-input-hoc.jsx
       // This function calls handleFlush() on the buffered input when called.
-      const flushInput = () => e.target.dispatchEvent(new Event("blur", { bubbles: true }));
+      const flushInput = () => e.target.dispatchEvent(new Event('blur', { bubbles: true }));
 
       const currentTime = document.timeline.currentTime; // Similar to Date.now() but can't be changed by user unexpectedly
       if (!inputMap.has(e.target)) inputMap.set(e.target, { time: null, steps: -1 });

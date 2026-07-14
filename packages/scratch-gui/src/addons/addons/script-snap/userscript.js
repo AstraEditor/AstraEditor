@@ -11,13 +11,13 @@ export default async function ({ addon, console }) {
 
   setGrid(true);
 
-  addon.settings.addEventListener("change", () => setGrid(true));
-  addon.self.addEventListener("disabled", () => setGrid(false));
-  addon.self.addEventListener("reenabled", () => setGrid(true));
+  addon.settings.addEventListener('change', () => setGrid(true));
+  addon.self.addEventListener('disabled', () => setGrid(false));
+  addon.self.addEventListener('reenabled', () => setGrid(true));
 
   function setGrid(enabled) {
     workspace.grid_.snapToGrid_ = enabled;
-    if (enabled) workspace.grid_.spacing_ = addon.settings.get("grid");
+    if (enabled) workspace.grid_.spacing_ = addon.settings.get('grid');
     else workspace.grid_.spacing_ = 40;
     workspace.grid_.update(workspace.scale);
   }

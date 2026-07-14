@@ -5,31 +5,23 @@ import { closePreviewExt } from '../reducers/modals';
 import PreviewExtComponent from '../components/ae-preview-ext/ae-preview-ext.jsx';
 import { setPreviewExtData } from '../reducers/ae-preview-ext-data';
 
-const PreviewExt = props => (
-        <PreviewExtComponent
-                onClose={props.onClose}
-                svgList={props.svgList}
-        />
-);
+const PreviewExt = (props) => <PreviewExtComponent onClose={props.onClose} svgList={props.svgList} />;
 
 PreviewExt.propTypes = {
-        onClose: PropTypes.func,
-        svgList: PropTypes.array
+  onClose: PropTypes.func,
+  svgList: PropTypes.array
 };
 
 // 连接 Redux
-const mapDispatchToProps = dispatch => ({
-        onClose: () => {
-                dispatch(closePreviewExt());
-                dispatch(setPreviewExtData(null));  // 关闭时清空数据
-        }
+const mapDispatchToProps = (dispatch) => ({
+  onClose: () => {
+    dispatch(closePreviewExt());
+    dispatch(setPreviewExtData(null)); // 关闭时清空数据
+  }
 });
 
-const mapStateToProps = state => ({
-        svgList: state.scratchGui.aePreviewExtData?.data || null
+const mapStateToProps = (state) => ({
+  svgList: state.scratchGui.aePreviewExtData?.data || null
 });
 
-export default connect(
-        mapStateToProps,
-        mapDispatchToProps
-)(PreviewExt);
+export default connect(mapStateToProps, mapDispatchToProps)(PreviewExt);

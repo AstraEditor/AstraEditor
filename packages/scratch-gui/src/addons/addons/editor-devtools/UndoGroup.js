@@ -38,8 +38,8 @@ export default class UndoGroup {
  * @private
  */
 function generateUID() {
-  const CHARACTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!#$%()*+,-./:;=?@[]^_`{|}~";
-  let result = "";
+  const CHARACTERS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!#$%()*+,-./:;=?@[]^_`{|}~';
+  let result = '';
   for (let i = 0; i < 20; i++) {
     result += CHARACTERS[Math.floor(Math.random() * CHARACTERS.length)];
   }

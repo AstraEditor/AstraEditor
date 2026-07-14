@@ -26,7 +26,7 @@
 }
 
 .tw-md-mode-indicator.preview-mode {
-  color: #4CAF50;
+  color: #4caf50;
   opacity: 1;
   font-weight: 600;
 }
@@ -59,9 +59,9 @@
   transform: scale(0.95);
 }
 
-.tw-md-toggle-button[data-mode="preview"] {
+.tw-md-toggle-button[data-mode='preview'] {
   background: rgba(76, 175, 80, 0.3);
-  color: #2E7D32;
+  color: #2e7d32;
   border-color: rgba(76, 175, 80, 0.3);
 }
 
@@ -108,7 +108,6 @@
   font-size: 18px;
   color: var(--editorTheme3-commentText, #555);
 }
-
 
 .tw-md-preview-container strong {
   font-weight: 600;

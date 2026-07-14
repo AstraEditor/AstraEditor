@@ -1,108 +1,108 @@
-@import "../../css/colors.css";
+@import '../../css/colors.css';
 
 .icon {
-    filter: $icon-style;
-    width: 1.5rem;
-    -webkit-filter: $icon-style;
+  filter: $icon-style;
+  width: 1.5rem;
+  -webkit-filter: $icon-style;
 }
 
 .theme-label {
-    flex: 1;
+  flex: 1;
 }
 
 .option {
-    display: flex;
-    align-items: center;
-    gap: .5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
 }
 
 .check {
-    filter: $icon-style;
-    margin: 0 .25rem 0 0;
-    visibility: hidden;
+  filter: $icon-style;
+  margin: 0 0.25rem 0 0;
+  visibility: hidden;
 }
 
-[dir="rtl"] .check {
-    margin: 0 0 0 .25rem;
+[dir='rtl'] .check {
+  margin: 0 0 0 0.25rem;
 }
 
 .selected {
-    visibility: visible;
+  visibility: visible;
 }
 
 .submenu-label {
-    flex: 1;
+  flex: 1;
 }
 
 .dropdown-label {
-    margin: 0 0.5rem 0 0.25rem;
+  margin: 0 0.5rem 0 0.25rem;
 }
 
-[dir="rtl"] .dropdown-label {
-    margin: 0 0.25rem 0 0.5rem;
+[dir='rtl'] .dropdown-label {
+  margin: 0 0.25rem 0 0.5rem;
 }
 
 .expand-caret {
-    filter: $icon-style;
-    transform: rotate(-90deg);
+  filter: $icon-style;
+  transform: rotate(-90deg);
 }
 
-[dir="rtl"] .expand-caret {
-    transform: rotate(90deg);
+[dir='rtl'] .expand-caret {
+  transform: rotate(90deg);
 }
 
 /* Extra padding to deal with scrollbar overlapping options in Firefox */
 
-[dir="ltr"] .language-menu-item {
-    padding-right: 1rem;
+[dir='ltr'] .language-menu-item {
+  padding-right: 1rem;
 }
 
-[dir="rtl"] .language-menu-item {
-    padding-left: 1rem;
+[dir='rtl'] .language-menu-item {
+  padding-left: 1rem;
 }
 
 .language-submenu > ul {
-    max-height: calc(100vh - 5rem); /* Fallback if dvh not supported */
-    max-height: calc(100dvh - 5rem);
+  max-height: calc(100vh - 5rem); /* Fallback if dvh not supported */
+  max-height: calc(100dvh - 5rem);
 }
 
 @media only screen and (max-width: 1124px) {
-    .dropdown-label {
-        display: none;
-    }
-    .SettingIcon{
-        width: 20px !important;
-    }
+  .dropdown-label {
+    display: none;
+  }
+  .SettingIcon {
+    width: 20px !important;
+  }
 }
 
 .accent-icon-outer {
-    width: 24px;
-    height: 24px;
-    border: 3px solid $menu-bar-foreground;
-    border-radius: 100%;
-    box-sizing: border-box;
-    transform-origin: center;
-    transform: scale(90%);
+  width: 24px;
+  height: 24px;
+  border: 3px solid $menu-bar-foreground;
+  border-radius: 100%;
+  box-sizing: border-box;
+  transform-origin: center;
+  transform: scale(90%);
 }
 
 .disabled {
-    opacity: 0.5;
+  opacity: 0.5;
 }
 .disabled img {
-    filter: grayscale(100%);
+  filter: grayscale(100%);
 }
 
 .open-link {
-    filter: $icon-style;
-    margin-left: 0.5rem;
+  filter: $icon-style;
+  margin-left: 0.5rem;
 }
 
-.SettingIcon{
-    filter: $icon-style;
-    width: 20px;
-    height: auto;
+.SettingIcon {
+  filter: $icon-style;
+  width: 20px;
+  height: auto;
 }
 
 .dropdownCaret {
-    filter: $icon-style;
+  filter: $icon-style;
 }

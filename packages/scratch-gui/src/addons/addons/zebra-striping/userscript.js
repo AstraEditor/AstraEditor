@@ -37,7 +37,7 @@ export default async function ({ addon, msg, console }) {
           }
         }
         for (const el of elements) {
-          el.classList.toggle("sa-zebra-stripe", isStriped);
+          el.classList.toggle('sa-zebra-stripe', isStriped);
         }
       }
     }
@@ -58,13 +58,13 @@ export default async function ({ addon, msg, console }) {
     const replacementGlowEl = await addon.tab.waitForElement('filter[id*="blocklyReplacementGlowFilter"]', {
       markAsSeen: true,
       reduxEvents: [
-        "scratch-gui/mode/SET_PLAYER",
-        "fontsLoaded/SET_FONTS_LOADED",
-        "scratch-gui/locales/SELECT_LOCALE",
-        "scratch-gui/theme/SET_THEME",
+        'scratch-gui/mode/SET_PLAYER',
+        'fontsLoaded/SET_FONTS_LOADED',
+        'scratch-gui/locales/SELECT_LOCALE',
+        'scratch-gui/theme/SET_THEME'
       ],
-      reduxCondition: (state) => !state.scratchGui.mode.isPlayerOnly,
+      reduxCondition: (state) => !state.scratchGui.mode.isPlayerOnly
     });
-    document.documentElement.style.setProperty("--zebraStriping-replacementGlow", `url(#${replacementGlowEl.id})`);
+    document.documentElement.style.setProperty('--zebraStriping-replacementGlow', `url(#${replacementGlowEl.id})`);
   }
 }

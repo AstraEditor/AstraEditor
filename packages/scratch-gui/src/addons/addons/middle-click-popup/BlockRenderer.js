@@ -4,10 +4,10 @@
  * @author Tacodiva
  */
 
-import { BlockShape, BlockInstance, BlockInputEnum, BlockInputBoolean, BlockInputBlock } from "./BlockTypeInfo.js";
-import { getTextWidth } from "./module.js";
+import { BlockShape, BlockInstance, BlockInputEnum, BlockInputBoolean, BlockInputBlock } from './BlockTypeInfo.js';
+import { getTextWidth } from './module.js';
 
-const SVG_NS = "http://www.w3.org/2000/svg";
+const SVG_NS = 'http://www.w3.org/2000/svg';
 
 const BlockShapes = {
   // eg (my variable)
@@ -27,7 +27,7 @@ const BlockShapes = {
     get snuggleWith() {
       // Don't feel bad BlockShapes.Round, I only snuggle with myself too :_(
       return [BlockShapes.Round];
-    },
+    }
   },
 
   // eg <() = ()>
@@ -39,7 +39,7 @@ const BlockShapes = {
     snugglePadding: 0,
     get snuggleWith() {
       return [BlockShapes.Boolean];
-    },
+    }
   },
 
   // Square dropdowns like variables
@@ -47,7 +47,7 @@ const BlockShapes = {
     padding: 8,
     minWidth: 20,
     backgroundPath: (width) =>
-      `m -2 -16 h ${width + 4} a 4 4 0 0 1 4 4 V 12 a 4 4 0 0 1 -4 4 H -2 a 4 4 0 0 1 -4 -4 V -12 a 4 4 0 0 1 4 -4`,
+      `m -2 -16 h ${width + 4} a 4 4 0 0 1 4 4 V 12 a 4 4 0 0 1 -4 4 H -2 a 4 4 0 0 1 -4 -4 V -12 a 4 4 0 0 1 4 -4`
   },
 
   // eg show
@@ -55,7 +55,7 @@ const BlockShapes = {
     padding: 8,
     minWidth: 60,
     backgroundPath: (width) =>
-      `m -8 -20 A 4 4 0 0 1 -4 -24 H 4 c 2 0 3 1 4 2 l 4 4 c 1 1 2 2 4 2 h 12 c 2 0 3 -1 4 -2 l 4 -4 C 37 -23 38 -24 40 -24 H ${width} a 4 4 0 0 1 4 4 v 40 a 4 4 0 0 1 -4 4 H 40 c -2 0 -3 1 -4 2 l -4 4 c -1 1 -2 2 -4 2 h -12 c -2 0 -3 -1 -4 -2 l -4 -4 c -1 -1 -2 -2 -4 -2 H -4 a 4 4 0 0 1 -4 -4 z`,
+      `m -8 -20 A 4 4 0 0 1 -4 -24 H 4 c 2 0 3 1 4 2 l 4 4 c 1 1 2 2 4 2 h 12 c 2 0 3 -1 4 -2 l 4 -4 C 37 -23 38 -24 40 -24 H ${width} a 4 4 0 0 1 4 4 v 40 a 4 4 0 0 1 -4 4 H 40 c -2 0 -3 1 -4 2 l -4 4 c -1 1 -2 2 -4 2 h -12 c -2 0 -3 -1 -4 -2 l -4 -4 c -1 -1 -2 -2 -4 -2 H -4 a 4 4 0 0 1 -4 -4 z`
   },
 
   // eg when I start as a clone
@@ -63,7 +63,7 @@ const BlockShapes = {
     padding: 8,
     minWidth: 60,
     backgroundPath: (width) =>
-      `m -8 -20 A 4 4 0 0 1 -4 -24 H ${width} a 4 4 0 0 1 4 4 v 40 a 4 4 0 0 1 -4 4 H 40 c -2 0 -3 1 -4 2 l -4 4 c -1 1 -2 2 -4 2 h -12 c -2 0 -3 -1 -4 -2 l -4 -4 c -1 -1 -2 -2 -4 -2 H -4 a 4 4 0 0 1 -4 -4 z`,
+      `m -8 -20 A 4 4 0 0 1 -4 -24 H ${width} a 4 4 0 0 1 4 4 v 40 a 4 4 0 0 1 -4 4 H 40 c -2 0 -3 1 -4 2 l -4 4 c -1 1 -2 2 -4 2 h -12 c -2 0 -3 -1 -4 -2 l -4 -4 c -1 -1 -2 -2 -4 -2 H -4 a 4 4 0 0 1 -4 -4 z`
   },
 
   // eg delete this clone
@@ -71,7 +71,7 @@ const BlockShapes = {
     padding: 8,
     minWidth: 60,
     backgroundPath: (width) =>
-      `m -8 -20 A 4 4 0 0 1 -4 -24 H 4 c 2 0 3 1 4 2 l 4 4 c 1 1 2 2 4 2 h 12 c 2 0 3 -1 4 -2 l 4 -4 C 37 -23 38 -24 40 -24 H ${width} a 4 4 0 0 1 4 4 v 40 a 4 4 0 0 1 -4 4 H -4 a 4 4 0 0 1 -4 -4 z`,
+      `m -8 -20 A 4 4 0 0 1 -4 -24 H 4 c 2 0 3 1 4 2 l 4 4 c 1 1 2 2 4 2 h 12 c 2 0 3 -1 4 -2 l 4 -4 C 37 -23 38 -24 40 -24 H ${width} a 4 4 0 0 1 4 4 v 40 a 4 4 0 0 1 -4 4 H -4 a 4 4 0 0 1 -4 -4 z`
   },
 
   // The white oval for text or number inputs
@@ -83,7 +83,7 @@ const BlockShapes = {
     snugglePadding: 4,
     get snuggleWith() {
       return [BlockShapes.Round];
-    },
+    }
   },
 
   BooleanInput: {
@@ -94,7 +94,7 @@ const BlockShapes = {
     snugglePadding: 6,
     get snuggleWith() {
       return [BlockShapes.Boolean];
-    },
+    }
   },
 
   HorizontalBlock: {
@@ -103,7 +103,7 @@ const BlockShapes = {
     backgroundPath: (width) =>
       `M -4 -20 a 4 4 0 0 1 4 -4 H ${
         width + 8
-      } a 4 4 0 0 1 4 4 v 2 c 0 2 -1 3 -2 4 l -4 4 c -1 1 -2 2 -2 4 v 12 c 0 2 1 3 2 4 l 4 4 c 1 1 2 2 2 4 v 2 a 4 4 0 0 1 -4 4 H 0 a 4 4 0 0 1 -4 -4 v -2 c 0 -2 -1 -3 -2 -4 l -4 -4 c -1 -1 -2 -2 -2 -4 v -12 c 0 -2 1 -3 2 -4 l 4 -4 c 1 -1 2 -2 2 -4 z`,
+      } a 4 4 0 0 1 4 4 v 2 c 0 2 -1 3 -2 4 l -4 4 c -1 1 -2 2 -2 4 v 12 c 0 2 1 3 2 4 l 4 4 c 1 1 2 2 2 4 v 2 a 4 4 0 0 1 -4 4 H 0 a 4 4 0 0 1 -4 -4 v -2 c 0 -2 -1 -3 -2 -4 l -4 -4 c -1 -1 -2 -2 -2 -4 v -12 c 0 -2 1 -3 2 -4 l 4 -4 c 1 -1 2 -2 2 -4 z`
   },
 
   HorizontalBlockEnd: {
@@ -112,8 +112,8 @@ const BlockShapes = {
     backgroundPath: (width) =>
       `M -4 -20 a 4 4 0 0 1 4 -4 H ${
         width + 8
-      } a 4 4 0 0 1 4 4 V 20 a 4 4 0 0 1 -4 4 H 0 a 4 4 0 0 1 -4 -4 v -2 c 0 -2 -1 -3 -2 -4 l -4 -4 c -1 -1 -2 -2 -2 -4 v -12 c 0 -2 1 -3 2 -4 l 4 -4 c 1 -1 2 -2 2 -4 z`,
-  },
+      } a 4 4 0 0 1 4 4 V 20 a 4 4 0 0 1 -4 4 H 0 a 4 4 0 0 1 -4 -4 v -2 c 0 -2 -1 -3 -2 -4 l -4 -4 c -1 -1 -2 -2 -2 -4 v -12 c 0 -2 1 -3 2 -4 l 4 -4 c 1 -1 2 -2 2 -4 z`
+  }
 };
 
 /**
@@ -168,11 +168,11 @@ export class BlockComponent {
  * @returns {BlockComponent} The BlockComponent.
  */
 function createTextComponent(text, fillVar, container) {
-  let textElement = container.appendChild(document.createElementNS(SVG_NS, "text"));
-  textElement.setAttribute("class", "blocklyText");
+  let textElement = container.appendChild(document.createElementNS(SVG_NS, 'text'));
+  textElement.setAttribute('class', 'blocklyText');
   textElement.style.fill = `var(${fillVar})`;
-  textElement.setAttribute("dominant-baseline", "middle");
-  textElement.setAttribute("dy", 1);
+  textElement.setAttribute('dominant-baseline', 'middle');
+  textElement.setAttribute('dy', 1);
   textElement.appendChild(document.createTextNode(text));
   return new BlockComponent(textElement, 0, getTextWidth(textElement));
 }
@@ -184,9 +184,9 @@ function createTextComponent(text, fillVar, container) {
  * @returns {SVGElement} The SVGElement which will contain all the block's components.
  */
 function createBlockContainer() {
-  let container = document.createElementNS(SVG_NS, "g");
-  let background = document.createElementNS(SVG_NS, "path");
-  background.setAttribute("class", "blocklyPath");
+  let container = document.createElementNS(SVG_NS, 'g');
+  let background = document.createElementNS(SVG_NS, 'path');
+  background.setAttribute('class', 'blocklyPath');
   container.appendChild(background);
   return container;
 }
@@ -202,16 +202,16 @@ function createBlockContainer() {
  */
 function createBlockComponent(container, shape, categoryClass, fill, stroke, width) {
   if (width < shape.minWidth) width = shape.minWidth;
-  container.classList.add("sa-block-color");
+  container.classList.add('sa-block-color');
   if (categoryClass) {
     container.classList.add(categoryClass);
   }
   const background = container.children[0];
-  let style = "";
+  let style = '';
   if (fill) style += `fill: var(${fill});`;
   if (stroke) style += `stroke: var(${stroke});`;
-  background.setAttribute("style", style);
-  background.setAttribute("d", shape.backgroundPath(width));
+  background.setAttribute('style', style);
+  background.setAttribute('d', shape.backgroundPath(width));
   return new BlockComponent(
     container,
     shape.padding,
@@ -226,7 +226,7 @@ function createBackedTextedComponent(text, container, shape, categoryClass, fill
   container.appendChild(blockContainer);
   const textElement = createTextComponent(text, textVar, blockContainer);
   if (textElement.width < shape.minWidth) {
-    textElement.dom.setAttribute("x", (shape.minWidth - textElement.width) / 2);
+    textElement.dom.setAttribute('x', (shape.minWidth - textElement.width) / 2);
   }
 
   const blockElement = createBlockComponent(blockContainer, shape, categoryClass, fill, stroke, textElement.width);
@@ -241,8 +241,8 @@ function createBackedTextedComponent(text, container, shape, categoryClass, fill
  */
 export default function renderBlock(block, container) {
   var blockComponent = _renderBlock(block, container, block.typeInfo.category, true);
-  blockComponent.dom.classList.add("sa-block-color");
-  blockComponent.dom.setAttribute("transform", `translate(${blockComponent.padding}, 0)`);
+  blockComponent.dom.classList.add('sa-block-color');
+  blockComponent.dom.setAttribute('transform', `translate(${blockComponent.padding}, 0)`);
   return blockComponent;
 }
 
@@ -259,21 +259,21 @@ function _renderBlock(block, container, parentCategory, isVertical) {
   const category = block.typeInfo.category;
 
   const COLOR_CLASSES = [
-    "motion",
-    "looks",
-    "sounds",
-    "events",
-    "control",
-    "sensing",
-    "operators",
-    "data",
-    "data-lists",
-    "list",
-    "more",
-    "pen",
-    "addon-custom-block"
+    'motion',
+    'looks',
+    'sounds',
+    'events',
+    'control',
+    'sensing',
+    'operators',
+    'data',
+    'data-lists',
+    'list',
+    'more',
+    'pen',
+    'addon-custom-block'
   ];
-  const categoryClass = COLOR_CLASSES.includes(category.name) ? "sa-block-color-" + category.name : null;
+  const categoryClass = COLOR_CLASSES.includes(category.name) ? 'sa-block-color-' + category.name : null;
 
   let xOffset = 0;
   let inputIdx = 0;
@@ -282,8 +282,8 @@ function _renderBlock(block, container, parentCategory, isVertical) {
     const blockPart = block.typeInfo.parts[partIdx];
 
     let component;
-    if (typeof blockPart === "string") {
-      component = createTextComponent(blockPart, "--sa-block-text", blockContainer);
+    if (typeof blockPart === 'string') {
+      component = createTextComponent(blockPart, '--sa-block-text', blockContainer);
     } else {
       const blockInput = block.inputs[inputIdx++];
       if (blockInput instanceof BlockInstance) {
@@ -297,7 +297,7 @@ function _renderBlock(block, container, parentCategory, isVertical) {
             categoryClass,
             `--sa-block-background-secondary, ${category.colorSecondary}`,
             `--sa-block-background-tertiary, ${category.colorTertiary}`,
-            "--sa-block-text"
+            '--sa-block-text'
           );
         } else {
           component = createBackedTextedComponent(
@@ -307,40 +307,40 @@ function _renderBlock(block, container, parentCategory, isVertical) {
             categoryClass,
             `--sa-block-background-primary, ${category.colorPrimary}`,
             `--sa-block-background-tertiary, ${category.colorTertiary}`,
-            "--sa-block-text"
+            '--sa-block-text'
           );
         }
       } else if (blockPart instanceof BlockInputBoolean) {
         component = createBackedTextedComponent(
-          "",
+          '',
           blockContainer,
           BlockShapes.BooleanInput,
           categoryClass,
           `--sa-block-field-background, ${category.colorTertiary}`,
           `--sa-block-field-background, ${category.colorTertiary}`,
-          "--sa-block-text"
+          '--sa-block-text'
         );
       } else if (blockPart instanceof BlockInputBlock) {
         component = createBackedTextedComponent(
-          "",
+          '',
           blockContainer,
           BlockShapes.HorizontalBlock,
           categoryClass,
           `--sa-block-field-background, ${category.colorTertiary}`,
           `--sa-block-field-background, ${category.colorTertiary}`,
-          "--sa-block-text"
+          '--sa-block-text'
         );
       } else {
         component = createBackedTextedComponent(
-          blockInput?.toString() ?? blockPart.defaultValue ?? "",
+          blockInput?.toString() ?? blockPart.defaultValue ?? '',
           blockContainer,
           BlockShapes.TextInput,
           categoryClass,
           `--sa-block-input-color, ${category.colorColor}`,
           `--sa-block-background-tertiary, ${category.colorTertiary}`,
-          "--sa-block-input-text"
+          '--sa-block-input-text'
         );
-        component.dom.classList.add("blocklyNonEditableText");
+        component.dom.classList.add('blocklyNonEditableText');
       }
     }
 
@@ -357,7 +357,7 @@ function _renderBlock(block, container, parentCategory, isVertical) {
       }
     }
 
-    component.dom.setAttribute("transform", `translate(${xTranslation}, 0)`);
+    component.dom.setAttribute('transform', `translate(${xTranslation}, 0)`);
     xOffset += BLOCK_ELEMENT_SPACING + component.width;
   }
 
