@@ -10,18 +10,19 @@ import { createHandler, cleanupRemoteByUser } from './handle.js';
 import ReduxStore from '../../redux.js';
 import { openLoadingProject, closeLoadingProject } from '../../../reducers/modals';
 
+// eslint-disable-next-line require-jsdoc
 export default async function ({ addon, console, msg }) {
   const vm = addon.tab.traps.vm;
   if (!vm) return;
 
-  const tabID = idHead + 'tab';
+  const tabID = `${idHead}tab`;
 
-  let url = '154.9.252.181:1832';
+  const url = '154.9.252.181:1832';
   let id = '';
   const isVSCLayout = getSetting('EnableVSCodeLayout');
 
   const tipBox = document.createElement('div');
-  tipBox.className = idHead + 'tipBoxScreen';
+  tipBox.className = `${idHead}tipBoxScreen`;
   document.body.appendChild(tipBox);
 
   let roomMembersEl = null; // 模块级引用，用于实时更新成员列表
@@ -34,7 +35,7 @@ export default async function ({ addon, console, msg }) {
 
     rtcState.allMembers.forEach((member) => {
       const item = document.createElement('span');
-      item.className = idHead + 'roomMember';
+      item.className = `${idHead}roomMember`;
 
       const nameSpan = document.createElement('span');
       nameSpan.textContent = member.userName;
@@ -53,7 +54,7 @@ export default async function ({ addon, console, msg }) {
       if (isHost && member.cid !== rtcState.clientId) {
         const kickBtn = document.createElement('button');
         kickBtn.textContent = msg('kick');
-        kickBtn.className = idHead + 'kickBtn';
+        kickBtn.className = `${idHead}kickBtn`;
         kickBtn.onclick = () => {
           rtc.kickMember(member.cid);
         };
@@ -71,16 +72,16 @@ export default async function ({ addon, console, msg }) {
   const updateTipText = (text = null, mode = 'normal') => {
     if (!tipBox || !text) return;
     const msg = document.createElement('div');
-    msg.className = idHead + 'tipMsgScreen';
+    msg.className = `${idHead}tipMsgScreen`;
     if (mode === 'error') msg.classList.add('mode-error');
     else if (mode === 'warn') msg.classList.add('mode-warn');
 
     const content = document.createElement('span');
-    content.className = idHead + 'tipMsg-text';
+    content.className = `${idHead}tipMsg-text`;
     content.textContent = text;
 
     const progress = document.createElement('div');
-    progress.className = idHead + 'tipMsg-progress';
+    progress.className = `${idHead}tipMsg-progress`;
 
     msg.appendChild(content);
     msg.appendChild(progress);
@@ -102,7 +103,7 @@ export default async function ({ addon, console, msg }) {
     if (!menuGroup) return;
 
     const container = document.createElement('div');
-    container.className = idHead + 'roomTip-container';
+    container.className = `${idHead}roomTip-container`;
 
     const roomIdText = document.createElement('span');
     roomIdText.textContent = roomId;
@@ -137,7 +138,7 @@ export default async function ({ addon, console, msg }) {
      */
     const tipBox = (mode, text) => {
       const box = document.createElement('div');
-      box.className = mode === 'tip' ? idHead + 'tipBox tip' : idHead + 'tipBox warn';
+      box.className = mode === 'tip' ? `${idHead}tipBox tip` : `${idHead}tipBox warn`;
       const title = document.createElement('h3');
       title.textContent = msg(mode);
       const content = document.createElement('p');
@@ -157,7 +158,7 @@ export default async function ({ addon, console, msg }) {
      */
     const inputBox = (config, text) => {
       const box = document.createElement('div');
-      box.className = idHead + 'inputBox';
+      box.className = `${idHead}inputBox`;
       const label = document.createElement('label');
       label.textContent = config.label;
       const input = document.createElement('input');
@@ -173,10 +174,10 @@ export default async function ({ addon, console, msg }) {
     };
 
     const Container = document.createElement('div');
-    Container.className = idHead + 'container';
+    Container.className = `${idHead}container`;
     const Title = document.createElement('h1');
     Title.textContent = msg('title');
-    Title.className = idHead + 'title';
+    Title.className = `${idHead}title`;
 
     const rtcState = rtc.getState();
 
@@ -200,7 +201,7 @@ export default async function ({ addon, console, msg }) {
       };
 
       const NetTipText = document.createElement('span');
-      NetTipText.className = idHead + 'netTip';
+      NetTipText.className = `${idHead}netTip`;
       NetTipText.style.display = 'none';
 
       if (isVSCLayout) Container.appendChild(Title);
@@ -241,10 +242,10 @@ export default async function ({ addon, console, msg }) {
       if (isVSCLayout) Container.appendChild(Title);
 
       const roomTitleDiv = document.createElement('div');
-      roomTitleDiv.className = idHead + 'roomTitleDiv';
+      roomTitleDiv.className = `${idHead}roomTitleDiv`;
       const roomTitleCopyButton = document.createElement('img');
       roomTitleCopyButton.src = copyImg;
-      roomTitleCopyButton.className = idHead + 'roomTitleCopyButton';
+      roomTitleCopyButton.className = `${idHead}roomTitleCopyButton`;
       roomTitleCopyButton.onclick = async () => {
         try {
           await navigator.clipboard.writeText(rtcState.roomId);
@@ -255,9 +256,9 @@ export default async function ({ addon, console, msg }) {
       };
       const roomTitle = document.createElement('span');
       roomTitle.textContent = rtcState.roomId;
-      roomTitle.className = idHead + 'roomTitle';
+      roomTitle.className = `${idHead}roomTitle`;
       const roomMembers = document.createElement('div');
-      roomMembers.className = idHead + 'roomMembers';
+      roomMembers.className = `${idHead}roomMembers`;
       roomMembersEl = roomMembers; // 保存引用供 renderMemberList 使用
       renderMemberList(rtcState, rtc); // 初始渲染
 
