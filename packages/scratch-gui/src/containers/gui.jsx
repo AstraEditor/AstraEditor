@@ -58,6 +58,7 @@ const setProjectIdMetadata = (projectId) => {
 class GUI extends React.Component {
   updateDesktopEnvironmentFlag() {
     if (typeof document === 'undefined') return;
+    document.documentElement.setAttribute('isFullScreen', false);
     document.documentElement.dataset.isScratchDesktop = this.props.isScratchDesktop ? 'true' : 'false';
   }
 

@@ -145,7 +145,17 @@ const renderMarkdownBlock = (text, escapeHtml, key) => (
             {value.replace(/\n$/, '')}
           </SyntaxHighlighter>
         );
-      }
+      },
+      link: (props) => (
+        <a href={props.href} target="_blank" rel="noreferrer noopener">
+          {props.children}
+        </a>
+      ),
+      linkReference: (props) => (
+        <a href={props.href} target="_blank" rel="noreferrer noopener">
+          {props.children}
+        </a>
+      )
     }}
   >
     {text}
