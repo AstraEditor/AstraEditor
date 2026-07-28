@@ -117,7 +117,7 @@
 
 .tab-list {
   height: $stage-menu-height;
-  width: 250px;
+  width: 100%;
   /* Match width of the toolbox */
   display: flex;
   align-items: flex-end;
@@ -137,7 +137,6 @@
 }
 
 .tab {
-  flex-grow: 1;
   height: 80%;
   margin-bottom: 0;
 
