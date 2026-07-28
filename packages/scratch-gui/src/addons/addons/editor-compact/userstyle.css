@@ -1,4 +1,4 @@
-:root[data-is-scratch-desktop='true'] {
+:root[data-is-scratch-desktop='true'][isfullscreen='false'] {
   --stage-fullscreen-top: 2rem;
 }
 

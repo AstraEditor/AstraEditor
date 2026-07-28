@@ -10,6 +10,14 @@
   --stage-fullscreen-top: $menu-bar-height;
 }
 
+:root[data-is-scratch-desktop='true'][isfullscreen='true'] {
+  --stage-fullscreen-top: 0rem !important;
+}
+:root[data-is-scratch-desktop='true'][isfullscreen='true'] [class*='menu-bar'],
+:root[data-is-scratch-desktop='true'][isfullscreen='true'] [id*='window-controls'] button {
+  display: none !important;
+}
+
 .stage-wrapper {
   position: relative;
 }

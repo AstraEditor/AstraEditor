@@ -4,7 +4,9 @@
   border-radius: 0 !important;
 }
 
-[class*='stage_stage-overlays_'][class*='stage_full-screen_'] {
+/* https://github.com/AstraEditor/scratch-gui/issues/29 */
+/* stage_stage-overlays 被重复下移了 */
+[class*='stage_stage-overlays_'][class*='stage_full-screen_']:not([class*="stage_stage-overlays"]) {
   top: var(--stage-fullscreen-top, 0rem);
   left: 0;
 }
