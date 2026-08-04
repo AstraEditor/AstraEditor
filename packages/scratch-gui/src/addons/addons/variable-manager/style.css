@@ -55,8 +55,8 @@
 
 #react-tabs-sa-variable-manager.vscode-tab.sa-var-manager-active,
 #react-tabs-sa-variable-manager.vscode-tab.is-selected {
-  background-color: var(--ui-white) !important;
-  box-shadow: inset 3px 0px 0px 0px var(--looks-secondary) !important;
+  background-color: var(--ui-white);
+  box-shadow: inset 3px 0px 0px 0px var(--looks-secondary);
 }
 
 [dir='rtl'] #react-tabs-sa-variable-manager.vscode-tab img {

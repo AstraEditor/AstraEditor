@@ -473,8 +473,6 @@ class MonacoEditorComponent extends React.Component {
       newFileName: '',
       showNewFileInput: false,
       blockGenerationStatus: null,
-      pyodideLoading: false,
-      pyodideReady: false,
       selectedFileIds: [],
       showFileSelectionModal: false,
       showSettingsModal: false,
@@ -581,50 +579,7 @@ class MonacoEditorComponent extends React.Component {
     this.setState({ fontSize: 14 });
   };
 
-  getFiles = () => {
-    return this.state.files.map((f) => ({ id: f.id, name: f.name, content: f.content }));
-  };
-
-  getActiveFile = () => {
-    const activeFile = this.state.files.find((f) => f.id === this.state.activeFileId);
-    return activeFile ? { id: activeFile.id, name: activeFile.name, content: activeFile.content } : null;
-  };
-
-  getPythonFiles = () => {
-    return this.state.files
-      .filter((f) => f.name.endsWith('.py'))
-      .map((f) => ({ id: f.id, name: f.name, content: f.content }));
-  };
-
-  getFileByName = (fileName) => {
-    const file = this.state.files.find((f) => f.name === fileName);
-    return file ? { id: file.id, name: file.name, content: file.content } : null;
-  };
-
-  getFileContent = (fileName) => {
-    const file = this.state.files.find((f) => f.name === fileName);
-    return file ? file.content : null;
-  };
-
-  getFileNames = () => {
-    return this.state.files.map((f) => f.name);
-  };
-
   componentDidMount() {
-    window._editorApi = {
-      getFiles: this.getFiles,
-      getActiveFile: this.getActiveFile,
-      getPythonFiles: this.getPythonFiles,
-      getFileByName: this.getFileByName,
-      getFileContent: this.getFileContent,
-      getFileNames: this.getFileNames,
-      zoomIn: this.zoomIn,
-      zoomOut: this.zoomOut,
-      resetZoom: this.resetZoom
-    };
-    if (this.props.onEditorReady) {
-      this.props.onEditorReady(window._editorApi);
-    }
     this.initMonaco();
 
     const vm = this.props.vm;
@@ -1487,6 +1442,9 @@ class MonacoEditorComponent extends React.Component {
       }
     });
 
+    // 扩展通过 VM 读取文件，先生成前把最新文件同步到 VM
+    this.saveFilesToProject();
+
     const filesForGeneration = selectedFiles.map((f) => ({
       name: f.name,
       content: f.content
@@ -1931,13 +1889,11 @@ class MonacoEditorComponent extends React.Component {
 MonacoEditorComponent.propTypes = {
   intl: intlShape.isRequired,
   theme: PropTypes.instanceOf(Theme),
-  vm: PropTypes.instanceOf(VM),
-  onBlocksGenerated: PropTypes.func
+  vm: PropTypes.instanceOf(VM)
 };
 
 MonacoEditorComponent.defaultProps = {
-  theme: Theme.dark,
-  onBlocksGenerated: null
+  theme: Theme.dark
 };
 
 export default injectIntl(MonacoEditorComponent);

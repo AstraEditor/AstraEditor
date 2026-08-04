@@ -1,7 +1,13 @@
 const version = {
-  version: '1.2.6',
-  date: '2026-07-13',
-  webBuild: '10',
-  webUpdate: ['协作插件', '修复侧边栏的滚动条问题', '让侧边栏可以在任何Tab出现', '修复Todo插件删除步骤按钮不工作的问题']
+  version: '1.2.7',
+  date: '2026-08-4',
+  webBuild: '11',
+  webUpdate: [
+    '将大部分仓库合并到“AstraEditor”仓库',
+    '新增全屏（F11）后自动隐藏菜单栏',
+    '修复 README 的部分错误',
+    '修复查找积木插件的部分问题',
+    '修复编辑器无法在打包器使用的问题'
+  ]
 };
 export default version;

@@ -83,8 +83,8 @@ function injectStyles() {
   -webkit-filter: brightness(150%) grayscale(100%);
 }
 [class*="tabs"][class*="vscodeList"] .${CONTAINER_CLASS} .${TAB_BUTTON_CLASS}.is-selected {
-  background-color: var(--ui-white) !important;
-  box-shadow: inset 3px 0px 0px 0px var(--looks-secondary) !important;
+  background-color: var(--ui-white);
+  box-shadow: inset 3px 0px 0px 0px var(--looks-secondary);
 }
 [class*="tabs"][class*="vscodeList"] .${CONTAINER_CLASS} .${TAB_BUTTON_CLASS}.is-selected img {
   filter: grayscale(0%);

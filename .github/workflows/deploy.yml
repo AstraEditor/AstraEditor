@@ -1,0 +1,72 @@
+name: Build and Deploy to GitHub Pages
+
+on:
+  workflow_dispatch:
+    inputs:
+      target:
+        description: '部署目标：snapshot（线上快照版）或 release（线上正式版）'
+        required: true
+        default: 'snapshot'
+        type: choice
+        options:
+          - snapshot
+          - release
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout AstraEditor
+        uses: actions/checkout@v4
+
+      - name: Force Git to use HTTPS instead of SSH
+        run: git config --global url."https://github.com/".insteadOf "git@github.com:"
+
+      - name: Install Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Enable pnpm
+        run: corepack enable pnpm
+
+      - name: Install dependencies
+        run: pnpm install --no-frozen-lockfile
+
+      - name: Generate files
+        run: pnpm --filter scratch-gui prepublish
+
+      - name: Build
+        run: pnpm build:gui
+
+      - name: Set deploy directory
+        run: |
+          if [ "${{ github.event.inputs.target }}" == "release" ]; then
+            echo "DEPLOY_DIR=online" >> $GITHUB_ENV
+            echo "DEPLOY_MESSAGE=New Release Version from AstraEditor ${GITHUB_SHA:0:7}" >> $GITHUB_ENV
+          else
+            echo "DEPLOY_DIR=snapshot" >> $GITHUB_ENV
+            echo "DEPLOY_MESSAGE=A Snapshot Version from AstraEditor ${GITHUB_SHA:0:7}" >> $GITHUB_ENV
+          fi
+
+      - name: Checkout astraeditor.github.io
+        uses: actions/checkout@v4
+        with:
+          repository: AstraEditor/astraeditor.github.io
+          token: ${{ secrets.DEPLOY_TOKEN }}
+          path: gh-pages
+
+      - name: Deploy to target directory
+        run: |
+          cd gh-pages
+          # 清空目标目录（保留 .git）
+          find "$DEPLOY_DIR" -mindepth 1 -delete
+          # 复制构建产物
+          cp -r $GITHUB_WORKSPACE/packages/scratch-gui/build/* "$DEPLOY_DIR"/
+          # 提交
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git diff --quiet && git diff --staged --quiet || \
+            git commit -m "$DEPLOY_MESSAGE"
+          git push

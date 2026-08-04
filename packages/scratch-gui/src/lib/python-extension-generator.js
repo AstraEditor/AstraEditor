@@ -189,16 +189,16 @@ const generateMultiFileExtension = (filesData) => {
       if (m.isInitBlock) {
         return `
     ${m.opcode}(args, util) {
-        if (window._pyodideLoading) {
+        if (pyodideState.loading) {
             return;
         }
-        if (window._pyodideReady && window._pyodideWorker) {
-            window._pyodideWorker.postMessage({ type: 'updateCode', data: PYTHON_CODE });
+        if (pyodideState.ready && pyodideState.worker) {
+            pyodideState.worker.postMessage({ type: 'updateCode', data: PYTHON_CODE });
             return;
         }
-        window._pyodideLoading = true;
-        window._pyodideReady = false;
-        window._pyodideError = null;
+        pyodideState.loading = true;
+        pyodideState.ready = false;
+        pyodideState.error = null;
         
         initPyodideBackground();
     }`;
@@ -207,14 +207,14 @@ const generateMultiFileExtension = (filesData) => {
       if (m.isStatusBlock) {
         return `
     ${m.opcode}(args, util) {
-        return ${m.statusType === 'success' ? 'window._pyodideReady === true' : 'window._pyodideLoading === true'};
+        return ${m.statusType === 'success' ? 'pyodideState.ready === true' : 'pyodideState.loading === true'};
     }`;
       }
 
       if (m.isRunBlock) {
         return `
     async ${m.opcode}(args, util) {
-        if (!window._pyodideReady || !window._pyodideWorker) {
+        if (!pyodideState.ready || !pyodideState.worker) {
             console.warn('Python not initialized');
             return;
         }
@@ -229,7 +229,7 @@ const generateMultiFileExtension = (filesData) => {
       if (m.isEvalBlock) {
         return `
     async ${m.opcode}(args, util) {
-        if (!window._pyodideReady || !window._pyodideWorker) {
+        if (!pyodideState.ready || !pyodideState.worker) {
             console.warn('Python not initialized');
             return null;
         }
@@ -246,8 +246,20 @@ const generateMultiFileExtension = (filesData) => {
       if (m.isFileBlock) {
         return `
     ${m.opcode}(args, util) {
-        if (window._editorApi && window._editorApi.getFileContent) {
-            return window._editorApi.getFileContent(args.NAME) || '';
+        try {
+            const vm = (typeof Scratch !== 'undefined' && Scratch.vm) || null;
+            if (vm && vm.runtime) {
+                const metadata = vm.runtime.getProjectMetadata();
+                const files = metadata && metadata.custom && metadata.custom.file;
+                if (Array.isArray(files)) {
+                    const file = files.find((f) => f && f.name === args.NAME);
+                    if (file) {
+                        return file.content || '';
+                    }
+                }
+            }
+        } catch (error) {
+            console.error('Failed to read file from VM:', error);
         }
         return '';
     }`;
@@ -256,7 +268,7 @@ const generateMultiFileExtension = (filesData) => {
       if (m.isPythonBlock) {
         return `
     async ${m.opcode}(args, util) {
-        if (!window._pyodideReady || !window._pyodideWorker) {
+        if (!pyodideState.ready || !pyodideState.worker) {
             console.warn('Python not initialized. Please run "init python" first.');
             return null;
         }
@@ -281,6 +293,14 @@ const generateMultiFileExtension = (filesData) => {
 (function() {
     const PYODIDE_INDEX_URL = "https://cdn.jsdelivr.net/pyodide/v0.24.1/full/";
     const PYTHON_CODE = ${JSON.stringify(combinedPythonCode)};
+
+    // Pyodide 运行状态归属扩展自身，不依赖 window（打包器等无 Monaco 环境同样可用）
+    const pyodideState = {
+        worker: null,
+        ready: false,
+        loading: false,
+        error: null
+    };
 
     function createPyodideWorker() {
         const workerCode = \`
@@ -361,35 +381,35 @@ const generateMultiFileExtension = (filesData) => {
     }
 
     function initPyodideBackground() {
-        if (window._pyodideWorker) {
-            window._pyodideWorker.postMessage({ type: 'updateCode', data: PYTHON_CODE });
+        if (pyodideState.worker) {
+            pyodideState.worker.postMessage({ type: 'updateCode', data: PYTHON_CODE });
             return;
         }
 
-        window._pyodideWorker = createPyodideWorker();
-        window._pyodideWorker.onmessage = function(e) {
+        pyodideState.worker = createPyodideWorker();
+        pyodideState.worker.onmessage = function(e) {
             const { type, result, error } = e.data;
             if (type === 'ready') {
-                window._pyodideReady = true;
-                window._pyodideLoading = false;
+                pyodideState.ready = true;
+                pyodideState.loading = false;
                 console.log('[Pyodide] Loaded in background worker!');
             } else if (type === 'error') {
                 console.error('[Pyodide Worker Error]', error);
             }
         };
-        window._pyodideWorker.onerror = function(e) {
+        pyodideState.worker.onerror = function(e) {
             console.error('[Pyodide Worker Error]', e.message);
-            window._pyodideReady = false;
-            window._pyodideLoading = false;
-            window._pyodideError = e.message;
+            pyodideState.ready = false;
+            pyodideState.loading = false;
+            pyodideState.error = e.message;
         };
 
-        window._pyodideWorker.postMessage({ type: 'init', data: PYTHON_CODE });
+        pyodideState.worker.postMessage({ type: 'init', data: PYTHON_CODE });
         console.log('[Pyodide] Starting background worker...');
     }
 
     async function runPythonFunction(funcName, args) {
-        if (!window._pyodideReady || !window._pyodideWorker) {
+        if (!pyodideState.ready || !pyodideState.worker) {
             return null;
         }
         
@@ -397,20 +417,20 @@ const generateMultiFileExtension = (filesData) => {
             const handler = function(e) {
                 const { type, result, error } = e.data;
                 if (type === 'result') {
-                    window._pyodideWorker.removeEventListener('message', handler);
+                    pyodideState.worker.removeEventListener('message', handler);
                     resolve(result);
                 } else if (type === 'error') {
-                    window._pyodideWorker.removeEventListener('message', handler);
+                    pyodideState.worker.removeEventListener('message', handler);
                     resolve(null);
                 }
             };
-            window._pyodideWorker.addEventListener('message', handler);
-            window._pyodideWorker.postMessage({ type: 'run', data: { funcName, args } });
+            pyodideState.worker.addEventListener('message', handler);
+            pyodideState.worker.postMessage({ type: 'run', data: { funcName, args } });
         });
     }
 
     async function runPythonCode(code) {
-        if (!window._pyodideReady || !window._pyodideWorker) {
+        if (!pyodideState.ready || !pyodideState.worker) {
             return;
         }
         
@@ -418,21 +438,21 @@ const generateMultiFileExtension = (filesData) => {
             const handler = function(e) {
                 const { type, error } = e.data;
                 if (type === 'codeRun') {
-                    window._pyodideWorker.removeEventListener('message', handler);
+                    pyodideState.worker.removeEventListener('message', handler);
                     resolve();
                 } else if (type === 'error') {
-                    window._pyodideWorker.removeEventListener('message', handler);
+                    pyodideState.worker.removeEventListener('message', handler);
                     console.error('Python code error:', error);
                     resolve();
                 }
             };
-            window._pyodideWorker.addEventListener('message', handler);
-            window._pyodideWorker.postMessage({ type: 'runCode', data: code });
+            pyodideState.worker.addEventListener('message', handler);
+            pyodideState.worker.postMessage({ type: 'runCode', data: code });
         });
     }
 
     async function evalPythonCode(code) {
-        if (!window._pyodideReady || !window._pyodideWorker) {
+        if (!pyodideState.ready || !pyodideState.worker) {
             return null;
         }
         
@@ -440,24 +460,32 @@ const generateMultiFileExtension = (filesData) => {
             const handler = function(e) {
                 const { type, result, error } = e.data;
                 if (type === 'evalResult') {
-                    window._pyodideWorker.removeEventListener('message', handler);
+                    pyodideState.worker.removeEventListener('message', handler);
                     resolve(result);
                 } else if (type === 'error') {
-                    window._pyodideWorker.removeEventListener('message', handler);
+                    pyodideState.worker.removeEventListener('message', handler);
                     console.error('Python eval error:', error);
                     resolve(null);
                 }
             };
-            window._pyodideWorker.addEventListener('message', handler);
-            window._pyodideWorker.postMessage({ type: 'evalCode', data: code });
+            pyodideState.worker.addEventListener('message', handler);
+            pyodideState.worker.postMessage({ type: 'evalCode', data: code });
         });
     }
 
     class PythonExtension {
         getFileMenu() {
-            if (window._editorApi && window._editorApi.getFileNames) {
-                const names = window._editorApi.getFileNames();
-                return names.map(name => ({ text: name, value: name }));
+            try {
+                const vm = (typeof Scratch !== 'undefined' && Scratch.vm) || null;
+                if (vm && vm.runtime) {
+                    const metadata = vm.runtime.getProjectMetadata();
+                    const files = metadata && metadata.custom && metadata.custom.file;
+                    if (Array.isArray(files) && files.length > 0) {
+                        return files.map((f) => ({ text: f.name, value: f.name }));
+                    }
+                }
+            } catch (error) {
+                console.error('Failed to read file names from VM:', error);
             }
             return [{ text: 'extension.py', value: 'extension.py' }];
         }
