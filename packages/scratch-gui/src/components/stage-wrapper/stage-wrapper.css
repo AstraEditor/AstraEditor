@@ -13,8 +13,11 @@
 :root[data-is-scratch-desktop='true'][isfullscreen='true'] {
   --stage-fullscreen-top: 0rem !important;
 }
-:root[data-is-scratch-desktop='true'][isfullscreen='true'] [class*='menu-bar'],
-:root[data-is-scratch-desktop='true'][isfullscreen='true'] [id*='window-controls'] button {
+/* 窗口全屏(F11)时保留菜单栏；仅当同时处于舞台全屏(.full-screen)时才隐藏 */
+:root[data-is-scratch-desktop='true'][isfullscreen='true']:has([class*='stage-wrapper_full-screen'])
+[class*='menu-bar'],
+:root[data-is-scratch-desktop='true'][isfullscreen='true']:has([class*='stage-wrapper_full-screen'])
+[id*='window-controls'] button {
   display: none !important;
 }
 
