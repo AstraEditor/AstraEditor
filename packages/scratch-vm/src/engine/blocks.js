@@ -520,8 +520,10 @@ class Blocks {
         break;
       case 'var_delete': {
         this.resetCache(); // tw: more aggressive cache resetting
-        const target = editingTarget && Object.prototype.hasOwnProperty.call(editingTarget.variables, e.varId);
-        stage;
+        const target =
+          editingTarget && Object.prototype.hasOwnProperty.call(editingTarget.variables, e.varId)
+            ? editingTarget
+            : stage;
         target.deleteVariable(e.varId);
         this.emitProjectChanged();
         break;
