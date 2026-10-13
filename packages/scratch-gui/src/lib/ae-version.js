@@ -1,13 +1,11 @@
 const version = {
-  version: '1.2.7',
-  date: '2026-08-4',
-  webBuild: '11',
+  version: '1.2.8',
+  date: '2026-10-13',
+  webBuild: '12',
   webUpdate: [
-    '将大部分仓库合并到“AstraEditor”仓库',
-    '新增全屏（F11）后自动隐藏菜单栏',
-    '修复 README 的部分错误',
-    '修复查找积木插件的部分问题',
-    '修复编辑器无法在打包器使用的问题'
+    '修复变量无法删除的问题',
+    '增加保存扩展库中扩展的原始内容选项（让其它编辑器可以使用AE扩展库的扩展）',
+    'Tip: 这会使扩展不会更新'
   ]
 };
 export default version;
