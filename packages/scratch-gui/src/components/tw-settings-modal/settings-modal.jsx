@@ -496,11 +496,42 @@ const EnableVSCodeLayout = (props) => (
     }
   />
 );
+const LoadExtensionToDataURL = (props) => (
+  <BooleanSetting
+    {...props}
+    label={
+      <FormattedMessage
+        defaultMessage="Save extension raw to project"
+        description="LoadExtensionToDataURL label"
+        id="tw.settingsModal.loadExtensionToDataURL"
+      />
+    }
+    help={
+      <>
+        <FormattedMessage
+          defaultMessage="When loading the extension, the original content is saved to the project instead of the URL."
+          description="LoadExtensionToDataURL help"
+          id="tw.settingsModal.loadExtensionToDataURLHelp"
+        />
+        <WarningTip>
+            <FormattedMessage
+              defaultMessage="This will significantly increase the size of the .sb3 file."
+              id="tw.settingsModal.LoadExtensionToDataURLWarn"
+            />
+        </WarningTip>
+      </>
+    }
+  />
+)
 const WarningTip = (props) => {
   return <div className={styles.warning}>{props.children}</div>;
 };
 const SettingsModalComponent = (props) => {
-  const [settingsTab, setSettingsTab] = useState(1);
+  const tabState = useState(props.where)
+  /** @type {'ae' | 'settings'} */
+  const settingsTab = tabState[0];
+  /** @type {(where: 'ae' | 'settings') => void} */
+  const setSettingsTab = tabState[1];
   const [settingsUpdate, onUpdate] = useState(false);
   const update = () => {
     onUpdate(!settingsUpdate);
@@ -519,31 +550,31 @@ const SettingsModalComponent = (props) => {
         }}
       >
         <button
-          className={settingsTab == 1 ? styles.tabButtonEnable : styles.tabButtonUnable}
+          className={settingsTab === 'settings' ? styles.tabButtonEnable : styles.tabButtonUnable}
           style={{
             display: 'inline-block',
             width: `50%`,
             height: '100%'
           }}
-          onClick={() => setSettingsTab(1)}
+          onClick={() => setSettingsTab('settings')}
         >
           <FormattedMessage defaultMessage="Project" description="Settings modal tab" id="tw.settingsModal.project" />
         </button>
         <button
-          className={settingsTab == 2 ? styles.tabButtonEnable : styles.tabButtonUnable}
+          className={settingsTab === 'ae' ? styles.tabButtonEnable : styles.tabButtonUnable}
           style={{
             display: 'inline-block',
             width: `50%`,
             height: '100%'
           }}
-          onClick={() => setSettingsTab(2)}
+          onClick={() => setSettingsTab('ae')}
         >
           AstraEditor
         </button>
       </div>
 
       <Box className={styles.body}>
-        {settingsTab == 1 && (
+        {settingsTab === 'settings' && (
           <>
             <Header>
               <FormattedMessage
@@ -582,7 +613,7 @@ const SettingsModalComponent = (props) => {
             {!props.isEmbedded && <StoreProjectOptions {...props} />}
           </>
         )}
-        {settingsTab == 2 && (
+        {settingsTab === 'ae' && (
           <>
             <Header>README</Header>
             <AutoDisplayREADME
@@ -612,6 +643,13 @@ const SettingsModalComponent = (props) => {
                 set('skipExtWarn', e.target.checked);
                 update();
               }}
+            />
+            <LoadExtensionToDataURL
+              value={get('loadExtensionToDataURL')}
+              onChange={(e) => {
+                set('loadExtensionToDataURL', e.target.checked);
+                update();
+              }} 
             />
             <Header>
               <FormattedMessage

@@ -5246,7 +5246,12 @@
     "gui.monacoEditor.settingsLineNumbers": "行号",
     "gui.monacoEditor.settingsSmoothScrolling": "平滑滚动",
     "gui.monacoEditor.settingsFolding": "折叠",
-    "gui.gui.monacoEditorTab": "编辑器"
+    "gui.gui.monacoEditorTab": "编辑器",
+    "tw.settingsModal.loadExtensionToDataURL": "保存原始扩展于作品",
+    "tw.settingsModal.loadExtensionToDataURLHelp": "加载扩展时会保存原始内容给作品，而不是URL。",
+    "tw.settingsModal.LoadExtensionToDataURLWarn": "这会显著增大.sb3文件体积。",
+    "gui.library.extensionUnSupportInTurboWarp": "TurboWarp无法通过URL加载AstraEditor 扩展库 的扩展",
+    "gui.library.extensionUnSupportInTurboWarpGotoSolve": "前去解决。"
   },
   "zh-tw": {
     "tw.alerts.lostPeripheralConnection": "與{extensionName}的連線中斷了。",

@@ -52,9 +52,18 @@ const reducer = function (state, action) {
   if (typeof state === 'undefined') state = initialState;
   switch (action.type) {
     case OPEN_MODAL:
-      return Object.assign({}, state, {
-        [action.modal]: true
-      });
+      return Object.assign(
+        {},
+        state,
+        {
+          [action.modal]: true
+        },
+        action.where
+          ? {
+              'settingsModal-where': action.where
+            }
+          : {}
+      );
     case CLOSE_MODAL:
       return Object.assign({}, state, {
         [action.modal]: false
@@ -63,8 +72,9 @@ const reducer = function (state, action) {
       return state;
   }
 };
-const openModal = function (modal) {
+const openModal = function (modal, props) {
   return {
+    ...props,
     type: OPEN_MODAL,
     modal: modal
   };
@@ -123,8 +133,11 @@ const openTipsLibrary = function () {
 const openUsernameModal = function () {
   return openModal(MODAL_USERNAME);
 };
-const openSettingsModal = function () {
-  return openModal(MODAL_SETTINGS);
+/** @type {(where: 'settings' | 'ae') => any} */
+const openSettingsModal = function (where = 'settings') {
+  return openModal(MODAL_SETTINGS, {
+    where
+  });
 };
 const openCustomExtensionModal = function () {
   return openModal(MODAL_CUSTOM_EXTENSION);

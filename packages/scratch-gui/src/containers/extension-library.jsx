@@ -16,6 +16,8 @@ import extensionTags from '../lib/libraries/tw-extension-tags';
 
 import LibraryComponent from '../components/library/library.jsx';
 import extensionIcon from '../components/action-menu/icon--sprite.svg';
+import { get } from '../lib/settings.js';
+import { manuallyTrustExtension } from './tw-security-manager.jsx';
 
 const messages = defineMessages({
   extensionTitle: {
@@ -206,7 +208,24 @@ class ExtensionLibrary extends React.PureComponent {
       if (this.props.vm.extensionManager.isExtensionLoaded(extensionId)) {
         this.props.onCategorySelected(extensionId);
       } else {
-        this.props.vm.extensionManager
+        // 内置扩展不是URL不做处理
+        if (get('loadExtensionToDataURL') && item.extensionURL) {
+          fetch(url).then((data) => {
+            data.text().then((content) => {
+              const dataURL = `data:application/javascript,${encodeURIComponent(content)}`;
+              manuallyTrustExtension(dataURL);
+              this.props.vm.extensionManager.loadExtensionURL(dataURL);
+            }).catch((err) => {
+              log.error(err);
+              // eslint-disable-next-line no-alert
+              alert(err);
+            });
+          }).catch((err) => {
+            log.error(err);
+            // eslint-disable-next-line no-alert
+            alert(err);
+          })
+        } else this.props.vm.extensionManager
           .loadExtensionURL(url)
           .then(() => {
             this.props.onCategorySelected(extensionId);

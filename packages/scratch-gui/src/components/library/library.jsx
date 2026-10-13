@@ -15,6 +15,9 @@ import RemovedTrademarks from '../tw-removed-trademarks/removed-trademarks.jsx';
 import { APP_NAME } from '../../lib/brand.js';
 
 import styles from './library.css';
+import { get } from '../../lib/settings.js';
+import { connect } from 'react-redux';
+import { openSettingsModal } from '../../reducers/modals.js';
 
 const messages = defineMessages({
   filterPlaceholder: {
@@ -26,6 +29,19 @@ const messages = defineMessages({
     id: 'gui.library.allTag',
     defaultMessage: 'All',
     description: 'Label for library tag to revert to all items after filtering by tag.'
+  },
+  unsupportedInTWTip: {
+    id: 'gui.library.extensionUnSupportInTurboWarp',
+    defaultMessage: 'TurboWarp cannot load extensions from the AstraEditor Extensions Gallery via URL.',
+  },
+  goToSolve: {
+    id: 'gui.library.extensionUnSupportInTurboWarpGotoSolve',
+    defaultMessage: 'Go to solve',
+  },
+  // 用于高亮
+  settings_loadExtensionToDataURL: {
+    id: 'tw.settingsModal.loadExtensionToDataURL',
+    defaultMessage: "Save extension raw to project"
   }
 });
 
@@ -269,9 +285,28 @@ class LibraryComponent extends React.Component {
             )}
           </div>
         )}
+        {
+          this.props.id === 'extensionLibrary' && !get('loadExtensionToDataURL') &&
+          <div className={styles.unsupportedInTWTip}>{this.props.intl.formatMessage(messages.unsupportedInTWTip)}<a onClick={() => {
+            this.props.onOpenSettings();
+            setTimeout(() => document.querySelectorAll('[class*=settings-modal_setting]').forEach(ele => {
+              const spanEle = ele.querySelector('span')
+              if(!spanEle) return;
+              if(spanEle.textContent !== this.props.intl.formatMessage(messages.settings_loadExtensionToDataURL)) return;
+              ele.animate(
+                [
+                  { background: 'var(--looks-secondary)' },
+                  { background: 'transparent' }
+                ],
+                { duration: 1000, easing: 'ease', iterations: '5', direction: 'alternate' }
+              )
+            }), 20)
+          }}>{this.props.intl.formatMessage(messages.goToSolve)}</a></div>
+        }
         <div
           className={classNames(styles.libraryScrollGrid, {
-            [styles.withFilterBar]: this.props.filterable || this.props.tags
+            [styles.withFilterBar]: this.props.filterable || this.props.tags,
+            [styles.padding]: this.props.id === 'extensionLibrary' && !get('loadExtensionToDataURL')
           })}
           ref={this.setFilteredDataRef}
         >
@@ -367,4 +402,8 @@ LibraryComponent.defaultProps = {
   showPlayButton: false
 };
 
-export default injectIntl(LibraryComponent);
+const mapDispatchToProps = (dispatch) => ({
+  onOpenSettings: () => dispatch(openSettingsModal('ae'))
+});
+
+export default injectIntl(connect(undefined, mapDispatchToProps)(LibraryComponent));

@@ -13,6 +13,9 @@
   height: auto;
   padding: 0.5rem;
   height: calc(100% - $library-header-height);
+  &.padding {
+    padding: 30px 0 0 0;
+  }
 }
 
 .library-scroll-grid.withFilterBar {
@@ -68,4 +71,16 @@
   display: flex;
   align-items: center;
   justify-content: center;
+}
+
+.unsupported-in-t-w-tip {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  justify-content: center;
+  padding: 5px;
+  background: var(--looks-transparent);
+  border-radius: 0 0 5px 5px;
+  position: absolute;
+  z-index: 999
 }

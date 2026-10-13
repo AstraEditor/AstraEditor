@@ -6,7 +6,8 @@ const DEFAULTS = {
   skipExtWarn: false,
   EnableExtensionPreview: false,
   EnableVSCodeLayout: true,
-  EnableMobileLayout: false
+  EnableMobileLayout: false,
+  loadExtensionToDataURL: false
 };
 
 const readAll = () => {
@@ -44,6 +45,7 @@ const init = () => {
 
 init();
 
+/** @type {(id: keyof typeof DEFAULTS) => boolean | undefined} */
 const get = (id) => {
   const settings = readAll();
   return settings[id];

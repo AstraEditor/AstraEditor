@@ -146,7 +146,8 @@ UsernameModal.propTypes = {
     width: PropTypes.number,
     height: PropTypes.number
   }),
-  disableCompiler: PropTypes.bool
+  disableCompiler: PropTypes.bool,
+  where: PropTypes.string
 };
 
 const mapStateToProps = (state) => ({
@@ -160,7 +161,8 @@ const mapStateToProps = (state) => ({
   removeLimits: !state.scratchGui.tw.runtimeOptions.miscLimits,
   warpTimer: state.scratchGui.tw.compilerOptions.warpTimer,
   customStageSize: state.scratchGui.customStageSize,
-  disableCompiler: !state.scratchGui.tw.compilerOptions.enabled
+  disableCompiler: !state.scratchGui.tw.compilerOptions.enabled,
+  where: state.scratchGui.modals['settingsModal-where']
 });
 
 const mapDispatchToProps = (dispatch) => ({
