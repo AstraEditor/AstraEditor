@@ -1,3 +1,4 @@
+/* eslint-disable import/no-unresolved -- chart.js 使用 package.json exports，旧版解析器无法识别 */
 import {
   Chart,
   RadarController,
@@ -12,6 +13,7 @@ import {
   Legend,
   Tooltip
 } from 'chart.js';
+/* eslint-enable import/no-unresolved */
 
 // 注册Chart.js组件
 Chart.register(
@@ -103,10 +105,15 @@ const ADVANCED_MATH_OPERATORS = new Set([
   '10 ^'
 ]);
 
+/**
+ * Simple Project Analyzer 插件入口。
+ */
 export default function ({ addon, msg, console }) {
   const vm = addon.tab.traps.vm;
 
-  // 项目分析器类
+  /**
+   * 项目分析器。
+   */
   class SimpleProjectAnalyzer {
     constructor() {
       this.analyzeModal = null;
@@ -429,7 +436,7 @@ export default function ({ addon, msg, console }) {
       if (!resultsDiv) return;
 
       // 生成简化版的 HTML（适合 Sidebar 显示）
-      resultsDiv.innerHTML = this.generateSidebarAnalysisHTML(analysis);
+      resultsDiv.innerHTML = this.generateSidebarAnalysisHTML();
 
       // 更新统计数据
       this.updateSidebarStats(analysis);
@@ -437,12 +444,9 @@ export default function ({ addon, msg, console }) {
       // 显示代码类型分布饼图
       this.displaySidebarCodeTypesChart(analysis);
 
-      // 计算并更新 Dr.Scratch 评分
-      const drScratchScores = this.calculateDrScratchScores(projectData);
+      // 计算并更新评分
+      const { drScratchScores, mathLogicScores } = this.calculateScores(projectData);
       this.displaySidebarDrScratchScores(drScratchScores);
-
-      // 计算并更新数学逻辑评分
-      const mathLogicScores = this.calculateMathLogicScores(projectData);
       this.displaySidebarMathLogicScores(mathLogicScores);
 
       // 更新扩展列表
@@ -454,7 +458,7 @@ export default function ({ addon, msg, console }) {
     }
 
     // 生成 Sidebar 版本的分析结果 HTML
-    generateSidebarAnalysisHTML(analysis) {
+    generateSidebarAnalysisHTML() {
       return `
         <div class="sa-spa-stats-section" style="
           background: var(--ui-secondary);
@@ -501,6 +505,7 @@ export default function ({ addon, msg, console }) {
           padding: 12px;
         ">
           <h4 style="margin: 0 0 8px 0; font-size: 14px; color: var(--text-primary);">${msg('math-logic-assessment')}</h4>
+          <p style="margin: 0 0 8px 0; font-size: 12px; color: var(--text-primary); opacity: 0.65;">${msg('math-logic-help')}</p>
           <div class="sa-spa-math-summary" id="saSAPAMathSummary" style="
             font-size: 14px;
             color: var(--text-primary);
@@ -1204,6 +1209,15 @@ export default function ({ addon, msg, console }) {
       return field ? field.value : null;
     }
 
+    // live VM 的变量/列表字段把 id 放在 field.id，旧格式可能把 [name, id] 放在 value。
+    getFieldId(block, fieldName) {
+      const field = block && block.fields && block.fields[fieldName];
+      if (!field) return null;
+      if (field.id) return field.id;
+      if (Array.isArray(field.value)) return field.value[1] || null;
+      return null;
+    }
+
     getInputFieldValue(block, blocks, inputName, fieldName) {
       const input = block && block.inputs && block.inputs[inputName];
       if (!input || !input.block) return null;
@@ -1231,8 +1245,17 @@ export default function ({ addon, msg, console }) {
       return false;
     }
 
+    // 一次构建评分上下文，供 Dr.Scratch 和数学逻辑评分共用。
+    calculateScores(projectData) {
+      const scoringContext = this.getScoringContext(projectData);
+      return {
+        drScratchScores: this.calculateDrScratchScores(projectData, scoringContext),
+        mathLogicScores: this.calculateMathLogicScores(projectData, scoringContext)
+      };
+    }
+
     // 计算Dr.Scratch评分
-    calculateDrScratchScores(projectData) {
+    calculateDrScratchScores(projectData, scoringContext = null) {
       const scores = {
         [msg('abstraction')]: 0,
         [msg('parallelism')]: 0,
@@ -1243,7 +1266,7 @@ export default function ({ addon, msg, console }) {
         [msg('data-representation')]: 0
       };
 
-      const context = this.getScoringContext(projectData);
+      const context = scoringContext || this.getScoringContext(projectData);
       const opcodeCounts = new Map();
 
       context.blocks.forEach((block) => {
@@ -1386,9 +1409,9 @@ export default function ({ addon, msg, console }) {
     // 计算数学逻辑评分：三个维度各 0-3 分，总分 9 分。
     // 1. 运算复杂度：算术、比较、布尔、字符串、数学函数、随机数的数量与多样性。
     // 2. 逻辑深度：条件/循环的数量与嵌套深度。
-    // 3. 数据量级：变量、列表、数据操作的数量与多样性。
-    calculateMathLogicScores(projectData) {
-      const context = this.getScoringContext(projectData);
+    // 3. 数据量级：有效脚本中实际引用的变量、列表和数据操作的数量与多样性。
+    calculateMathLogicScores(projectData, scoringContext = null) {
+      const context = scoringContext || this.getScoringContext(projectData);
       const operatorBlocks = context.blocks.filter((block) => block.opcode.startsWith('operator_'));
       const operatorCount = operatorBlocks.length;
       const operatorTypes = new Set(operatorBlocks.map((block) => block.opcode));
@@ -1457,21 +1480,17 @@ export default function ({ addon, msg, console }) {
         }
       }
 
-      const variableIds = new Set();
-      const listIds = new Set();
-      context.targets.forEach((target) => {
-        Object.values(target.variables || {}).forEach((variable) => {
-          const variableKey = `${target.name || ''}:${variable.id}`;
-          if (variable.type === VARIABLE_TYPE_LIST) {
-            listIds.add(variableKey);
-          } else if (variable.type !== VARIABLE_TYPE_BROADCAST) {
-            variableIds.add(variableKey);
-          }
-        });
-      });
-
-      const structureCount = variableIds.size + listIds.size;
       const dataBlocks = context.blocks.filter((block) => block.opcode.startsWith('data_'));
+      // 只统计有效脚本中实际引用的变量/列表；空项目的默认变量不计入数据量级。
+      const usedVariableIds = new Set();
+      const usedListIds = new Set();
+      dataBlocks.forEach((block) => {
+        const variableId = this.getFieldId(block, 'VARIABLE');
+        if (variableId) usedVariableIds.add(variableId);
+        const listId = this.getFieldId(block, 'LIST');
+        if (listId) usedListIds.add(listId);
+      });
+      const structureCount = usedVariableIds.size + usedListIds.size;
       const listOperations = dataBlocks.filter((block) => LIST_OPCODES.has(block.opcode));
       const distinctListOperations = new Set(listOperations.map((block) => block.opcode)).size;
       const variableMutations = dataBlocks.filter(
@@ -1479,14 +1498,14 @@ export default function ({ addon, msg, console }) {
       ).length;
 
       let dataScore = 0;
-      if (structureCount > 0 || dataBlocks.length > 0) {
+      if (dataBlocks.length > 0) {
         dataScore = 1;
       }
       if (structureCount >= 2 || variableMutations > 0 || listOperations.length > 0 || dataBlocks.length >= 3) {
         dataScore = 2;
       }
       if (
-        (listIds.size > 0 && listOperations.length >= 2 && distinctListOperations >= 2) ||
+        (usedListIds.size > 0 && listOperations.length >= 2 && distinctListOperations >= 2) ||
         (structureCount >= 4 && (variableMutations > 0 || listOperations.length > 0)) ||
         (dataBlocks.length >= 8 && (variableMutations > 0 || listOperations.length > 0))
       ) {
@@ -1502,16 +1521,16 @@ export default function ({ addon, msg, console }) {
 
     // Dr.Scratch 官方等级：0-7 Basic，8-14 Developing，15-21 Proficiency。
     getDrScratchLevel(totalScore) {
-      if (totalScore >= 15) return msg('advanced');
+      if (totalScore >= 15) return msg('proficient');
       if (totalScore >= 8) return msg('developing');
-      return msg('beginner');
+      return msg('basic');
     }
 
     // 数学逻辑总分 0-9，按三个维度的平均分划分等级。
     getMathLogicLevel(totalScore) {
-      if (totalScore >= 7) return msg('advanced');
+      if (totalScore >= 7) return msg('proficient');
       if (totalScore >= 4) return msg('developing');
-      return msg('beginner');
+      return msg('basic');
     }
 
     // 格式化文件大小
@@ -1522,7 +1541,7 @@ export default function ({ addon, msg, console }) {
       const sizes = ['B', 'KB', 'MB', 'GB'];
       const i = Math.floor(Math.log(bytes) / Math.log(k));
 
-      return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+      return `${parseFloat((bytes / Math.pow(k, i)).toFixed(2))} ${sizes[i]}`;
     }
 
     // 生成分析结果HTML
@@ -1603,6 +1622,7 @@ export default function ({ addon, msg, console }) {
           <!-- 核心数学能力评估 -->
           <div class="sa-analyze-section">
             <h3 class="sa-analyze-section-title">${msg('math-logic-assessment')}</h3>
+            <p style="margin: 0 0 12px 0; font-size: 12px; color: var(--text-primary); opacity: 0.65;">${msg('math-logic-help')}</p>
             <div class="sa-analyze-row">
               <div class="sa-analyze-col-6">
                 <div class="sa-analyze-chart-container">
@@ -1639,12 +1659,9 @@ export default function ({ addon, msg, console }) {
       // 更新代码类型分布图
       this.displayCodeTypeChart(analysis);
 
-      // 计算并更新Dr.Scratch评分
-      const drScratchScores = this.calculateDrScratchScores(projectData);
+      // 计算并更新评分
+      const { drScratchScores, mathLogicScores } = this.calculateScores(projectData);
       this.displayDrScratchScores(drScratchScores);
-
-      // 计算并更新数学逻辑评分
-      const mathLogicScores = this.calculateMathLogicScores(projectData);
       this.displayMathLogicScores(mathLogicScores);
 
       // 更新扩展列表
@@ -1658,7 +1675,6 @@ export default function ({ addon, msg, console }) {
     // 更新统计数据
     updateStats(analysis) {
       const statsGrid = document.getElementById('saStatsGrid');
-      const totalExtensionBlocks = analysis.extensions.reduce((sum, ext) => sum + ext.blocks.length, 0);
 
       statsGrid.innerHTML = `
         <div class="sa-analyze-stat">
@@ -1793,15 +1809,14 @@ export default function ({ addon, msg, console }) {
       const assignedColors = sortedLabels.map((label, index) => {
         if (categoryColors[label]) {
           return categoryColors[label];
-        } else {
-          // 检查是否是具有自定义颜色的扩展
-          const extension = analysis.extensions.find((ext) => ext.name === label);
-          if (extension && extension.color) {
-            return extension.color;
-          }
-          // 使用预定义的扩展颜色
-          return extensionColors[index % extensionColors.length];
         }
+        // 检查是否是具有自定义颜色的扩展
+        const extension = analysis.extensions.find((ext) => ext.name === label);
+        if (extension && extension.color) {
+          return extension.color;
+        }
+        // 使用预定义的扩展颜色
+        return extensionColors[index % extensionColors.length];
       });
 
       // 销毁现有图表
@@ -1985,7 +2000,7 @@ export default function ({ addon, msg, console }) {
           labels: labels,
           datasets: [
             {
-              label: msg('relative-intensity'),
+              label: msg('math-logic-score'),
               data: data,
               backgroundColor: 'rgba(230, 81, 0, 0.2)',
               borderColor: '#E65100',
@@ -2058,8 +2073,7 @@ export default function ({ addon, msg, console }) {
       // 获取项目数据并执行分析
       const projectData = this.getLiveProjectData();
       const analysis = this.performAnalysis(projectData);
-      const drScratchScores = this.calculateDrScratchScores(projectData);
-      const mathLogicScores = this.calculateMathLogicScores(projectData);
+      const { drScratchScores, mathLogicScores } = this.calculateScores(projectData);
 
       // 创建导出Canvas
       const canvas = document.createElement('canvas');
@@ -2098,7 +2112,6 @@ export default function ({ addon, msg, console }) {
       const logoX = 20;
       const logoY = 12;
       const logoWidth = 36;
-      const logoHeight = 36;
       // 将SVG坐标缩放并平移到我们需要的位置
       const scale = logoWidth / 103.42932;
       const offsetX = logoX - 188.28534 * scale;
@@ -2183,7 +2196,7 @@ export default function ({ addon, msg, console }) {
       y = this.drawDrScratchSection(ctx, drScratchScores, width, y, padding, sectionPadding);
 
       // 绘制数学逻辑评分
-      y = this.drawMathLogicSection(ctx, mathLogicScores, width, y, padding, sectionPadding);
+      this.drawMathLogicSection(ctx, mathLogicScores, width, y, padding, sectionPadding);
 
       // 绘制底部版权信息
       ctx.font = '12px Arial, sans-serif';
@@ -2431,7 +2444,7 @@ export default function ({ addon, msg, console }) {
         ctx.fillStyle = '#333333';
         ctx.textAlign = 'left';
 
-        const displayLabel = label.length > 10 ? label.substring(0, 10) + '...' : label;
+        const displayLabel = label.length > 10 ? `${label.substring(0, 10)}...` : label;
         ctx.fillText(`${displayLabel}: ${displayData[index]}`, legendX + 14, legendY + 9);
       });
 
@@ -2499,7 +2512,7 @@ export default function ({ addon, msg, console }) {
         // 标签
         ctx.font = '12px Arial, sans-serif';
         ctx.fillStyle = '#333333';
-        const displayLabel = label.length > 14 ? label.substring(0, 14) + '...' : label;
+        const displayLabel = label.length > 14 ? `${label.substring(0, 14)}...` : label;
         ctx.fillText(displayLabel, detailsX, detailsY);
 
         // 进度条背景
@@ -2571,7 +2584,7 @@ export default function ({ addon, msg, console }) {
       labels.forEach((label, index) => {
         ctx.font = '12px Arial, sans-serif';
         ctx.fillStyle = '#333333';
-        const displayLabel = label.length > 14 ? label.substring(0, 14) + '...' : label;
+        const displayLabel = label.length > 14 ? `${label.substring(0, 14)}...` : label;
         ctx.fillText(`${displayLabel}: ${data[index]}/3`, detailsX, detailsY);
         detailsY += 28;
       });
@@ -2624,7 +2637,7 @@ export default function ({ addon, msg, console }) {
         else ctx.lineTo(x, y);
       });
       ctx.closePath();
-      ctx.fillStyle = color + '33'; // 添加透明度
+      ctx.fillStyle = `${color}33`; // 添加透明度
       ctx.fill();
       ctx.strokeStyle = color;
       ctx.lineWidth = 2;
@@ -2657,13 +2670,13 @@ export default function ({ addon, msg, console }) {
         const x = centerX + labelRadius * Math.cos(angle);
         const y = centerY + labelRadius * Math.sin(angle);
 
-        const displayLabel = label.length > 8 ? label.substring(0, 8) + '...' : label;
+        const displayLabel = label.length > 8 ? `${label.substring(0, 8)}...` : label;
         ctx.fillText(displayLabel, x, y);
       });
     }
 
     // 绘制扩展列表部分
-    drawExtensionsSection(ctx, extensions, width, y, padding, sectionPadding) {
+    drawExtensionsSection(ctx, extensions, width, y, padding) {
       const sectionWidth = width - padding * 2;
       const height = Math.max(150, extensions.length * 50 + 60);
 
@@ -2717,7 +2730,7 @@ export default function ({ addon, msg, console }) {
         ctx.font = '13px Arial, sans-serif';
         ctx.fillStyle = '#333333';
         ctx.textAlign = 'left';
-        const displayName = extension.name.length > 16 ? extension.name.substring(0, 16) + '...' : extension.name;
+        const displayName = extension.name.length > 16 ? `${extension.name.substring(0, 16)}...` : extension.name;
         ctx.fillText(displayName, itemX + 26, itemY + 18);
 
         // 绘制积木数量
