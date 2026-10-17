@@ -311,6 +311,7 @@
   "simple-project-analyzer/user-interactivity": "用户交互",
   "simple-project-analyzer/data-representation": "数据表示",
   "simple-project-analyzer/effective-blocks": "有效积木",
+  "simple-project-analyzer/effective-blocks-help": "仅统计头代码（帽子积木、自定义积木定义）下的非阴影积木；独立积木堆和孤立积木不计入",
   "simple-project-analyzer/function-definitions": "函数定义",
   "simple-project-analyzer/project-size": "项目大小",
   "simple-project-analyzer/costumes-size": "造型大小",

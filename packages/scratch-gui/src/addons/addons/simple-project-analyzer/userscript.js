@@ -31,9 +31,77 @@ import icon from '!../../../lib/tw-recolor/build!./SPA.svg';
 import AddToBar from '../../tools/AddToBar/index.js';
 import ReduxStore from '../../redux.js';
 
-/* todo:
-  将统计积木的函数从计算项目JSON改为和计数器一样的获取虚拟机函数。
-*/
+// 积木统计直接读取 VM 运行时，避免 SB3 序列化时压缩 primitive 积木。
+
+const VARIABLE_TYPE_LIST = 'list';
+const VARIABLE_TYPE_BROADCAST = 'broadcast_msg';
+
+const STRUCTURAL_CONTROL_OPCODES = new Set([
+  'control_if',
+  'control_if_else',
+  'control_repeat',
+  'control_forever',
+  'control_repeat_until',
+  'control_while',
+  'control_for_each'
+]);
+
+// Dr.Scratch 的列表操作集合，不包含只读取整个列表内容的 data_listcontents。
+const LIST_OPCODES = new Set([
+  'data_addtolist',
+  'data_deleteoflist',
+  'data_deletealloflist',
+  'data_insertatlist',
+  'data_replaceitemoflist',
+  'data_itemoflist',
+  'data_itemnumoflist',
+  'data_lengthoflist',
+  'data_listcontainsitem',
+  'data_showlist',
+  'data_hidelist'
+]);
+
+// Dr.Scratch 用来判断“角色属性变化”的运动/外观积木。
+const SPRITE_MODIFIER_OPCODES = new Set([
+  'looks_switchbackdropto',
+  'looks_switchbackdroptoandwait',
+  'looks_nextbackdrop',
+  'looks_switchcostumeto',
+  'looks_nextcostume',
+  'looks_changesizeby',
+  'looks_setsizeto',
+  'looks_hide',
+  'looks_show',
+  'looks_seteffectto',
+  'looks_changeeffectby',
+  'motion_turnright',
+  'motion_turnleft',
+  'motion_pointindirection',
+  'motion_pointtowards',
+  'motion_movesteps',
+  'motion_gotoxy',
+  'motion_goto',
+  'motion_glidesecstoxy',
+  'motion_glideto',
+  'motion_changexby',
+  'motion_setx',
+  'motion_changeyby',
+  'motion_sety'
+]);
+
+const ADVANCED_MATH_OPERATORS = new Set([
+  'sqrt',
+  'sin',
+  'cos',
+  'tan',
+  'asin',
+  'acos',
+  'atan',
+  'ln',
+  'log',
+  'e ^',
+  '10 ^'
+]);
 
 export default function ({ addon, msg, console }) {
   const vm = addon.tab.traps.vm;
@@ -44,18 +112,114 @@ export default function ({ addon, msg, console }) {
       this.analyzeModal = null;
       this.removeModal = null;
       this.chartInstance = null;
+      this.codeTypesChartInstance = null;
       this.mathLogicChartInstance = null;
       this.drScratchChartInstance = null;
       this.sidebarContent = null;
       this.projectName = '';
+      this.sidebarActive = false;
+      this.refreshTimeout = null;
 
       // 订阅 Redux Store 获取作品名称
-      ReduxStore.addEventListener('statechanged', (e) => {
+      this.onReduxStateChanged = (e) => {
         const state = e.detail.next;
         if (state && state.scratchGui && state.scratchGui.projectTitle) {
           this.projectName = state.scratchGui.projectTitle;
         }
+      };
+      ReduxStore.addEventListener('statechanged', this.onReduxStateChanged);
+    }
+
+    // 统一销毁所有 Chart.js 实例
+    destroyCharts() {
+      ['chartInstance', 'codeTypesChartInstance', 'mathLogicChartInstance', 'drScratchChartInstance'].forEach((key) => {
+        if (this[key]) {
+          this[key].destroy();
+          this[key] = null;
+        }
       });
+    }
+
+    // Sidebar 加载状态的 HTML
+    getSidebarLoadingHTML() {
+      return `
+        <div class="sa-spa-sidebar-spinner" style="
+          width: 40px;
+          height: 40px;
+          border: 4px solid rgba(0, 0, 0, 0.1);
+          border-radius: 50%;
+          border-top-color: var(--ui-primary);
+          animation: sa-spa-spin 1s ease-in-out infinite;
+        "></div>
+        <p style="color: var(--text-primary);">${msg('analyzing')}</p>
+      `;
+    }
+
+    getEffectiveBlocksHelp() {
+      return msg('effective-blocks-help');
+    }
+
+    getExtensionCategoryInfo(extensionId) {
+      const blockInfo = vm.runtime && vm.runtime._blockInfo;
+      if (!Array.isArray(blockInfo)) return null;
+      return blockInfo.find((info) => info && info.id === extensionId) || null;
+    }
+
+    // 扩展名称来自扩展元数据，插入 HTML 前需要转义
+    escapeHTML(value) {
+      return String(value)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
+
+    // 扩展颜色来自扩展元数据，只允许常见的安全颜色格式
+    getSafeColor(color) {
+      if (typeof color !== 'string') return null;
+      const value = color.trim();
+      if (/^#[0-9a-f]{3,8}$/i.test(value)) return value;
+      if (/^(rgb|rgba|hsl|hsla)\(\s*[-\d.%\s,/]+\)$/i.test(value)) return value;
+      return null;
+    }
+
+    /**
+     * 直接从 VM 运行时收集项目数据。
+     * 不使用 vm.toJSON()，因为序列化会把 data_variable / data_listcontents
+     * 等 primitive 积木压缩成内联数组，导致积木数量少算。
+     */
+    getLiveProjectData() {
+      const seenBlocks = new Set();
+      const targets = [];
+
+      for (const target of vm.runtime.targets) {
+        // 克隆体与原始角色共享 blocks，只统计原始角色
+        if (!target.isOriginal) continue;
+        const blocks = target.blocks && target.blocks._blocks;
+        if (!blocks) continue;
+        if (seenBlocks.has(blocks)) continue;
+        seenBlocks.add(blocks);
+
+        targets.push({
+          name: target.getName(),
+          isStage: target.isStage,
+          blocks,
+          variables: target.variables || {},
+          costumes: target.getCostumes(),
+          sounds: target.getSounds()
+        });
+      }
+
+      let extensionURLs = {};
+      if (vm.extensionManager && typeof vm.extensionManager.getExtensionURLs === 'function') {
+        extensionURLs = vm.extensionManager.getExtensionURLs();
+      }
+
+      return {
+        targets,
+        extensionURLs
+      };
     }
 
     // 创建分析按钮
@@ -85,7 +249,7 @@ export default function ({ addon, msg, console }) {
       content.innerHTML = `
         <div class="sa-analyze-header">
           <button id="saExportButton" class="sa-export-button">
-            ${msg('export-image', '导出图片')}
+            ${msg('export-image')}
           </button>
         </div>
         <div class="sa-analyze-loading" id="saAnalyzeLoading">
@@ -117,18 +281,7 @@ export default function ({ addon, msg, console }) {
         this.removeModal = null;
 
         // 销毁图表实例
-        if (this.chartInstance) {
-          this.chartInstance.destroy();
-          this.chartInstance = null;
-        }
-        if (this.mathLogicChartInstance) {
-          this.mathLogicChartInstance.destroy();
-          this.mathLogicChartInstance = null;
-        }
-        if (this.drScratchChartInstance) {
-          this.drScratchChartInstance.destroy();
-          this.drScratchChartInstance = null;
-        }
+        this.destroyCharts();
       }
     }
 
@@ -174,7 +327,7 @@ export default function ({ addon, msg, console }) {
         const exportButton = document.createElement('button');
         exportButton.id = 'saSPASidebarExportButton';
         exportButton.className = 'sa-spa-sidebar-export-button';
-        exportButton.textContent = msg('export-image', '导出图片');
+        exportButton.textContent = msg('export-image');
         exportButton.style.cssText = `
           padding: 6px 12px;
           font-size: 12px;
@@ -205,17 +358,7 @@ export default function ({ addon, msg, console }) {
           padding: 40px;
           gap: 16px;
         `;
-        loadingDiv.innerHTML = `
-          <div class="sa-spa-sidebar-spinner" style="
-            width: 40px;
-            height: 40px;
-            border: 4px solid rgba(0, 0, 0, 0.1);
-            border-radius: 50%;
-            border-top-color: var(--ui-primary);
-            animation: sa-spa-spin 1s ease-in-out infinite;
-          "></div>
-          <p style="color: var(--text-primary);">${msg('analyzing')}</p>
-        `;
+        loadingDiv.innerHTML = this.getSidebarLoadingHTML();
         this.sidebarContent.appendChild(loadingDiv);
 
         // 添加结果容器
@@ -247,33 +390,39 @@ export default function ({ addon, msg, console }) {
       const loadingDiv = document.getElementById('saSAPASidebarLoading');
       const resultsDiv = document.getElementById('saSAPASidebarResults');
 
-      if (loadingDiv) loadingDiv.style.display = 'flex';
+      if (loadingDiv) {
+        loadingDiv.innerHTML = this.getSidebarLoadingHTML();
+        loadingDiv.style.display = 'flex';
+      }
       if (resultsDiv) resultsDiv.style.display = 'none';
     }
 
     // 为 Sidebar 分析项目
     async analyzeProjectForSidebar() {
       try {
-        // 使用 vm.toJSON 获取项目数据
-        const vm = addon.tab.traps.vm;
-        const projectJSON = JSON.parse(vm.toJSON());
+        // 直接读取 VM 运行时中的积木，避免 toJSON 压缩变量/列表读取积木
+        const projectData = this.getLiveProjectData();
 
         // 执行分析
-        const analysis = this.performAnalysis(projectJSON);
+        const analysis = this.performAnalysis(projectData);
 
         // 更新 Sidebar UI
-        this.updateSidebarResults(analysis);
+        this.updateSidebarResults(analysis, projectData);
       } catch (error) {
-        console.error(msg('analysis-error', '分析项目时出错:'), error);
+        console.error(msg('analysis-error'), error);
         const loadingDiv = document.getElementById('saSAPASidebarLoading');
+        const resultsDiv = document.getElementById('saSAPASidebarResults');
         if (loadingDiv) {
+          // 自动刷新失败时 loading 可能已被隐藏，需要重新显示错误
           loadingDiv.innerHTML = `<p style="color: #d32f2f;">${msg('analysis-error')}</p>`;
+          loadingDiv.style.display = 'flex';
         }
+        if (resultsDiv) resultsDiv.style.display = 'none';
       }
     }
 
     // 更新 Sidebar 分析结果
-    updateSidebarResults(analysis) {
+    updateSidebarResults(analysis, projectData) {
       const resultsDiv = document.getElementById('saSAPASidebarResults');
       const loadingDiv = document.getElementById('saSAPASidebarLoading');
 
@@ -289,13 +438,11 @@ export default function ({ addon, msg, console }) {
       this.displaySidebarCodeTypesChart(analysis);
 
       // 计算并更新 Dr.Scratch 评分
-      const vm = addon.tab.traps.vm;
-      const projectJSON = JSON.parse(vm.toJSON());
-      const drScratchScores = this.calculateDrScratchScores(projectJSON);
+      const drScratchScores = this.calculateDrScratchScores(projectData);
       this.displaySidebarDrScratchScores(drScratchScores);
 
       // 计算并更新数学逻辑评分
-      const mathLogicScores = this.calculateMathLogicScores(projectJSON);
+      const mathLogicScores = this.calculateMathLogicScores(projectData);
       this.displaySidebarMathLogicScores(mathLogicScores);
 
       // 更新扩展列表
@@ -387,7 +534,8 @@ export default function ({ addon, msg, console }) {
         { label: msg('total-blocks'), value: analysis.totalBlocks },
         {
           label: msg('effective-blocks'),
-          value: analysis.effectiveBlocks
+          value: analysis.effectiveBlocks,
+          title: this.getEffectiveBlocksHelp()
         },
         {
           label: msg('function-definitions'),
@@ -408,7 +556,7 @@ export default function ({ addon, msg, console }) {
           border-radius: 4px;
           padding: 8px;
           text-align: center;
-        ">
+        " title="${stat.title || ''}">
           <div style="font-size: 18px; font-weight: bold; color: var(--motion-primary);">${stat.value}</div>
           <div style="font-size: 11px; color: var(--text-primary); opacity: 0.8;">${stat.label}</div>
         </div>
@@ -537,16 +685,7 @@ export default function ({ addon, msg, console }) {
       const totalScore = data.reduce((sum, val) => sum + val, 0);
 
       // 更新总分摘要
-      let level = msg('beginner');
-      if (totalScore >= 18) {
-        level = msg('expert');
-      } else if (totalScore >= 14) {
-        level = msg('advanced');
-      } else if (totalScore >= 10) {
-        level = msg('intermediate');
-      } else if (totalScore >= 6) {
-        level = msg('developing');
-      }
+      const level = this.getDrScratchLevel(totalScore);
 
       summaryDiv.innerHTML = `<strong>${msg('total-score')}：</strong>${totalScore} / 21<br><strong>${msg('evaluation-level')}：</strong>${level}`;
 
@@ -607,20 +746,9 @@ export default function ({ addon, msg, console }) {
       const totalScore = data.reduce((sum, val) => sum + val, 0);
 
       // 更新总分摘要
-      let level = msg('beginner', '初级');
-      if (totalScore >= 20) {
-        level = msg('advanced', '高级');
-      } else if (totalScore >= 10) {
-        level = msg('intermediate', '中级');
-      } else if (totalScore >= 5) {
-        level = msg('developing', '发展中');
-      }
+      const level = this.getMathLogicLevel(totalScore);
 
-      summaryDiv.innerHTML = `<strong>${msg('math-total-score')}：</strong>${totalScore}<br><strong>${msg('evaluation-level')}：</strong>${level}`;
-
-      // 数据标准化
-      const maxValue = Math.max(...data, 1);
-      const normalizedData = data.map((value) => value / maxValue);
+      summaryDiv.innerHTML = `<strong>${msg('math-total-score')}：</strong>${totalScore} / 9<br><strong>${msg('evaluation-level')}：</strong>${level}`;
 
       // 创建雷达图
       if (this.mathLogicChartInstance) {
@@ -633,7 +761,7 @@ export default function ({ addon, msg, console }) {
           labels: labels,
           datasets: [
             {
-              data: normalizedData,
+              data: data,
               backgroundColor: 'rgba(230, 81, 0, 0.2)',
               borderColor: '#E65100',
               borderWidth: 2,
@@ -649,9 +777,9 @@ export default function ({ addon, msg, console }) {
           scales: {
             r: {
               beginAtZero: true,
-              max: 1,
+              max: 3,
               ticks: {
-                stepSize: 0.2,
+                stepSize: 1,
                 font: { size: 10 }
               },
               pointLabels: {
@@ -666,7 +794,7 @@ export default function ({ addon, msg, console }) {
                 label: function (context) {
                   const label = context.label || '';
                   const rawValue = data[context.dataIndex];
-                  return `${label}: ${rawValue}`;
+                  return `${label}: ${rawValue}/3`;
                 }
               }
             }
@@ -687,7 +815,7 @@ export default function ({ addon, msg, console }) {
 
       extensionList.innerHTML = extensions
         .map((extension) => {
-          const color = extension.color || '#888888';
+          const color = this.getSafeColor(extension.color) || '#888888';
           return `
           <div style="
             background: var(--ui-white);
@@ -704,7 +832,7 @@ export default function ({ addon, msg, console }) {
               flex-shrink: 0;
               background-color: ${color};
             "></div>
-            <div style="flex: 1; font-size: 12px; color: var(--text-primary);">${extension.name}</div>
+            <div style="flex: 1; font-size: 12px; color: var(--text-primary);">${this.escapeHTML(extension.name)}</div>
             <div style="font-size: 11px; color: var(--text-primary); opacity: 0.7;">${extension.blocks.length}</div>
           </div>
         `;
@@ -715,17 +843,16 @@ export default function ({ addon, msg, console }) {
     // 分析项目
     async analyzeProject() {
       try {
-        // 使用 vm.toJSON 获取项目数据
-        const vm = addon.tab.traps.vm;
-        const projectJSON = JSON.parse(vm.toJSON());
+        // 直接读取 VM 运行时中的积木，避免 toJSON 压缩变量/列表读取积木
+        const projectData = this.getLiveProjectData();
 
         // 执行分析
-        const analysis = this.performAnalysis(projectJSON);
+        const analysis = this.performAnalysis(projectData);
 
         // 更新UI
-        this.updateAnalysisResults(analysis);
+        this.updateAnalysisResults(analysis, projectData);
       } catch (error) {
-        console.error(msg('analysis-error', '分析项目时出错:'), error);
+        console.error(msg('analysis-error'), error);
         document.getElementById('saAnalyzeLoading').innerHTML = `
           <p style="color: #d32f2f;">${msg('analysis-error')}</p>
         `;
@@ -793,19 +920,19 @@ export default function ({ addon, msg, console }) {
 
     // 获取积木类型
     getBlockCategory(opcode, extensionNameMap = {}) {
-      if (opcode.startsWith('motion_')) return msg('motion', '运动');
-      if (opcode.startsWith('looks_')) return msg('looks', '外观');
-      if (opcode.startsWith('sound_')) return msg('sound', '声音');
-      if (opcode.startsWith('event_')) return msg('events', '事件');
-      if (opcode.startsWith('control_')) return msg('control', '控制');
-      if (opcode.startsWith('sensing_')) return msg('sensing', '侦测');
-      if (opcode.startsWith('operator_')) return msg('operators', '运算');
-      if (opcode.startsWith('data_')) return msg('data', '数据');
-      if (opcode.startsWith('video_')) return msg('video', '视频');
+      if (opcode.startsWith('motion_')) return msg('motion');
+      if (opcode.startsWith('looks_')) return msg('looks');
+      if (opcode.startsWith('sound_')) return msg('sound');
+      if (opcode.startsWith('event_')) return msg('events');
+      if (opcode.startsWith('control_')) return msg('control');
+      if (opcode.startsWith('sensing_')) return msg('sensing');
+      if (opcode.startsWith('operator_')) return msg('operators');
+      if (opcode.startsWith('data_')) return msg('data');
+      if (opcode.startsWith('video_')) return msg('video');
 
       // 自定义函数和参数
-      if (opcode.startsWith('procedures_')) return msg('custom-functions', '自定义函数');
-      if (opcode.startsWith('argument_')) return msg('custom-functions', '自定义函数');
+      if (opcode.startsWith('procedures_')) return msg('custom-functions');
+      if (opcode.startsWith('argument_')) return msg('custom-functions');
 
       // 扩展积木处理
       if (!this.isStandardBlock(opcode)) {
@@ -818,7 +945,7 @@ export default function ({ addon, msg, console }) {
         return this.getExtensionNameFromId(extensionId);
       }
 
-      return msg('other', '其他');
+      return msg('other');
     }
 
     // 检查是否为标准积木
@@ -869,40 +996,31 @@ export default function ({ addon, msg, console }) {
 
     // 分析扩展
     analyzeExtensions(analysis, projectData) {
-      const extensions = projectData.extensions || [];
       const extensionURLs = projectData.extensionURLs || {};
 
       // 获取所有扩展积木操作码
       const extensionBlocks = this.getExtensionBlocks(projectData);
+      const extensionIds = new Set();
+
+      extensionBlocks.forEach((block) => {
+        extensionIds.add(block.extensionId);
+      });
 
       // 分析扩展信息
-      extensions.forEach((ext) => {
-        let extensionName = this.getExtensionNameFromId(ext);
-        let extensionColor = null;
+      extensionIds.forEach((ext) => {
+        const categoryInfo = this.getExtensionCategoryInfo(ext);
+        const categoryName = categoryInfo && typeof categoryInfo.name === 'string' ? categoryInfo.name : null;
 
         const extensionInfo = {
           id: ext,
-          name: extensionName,
-          color: extensionColor,
+          name: categoryName || this.getExtensionNameFromId(ext),
+          color: this.getSafeColor(categoryInfo && categoryInfo.color1),
           url: extensionURLs[ext] || null,
           blocks: extensionBlocks.filter((block) => block.extensionId === ext)
         };
 
         analysis.extensions.push(extensionInfo);
       });
-
-      // 检查画笔扩展使用情况
-      const penBlocks = extensionBlocks.filter((block) => block.extensionId === 'pen');
-      if (penBlocks.length > 0 && !extensions.includes('pen')) {
-        const penExtensionInfo = {
-          id: 'pen',
-          name: msg('extension-pen', '画笔'),
-          color: null,
-          url: null,
-          blocks: penBlocks
-        };
-        analysis.extensions.push(penExtensionInfo);
-      }
     }
 
     // 获取扩展积木
@@ -913,7 +1031,7 @@ export default function ({ addon, msg, console }) {
       targets.forEach((target) => {
         const blocks = target.blocks || {};
         Object.values(blocks).forEach((block) => {
-          if (block.opcode && !this.isStandardBlock(block.opcode)) {
+          if (block.opcode && !block.shadow && !this.isStandardBlock(block.opcode)) {
             const extensionId = this.getExtensionIdFromOpcode(block.opcode);
             extensionBlocks.push({
               opcode: block.opcode,
@@ -930,11 +1048,10 @@ export default function ({ addon, msg, console }) {
     analyzeSprites(analysis, projectData) {
       const targets = projectData.targets || [];
       const sprites = targets.filter((t) => !t.isStage);
-      const stage = targets.find((t) => t.isStage);
 
       analysis.sprites = sprites.length;
 
-      // 统计造型和声音
+      // 统计造型、声音、变量和列表
       targets.forEach((target) => {
         if (target.costumes) {
           analysis.costumeCount += target.costumes.length;
@@ -942,12 +1059,15 @@ export default function ({ addon, msg, console }) {
         if (target.sounds) {
           analysis.soundCount += target.sounds.length;
         }
-        if (target.variables) {
-          analysis.variableCount += Object.keys(target.variables).length;
-        }
-        if (target.lists) {
-          analysis.listCount += Object.keys(target.lists).length;
-        }
+
+        // live VM 中变量和列表都存放在 target.variables，通过 type 区分
+        Object.values(target.variables || {}).forEach((variable) => {
+          if (variable.type === VARIABLE_TYPE_LIST) {
+            analysis.listCount++;
+          } else if (variable.type !== VARIABLE_TYPE_BROADCAST) {
+            analysis.variableCount++;
+          }
+        });
       });
     }
 
@@ -959,44 +1079,45 @@ export default function ({ addon, msg, console }) {
 
       targets.forEach((target) => {
         const blocks = target.blocks || {};
+        const visited = new Set();
 
-        // 首先找出所有头代码（hat blocks）
-        const hatBlocks = [];
+        // 统计函数定义
         Object.values(blocks).forEach((block) => {
-          if (block.opcode && !block.shadow && block.topLevel) {
-            // 使用 vm.runtime.getIsHat() 判断是否为头代码，同时手动检查函数定义
-            if (vm.runtime.getIsHat(block.opcode) || block.opcode === 'procedures_definition') {
-              hatBlocks.push(block);
-            }
-          }
-
-          // 统计函数定义
+          if (!block.opcode || block.shadow) return;
           if (block.opcode === 'procedures_definition') {
             analysis.functionDefinitions++;
           }
         });
 
-        // 统计每个头代码栈中的有效积木
-        hatBlocks.forEach((hatBlock) => {
-          this.traverseBlockStack(blocks, hatBlock, analysis);
+        // 有效积木只统计挂在头代码下的脚本：
+        // 帽子积木或自定义积木定义。独立积木堆和孤立积木不计入。
+        const isScriptRoot = (block) => {
+          if (!block || !block.opcode || block.shadow || !block.topLevel) return false;
+          return vm.runtime.getIsHat(block.opcode) || block.opcode === 'procedures_definition';
+        };
+
+        // 统计每个头代码脚本下的有效积木
+        Object.values(blocks).forEach((block) => {
+          if (!isScriptRoot(block)) return;
+          this.traverseBlockStack(blocks, block, analysis, visited);
         });
       });
     }
 
     // 遍历代码栈，包括子栈（迭代实现）
-    traverseBlockStack(blocks, block, analysis) {
+    traverseBlockStack(blocks, block, analysis, visited = new Set()) {
       if (!block) return;
 
       const stack = [block];
 
       while (stack.length > 0) {
         const currentBlock = stack.pop();
-        if (!currentBlock) continue;
+        if (!currentBlock || currentBlock.shadow) continue;
+        if (currentBlock.id && visited.has(currentBlock.id)) continue;
+        if (currentBlock.id) visited.add(currentBlock.id);
 
         // 计数当前积木（非阴影）
-        if (!currentBlock.shadow) {
-          analysis.effectiveBlocks++;
-        }
+        analysis.effectiveBlocks++;
 
         // 处理下一个积木（先入栈，后处理）
         if (currentBlock.next && blocks[currentBlock.next]) {
@@ -1004,279 +1125,393 @@ export default function ({ addon, msg, console }) {
         }
 
         // 处理子栈（如循环体、条件语句等）
-        if (currentBlock.inputs) {
-          Object.values(currentBlock.inputs).forEach((input) => {
-            if (Array.isArray(input) && input.length >= 2) {
-              const inputValue = input[1];
-              // 如果输入值是积木ID，入栈
-              if (typeof inputValue === 'string' && blocks[inputValue]) {
-                stack.push(blocks[inputValue]);
-              }
-            }
-          });
-        }
+        Object.values(currentBlock.inputs || {}).forEach((input) => {
+          if (input && input.block && blocks[input.block]) {
+            stack.push(blocks[input.block]);
+          }
+        });
       }
+    }
+
+    // 收集评分上下文：只从帽子积木或自定义积木定义开始，
+    // 沿 next 和 inputs 遍历，独立积木堆不参与评分。
+    getScoringContext(projectData) {
+      const targets = projectData.targets || [];
+      const scripts = [];
+      const blocks = [];
+
+      targets.forEach((target) => {
+        const targetBlocks = target.blocks || {};
+
+        Object.values(targetBlocks).forEach((root) => {
+          if (!root || !root.opcode || root.shadow || !root.topLevel) return;
+
+          const isDefinition = root.opcode === 'procedures_definition';
+          if (!isDefinition && !vm.runtime.getIsHat(root.opcode)) return;
+
+          const scriptBlocks = [];
+          const visited = new Set();
+          const stack = [{ block: root, controlDepth: 0 }];
+          let maxControlDepth = 0;
+
+          while (stack.length > 0) {
+            const { block, controlDepth } = stack.pop();
+            if (!block || block.shadow) continue;
+            if (block.id && visited.has(block.id)) continue;
+            if (block.id) visited.add(block.id);
+
+            scriptBlocks.push(block);
+            blocks.push(block);
+
+            if (this.isStructuralControl(block.opcode)) {
+              maxControlDepth = Math.max(maxControlDepth, controlDepth + 1);
+            }
+
+            if (block.next && targetBlocks[block.next]) {
+              stack.push({ block: targetBlocks[block.next], controlDepth });
+            }
+
+            Object.entries(block.inputs || {}).forEach(([inputName, input]) => {
+              if (!input || !input.block) return;
+              const child = targetBlocks[input.block];
+              if (!child) return;
+
+              const isSubstack = inputName === 'SUBSTACK' || inputName === 'SUBSTACK2';
+              const childDepth = isSubstack && this.isStructuralControl(block.opcode) ? controlDepth + 1 : controlDepth;
+              stack.push({ block: child, controlDepth: childDepth });
+            });
+          }
+
+          scripts.push({
+            target,
+            root,
+            startOpcode: root.opcode,
+            blocks: scriptBlocks,
+            maxControlDepth
+          });
+        });
+      });
+
+      return { targets, scripts, blocks };
+    }
+
+    isStructuralControl(opcode) {
+      return STRUCTURAL_CONTROL_OPCODES.has(opcode);
+    }
+
+    getBlockFieldValue(block, fieldName) {
+      const field = block && block.fields && block.fields[fieldName];
+      return field ? field.value : null;
+    }
+
+    getInputFieldValue(block, blocks, inputName, fieldName) {
+      const input = block && block.inputs && block.inputs[inputName];
+      if (!input || !input.block) return null;
+
+      const inputBlock = blocks[input.block];
+      if (!inputBlock) return null;
+
+      return this.getBlockFieldValue(inputBlock, fieldName);
+    }
+
+    hasDuplicateScriptStart(scripts, startOpcode, getKey) {
+      const seen = new Set();
+
+      for (const script of scripts) {
+        if (script.startOpcode !== startOpcode || script.blocks.length <= 1) continue;
+
+        const key = getKey(script);
+        if (key === null || key === undefined || key === '') continue;
+
+        const normalizedKey = String(key).trim().toLowerCase();
+        if (seen.has(normalizedKey)) return true;
+        seen.add(normalizedKey);
+      }
+
+      return false;
     }
 
     // 计算Dr.Scratch评分
     calculateDrScratchScores(projectData) {
       const scores = {
-        [msg('abstraction', '抽象和问题分解')]: 0,
-        [msg('parallelism', '并行性')]: 0,
-        [msg('logic', '逻辑思维')]: 0,
-        [msg('synchronization', '同步')]: 0,
-        [msg('flow-control', '流程控制')]: 0,
-        [msg('user-interactivity', '用户交互')]: 0,
-        [msg('data-representation', '数据表示')]: 0
+        [msg('abstraction')]: 0,
+        [msg('parallelism')]: 0,
+        [msg('logic')]: 0,
+        [msg('synchronization')]: 0,
+        [msg('flow-control')]: 0,
+        [msg('user-interactivity')]: 0,
+        [msg('data-representation')]: 0
       };
 
-      const targets = projectData.targets || [];
-      const blockTypes = new Set(); // 存储所有使用的积木块种类
-      const eventBlockTypes = new Set(); // 存储事件积木块种类
-      const controlBlockTypes = new Set(); // 存储控制积木块种类
-      const operatorBlockTypes = new Set(); // 存储运算积木块种类
-      const dataBlockTypes = new Set(); // 存储数据积木块种类
-      const sensingBlockTypes = new Set(); // 存储侦测积木块种类
-      const motionBlockTypes = new Set(); // 存储运动积木块种类
-      const looksBlockTypes = new Set(); // 存储外观积木块种类
-      const soundBlockTypes = new Set(); // 存储声音积木块种类
-      const procedureBlockTypes = new Set(); // 存储自定义积木块种类
-      const variableNames = new Set();
-      const listNames = new Set();
+      const context = this.getScoringContext(projectData);
+      const opcodeCounts = new Map();
 
-      // 收集所有积木块种类
-      targets.forEach((target) => {
-        const blocks = target.blocks || {};
-        Object.values(blocks).forEach((block) => {
-          if (block.opcode) {
-            blockTypes.add(block.opcode);
-
-            // 分类收集积木块种类
-            if (block.opcode.startsWith('event_')) {
-              eventBlockTypes.add(block.opcode);
-            }
-            if (block.opcode.startsWith('control_')) {
-              controlBlockTypes.add(block.opcode);
-            }
-            if (block.opcode.startsWith('operator_')) {
-              operatorBlockTypes.add(block.opcode);
-            }
-            if (block.opcode.startsWith('data_')) {
-              dataBlockTypes.add(block.opcode);
-            }
-            if (block.opcode.startsWith('sensing_')) {
-              sensingBlockTypes.add(block.opcode);
-            }
-            if (block.opcode.startsWith('motion_')) {
-              motionBlockTypes.add(block.opcode);
-            }
-            if (block.opcode.startsWith('looks_')) {
-              looksBlockTypes.add(block.opcode);
-            }
-            if (block.opcode.startsWith('sound_')) {
-              soundBlockTypes.add(block.opcode);
-            }
-            if (block.opcode.startsWith('procedures_')) {
-              procedureBlockTypes.add(block.opcode);
-            }
-          }
-        });
-
-        // 收集变量和列表名称
-        if (target.variables) {
-          Object.values(target.variables).forEach((variable) => {
-            if (Array.isArray(variable) && variable.length > 0) {
-              variableNames.add(variable[0]);
-            }
-          });
-        }
-        if (target.lists) {
-          Object.values(target.lists).forEach((list) => {
-            if (Array.isArray(list) && list.length > 0) {
-              listNames.add(list[0]);
-            }
-          });
-        }
+      context.blocks.forEach((block) => {
+        opcodeCounts.set(block.opcode, (opcodeCounts.get(block.opcode) || 0) + 1);
       });
 
-      // 1. 抽象和问题分解 (Abstraction and problem decomposition)
-      // 完全基于积木块种类评分
-      const spriteCount = targets.filter((t) => !t.isStage).length;
-      const hasMultipleSprites = spriteCount > 1;
-      const hasMultipleScripts = eventBlockTypes.size > 1; // 多种事件积木表示多个脚本
-      const hasCustomBlocks = procedureBlockTypes.has('procedures_definition');
-      const hasClones =
-        controlBlockTypes.has('control_create_clone_of') || controlBlockTypes.has('control_start_as_clone');
+      const hasOpcode = (opcode) => opcodeCounts.has(opcode);
+      const hasAnyOpcode = (opcodes) => opcodes.some((opcode) => hasOpcode(opcode));
 
-      if (hasMultipleSprites && hasMultipleScripts) {
-        scores[msg('abstraction', '抽象和问题分解')] = 1; // Basic
-      }
-      if (hasCustomBlocks) {
-        scores[msg('abstraction', '抽象和问题分解')] = 2; // Developing
-      }
-      if (hasClones) {
-        scores[msg('abstraction', '抽象和问题分解')] = 3; // Proficiency
+      // 1. 抽象和问题分解：克隆 > 自定义积木 > 多个脚本
+      if (hasOpcode('control_start_as_clone')) {
+        scores[msg('abstraction')] = 3;
+      } else if (hasOpcode('procedures_definition')) {
+        scores[msg('abstraction')] = 2;
+      } else if (context.scripts.length > 1) {
+        scores[msg('abstraction')] = 1;
       }
 
-      // 2. 并行性 (Parallelism)
-      // 基于不同的事件积木块种类
-      const hasGreenFlag = eventBlockTypes.has('event_whenflagclicked');
-      const hasKeyEvents = eventBlockTypes.has('event_whenkeypressed');
-      const hasClickEvents = eventBlockTypes.has('event_whenthisspriteclicked');
-      const hasMessageEvents = eventBlockTypes.has('event_whenbroadcastreceived');
-      const hasCloneEvents = controlBlockTypes.has('control_create_clone_of');
-      const hasSensorEvents = eventBlockTypes.has('event_whengreaterthan');
-      const hasBackdropEvents = eventBlockTypes.has('event_whenbackdropswitchesto');
+      // 2. 并行性：同一消息/背景/传感器事件的两个脚本 > 同一按键或同一角色两个点击脚本 > 两个绿旗脚本
+      const hasDuplicateMessage = this.hasDuplicateScriptStart(
+        context.scripts,
+        'event_whenbroadcastreceived',
+        (script) => this.getBlockFieldValue(script.root, 'BROADCAST_OPTION')
+      );
+      const hasDuplicateBackdrop = this.hasDuplicateScriptStart(
+        context.scripts,
+        'event_whenbackdropswitchesto',
+        (script) => this.getBlockFieldValue(script.root, 'BACKDROP')
+      );
+      const hasDuplicateMultimedia = this.hasDuplicateScriptStart(
+        context.scripts,
+        'event_whengreaterthan',
+        (script) => {
+          const menu = this.getBlockFieldValue(script.root, 'WHENGREATERTHANMENU');
+          if (menu === null || menu === undefined) return null;
+          const value = this.getInputFieldValue(script.root, script.target.blocks, 'VALUE', 'NUM');
+          return value === null || value === undefined ? null : `${menu}:${value}`;
+        }
+      );
+      const hasDuplicateKey = this.hasDuplicateScriptStart(context.scripts, 'event_whenkeypressed', (script) =>
+        this.getBlockFieldValue(script.root, 'KEY_OPTION')
+      );
 
-      if (hasGreenFlag && eventBlockTypes.size > 1) {
-        scores[msg('parallelism', '并行性')] = 1; // Basic - 多个绿旗脚本
-      }
-      if ((hasKeyEvents || hasClickEvents) && eventBlockTypes.size > 2) {
-        scores[msg('parallelism', '并行性')] = 2; // Developing - 按键或点击事件
-      }
-      if (hasMessageEvents || hasCloneEvents || hasSensorEvents || hasBackdropEvents) {
-        scores[msg('parallelism', '并行性')] = 3; // Proficiency - 消息、克隆或传感器事件
-      }
+      const clickedCounts = new Map();
+      context.scripts.forEach((script) => {
+        if (script.startOpcode === 'event_whenthisspriteclicked' && script.blocks.length > 1) {
+          clickedCounts.set(script.target, (clickedCounts.get(script.target) || 0) + 1);
+        }
+      });
+      const hasTwoClickedScripts = Array.from(clickedCounts.values()).some((count) => count > 1);
+      const greenFlagScripts = context.scripts.filter(
+        (script) => script.startOpcode === 'event_whenflagclicked' && script.blocks.length > 1
+      ).length;
 
-      // 3. 逻辑思维 (Logical thinking)
-      // 基于不同的逻辑积木块种类
-      const hasIf = controlBlockTypes.has('control_if');
-      const hasIfElse = controlBlockTypes.has('control_if_else');
-      const hasLogicOps =
-        operatorBlockTypes.has('operator_and') ||
-        operatorBlockTypes.has('operator_or') ||
-        operatorBlockTypes.has('operator_not');
-
-      if (hasIf) {
-        scores[msg('logic', '逻辑思维')] = 1; // Basic
-      }
-      if (hasIfElse) {
-        scores[msg('logic', '逻辑思维')] = 2; // Developing
-      }
-      if (hasLogicOps) {
-        scores[msg('logic', '逻辑思维')] = 3; // Proficiency
-      }
-
-      // 4. 同步 (Synchronization)
-      // 基于不同的同步积木块种类
-      const hasWait = controlBlockTypes.has('control_wait');
-      const hasBroadcast = eventBlockTypes.has('event_broadcast');
-      const hasReceiveMessage = eventBlockTypes.has('event_whenbroadcastreceived');
-      const hasStopAll = controlBlockTypes.has('control_stop_all');
-      const hasStopThis = controlBlockTypes.has('control_stop_this_script');
-      const hasStopOther = controlBlockTypes.has('control_stop_other_scripts_in_sprite');
-      const hasWaitUntil = controlBlockTypes.has('control_wait_until');
-      const hasBackdropChange =
-        looksBlockTypes.has('looks_nextbackdrop') || looksBlockTypes.has('looks_switchbackdropto');
-      const hasBroadcastAndWait = eventBlockTypes.has('event_broadcastandwait');
-
-      if (hasWait) {
-        scores[msg('synchronization', '同步')] = 1; // Basic
-      }
-      if (hasBroadcast || hasReceiveMessage || hasStopAll || hasStopThis || hasStopOther) {
-        scores[msg('synchronization', '同步')] = 2; // Developing
-      }
-      if (hasWaitUntil || hasBackdropChange || hasBroadcastAndWait) {
-        scores[msg('synchronization', '同步')] = 3; // Proficiency
+      if (hasDuplicateMessage || hasDuplicateBackdrop || hasDuplicateMultimedia) {
+        scores[msg('parallelism')] = 3;
+      } else if (hasDuplicateKey || hasTwoClickedScripts) {
+        scores[msg('parallelism')] = 2;
+      } else if (greenFlagScripts > 1) {
+        scores[msg('parallelism')] = 1;
       }
 
-      // 5. 流程控制 (Flow control)
-      // 基于不同的流程控制积木块种类
-      const hasSequence = blockTypes.size > 0; // 任何积木块都表示有序列
-      const hasRepeat = controlBlockTypes.has('control_repeat') || controlBlockTypes.has('control_forever');
-      const hasRepeatUntil = controlBlockTypes.has('control_repeat_until');
-
-      if (hasSequence) {
-        scores[msg('flow-control', '流程控制')] = 1; // Basic
-      }
-      if (hasRepeat) {
-        scores[msg('flow-control', '流程控制')] = 2; // Developing
-      }
-      if (hasRepeatUntil) {
-        scores[msg('flow-control', '流程控制')] = 3; // Proficiency
+      // 3. 逻辑思维：逻辑运算 > if-else > if
+      if (hasAnyOpcode(['operator_and', 'operator_or', 'operator_not'])) {
+        scores[msg('logic')] = 3;
+      } else if (hasOpcode('control_if_else')) {
+        scores[msg('logic')] = 2;
+      } else if (hasOpcode('control_if')) {
+        scores[msg('logic')] = 1;
       }
 
-      // 6. 用户交互 (User Interactivity)
-      // 基于不同的交互积木块种类
-      const hasGreenFlagEvent = eventBlockTypes.has('event_whenflagclicked');
-      const hasKeyPressedEvent = eventBlockTypes.has('event_whenkeypressed');
-      const hasSpriteClickedEvent = eventBlockTypes.has('event_whenthisspriteclicked');
-      const hasAskWait = sensingBlockTypes.has('sensing_askandwait');
-      const hasMouseBlocks =
-        sensingBlockTypes.has('sensing_mousedown') ||
-        sensingBlockTypes.has('sensing_mousex') ||
-        sensingBlockTypes.has('sensing_mousey');
-      const hasSensorGreater = eventBlockTypes.has('event_whengreaterthan');
-      const hasVideo = Array.from(blockTypes).some((type) => type.startsWith('video_'));
-      const hasAudioInteraction =
-        soundBlockTypes.has('sound_playuntildone') ||
-        soundBlockTypes.has('sound_setvolumeto') ||
-        soundBlockTypes.has('sound_changevolumeby');
-
-      if (hasGreenFlagEvent) {
-        scores[msg('user-interactivity', '用户交互')] = 1; // Basic
-      }
-      if (hasKeyPressedEvent || hasSpriteClickedEvent || hasAskWait || hasMouseBlocks) {
-        scores[msg('user-interactivity', '用户交互')] = 2; // Developing
-      }
-      if (hasSensorGreater || hasVideo || hasAudioInteraction) {
-        scores[msg('user-interactivity', '用户交互')] = 3; // Proficiency
+      // 4. 同步：wait until / 背景切换事件 / broadcast and wait > broadcast / receive / stop > wait
+      if (hasAnyOpcode(['control_wait_until', 'event_whenbackdropswitchesto', 'event_broadcastandwait'])) {
+        scores[msg('synchronization')] = 3;
+      } else if (hasAnyOpcode(['event_broadcast', 'event_whenbroadcastreceived', 'control_stop'])) {
+        scores[msg('synchronization')] = 2;
+      } else if (hasOpcode('control_wait')) {
+        scores[msg('synchronization')] = 1;
       }
 
-      // 7. 数据表示 (Data representation)
-      // 基于不同的数据积木块种类
-      const hasSpriteModifiers = motionBlockTypes.size > 0 || looksBlockTypes.size > 0 || soundBlockTypes.size > 0;
-      const hasVariableOperations = variableNames.size > 0 && dataBlockTypes.size > 0;
-      const hasListOperations = listNames.size > 0 && Array.from(dataBlockTypes).some((type) => type.includes('list'));
+      // 5. 流程控制：repeat until > repeat / forever > 任意多积木脚本
+      if (hasAnyOpcode(['control_repeat_until', 'control_while'])) {
+        scores[msg('flow-control')] = 3;
+      } else if (hasAnyOpcode(['control_repeat', 'control_forever', 'control_for_each'])) {
+        scores[msg('flow-control')] = 2;
+      } else if (context.scripts.some((script) => script.blocks.length > 1)) {
+        scores[msg('flow-control')] = 1;
+      }
 
-      if (hasSpriteModifiers) {
-        scores[msg('data-representation', '数据表示')] = 1; // Basic
+      // 6. 用户交互：视频/响度/传感器 > 按键/点击/鼠标/询问 > 绿旗
+      const hasVideo = context.blocks.some(
+        (block) => block.opcode.startsWith('videoSensing_') || block.opcode.startsWith('video_')
+      );
+      const hasLoudness = hasOpcode('sensing_loudness');
+      const hasMousePointer = context.scripts.some((script) =>
+        script.blocks.some((block) => {
+          if (block.opcode === 'motion_goto') {
+            return this.getInputFieldValue(block, script.target.blocks, 'TO', 'TO') === '_mouse_';
+          }
+          if (block.opcode === 'sensing_touchingobject') {
+            return (
+              this.getInputFieldValue(block, script.target.blocks, 'TOUCHINGOBJECTMENU', 'TOUCHINGOBJECTMENU') ===
+              '_mouse_'
+            );
+          }
+          return false;
+        })
+      );
+
+      if (hasOpcode('event_whengreaterthan') || hasVideo || hasLoudness) {
+        scores[msg('user-interactivity')] = 3;
+      } else if (
+        hasAnyOpcode([
+          'event_whenkeypressed',
+          'event_whenthisspriteclicked',
+          'sensing_mousedown',
+          'sensing_keypressed',
+          'sensing_askandwait',
+          'sensing_answer'
+        ]) ||
+        hasMousePointer
+      ) {
+        scores[msg('user-interactivity')] = 2;
+      } else if (hasOpcode('event_whenflagclicked')) {
+        scores[msg('user-interactivity')] = 1;
       }
-      if (hasVariableOperations) {
-        scores[msg('data-representation', '数据表示')] = 2; // Developing
-      }
-      if (hasListOperations) {
-        scores[msg('data-representation', '数据表示')] = 3; // Proficiency
+
+      // 7. 数据表示：列表操作 > 变量赋值/改变 > 角色属性变化
+      if (context.blocks.some((block) => LIST_OPCODES.has(block.opcode))) {
+        scores[msg('data-representation')] = 3;
+      } else if (hasAnyOpcode(['data_setvariableto', 'data_changevariableby'])) {
+        scores[msg('data-representation')] = 2;
+      } else if (context.blocks.some((block) => SPRITE_MODIFIER_OPCODES.has(block.opcode))) {
+        scores[msg('data-representation')] = 1;
       }
 
       return scores;
     }
 
-    // 计算数学逻辑评分
+    // 计算数学逻辑评分：三个维度各 0-3 分，总分 9 分。
+    // 1. 运算复杂度：算术、比较、布尔、字符串、数学函数、随机数的数量与多样性。
+    // 2. 逻辑深度：条件/循环的数量与嵌套深度。
+    // 3. 数据量级：变量、列表、数据操作的数量与多样性。
     calculateMathLogicScores(projectData) {
-      const targets = projectData.targets || [];
+      const context = this.getScoringContext(projectData);
+      const operatorBlocks = context.blocks.filter((block) => block.opcode.startsWith('operator_'));
+      const operatorCount = operatorBlocks.length;
+      const operatorTypes = new Set(operatorBlocks.map((block) => block.opcode));
 
-      // 统计各类积木块数量
-      let operatorCount = 0;
-      let controlCount = 0;
-      let dataCount = 0;
+      const hasArithmetic = ['operator_add', 'operator_subtract', 'operator_multiply', 'operator_divide'].some(
+        (opcode) => operatorTypes.has(opcode)
+      );
+      const hasComparison = ['operator_lt', 'operator_gt', 'operator_equals'].some((opcode) =>
+        operatorTypes.has(opcode)
+      );
+      const hasBoolean = ['operator_and', 'operator_or', 'operator_not'].some((opcode) => operatorTypes.has(opcode));
+      const hasString = ['operator_join', 'operator_letter_of', 'operator_length', 'operator_contains'].some((opcode) =>
+        operatorTypes.has(opcode)
+      );
+      const hasMathop = operatorTypes.has('operator_mathop');
+      const hasRandom = operatorTypes.has('operator_random');
+      const mathopOperators = new Set(
+        operatorBlocks
+          .filter((block) => block.opcode === 'operator_mathop')
+          .map((block) => String(this.getBlockFieldValue(block, 'OPERATOR') || '').toLowerCase())
+      );
+      const hasAdvancedMath = Array.from(mathopOperators).some((operator) => ADVANCED_MATH_OPERATORS.has(operator));
+      const categoryCount = [hasArithmetic, hasComparison, hasBoolean, hasString, hasMathop, hasRandom].filter(
+        Boolean
+      ).length;
 
-      targets.forEach((target) => {
-        const blocks = target.blocks || {};
-        Object.values(blocks).forEach((block) => {
-          if (!block.opcode) return;
+      let operationScore = 0;
+      if (operatorCount > 0) {
+        operationScore = 1;
+        if (hasAdvancedMath || (operatorCount >= 4 && categoryCount >= 2) || operatorCount >= 6) {
+          operationScore = 2;
+        }
+        if (
+          (hasAdvancedMath && operatorCount >= 5 && categoryCount >= 2) ||
+          (hasBoolean && operatorCount >= 6 && categoryCount >= 3) ||
+          operatorCount >= 10
+        ) {
+          operationScore = 3;
+        }
+      }
 
-          if (block.opcode.startsWith('operator_')) {
-            operatorCount++;
-          }
+      const structuralBlocks = context.blocks.filter((block) => STRUCTURAL_CONTROL_OPCODES.has(block.opcode));
+      const structuralCount = structuralBlocks.length;
+      const maxControlDepth = context.scripts.reduce((max, script) => Math.max(max, script.maxControlDepth), 0);
+      const hasConditional = structuralBlocks.some(
+        (block) => block.opcode === 'control_if' || block.opcode === 'control_if_else'
+      );
+      const hasLoop = structuralBlocks.some((block) =>
+        ['control_repeat', 'control_forever', 'control_repeat_until', 'control_while', 'control_for_each'].includes(
+          block.opcode
+        )
+      );
 
-          if (block.opcode.startsWith('control_')) {
-            controlCount++;
-          }
+      let logicScore = 0;
+      if (structuralCount > 0) {
+        logicScore = 1;
+        if (structuralCount >= 2 || maxControlDepth >= 2 || (hasConditional && hasLoop)) {
+          logicScore = 2;
+        }
+        if (
+          maxControlDepth >= 3 ||
+          (hasConditional && hasLoop && hasBoolean) ||
+          (structuralCount >= 5 && maxControlDepth >= 2)
+        ) {
+          logicScore = 3;
+        }
+      }
 
-          if (block.opcode.startsWith('data_')) {
-            dataCount++;
+      const variableIds = new Set();
+      const listIds = new Set();
+      context.targets.forEach((target) => {
+        Object.values(target.variables || {}).forEach((variable) => {
+          const variableKey = `${target.name || ''}:${variable.id}`;
+          if (variable.type === VARIABLE_TYPE_LIST) {
+            listIds.add(variableKey);
+          } else if (variable.type !== VARIABLE_TYPE_BROADCAST) {
+            variableIds.add(variableKey);
           }
         });
       });
 
-      const scores = {
-        [msg('operation-complexity', 'Operation Complexity')]: operatorCount,
-        [msg('logic-depth', 'Logic Depth')]: controlCount,
-        [msg('data-magnitude', 'Data Magnitude')]: dataCount
-      };
+      const structureCount = variableIds.size + listIds.size;
+      const dataBlocks = context.blocks.filter((block) => block.opcode.startsWith('data_'));
+      const listOperations = dataBlocks.filter((block) => LIST_OPCODES.has(block.opcode));
+      const distinctListOperations = new Set(listOperations.map((block) => block.opcode)).size;
+      const variableMutations = dataBlocks.filter(
+        (block) => block.opcode === 'data_setvariableto' || block.opcode === 'data_changevariableby'
+      ).length;
 
-      return scores;
+      let dataScore = 0;
+      if (structureCount > 0 || dataBlocks.length > 0) {
+        dataScore = 1;
+      }
+      if (structureCount >= 2 || variableMutations > 0 || listOperations.length > 0 || dataBlocks.length >= 3) {
+        dataScore = 2;
+      }
+      if (
+        (listIds.size > 0 && listOperations.length >= 2 && distinctListOperations >= 2) ||
+        (structureCount >= 4 && (variableMutations > 0 || listOperations.length > 0)) ||
+        (dataBlocks.length >= 8 && (variableMutations > 0 || listOperations.length > 0))
+      ) {
+        dataScore = 3;
+      }
+
+      return {
+        [msg('operation-complexity')]: operationScore,
+        [msg('logic-depth')]: logicScore,
+        [msg('data-magnitude')]: dataScore
+      };
+    }
+
+    // Dr.Scratch 官方等级：0-7 Basic，8-14 Developing，15-21 Proficiency。
+    getDrScratchLevel(totalScore) {
+      if (totalScore >= 15) return msg('advanced');
+      if (totalScore >= 8) return msg('developing');
+      return msg('beginner');
+    }
+
+    // 数学逻辑总分 0-9，按三个维度的平均分划分等级。
+    getMathLogicLevel(totalScore) {
+      if (totalScore >= 7) return msg('advanced');
+      if (totalScore >= 4) return msg('developing');
+      return msg('beginner');
     }
 
     // 格式化文件大小
@@ -1296,50 +1531,50 @@ export default function ({ addon, msg, console }) {
         <div class="sa-analyze-modal-body">
           <!-- 项目统计部分 -->
           <div class="sa-analyze-section">
-            <h3 class="sa-analyze-section-title">${msg('project-stats', '项目统计')}</h3>
+            <h3 class="sa-analyze-section-title">${msg('project-stats')}</h3>
             <div class="sa-analyze-stats-grid" id="saStatsGrid">
               <div class="sa-analyze-stat">
                 <div class="sa-analyze-stat-value">-</div>
-                <div class="sa-analyze-stat-label">${msg('total-blocks', '总积木数')}</div>
+                <div class="sa-analyze-stat-label">${msg('total-blocks')}</div>
               </div>
               <div class="sa-analyze-stat">
                 <div class="sa-analyze-stat-value">-</div>
-                <div class="sa-analyze-stat-label">${msg('effective-blocks', '有效积木')}</div>
+                <div class="sa-analyze-stat-label">${msg('effective-blocks')}</div>
               </div>
               <div class="sa-analyze-stat">
                 <div class="sa-analyze-stat-value">-</div>
-                <div class="sa-analyze-stat-label">${msg('function-definitions', '函数定义')}</div>
+                <div class="sa-analyze-stat-label">${msg('function-definitions')}</div>
               </div>
               <div class="sa-analyze-stat">
                 <div class="sa-analyze-stat-value">-</div>
-                <div class="sa-analyze-stat-label">${msg('stat-sprites', '精灵数量')}</div>
+                <div class="sa-analyze-stat-label">${msg('stat-sprites')}</div>
               </div>
               <div class="sa-analyze-stat">
                 <div class="sa-analyze-stat-value">-</div>
-                <div class="sa-analyze-stat-label">${msg('stat-costumes', '造型数量')}</div>
+                <div class="sa-analyze-stat-label">${msg('stat-costumes')}</div>
               </div>
               <div class="sa-analyze-stat">
                 <div class="sa-analyze-stat-value">-</div>
-                <div class="sa-analyze-stat-label">${msg('stat-sounds', '声音数量')}</div>
+                <div class="sa-analyze-stat-label">${msg('stat-sounds')}</div>
               </div>
               <div class="sa-analyze-stat">
                 <div class="sa-analyze-stat-value">-</div>
-                <div class="sa-analyze-stat-label">${msg('stat-variables', '变量数量')}</div>
+                <div class="sa-analyze-stat-label">${msg('stat-variables')}</div>
               </div>
               <div class="sa-analyze-stat">
                 <div class="sa-analyze-stat-value">-</div>
-                <div class="sa-analyze-stat-label">${msg('stat-lists', '列表数量')}</div>
+                <div class="sa-analyze-stat-label">${msg('stat-lists')}</div>
               </div>
               <div class="sa-analyze-stat">
                 <div class="sa-analyze-stat-value">-</div>
-                <div class="sa-analyze-stat-label">${msg('extensions', '扩展数量')}</div>
+                <div class="sa-analyze-stat-label">${msg('extensions')}</div>
               </div>
             </div>
           </div>
 
           <!-- 代码类型分布 -->
           <div class="sa-analyze-section">
-            <h3 class="sa-analyze-section-title">${msg('block-distribution', '代码类型分布')}</h3>
+            <h3 class="sa-analyze-section-title">${msg('block-distribution')}</h3>
             <div class="sa-analyze-chart-container">
               <canvas id="saCodeTypeChart" width="400" height="200"></canvas>
             </div>
@@ -1347,7 +1582,7 @@ export default function ({ addon, msg, console }) {
 
           <!-- Dr.Scratch评分系统 -->
           <div class="sa-analyze-section">
-            <h3 class="sa-analyze-section-title">${msg('dr-scratch-score', 'Dr.Scratch评分系统')}</h3>
+            <h3 class="sa-analyze-section-title">${msg('dr-scratch-score')}</h3>
             <div class="sa-analyze-row">
               <div class="sa-analyze-col-6">
                 <div class="sa-analyze-chart-container">
@@ -1357,8 +1592,8 @@ export default function ({ addon, msg, console }) {
               <div class="sa-analyze-col-6">
                 <div class="sa-analyze-score-details" id="saDrScratchDetails">
                   <div class="sa-analyze-score-summary">
-                    <h4>${msg('total-score', '总分')}：<span id="saDrScratchTotalScore">0</span> / 21</h4>
-                    <div class="sa-analyze-score-level" id="saDrScratchScoreLevel">${msg('evaluation-level', '评估等级')}：${msg('calculating', '计算中...')}</div>
+                    <h4>${msg('total-score')}：<span id="saDrScratchTotalScore">0</span> / 21</h4>
+                    <div class="sa-analyze-score-level" id="saDrScratchScoreLevel">${msg('evaluation-level')}：${msg('calculating')}</div>
                   </div>
                 </div>
               </div>
@@ -1367,7 +1602,7 @@ export default function ({ addon, msg, console }) {
 
           <!-- 核心数学能力评估 -->
           <div class="sa-analyze-section">
-            <h3 class="sa-analyze-section-title">${msg('math-logic-assessment', '核心数学能力评估')}</h3>
+            <h3 class="sa-analyze-section-title">${msg('math-logic-assessment')}</h3>
             <div class="sa-analyze-row">
               <div class="sa-analyze-col-6">
                 <div class="sa-analyze-chart-container">
@@ -1377,8 +1612,8 @@ export default function ({ addon, msg, console }) {
               <div class="sa-analyze-col-6">
                 <div class="sa-analyze-score-details" id="saMathLogicDetails">
                   <div class="sa-analyze-score-summary">
-                    <h4>${msg('math-total-score', '数学总分')}：<span id="saMathTotalScore">0</span> ${msg('blocks-count', '')}</h4>
-                    <div class="sa-analyze-score-level" id="saMathScoreLevel">${msg('evaluation-level', '评估等级')}：${msg('calculating', '计算中...')}</div>
+                    <h4>${msg('math-total-score')}：<span id="saMathTotalScore">0</span> / 9</h4>
+                    <div class="sa-analyze-score-level" id="saMathScoreLevel">${msg('evaluation-level')}：${msg('calculating')}</div>
                   </div>
                 </div>
               </div>
@@ -1387,9 +1622,9 @@ export default function ({ addon, msg, console }) {
 
           <!-- 使用的扩展 -->
           <div class="sa-analyze-section">
-            <h3 class="sa-analyze-section-title">${msg('extensions-used', '使用的扩展')}</h3>
+            <h3 class="sa-analyze-section-title">${msg('extensions-used')}</h3>
             <div class="sa-analyze-extension-list" id="saExtensionList">
-              <p>${msg('loading', '加载中...')}</p>
+              <p>${msg('loading')}</p>
             </div>
           </div>
         </div>
@@ -1397,7 +1632,7 @@ export default function ({ addon, msg, console }) {
     }
 
     // 更新分析结果
-    updateAnalysisResults(analysis) {
+    updateAnalysisResults(analysis, projectData) {
       // 更新统计数据
       this.updateStats(analysis);
 
@@ -1405,13 +1640,11 @@ export default function ({ addon, msg, console }) {
       this.displayCodeTypeChart(analysis);
 
       // 计算并更新Dr.Scratch评分
-      const vm = addon.tab.traps.vm;
-      const projectJSON = JSON.parse(vm.toJSON());
-      const drScratchScores = this.calculateDrScratchScores(projectJSON);
+      const drScratchScores = this.calculateDrScratchScores(projectData);
       this.displayDrScratchScores(drScratchScores);
 
       // 计算并更新数学逻辑评分
-      const mathLogicScores = this.calculateMathLogicScores(projectJSON);
+      const mathLogicScores = this.calculateMathLogicScores(projectData);
       this.displayMathLogicScores(mathLogicScores);
 
       // 更新扩展列表
@@ -1430,39 +1663,39 @@ export default function ({ addon, msg, console }) {
       statsGrid.innerHTML = `
         <div class="sa-analyze-stat">
           <div class="sa-analyze-stat-value">${analysis.totalBlocks}</div>
-          <div class="sa-analyze-stat-label">${msg('total-blocks', '总积木数')}</div>
+          <div class="sa-analyze-stat-label">${msg('total-blocks')}</div>
         </div>
-        <div class="sa-analyze-stat">
+        <div class="sa-analyze-stat" title="${this.getEffectiveBlocksHelp()}">
           <div class="sa-analyze-stat-value">${analysis.effectiveBlocks}</div>
-          <div class="sa-analyze-stat-label">${msg('effective-blocks', '有效积木')}</div>
+          <div class="sa-analyze-stat-label">${msg('effective-blocks')}</div>
         </div>
         <div class="sa-analyze-stat">
           <div class="sa-analyze-stat-value">${analysis.functionDefinitions}</div>
-          <div class="sa-analyze-stat-label">${msg('function-definitions', '函数定义')}</div>
+          <div class="sa-analyze-stat-label">${msg('function-definitions')}</div>
         </div>
         <div class="sa-analyze-stat">
           <div class="sa-analyze-stat-value">${analysis.sprites}</div>
-          <div class="sa-analyze-stat-label">${msg('stat-sprites', '精灵数量')}</div>
+          <div class="sa-analyze-stat-label">${msg('stat-sprites')}</div>
         </div>
         <div class="sa-analyze-stat">
           <div class="sa-analyze-stat-value">${analysis.costumeCount}</div>
-          <div class="sa-analyze-stat-label">${msg('stat-costumes', '造型数量')}</div>
+          <div class="sa-analyze-stat-label">${msg('stat-costumes')}</div>
         </div>
         <div class="sa-analyze-stat">
           <div class="sa-analyze-stat-value">${analysis.soundCount}</div>
-          <div class="sa-analyze-stat-label">${msg('stat-sounds', '声音数量')}</div>
+          <div class="sa-analyze-stat-label">${msg('stat-sounds')}</div>
         </div>
         <div class="sa-analyze-stat">
           <div class="sa-analyze-stat-value">${analysis.variableCount}</div>
-          <div class="sa-analyze-stat-label">${msg('stat-variables', '变量数量')}</div>
+          <div class="sa-analyze-stat-label">${msg('stat-variables')}</div>
         </div>
         <div class="sa-analyze-stat">
           <div class="sa-analyze-stat-value">${analysis.listCount}</div>
-          <div class="sa-analyze-stat-label">${msg('stat-lists', '列表数量')}</div>
+          <div class="sa-analyze-stat-label">${msg('stat-lists')}</div>
         </div>
         <div class="sa-analyze-stat">
           <div class="sa-analyze-stat-value">${analysis.extensions.length}</div>
-          <div class="sa-analyze-stat-label">${msg('extensions', '扩展数量')}</div>
+          <div class="sa-analyze-stat-label">${msg('extensions')}</div>
         </div>
       `;
     }
@@ -1476,15 +1709,15 @@ export default function ({ addon, msg, console }) {
 
       // 定义标准类别的固定顺序
       const standardOrder = [
-        msg('motion', '运动'),
-        msg('looks', '外观'),
-        msg('sound', '声音'),
-        msg('events', '事件'),
-        msg('control', '控制'),
-        msg('sensing', '侦测'),
-        msg('operators', '运算'),
-        msg('data', '数据'),
-        msg('custom-functions', '自定义函数')
+        msg('motion'),
+        msg('looks'),
+        msg('sound'),
+        msg('events'),
+        msg('control'),
+        msg('sensing'),
+        msg('operators'),
+        msg('data'),
+        msg('custom-functions')
       ];
 
       // 分离标准和扩展类别
@@ -1522,15 +1755,15 @@ export default function ({ addon, msg, console }) {
 
       // 定义每个类别的颜色
       const categoryColors = {
-        [msg('motion', '运动')]: '#4C97FF',
-        [msg('looks', '外观')]: '#9966FF',
-        [msg('sound', '声音')]: '#CF63CF',
-        [msg('events', '事件')]: '#FFBF00',
-        [msg('control', '控制')]: '#FFAB19',
-        [msg('sensing', '侦测')]: '#5CB1D6',
-        [msg('operators', '运算')]: '#59C059',
-        [msg('data', '数据')]: '#FF8C1A',
-        [msg('custom-functions', '自定义函数')]: '#FF6680'
+        [msg('motion')]: '#4C97FF',
+        [msg('looks')]: '#9966FF',
+        [msg('sound')]: '#CF63CF',
+        [msg('events')]: '#FFBF00',
+        [msg('control')]: '#FFAB19',
+        [msg('sensing')]: '#5CB1D6',
+        [msg('operators')]: '#59C059',
+        [msg('data')]: '#FF8C1A',
+        [msg('custom-functions')]: '#FF6680'
       };
 
       // 为扩展生成默认颜色
@@ -1634,17 +1867,8 @@ export default function ({ addon, msg, console }) {
       document.getElementById('saDrScratchTotalScore').textContent = totalScore;
 
       // 计算等级
-      let level = msg('beginner', '初学者');
-      if (totalScore >= 18) {
-        level = msg('expert', '专家级');
-      } else if (totalScore >= 14) {
-        level = msg('advanced', '高级');
-      } else if (totalScore >= 10) {
-        level = msg('intermediate', '中级');
-      } else if (totalScore >= 6) {
-        level = msg('developing', '发展中');
-      }
-      document.getElementById('saDrScratchScoreLevel').textContent = `${msg('evaluation-level', '评估等级')}：${level}`;
+      const level = this.getDrScratchLevel(totalScore);
+      document.getElementById('saDrScratchScoreLevel').textContent = `${msg('evaluation-level')}：${level}`;
 
       // 更新评分详情
       const detailsHTML = labels
@@ -1678,7 +1902,7 @@ export default function ({ addon, msg, console }) {
           labels: labels,
           datasets: [
             {
-              label: msg('computational-thinking-score', '计算思维评分'),
+              label: msg('computational-thinking-score'),
               data: data,
               backgroundColor: 'rgba(77, 151, 255, 0.2)',
               borderColor: '#4d97ff',
@@ -1726,15 +1950,8 @@ export default function ({ addon, msg, console }) {
       document.getElementById('saMathTotalScore').textContent = totalScore;
 
       // 计算等级
-      let level = msg('beginner', '初级');
-      if (totalScore >= 20) {
-        level = msg('advanced', '高级');
-      } else if (totalScore >= 10) {
-        level = msg('intermediate', '中级');
-      } else if (totalScore >= 5) {
-        level = msg('developing', '发展中');
-      }
-      document.getElementById('saMathScoreLevel').textContent = `${msg('evaluation-level', '评估等级')}：${level}`;
+      const level = this.getMathLogicLevel(totalScore);
+      document.getElementById('saMathScoreLevel').textContent = `${msg('evaluation-level')}：${level}`;
 
       // 更新评分详情
       const detailsHTML = labels
@@ -1742,7 +1959,10 @@ export default function ({ addon, msg, console }) {
           (label) => `
         <div class="sa-analyze-score-item">
           <div class="sa-analyze-score-label">${label}</div>
-          <div class="sa-analyze-score-value">${scores[label]} </div>
+          <div class="sa-analyze-score-bar">
+            <div class="sa-analyze-score-fill" style="width: ${(scores[label] / 3) * 100}%"></div>
+          </div>
+          <div class="sa-analyze-score-value">${scores[label]}/3</div>
         </div>
       `
         )
@@ -1758,10 +1978,6 @@ export default function ({ addon, msg, console }) {
         this.mathLogicChartInstance = null;
       }
 
-      // 数据标准化
-      const maxValue = Math.max(...data, 1);
-      const normalizedData = data.map((value) => value / maxValue);
-
       // 创建雷达图
       this.mathLogicChartInstance = new Chart(ctx, {
         type: 'radar',
@@ -1769,8 +1985,8 @@ export default function ({ addon, msg, console }) {
           labels: labels,
           datasets: [
             {
-              label: msg('relative-intensity', '相对强度'),
-              data: normalizedData,
+              label: msg('relative-intensity'),
+              data: data,
               backgroundColor: 'rgba(230, 81, 0, 0.2)',
               borderColor: '#E65100',
               borderWidth: 2,
@@ -1787,9 +2003,9 @@ export default function ({ addon, msg, console }) {
           scales: {
             r: {
               beginAtZero: true,
-              max: 1,
+              max: 3,
               ticks: {
-                stepSize: 0.2
+                stepSize: 1
               }
             }
           },
@@ -1802,7 +2018,7 @@ export default function ({ addon, msg, console }) {
                 label: function (context) {
                   const label = context.label || '';
                   const rawValue = data[context.dataIndex];
-                  return `${label}: ${rawValue} `;
+                  return `${label}: ${rawValue}/3`;
                 }
               }
             }
@@ -1816,19 +2032,19 @@ export default function ({ addon, msg, console }) {
       const extensionList = document.getElementById('saExtensionList');
 
       if (extensions.length === 0) {
-        extensionList.innerHTML = `<p>${msg('no-extensions', '未使用扩展')}</p>`;
+        extensionList.innerHTML = `<p>${msg('no-extensions')}</p>`;
         return;
       }
 
       let html = '<div class="sa-analyze-extensions-grid">';
 
       extensions.forEach((extension) => {
-        const color = extension.color || '#888888';
+        const color = this.getSafeColor(extension.color) || '#888888';
         html += `
           <div class="sa-analyze-extension-item">
             <div class="sa-analyze-extension-color" style="background-color: ${color}"></div>
-            <div class="sa-analyze-extension-name">${extension.name}</div>
-            <div class="sa-analyze-extension-count">${extension.blocks.length} ${msg('blocks-count', '')}</div>
+            <div class="sa-analyze-extension-name">${this.escapeHTML(extension.name)}</div>
+            <div class="sa-analyze-extension-count">${extension.blocks.length} ${msg('blocks-count')}</div>
           </div>
         `;
       });
@@ -1840,11 +2056,10 @@ export default function ({ addon, msg, console }) {
     // 导出分析结果为图片
     async exportAnalysisAsImage() {
       // 获取项目数据并执行分析
-      const vm = addon.tab.traps.vm;
-      const projectJSON = JSON.parse(vm.toJSON());
-      const analysis = this.performAnalysis(projectJSON);
-      const drScratchScores = this.calculateDrScratchScores(projectJSON);
-      const mathLogicScores = this.calculateMathLogicScores(projectJSON);
+      const projectData = this.getLiveProjectData();
+      const analysis = this.performAnalysis(projectData);
+      const drScratchScores = this.calculateDrScratchScores(projectData);
+      const mathLogicScores = this.calculateMathLogicScores(projectData);
 
       // 创建导出Canvas
       const canvas = document.createElement('canvas');
@@ -1944,7 +2159,7 @@ export default function ({ addon, msg, console }) {
       ctx.restore();
 
       // 获取作品名称
-      const projectName = this.projectName || projectJSON.info?.objName || '';
+      const projectName = this.projectName || '';
 
       // 绘制标题文本
       ctx.font = 'bold 20px Arial, sans-serif';
@@ -2002,44 +2217,44 @@ export default function ({ addon, msg, console }) {
       ctx.font = 'bold 16px Arial, sans-serif';
       ctx.fillStyle = '#333333';
       ctx.textAlign = 'left';
-      ctx.fillText(msg('project-stats', '项目统计'), padding + 20, y + 30);
+      ctx.fillText(msg('project-stats'), padding + 20, y + 30);
 
       // 统计数据
       const stats = [
         {
-          label: msg('total-blocks', '总积木数'),
+          label: msg('total-blocks'),
           value: analysis.totalBlocks
         },
         {
-          label: msg('effective-blocks', '有效积木'),
+          label: msg('effective-blocks'),
           value: analysis.effectiveBlocks
         },
         {
-          label: msg('function-definitions', '函数定义'),
+          label: msg('function-definitions'),
           value: analysis.functionDefinitions
         },
         {
-          label: msg('stat-sprites', '精灵数量'),
+          label: msg('stat-sprites'),
           value: analysis.sprites
         },
         {
-          label: msg('stat-costumes', '造型数量'),
+          label: msg('stat-costumes'),
           value: analysis.costumeCount
         },
         {
-          label: msg('stat-sounds', '声音数量'),
+          label: msg('stat-sounds'),
           value: analysis.soundCount
         },
         {
-          label: msg('stat-variables', '变量数量'),
+          label: msg('stat-variables'),
           value: analysis.variableCount
         },
         {
-          label: msg('stat-lists', '列表数量'),
+          label: msg('stat-lists'),
           value: analysis.listCount
         },
         {
-          label: msg('extensions', '扩展数量'),
+          label: msg('extensions'),
           value: analysis.extensions.length
         }
       ];
@@ -2088,7 +2303,7 @@ export default function ({ addon, msg, console }) {
       ctx.font = 'bold 16px Arial, sans-serif';
       ctx.fillStyle = '#333333';
       ctx.textAlign = 'left';
-      ctx.fillText(msg('block-distribution', '代码类型分布'), padding + 20, y + 30);
+      ctx.fillText(msg('block-distribution'), padding + 20, y + 30);
 
       // 饼图区域位置：左侧1/3位置
       const chartAreaWidth = sectionWidth / 3;
@@ -2098,15 +2313,15 @@ export default function ({ addon, msg, console }) {
 
       // 定义颜色
       const categoryColors = {
-        [msg('motion', '运动')]: '#4C97FF',
-        [msg('looks', '外观')]: '#9966FF',
-        [msg('sound', '声音')]: '#CF63CF',
-        [msg('events', '事件')]: '#FFBF00',
-        [msg('control', '控制')]: '#FFAB19',
-        [msg('sensing', '侦测')]: '#5CB1D6',
-        [msg('operators', '运算')]: '#59C059',
-        [msg('data', '数据')]: '#FF8C1A',
-        [msg('custom-functions', '自定义函数')]: '#FF6680'
+        [msg('motion')]: '#4C97FF',
+        [msg('looks')]: '#9966FF',
+        [msg('sound')]: '#CF63CF',
+        [msg('events')]: '#FFBF00',
+        [msg('control')]: '#FFAB19',
+        [msg('sensing')]: '#5CB1D6',
+        [msg('operators')]: '#59C059',
+        [msg('data')]: '#FF8C1A',
+        [msg('custom-functions')]: '#FF6680'
       };
 
       const extensionColors = [
@@ -2129,15 +2344,15 @@ export default function ({ addon, msg, console }) {
 
       // 排序数据
       const standardOrder = [
-        msg('motion', '运动'),
-        msg('looks', '外观'),
-        msg('sound', '声音'),
-        msg('events', '事件'),
-        msg('control', '控制'),
-        msg('sensing', '侦测'),
-        msg('operators', '运算'),
-        msg('data', '数据'),
-        msg('custom-functions', '自定义函数')
+        msg('motion'),
+        msg('looks'),
+        msg('sound'),
+        msg('events'),
+        msg('control'),
+        msg('sensing'),
+        msg('operators'),
+        msg('data'),
+        msg('custom-functions')
       ];
 
       const sortedCodeTypes = {};
@@ -2249,18 +2464,14 @@ export default function ({ addon, msg, console }) {
       ctx.font = 'bold 16px Arial, sans-serif';
       ctx.fillStyle = '#333333';
       ctx.textAlign = 'left';
-      ctx.fillText(msg('dr-scratch-score', 'Dr.Scratch评分系统'), padding + 20, y + 30);
+      ctx.fillText(msg('dr-scratch-score'), padding + 20, y + 30);
 
       const labels = Object.keys(scores);
       const data = Object.values(scores);
       const totalScore = data.reduce((sum, val) => sum + val, 0);
 
       // 计算等级
-      let level = msg('beginner', '初学者');
-      if (totalScore >= 18) level = msg('expert', '专家级');
-      else if (totalScore >= 14) level = msg('advanced', '高级');
-      else if (totalScore >= 10) level = msg('intermediate', '中级');
-      else if (totalScore >= 6) level = msg('developing', '发展中');
+      const level = this.getDrScratchLevel(totalScore);
 
       // 绘制雷达图（在背景左侧1/3位置）
       this.drawRadarChart(ctx, padding + 136, y + 160, 80, labels, data, 3, '#4d97ff');
@@ -2272,13 +2483,13 @@ export default function ({ addon, msg, console }) {
       // 总分
       ctx.font = 'bold 18px Arial, sans-serif';
       ctx.fillStyle = '#333333';
-      ctx.fillText(`${msg('total-score', '总分')}: ${totalScore} / 21`, detailsX, detailsY);
+      ctx.fillText(`${msg('total-score')}: ${totalScore} / 21`, detailsX, detailsY);
       detailsY += 25;
 
       // 等级
       ctx.font = '14px Arial, sans-serif';
       ctx.fillStyle = '#666666';
-      ctx.fillText(`${msg('evaluation-level', '评估等级')}: ${level}`, detailsX, detailsY);
+      ctx.fillText(`${msg('evaluation-level')}: ${level}`, detailsX, detailsY);
       detailsY += 35;
 
       // 各项评分
@@ -2328,24 +2539,17 @@ export default function ({ addon, msg, console }) {
       ctx.font = 'bold 16px Arial, sans-serif';
       ctx.fillStyle = '#333333';
       ctx.textAlign = 'left';
-      ctx.fillText(msg('math-logic-assessment', '核心数学能力评估'), padding + 20, y + 30);
+      ctx.fillText(msg('math-logic-assessment'), padding + 20, y + 30);
 
       const labels = Object.keys(scores);
       const data = Object.values(scores);
       const totalScore = data.reduce((sum, val) => sum + val, 0);
 
       // 计算等级
-      let level = msg('beginner', '初级');
-      if (totalScore >= 20) level = msg('advanced', '高级');
-      else if (totalScore >= 10) level = msg('intermediate', '中级');
-      else if (totalScore >= 5) level = msg('developing', '发展中');
-
-      // 标准化数据用于雷达图
-      const maxValue = Math.max(...data, 1);
-      const normalizedData = data.map((v) => v / maxValue);
+      const level = this.getMathLogicLevel(totalScore);
 
       // 绘制雷达图（在背景左侧1/3位置）
-      this.drawRadarChart(ctx, padding + 136, y + 160, 100, labels, normalizedData, 1, '#E65100');
+      this.drawRadarChart(ctx, padding + 136, y + 160, 100, labels, data, 3, '#E65100');
 
       // 绘制评分详情
       const detailsX = padding + 340;
@@ -2354,13 +2558,13 @@ export default function ({ addon, msg, console }) {
       // 总分
       ctx.font = 'bold 18px Arial, sans-serif';
       ctx.fillStyle = '#333333';
-      ctx.fillText(`${msg('math-total-score', '数学总分')}: ${totalScore}`, detailsX, detailsY);
+      ctx.fillText(`${msg('math-total-score')}: ${totalScore} / 9`, detailsX, detailsY);
       detailsY += 25;
 
       // 等级
       ctx.font = '14px Arial, sans-serif';
       ctx.fillStyle = '#666666';
-      ctx.fillText(`${msg('evaluation-level', '评估等级')}: ${level}`, detailsX, detailsY);
+      ctx.fillText(`${msg('evaluation-level')}: ${level}`, detailsX, detailsY);
       detailsY += 35;
 
       // 各项评分
@@ -2368,7 +2572,7 @@ export default function ({ addon, msg, console }) {
         ctx.font = '12px Arial, sans-serif';
         ctx.fillStyle = '#333333';
         const displayLabel = label.length > 14 ? label.substring(0, 14) + '...' : label;
-        ctx.fillText(`${displayLabel}: ${data[index]}`, detailsX, detailsY);
+        ctx.fillText(`${displayLabel}: ${data[index]}/3`, detailsX, detailsY);
         detailsY += 28;
       });
 
@@ -2477,12 +2681,12 @@ export default function ({ addon, msg, console }) {
       ctx.font = 'bold 16px Arial, sans-serif';
       ctx.fillStyle = '#333333';
       ctx.textAlign = 'left';
-      ctx.fillText(msg('extensions-used', '使用的扩展'), padding + 20, y + 30);
+      ctx.fillText(msg('extensions-used'), padding + 20, y + 30);
 
       if (extensions.length === 0) {
         ctx.font = '14px Arial, sans-serif';
         ctx.fillStyle = '#999999';
-        ctx.fillText(msg('no-extensions', '未使用扩展'), padding + 20, y + 60);
+        ctx.fillText(msg('no-extensions'), padding + 20, y + 60);
         return;
       }
 
@@ -2503,7 +2707,7 @@ export default function ({ addon, msg, console }) {
         ctx.fill();
 
         // 绘制颜色圆点
-        const color = extension.color || '#888888';
+        const color = this.getSafeColor(extension.color) || '#888888';
         ctx.beginPath();
         ctx.arc(itemX + 12, itemY + 16, 6, 0, Math.PI * 2);
         ctx.fillStyle = color;
@@ -2520,22 +2724,25 @@ export default function ({ addon, msg, console }) {
         ctx.font = '12px Arial, sans-serif';
         ctx.fillStyle = '#999999';
         ctx.textAlign = 'right';
-        ctx.fillText(`${extension.blocks.length} ${msg('blocks-count', 'blocks')}`, itemX + itemWidth - 18, itemY + 18);
+        ctx.fillText(`${extension.blocks.length} ${msg('blocks-count')}`, itemX + itemWidth - 18, itemY + 18);
       });
     }
   }
 
   const analyzer = new SimpleProjectAnalyzer();
 
-  // Listen for project changes (auto-refresh analysis in sidebar)
-  // 如果扣式咯你知道这个东西会多卡你还会加这个吗
-  // let clean;
-  // vm.runtime.on("PROJECT_CHANGED", () => {
-  //     if (clean) clearTimeout(clean);
-  //     clean = setTimeout(() => {
-  //         analyzer.analyzeProjectForSidebar();
-  //     }, 100);
-  // });
+  // 项目变化时刷新 Sidebar（仅在分析面板打开时，1000ms 防抖）
+  const scheduleSidebarRefresh = () => {
+    if (!analyzer.sidebarActive) return;
+    if (analyzer.refreshTimeout) clearTimeout(analyzer.refreshTimeout);
+    analyzer.refreshTimeout = setTimeout(() => {
+      analyzer.refreshTimeout = null;
+      analyzer.analyzeProjectForSidebar();
+    }, 1000);
+  };
+
+  vm.on('PROJECT_CHANGED', scheduleSidebarRefresh);
+  vm.runtime.on('PROJECT_LOADED', scheduleSidebarRefresh);
 
   // Button injection via AddToBar (handles both VSCode and non-VSCode layouts)
   AddToBar(addon, {
@@ -2547,24 +2754,34 @@ export default function ({ addon, msg, console }) {
       return analyzer.sidebarContent;
     },
     onActivate: () => {
+      analyzer.sidebarActive = true;
       analyzer.analyzeProjectForSidebar();
     },
     onDeactivate: () => {
-      if (analyzer.chartInstance) {
-        analyzer.chartInstance.destroy();
-        analyzer.chartInstance = null;
+      analyzer.sidebarActive = false;
+      if (analyzer.refreshTimeout) {
+        clearTimeout(analyzer.refreshTimeout);
+        analyzer.refreshTimeout = null;
       }
-      if (analyzer.mathLogicChartInstance) {
-        analyzer.mathLogicChartInstance.destroy();
-        analyzer.mathLogicChartInstance = null;
-      }
-      if (analyzer.drScratchChartInstance) {
-        analyzer.drScratchChartInstance.destroy();
-        analyzer.drScratchChartInstance = null;
-      }
+      analyzer.destroyCharts();
     },
     onClick: () => {
       analyzer.showAnalysisModal();
     }
   });
+
+  // 禁用插件时移除监听和图表，避免重新启用后重复刷新或残留实例
+  if (addon.self && typeof addon.self.addEventListener === 'function') {
+    addon.self.addEventListener('disabled', () => {
+      analyzer.sidebarActive = false;
+      if (analyzer.refreshTimeout) {
+        clearTimeout(analyzer.refreshTimeout);
+        analyzer.refreshTimeout = null;
+      }
+      vm.off('PROJECT_CHANGED', scheduleSidebarRefresh);
+      vm.runtime.off('PROJECT_LOADED', scheduleSidebarRefresh);
+      ReduxStore.removeEventListener('statechanged', analyzer.onReduxStateChanged);
+      analyzer.destroyCharts();
+    });
+  }
 }

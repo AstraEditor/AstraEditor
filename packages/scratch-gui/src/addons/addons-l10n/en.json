@@ -319,6 +319,7 @@
   "simple-project-analyzer/user-interactivity": "User Interactivity",
   "simple-project-analyzer/data-representation": "Data Representation",
   "simple-project-analyzer/effective-blocks": "Effective Blocks",
+  "simple-project-analyzer/effective-blocks-help": "Only blocks under a hat block or custom block definition are counted. Loose stacks and isolated blocks are excluded.",
   "simple-project-analyzer/function-definitions": "Function Definitions",
   "simple-project-analyzer/project-size": "Project Size",
   "simple-project-analyzer/costumes-size": "Costumes Size",
