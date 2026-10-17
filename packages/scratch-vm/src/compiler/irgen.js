@@ -1334,7 +1334,7 @@ class ScriptTreeGenerator {
     }
 
     // Create it locally...
-    const newVariable = new Variable(id, name, type, false);
+    const newVariable = Variable.create(id, name, type, false);
 
     // Intentionally not using newVariable.id so that this matches vanilla Scratch quirks regarding
     // handling of null variable IDs.
@@ -1347,7 +1347,7 @@ class ScriptTreeGenerator {
       for (const clone of target.sprite.clones) {
         // @ts-ignore
         if (!Object.prototype.hasOwnProperty.call(clone.variables, id)) {
-          clone.variables[String(id)] = new Variable(id, name, type, false);
+          clone.variables[String(id)] = Variable.createSibling(newVariable, id, name, type, false);
         }
       }
     }

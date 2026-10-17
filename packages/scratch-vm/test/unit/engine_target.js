@@ -183,7 +183,7 @@ test("renameVariable calls cloud io device's requestRenameVariable function", (t
 
   const target = new Target(runtime);
   target.isStage = true;
-  const mockCloudVar = new Variable('foo', 'bar', Variable.SCALAR_TYPE, true);
+  const mockCloudVar = Variable.create('foo', 'bar', Variable.SCALAR_TYPE, true);
   target.variables[mockCloudVar.id] = mockCloudVar;
   runtime.addTarget(target);
 
@@ -210,7 +210,7 @@ test("renameVariable does not call cloud io device's requestRenameVariable funct
   };
 
   const target = new Target(runtime);
-  const mockCloudVar = new Variable('foo', 'bar', Variable.SCALAR_TYPE, true);
+  const mockCloudVar = Variable.create('foo', 'bar', Variable.SCALAR_TYPE, true);
   target.variables[mockCloudVar.id] = mockCloudVar;
   runtime.addTarget(target);
 
@@ -261,7 +261,7 @@ test("deleteVariable calls cloud io device's requestRenameVariable function", (t
 
   const target = new Target(runtime);
   target.isStage = true;
-  const mockCloudVar = new Variable('foo', 'bar', Variable.SCALAR_TYPE, true);
+  const mockCloudVar = Variable.create('foo', 'bar', Variable.SCALAR_TYPE, true);
   target.variables[mockCloudVar.id] = mockCloudVar;
   runtime.addTarget(target);
 
@@ -283,7 +283,7 @@ test("deleteVariable calls cloud io device's requestRenameVariable function", (t
   };
 
   const target = new Target(runtime);
-  const mockCloudVar = new Variable('foo', 'bar', Variable.SCALAR_TYPE, true);
+  const mockCloudVar = Variable.create('foo', 'bar', Variable.SCALAR_TYPE, true);
   target.variables[mockCloudVar.id] = mockCloudVar;
   runtime.addTarget(target);
 
@@ -311,6 +311,9 @@ test('duplicateVariable creates a new variable with a new ID by default', (t) =>
 
   // Duplicate variable should start out with the same value as the original variable
   t.equal(newVariable.value, originalVariable.value);
+
+  // Duplicate variable should share its hidden class with the original
+  t.equal(newVariable.constructor, originalVariable.constructor);
 
   // Modifying one variable should not modify the other
   newVariable.value = 15;

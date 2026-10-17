@@ -1256,7 +1256,7 @@ const parseScratchObject = function (object, runtime, extensions, zip, assets) {
       // - it's a stage variable, and
       // - the runtime can support another cloud variable
       const isCloud = variable.length === 3 && variable[2] && object.isStage && runtime.canAddCloudVariable();
-      const newVariable = new Variable(
+      const newVariable = Variable.create(
         varId, // var id is the index of the variable desc array in the variables obj
         variable[0], // name of the variable
         Variable.SCALAR_TYPE, // type of the variable
@@ -1270,7 +1270,7 @@ const parseScratchObject = function (object, runtime, extensions, zip, assets) {
   if (Object.prototype.hasOwnProperty.call(object, 'lists')) {
     for (const listId in object.lists) {
       const list = object.lists[listId];
-      const newList = new Variable(listId, list[0], Variable.LIST_TYPE, false);
+      const newList = Variable.create(listId, list[0], Variable.LIST_TYPE, false);
       newList.value = list[1];
       target.variables[newList.id] = newList;
     }
@@ -1278,7 +1278,7 @@ const parseScratchObject = function (object, runtime, extensions, zip, assets) {
   if (Object.prototype.hasOwnProperty.call(object, 'broadcasts')) {
     for (const broadcastId in object.broadcasts) {
       const broadcast = object.broadcasts[broadcastId];
-      const newBroadcast = new Variable(broadcastId, broadcast, Variable.BROADCAST_MESSAGE_TYPE, false);
+      const newBroadcast = Variable.create(broadcastId, broadcast, Variable.BROADCAST_MESSAGE_TYPE, false);
       // no need to explicitly set the value, variable constructor
       // sets the value to the same as the name for broadcast msgs
       target.variables[newBroadcast.id] = newBroadcast;
