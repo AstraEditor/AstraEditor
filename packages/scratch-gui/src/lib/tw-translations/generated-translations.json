@@ -5251,7 +5251,10 @@
     "tw.settingsModal.loadExtensionToDataURLHelp": "加载扩展时会保存原始内容给作品，而不是URL。",
     "tw.settingsModal.LoadExtensionToDataURLWarn": "这会显著增大.sb3文件体积。",
     "gui.library.extensionUnSupportInTurboWarp": "TurboWarp无法通过URL加载AstraEditor 扩展库 的扩展",
-    "gui.library.extensionUnSupportInTurboWarpGotoSolve": "前去解决。"
+    "gui.library.extensionUnSupportInTurboWarpGotoSolve": "前去解决。",
+    "tw.extensionManager.byInternet": "从网络上加载",
+    "tw.extensionManager.byLocal": "从本地中加载",
+    "tw.extensionManager.byBuiltIn": "内置扩展"
   },
   "zh-tw": {
     "tw.alerts.lostPeripheralConnection": "與{extensionName}的連線中斷了。",

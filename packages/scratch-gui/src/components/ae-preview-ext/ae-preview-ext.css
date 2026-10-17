@@ -8,10 +8,9 @@
 
 .body {
   background: $ui-modal-background;
-  padding: 1.5rem 2.25rem;
-  min-height: 150px;
-  max-height: calc(100vh - 250px);
+  height: calc(100vh - 250px);
   overflow-y: auto;
+  display: flex;
 }
 
 .tab-button-enable,
@@ -168,4 +167,10 @@
 }
 svg {
   overflow: visible !important;
+}
+
+.textarea {
+  width: 100%;
+  flex: 1;
+  resize: none;
 }

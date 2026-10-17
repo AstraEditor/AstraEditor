@@ -1,6 +1,6 @@
 import classNames from 'classnames';
 import PropTypes from 'prop-types';
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { defineMessages, injectIntl, intlShape, FormattedMessage } from 'react-intl';
 
 import add from './add.svg';
@@ -10,6 +10,10 @@ import Modal from '../../containers/modal.jsx';
 import Box from '../box/box.jsx';
 import AddonHooks from '../../addons/hooks';
 import extensionTags from '../../lib/libraries/tw-extension-tags';
+
+import FileIcon from './file.svg';
+import WebsiteIcon from './website.svg';
+import BuiltInIcon from './builtin.svg';
 
 import styles from './extension-chooser.css';
 
@@ -26,6 +30,18 @@ const messages = defineMessages({
     defaultMessage: 'Open Extension Library',
     description: 'Button to open the original extension library',
     id: 'tw.extensionManager.openLibrary'
+  },
+  byInternet: {
+    defaultMessage: 'Loaded from Internet',
+    id: 'tw.extensionManager.byInternet'
+  },
+  byLocal: {
+    defaultMessage: 'Loaded from Local',
+    id: 'tw.extensionManager.byLocal'
+  },
+  byBuiltIn: {
+    defaultMessage: 'Built-in Extension',
+    id: 'tw.extensionManager.byBuiltIn'
   }
 });
 
@@ -86,6 +102,7 @@ const ExtensionChooser = (props) => {
   const [galleryData, setGalleryData] = useState({});
   const [backgroundLoaded, setBackgroundLoaded] = useState({});
   const [search, setSearch] = useState('');
+  const [extensionsURLs, setExtensionsURLs] = useState({urls: vm.extensionManager.workerURLs, exts: vm.extensionManager._loadedExtensions });
   /*
    * a-b : debugger扩展
    */
@@ -97,21 +114,7 @@ const ExtensionChooser = (props) => {
   /*
    *这里下载的文件实际上为html
    */
-  const TurboWarp_IncludeExts = [
-    'ev3',
-    'makeymakey',
-    'translate',
-    'music',
-    'pen',
-    'videoSensing',
-    'text2speech',
-    'translate',
-    'microbit',
-    'boost',
-    'wedo2',
-    'gdxfor',
-    'tw'
-  ];
+  const TurboWarp_IncludeExts = Object.keys(vm.extensionManager.builtinExtensions);
   // 删除扩展
   const handleRemoveExtension = (extensionId) => {
     if (!vm || !vm.extensionManager) return;
@@ -147,7 +150,6 @@ const ExtensionChooser = (props) => {
           }
         });
         const results = await Promise.all(getExtLists);
-        console.log(results);
         const metadataMap = {};
 
         results.forEach((result, index) => {
@@ -198,6 +200,9 @@ const ExtensionChooser = (props) => {
         });
         const uniqueExtensions = Array.from(extensionMap.values());
         setExtensions(uniqueExtensions);
+        queueMicrotask(() => {
+          setExtensionsURLs({urls: vm.extensionManager.workerURLs, exts: vm.extensionManager._loadedExtensions });
+        })
       }
     };
 
@@ -370,6 +375,7 @@ const ExtensionChooser = (props) => {
               </span>
             )}
             {extensions.map((item, index) => {
+              const isInternetExt = extensionsURLs.urls[Array.from(extensionsURLs.exts.keys()).findIndex(e => e === item.id)]?.startsWith('http');
               return (
                 !TurboWarp_Exts.includes(item.id) && (
                   <div
@@ -426,6 +432,9 @@ const ExtensionChooser = (props) => {
                           >
                             {item.name}
                           </span>
+                          <img className={styles.extensionTypeIcon} src={TurboWarp_IncludeExts.includes(item.id) ? BuiltInIcon : isInternetExt ? WebsiteIcon : FileIcon}
+                            title={intl.formatMessage(TurboWarp_IncludeExts.includes(item.id) ?  messages.byBuiltIn : isInternetExt ? messages.byInternet : messages.byLocal)}
+                          />
                           <br />
                           <span
                             className={styles.ExtId}
@@ -439,13 +448,13 @@ const ExtensionChooser = (props) => {
                         </div>
                       </div>
                       <div>
-                        <button
+                       {vm.extensionManager.getExtensionURLs()[item.id] &&  <button
                           className={styles.button}
                           style={{
                             color: item.color2 == undefined ? item.color1 : item.color2
                           }}
                           onClick={() => {
-                            dispatch(setPreviewExtData(getSVGfromOpcodes(getOpcodefromExt(item))));
+                            dispatch(setPreviewExtData(vm.extensionManager.getExtensionURLs()[item.id]));
                             dispatch(openPreviewExt());
                           }}
                         >
@@ -454,7 +463,7 @@ const ExtensionChooser = (props) => {
                             description="text of View "
                             id="tw.extensionManager.preview"
                           />
-                        </button>
+                        </button>}
                         {!TurboWarp_IncludeExts.includes(item.id) && (
                           <button
                             className={styles.button}

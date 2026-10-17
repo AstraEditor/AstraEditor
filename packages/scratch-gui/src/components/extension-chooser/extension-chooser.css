@@ -122,31 +122,9 @@
   height: 16px;
 }
 
-@media (max-width: 768px) {
-  .openLibraryButton,
-  .openCustomExtension {
-    position: fixed;
-    left: 20px;
-    width: 65px;
-    height: 65px;
-    z-index: 1000;
-  }
-
-  .openLibraryButton {
-    bottom: 100px;
-  }
-
-  .openCustomExtension {
-    bottom: 20px;
-  }
-
-  .openLibraryButtonIcon {
-    width: 24px;
-    height: 24px;
-  }
-
-  .content {
-    padding-bottom: 180px;
-  }
-  /*koshino我喜欢你喵~*/
+.extensionTypeIcon {
+  width: auto;
+  height: 20px;
+  padding-left: 5px;
+  filter: invert(1) drop-shadow(rgba(0, 0, 0, 0.8) 0px 0px 3px);
 }
