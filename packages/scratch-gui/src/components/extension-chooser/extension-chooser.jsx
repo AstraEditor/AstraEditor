@@ -448,13 +448,13 @@ const ExtensionChooser = (props) => {
                         </div>
                       </div>
                       <div>
-                       {vm.extensionManager.getExtensionURLs()[item.id] &&  <button
+                       {<button
                           className={styles.button}
                           style={{
                             color: item.color2 == undefined ? item.color1 : item.color2
                           }}
                           onClick={() => {
-                            dispatch(setPreviewExtData(vm.extensionManager.getExtensionURLs()[item.id]));
+                            dispatch(setPreviewExtData({data: vm.extensionManager.getExtensionURLs()[item.id] ?? `data:text/plain;base64,VEFUIFRoaXMgRXh0ZW5zaW9uIGlzIGJ1aWx0SW4gb3IgY2FuJ3QgYmUgbG9hZC4=`, svgs: getSVGfromOpcodes(getOpcodefromExt(item))}));
                             dispatch(openPreviewExt());
                           }}
                         >

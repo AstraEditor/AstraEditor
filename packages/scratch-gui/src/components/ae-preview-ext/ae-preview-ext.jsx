@@ -1,6 +1,6 @@
 import { defineMessages, FormattedMessage, intlShape, injectIntl } from 'react-intl';
 import PropTypes from 'prop-types';
-import React, { useRef } from 'react';
+import React, { useRef, useState } from 'react';
 import Modal from '../../containers/modal.jsx';
 import styles from './ae-preview-ext.css';
 
@@ -15,8 +15,10 @@ const messages = defineMessages({
 
 // 展示组件
 const PreviewExtComponent = (props) => {
+  // raw | svg
+  const [nowPage, setPage] = useState('svg');
   /** @type {string} */
-  const extContent = props.svgList;
+  const extContent = props.svgList.data;
   const textareaRef = useRef(null);
   const decode = () => {
     if(extContent.startsWith('http')) {
@@ -57,7 +59,49 @@ const PreviewExtComponent = (props) => {
     >
       {/* Modal 内容 */}
       <div className={styles.body}>
-        <textarea ref={textareaRef} className={styles.textarea} value={decode()} readOnly />
+            <div
+              className={styles.Modaltab}
+              style={{
+                margin: '0'
+              }}
+            >
+              <button
+                className={nowPage === 'svg' ? styles.tabButtonEnable : styles.tabButtonUnable}
+                style={{
+                  display: 'inline-block',
+                  width: `50%`,
+                  height: '100%'
+                }}
+                onClick={() => setPage('svg')}
+              >
+                SVG
+              </button>
+              <button
+                className={nowPage === 'raw' ? styles.tabButtonEnable : styles.tabButtonUnable}
+                style={{
+                  display: 'inline-block',
+                  width: `50%`,
+                  height: '100%'
+                }}
+                onClick={() => setPage('raw')}
+              >
+                JavaScript
+              </button>
+            </div>
+        {nowPage === 'raw' ? <textarea ref={textareaRef} className={styles.textarea} value={decode()} readOnly /> :  
+          props.svgList.svgs && props.svgList.svgs.length > 0 ? (
+            <div className={styles.svgList}>
+              {props.svgList.svgs.map((svg, index) => (
+                <div
+                  key={index}
+                  className={styles.svgItem}
+                  dangerouslySetInnerHTML={{ __html: `<svg className=svgBlock>${svg}</svg>` }}
+                />
+              ))}
+            </div>
+          ) : (
+            <FormattedMessage defaultMessage="No blocks to preview" id="tw.previewextension.noblocks" />
+          )}
       </div>
     </Modal>
 )};
