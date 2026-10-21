@@ -27,7 +27,7 @@ const manifest = {
     }
   ],
   userscripts: [{ url: 'userscript.js' }],
-  tags: ['editor', 'new'],
+  tags: ['editor'],
   enabledByDefault: false
 };
 export default manifest;

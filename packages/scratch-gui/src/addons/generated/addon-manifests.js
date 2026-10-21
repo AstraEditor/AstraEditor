@@ -186,7 +186,7 @@ export default {
   bookmark: _bookmark,
   Terminal: _Terminal,
   // "my-blocks-plus": _myblocksplus,
-  // "astras-copilot": _astras_copilot,
+  'astras-copilot': _astras_copilot,
   'sprite-folders': _sprite_folders,
   background: _background,
   todo: _todo,

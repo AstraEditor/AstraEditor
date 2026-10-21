@@ -86,7 +86,7 @@ const manifest = {
     },
     { name: 'Animated graphs (may affect performance)', id: 'fancy_graphs', type: 'boolean', default: false }
   ],
-  tags: ['new', 'recommended'],
+  tags: ['recommended'],
   enabledByDefault: true
 };
 export default manifest;

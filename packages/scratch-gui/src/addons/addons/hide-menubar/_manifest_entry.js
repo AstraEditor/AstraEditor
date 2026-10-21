@@ -4,7 +4,7 @@ const manifest = {
   name: 'Hide Menubar',
   description:
     'The menubar will hidden and can automatically appear when you hover nearby. You may also choose to lock it in place for persistent display.',
-  tags: ['new', 'theme'],
+  tags: ['theme'],
   credits: [
     {
       name: 'KOSHINO',

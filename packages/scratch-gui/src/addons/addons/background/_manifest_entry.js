@@ -2,7 +2,7 @@ const manifest = {
   name: 'Background',
   description: 'Make your editor look brand new.',
   editorOnly: false,
-  tags: ['new'],
+  tags: ['recommended'],
   info: [
     {
       type: 'notice',

@@ -20,7 +20,7 @@ const manifest = {
       url: 'userstyle.css'
     }
   ],
-  tags: ['new', 'recommended'],
+  tags: ['recommended'],
   enabledByDefault: true
 };
 export default manifest;

@@ -26,7 +26,7 @@ const manifest = {
       url: 'userstyle.css'
     }
   ],
-  tags: ['editor', 'new', 'recommended'],
+  tags: ['editor', 'recommended'],
   enabledByDefault: true,
   dynamicEnable: true,
   dynamicDisable: false

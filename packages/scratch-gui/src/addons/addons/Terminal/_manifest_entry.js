@@ -4,7 +4,7 @@ const manifest = {
   name: 'Terminal',
   description: 'A Terminal at the bottom of the editor, you can execute commands to view project information and debug',
   incompatible: ['debugger'],
-  tags: ['new', 'recommanded'],
+  tags: ['recommanded'],
   credits: [
     {
       name: 'Cyberexplorer',

@@ -1,0 +1,882 @@
+import dispatch from 'scratch-vm/src/dispatch/central-dispatch';
+
+import { getBlockLabel, scriptToDSL, previewScriptDSL } from './dsl.js';
+
+const MAX_FIELD_LENGTH = 500;
+const MAX_LIST_ITEMS = 30;
+const MAX_SCRIPT_BLOCKS = 400;
+const MAX_SCRIPT_PREVIEW = 6;
+const MAX_SEARCH_RESULTS = 50;
+const MAX_EXTENSION_BLOCKS = 80;
+const MAX_EXTENSION_MENUS = 30;
+const MAX_EXTENSION_SOURCE_LENGTH = 24000;
+
+/**
+ * Convert a Scratch value into a small JSON-safe value.
+ * @param {*} value Value to convert.
+ * @returns {*} Converted value.
+ */
+const serializeValue = (value) => {
+  if (value === null || value === undefined) return null;
+  if (Array.isArray(value)) {
+    return value.slice(0, MAX_LIST_ITEMS).map((item) => serializeValue(item));
+  }
+  if (typeof value === 'string') {
+    return value.length > MAX_FIELD_LENGTH ? `${value.slice(0, MAX_FIELD_LENGTH)}...` : value;
+  }
+  if (typeof value === 'number' || typeof value === 'boolean') return value;
+  return String(value).slice(0, MAX_FIELD_LENGTH);
+};
+
+/**
+ * Get the block map from a target.
+ * @param {object} target Scratch target.
+ * @returns {object} Block map.
+ */
+const getBlockMap = (target) => (target && target.blocks && target.blocks._blocks ? target.blocks._blocks : {});
+
+/**
+ * Get a block from a target.
+ * @param {object} target Scratch target.
+ * @param {string} blockId Block ID.
+ * @returns {object|undefined} Block object.
+ */
+const getBlock = (target, blockId) => {
+  if (!target || !target.blocks || !blockId) return undefined;
+  if (typeof target.blocks.getBlock === 'function') return target.blocks.getBlock(blockId);
+  return getBlockMap(target)[blockId];
+};
+
+/**
+ * Get all runtime targets.
+ * @param {object} vm Scratch VM.
+ * @returns {Array<object>} Targets.
+ */
+const getTargets = (vm) => (vm && vm.runtime && Array.isArray(vm.runtime.targets) ? vm.runtime.targets : []);
+
+/**
+ * Get the current editing target, falling back to the stage.
+ * @param {object} vm Scratch VM.
+ * @returns {object|null} Target.
+ */
+const getEditingTarget = (vm) => {
+  if (!vm || !vm.runtime) return null;
+  if (typeof vm.runtime.getEditingTarget === 'function') {
+    const editingTarget = vm.runtime.getEditingTarget();
+    if (editingTarget) return editingTarget;
+  }
+  return typeof vm.runtime.getTargetForStage === 'function' ? vm.runtime.getTargetForStage() : null;
+};
+
+/**
+ * Resolve a target by ID or name.
+ * @param {object} vm Scratch VM.
+ * @param {string|undefined} selector Target name or ID. Defaults to the editing target.
+ * @returns {object|null} Target.
+ */
+const resolveTarget = (vm, selector) => {
+  if (!selector) return getEditingTarget(vm);
+  if (vm && vm.runtime && typeof vm.runtime.getTargetById === 'function') {
+    const targetById = vm.runtime.getTargetById(selector);
+    if (targetById) return targetById;
+  }
+  const wantedName = String(selector).toLowerCase();
+  return getTargets(vm).find((target) => String(target.getName()).toLowerCase() === wantedName) || null;
+};
+
+/**
+ * Resolve a target or throw a useful error.
+ * @param {object} vm Scratch VM.
+ * @param {string|undefined} selector Target name or ID.
+ * @returns {object} Target.
+ */
+const requireTarget = (vm, selector) => {
+  const target = resolveTarget(vm, selector);
+  if (!target) throw new Error('Target not found. Check the sprite name or use list_targets.');
+  return target;
+};
+
+/**
+ * Get a compact target identity.
+ * @param {object} target Scratch target.
+ * @returns {object} Identity.
+ */
+const getTargetIdentity = (target) => ({
+  name: serializeValue(target.getName ? target.getName() : ''),
+  isStage: Boolean(target.isStage)
+});
+
+/**
+ * Get all top-level script IDs for a target.
+ * @param {object} target Scratch target.
+ * @returns {Array<string>} Script IDs.
+ */
+const getScriptIds = (target) => {
+  if (!target || !target.blocks) return [];
+  if (typeof target.blocks.getScripts === 'function') {
+    const scripts = target.blocks.getScripts();
+    if (Array.isArray(scripts)) return scripts.slice();
+  }
+  return Object.values(getBlockMap(target))
+    .filter((block) => block && block.topLevel && !block.shadow)
+    .map((block) => block.id);
+};
+
+/**
+ * Count non-shadow blocks in a target.
+ * @param {object} target Scratch target.
+ * @returns {number} Block count.
+ */
+const countBlocks = (target) => Object.values(getBlockMap(target)).filter((block) => block && !block.shadow).length;
+
+/**
+ * Walk all reachable blocks from a root.
+ * @param {object} target Scratch target.
+ * @param {string} rootId Root block ID.
+ * @param {Function} visitor Visitor called with each block.
+ */
+const walkBlocks = (target, rootId, visitor) => {
+  const seen = new Set();
+  const stack = [rootId];
+  while (stack.length > 0) {
+    const blockId = stack.pop();
+    if (!blockId || seen.has(blockId)) continue;
+    const block = getBlock(target, blockId);
+    if (!block) continue;
+    seen.add(blockId);
+    visitor(block);
+    if (block.next) stack.push(block.next);
+    if (block.inputs) {
+      Object.values(block.inputs).forEach((input) => {
+        if (input && input.block) stack.push(input.block);
+      });
+    }
+  }
+};
+
+/**
+ * Count blocks reachable from a script.
+ * @param {object} target Scratch target.
+ * @param {string} scriptId Script root ID.
+ * @returns {number} Reachable block count.
+ */
+const countScriptBlocks = (target, scriptId) => {
+  let count = 0;
+  walkBlocks(target, scriptId, (block) => {
+    if (!block.shadow) count++;
+  });
+  return count;
+};
+
+/**
+ * Resolve a localized string from extension metadata.
+ * @param {*} value Metadata value.
+ * @returns {string} Display text.
+ */
+const resolveExtensionText = (value) => {
+  if (typeof value === 'string') return value;
+  if (!value || typeof value !== 'object') return '';
+  if (typeof value.default === 'string') return value.default;
+  for (const key of ['en', 'zh-cn', 'zh', 'zh-tw']) {
+    if (typeof value[key] === 'string') return value[key];
+  }
+  const first = Object.values(value).find((item) => typeof item === 'string');
+  return typeof first === 'string' ? first : '';
+};
+
+/**
+ * Get loaded extension IDs and names.
+ * @param {object} vm Scratch VM.
+ * @returns {Array<object>} Extension summaries.
+ */
+const getLoadedExtensions = (vm) => {
+  const manager = vm.extensionManager || (vm.runtime && vm.runtime.extensionManager);
+  if (!manager || !manager._loadedExtensions) return [];
+  const blockInfo = (vm.runtime && vm.runtime._blockInfo) || [];
+  return Array.from(manager._loadedExtensions.keys()).map((id) => {
+    const category = blockInfo.find((info) => info && info.id === id);
+    return {
+      id,
+      name: (category && category.name) || id
+    };
+  });
+};
+
+/**
+ * Flatten extension block metadata, including grouped categories.
+ * @param {Array<*>} blocks Block metadata.
+ * @param {Array<object>} output Collected blocks.
+ */
+const flattenExtensionBlocks = (blocks, output) => {
+  if (!Array.isArray(blocks)) return;
+  for (const block of blocks) {
+    if (output.length >= MAX_EXTENSION_BLOCKS) return;
+    if (Array.isArray(block)) {
+      flattenExtensionBlocks(block, output);
+      continue;
+    }
+    if (block && typeof block === 'object') output.push(block);
+  }
+};
+
+/**
+ * Describe one extension block definition.
+ * @param {object} block Block metadata.
+ * @returns {object} Compact block description.
+ */
+const describeExtensionBlock = (block) => {
+  const args = {};
+  if (block.arguments && typeof block.arguments === 'object') {
+    for (const [name, arg] of Object.entries(block.arguments)) {
+      if (!arg || typeof arg !== 'object') continue;
+      const entry = {
+        type: arg.type || 'string'
+      };
+      if (arg.defaultValue !== undefined) entry.default = serializeValue(arg.defaultValue);
+      if (arg.menu) entry.menu = arg.menu;
+      args[name] = entry;
+    }
+  }
+  return {
+    opcode: block.opcode || '',
+    type: block.blockType || 'command',
+    text: resolveExtensionText(block.text),
+    func: block.func || null,
+    arguments: args
+  };
+};
+
+/**
+ * Get the source string for a function.
+ * @param {Function} fn Function.
+ * @returns {string} Source, or an empty string.
+ */
+const getFunctionSource = (fn) => {
+  if (typeof fn !== 'function') return '';
+  try {
+    const source = Function.prototype.toString.call(fn);
+    return source && !source.includes('[native code]') ? source : '';
+  } catch (error) {
+    return '';
+  }
+};
+
+/**
+ * Collect available extension source code.
+ * @param {object} extensionObject Local extension object.
+ * @param {object} info Raw extension info.
+ * @param {Array<object>} blocks Flattened block metadata.
+ * @returns {string} Source code.
+ */
+const collectExtensionSource = (extensionObject, info, blocks) => {
+  const constructorSource = getFunctionSource(extensionObject && extensionObject.constructor);
+  if (constructorSource && constructorSource.length > 40) {
+    return constructorSource.length > MAX_EXTENSION_SOURCE_LENGTH
+      ? `${constructorSource.slice(0, MAX_EXTENSION_SOURCE_LENGTH)}...`
+      : constructorSource;
+  }
+
+  const names = new Set(['getInfo']);
+  for (const block of blocks) {
+    if (block.func) names.add(block.func);
+  }
+  if (info.menus && typeof info.menus === 'object') {
+    for (const menu of Object.values(info.menus)) {
+      if (menu && typeof menu.items === 'string') names.add(menu.items);
+    }
+  }
+
+  const parts = [];
+  for (const name of names) {
+    const source = getFunctionSource(extensionObject && extensionObject[name]);
+    if (source) parts.push(`// ${name}\n${source}`);
+  }
+  const text = parts.join('\n\n');
+  return text.length > MAX_EXTENSION_SOURCE_LENGTH ? `${text.slice(0, MAX_EXTENSION_SOURCE_LENGTH)}...` : text;
+};
+
+/**
+ * Find an extension's loaded ID, allowing an exact ID or name match.
+ * @param {object} vm Scratch VM.
+ * @param {string} requested Requested extension ID or name.
+ * @returns {string|null} Loaded extension ID.
+ */
+const resolveExtensionId = (vm, requested) => {
+  const manager = vm.extensionManager || (vm.runtime && vm.runtime.extensionManager);
+  if (!manager || !manager._loadedExtensions) return null;
+  const ids = Array.from(manager._loadedExtensions.keys());
+  const lower = requested.toLowerCase();
+  const byId = ids.find((id) => id === requested) || ids.find((id) => id.toLowerCase() === lower);
+  if (byId) return byId;
+  const blockInfo = (vm.runtime && vm.runtime._blockInfo) || [];
+  const byName = blockInfo.find((info) => {
+    if (!info || typeof info.name !== 'string') return false;
+    return info.name.toLowerCase() === lower;
+  });
+  return byName ? byName.id : null;
+};
+
+/**
+ * Read an extension's metadata and available source code.
+ * @param {object} vm Scratch VM.
+ * @param {object} args Tool arguments.
+ * @param {string} args.extensionId Extension ID or name.
+ * @param {boolean} [args.includeSource] Whether to include source code.
+ * @returns {Promise<object>} Extension details.
+ */
+const getExtensionSource = async (vm, args) => {
+  const requested = String(args.extensionId || '').trim();
+  if (!requested) throw new Error('extensionId is required.');
+
+  const manager = vm.extensionManager || (vm.runtime && vm.runtime.extensionManager);
+  const loaded = manager && manager._loadedExtensions;
+  const id = resolveExtensionId(vm, requested);
+  if (!id) {
+    const available = getLoadedExtensions(vm)
+      .map((extension) => `${extension.id} (${extension.name})`)
+      .join(', ');
+    throw new Error(`Extension not loaded: ${requested}. Loaded extensions: ${available || 'none'}.`);
+  }
+
+  const serviceName = loaded ? loaded.get(id) : null;
+  const runtime = (vm && vm.runtime) || {};
+  const category = (runtime._blockInfo || []).find((info) => info && info.id === id);
+  let remote = false;
+  if (serviceName && typeof dispatch._isRemoteService === 'function') {
+    try {
+      remote = Boolean(dispatch._isRemoteService(serviceName));
+    } catch (error) {
+      remote = false;
+    }
+  }
+
+  let serviceObject = null;
+  if (!remote && serviceName && dispatch.services) {
+    serviceObject = dispatch.services[serviceName] || null;
+  }
+  if (!serviceObject && runtime[`ext_${id}`]) serviceObject = runtime[`ext_${id}`];
+
+  let info = null;
+  try {
+    if (serviceName) info = await dispatch.call(serviceName, 'getInfo');
+  } catch (error) {
+    info = null;
+  }
+  if (!info && serviceObject && typeof serviceObject.getInfo === 'function') {
+    try {
+      info = serviceObject.getInfo();
+    } catch (error) {
+      info = null;
+    }
+  }
+  if (!info || typeof info !== 'object') {
+    throw new Error(`Extension metadata is unavailable for ${id}.`);
+  }
+
+  const blocks = [];
+  flattenExtensionBlocks(info.blocks, blocks);
+  const menus = [];
+  if (info.menus && typeof info.menus === 'object') {
+    for (const [name, menu] of Object.entries(info.menus).slice(0, MAX_EXTENSION_MENUS)) {
+      menus.push({
+        name,
+        items: menu && Array.isArray(menu.items) ? menu.items.slice(0, MAX_LIST_ITEMS) : null,
+        dynamic: Boolean(menu && typeof menu.items === 'string')
+      });
+    }
+  }
+
+  const result = {
+    id,
+    name: resolveExtensionText(info.name) || (category && category.name) || id,
+    sandboxed: remote,
+    blockCount: blocks.length,
+    blocks: blocks.slice(0, MAX_EXTENSION_BLOCKS).map(describeExtensionBlock),
+    menus,
+    source: '',
+    sourceNote: ''
+  };
+
+  if (args.includeSource === false) {
+    result.sourceNote = 'Source code was not requested.';
+    return result;
+  }
+
+  if (serviceObject) {
+    result.source = collectExtensionSource(serviceObject, info, blocks);
+    result.sourceNote = result.source
+      ? 'Source is collected from the loaded extension object.'
+      : 'No readable function source is available for this extension.';
+  } else if (remote && manager && Array.isArray(manager.workerURLs) && serviceName) {
+    const match = String(serviceName).match(/^(?:extension|unsandboxed)\.(\d+)\./);
+    const workerId = match ? Number(match[1]) : null;
+    const url = workerId !== null ? manager.workerURLs[workerId] : null;
+    if (url) {
+      try {
+        const response = await fetch(url);
+        if (response.ok) {
+          const text = await response.text();
+          result.source = text.slice(0, MAX_EXTENSION_SOURCE_LENGTH);
+          result.sourceNote =
+            text.length > MAX_EXTENSION_SOURCE_LENGTH
+              ? `Source was loaded from the extension URL and truncated to ${MAX_EXTENSION_SOURCE_LENGTH} characters.`
+              : 'Source was loaded from the extension URL.';
+        } else {
+          result.sourceNote = `The extension source could not be fetched (HTTP ${response.status}).`;
+        }
+      } catch (error) {
+        result.sourceNote = `The extension source could not be fetched: ${
+          error && error.message ? error.message : String(error)
+        }`;
+      }
+    } else {
+      result.sourceNote = 'The extension runs in a sandbox, so its source is not directly available.';
+    }
+  } else {
+    result.sourceNote = 'The extension runs in a sandbox, so its source is not directly available.';
+  }
+
+  return result;
+};
+
+/**
+ * Summarize a target's variables and lists.
+ * @param {object} target Scratch target.
+ * @returns {object} Variable summary.
+ */
+const getVariableSummary = (target) => {
+  const variables = [];
+  const lists = [];
+  const broadcasts = [];
+  for (const variable of Object.values((target && target.variables) || {})) {
+    const entry = {
+      name: serializeValue(variable.name),
+      type: variable.type,
+      isCloud: Boolean(variable.isCloud)
+    };
+    if (variable.type === 'list') {
+      entry.value = serializeValue(variable.value);
+      lists.push(entry);
+    } else if (variable.type === 'broadcast_msg') {
+      entry.value = serializeValue(variable.value);
+      broadcasts.push(entry);
+    } else {
+      entry.value = serializeValue(variable.value);
+      variables.push(entry);
+    }
+  }
+  return { variables, lists, broadcasts };
+};
+
+/**
+ * Summarize a target without its blocks.
+ * @param {object} target Scratch target.
+ * @returns {object} Target summary.
+ */
+const getTargetSummary = (target) => {
+  const variables = getVariableSummary(target);
+  return {
+    ...getTargetIdentity(target),
+    visible: target.visible !== false,
+    x: typeof target.x === 'number' ? target.x : null,
+    y: typeof target.y === 'number' ? target.y : null,
+    blockCount: countBlocks(target),
+    scriptCount: getScriptIds(target).length,
+    variableCount: variables.variables.length,
+    listCount: variables.lists.length,
+    costumeCount: typeof target.getCostumes === 'function' ? target.getCostumes().length : 0,
+    soundCount: typeof target.getSounds === 'function' ? target.getSounds().length : 0
+  };
+};
+
+/**
+ * Build a project summary for initial model context.
+ * @param {object} vm Scratch VM.
+ * @returns {object} Project summary.
+ */
+const getProjectSummary = (vm) => {
+  const runtime = (vm && vm.runtime) || {};
+  const stage = typeof runtime.getTargetForStage === 'function' ? runtime.getTargetForStage() : null;
+  const editingTarget = getEditingTarget(vm);
+  const stageVariables = stage ? getVariableSummary(stage) : { variables: [], lists: [], broadcasts: [] };
+  return {
+    stage: stage ? getTargetSummary(stage) : null,
+    sprites: getTargets(vm)
+      .filter((target) => !target.isStage)
+      .map(getTargetSummary),
+    currentTarget: editingTarget ? getTargetIdentity(editingTarget) : null,
+    extensions: getLoadedExtensions(vm),
+    globalVariableNames: stageVariables.variables.map((variable) => variable.name),
+    globalListNames: stageVariables.lists.map((list) => list.name),
+    broadcastNames: stageVariables.broadcasts.map((broadcast) => broadcast.name)
+  };
+};
+
+/**
+ * Get detailed target information.
+ * @param {object} vm Scratch VM.
+ * @param {object} args Tool arguments.
+ * @param {string} [args.target] Target name or ID.
+ * @returns {object} Target details.
+ */
+const getTargetDetails = (vm, args) => {
+  const target = requireTarget(vm, args.target);
+  const localVariables = getVariableSummary(target);
+  const stage =
+    vm && vm.runtime && typeof vm.runtime.getTargetForStage === 'function' ? vm.runtime.getTargetForStage() : null;
+  const stageVariables =
+    stage && stage !== target ? getVariableSummary(stage) : { variables: [], lists: [], broadcasts: [] };
+  return {
+    ...getTargetSummary(target),
+    localVariables: localVariables.variables,
+    localLists: localVariables.lists,
+    localBroadcasts: localVariables.broadcasts,
+    globalVariables: stageVariables.variables,
+    globalLists: stageVariables.lists,
+    globalBroadcasts: stageVariables.broadcasts,
+    costumes:
+      typeof target.getCostumes === 'function'
+        ? target.getCostumes().map((costume) => ({
+            name: serializeValue(costume.name),
+            dataFormat: costume.dataFormat || null
+          }))
+        : [],
+    sounds:
+      typeof target.getSounds === 'function'
+        ? target.getSounds().map((sound) => ({
+            name: serializeValue(sound.name),
+            format: sound.format || null
+          }))
+        : []
+  };
+};
+
+/**
+ * List scripts for a target.
+ * @param {object} vm Scratch VM.
+ * @param {object} args Tool arguments.
+ * @param {string} [args.target] Target name or ID.
+ * @param {number} [args.limit] Maximum number of scripts.
+ * @returns {object} Script list.
+ */
+const listScripts = (vm, args) => {
+  const target = requireTarget(vm, args.target);
+  const scriptIds = getScriptIds(target);
+  const limit = Math.max(1, Math.min(100, Number(args.limit) || 50));
+  const scripts = scriptIds.slice(0, limit).map((scriptId) => {
+    const block = getBlock(target, scriptId);
+    return {
+      id: scriptId,
+      label: block ? getBlockLabel(vm, block.opcode, block.mutation) : null,
+      x: block && typeof block.x === 'number' ? block.x : null,
+      y: block && typeof block.y === 'number' ? block.y : null,
+      blockCount: countScriptBlocks(target, scriptId),
+      preview: previewScriptDSL(vm, target, scriptId, MAX_SCRIPT_PREVIEW)
+    };
+  });
+  return {
+    target: getTargetIdentity(target),
+    count: scriptIds.length,
+    scripts,
+    truncated: scriptIds.length > scripts.length
+  };
+};
+
+/**
+ * Get a script as a readable Scratch DSL.
+ * @param {object} vm Scratch VM.
+ * @param {object} args Tool arguments.
+ * @param {string} args.blockId Script root or any block in the script.
+ * @param {string} [args.target] Target name or ID.
+ * @param {number} [args.maxBlocks] Maximum number of blocks.
+ * @returns {object} Script DSL.
+ */
+const getScript = (vm, args) => {
+  if (!args.blockId || typeof args.blockId !== 'string') {
+    throw new Error('blockId is required.');
+  }
+  const target = requireTarget(vm, args.target);
+  const block = getBlock(target, args.blockId);
+  if (!block) throw new Error('Block not found. Use list_scripts or search_blocks to find a valid script.');
+
+  let rootId = args.blockId;
+  if (target.blocks && typeof target.blocks.getTopLevelScript === 'function') {
+    rootId = target.blocks.getTopLevelScript(args.blockId) || args.blockId;
+  }
+  const root = getBlock(target, rootId);
+  const maxBlocks = Math.max(1, Math.min(MAX_SCRIPT_BLOCKS, Number(args.maxBlocks) || 200));
+  const result = scriptToDSL(vm, target, rootId, maxBlocks);
+  return {
+    target: getTargetIdentity(target),
+    root: {
+      label: root ? getBlockLabel(vm, root.opcode, root.mutation) : null
+    },
+    dsl: result.dsl,
+    blockCount: countScriptBlocks(target, rootId),
+    truncated: result.truncated
+  };
+};
+
+/**
+ * Search blocks by opcode, field value, or ID.
+ * @param {object} vm Scratch VM.
+ * @param {object} args Tool arguments.
+ * @param {string} args.query Search query.
+ * @param {string} [args.target] Optional target name or ID.
+ * @param {number} [args.limit] Maximum number of results.
+ * @returns {object} Search results.
+ */
+const searchBlocks = (vm, args) => {
+  const query = String(args.query || '').trim();
+  if (!query) throw new Error('query is required.');
+  const limit = Math.max(1, Math.min(MAX_SEARCH_RESULTS, Number(args.limit) || 25));
+  const lowerQuery = query.toLowerCase();
+  const targets = args.target ? [requireTarget(vm, args.target)] : getTargets(vm);
+  const matches = [];
+
+  for (const target of targets) {
+    for (const block of Object.values(getBlockMap(target))) {
+      if (!block) continue;
+      const matchedFields = [];
+      let matched = String(block.opcode || '')
+        .toLowerCase()
+        .includes(lowerQuery);
+      if (block.id && String(block.id).toLowerCase().includes(lowerQuery)) matched = true;
+      if (block.fields) {
+        for (const [fieldName, field] of Object.entries(block.fields)) {
+          if (String(field.value).toLowerCase().includes(lowerQuery)) {
+            matched = true;
+            matchedFields.push(fieldName);
+          }
+        }
+      }
+      if (block.mutation && typeof block.mutation.proccode === 'string') {
+        if (block.mutation.proccode.toLowerCase().includes(lowerQuery)) {
+          matched = true;
+          matchedFields.push('mutation.proccode');
+        }
+      }
+      if (!matched) continue;
+      let scriptId = null;
+      if (target.blocks && typeof target.blocks.getTopLevelScript === 'function') {
+        scriptId = target.blocks.getTopLevelScript(block.id);
+      }
+      matches.push({
+        target: getTargetIdentity(target),
+        label: getBlockLabel(vm, block.opcode, block.mutation),
+        shadow: Boolean(block.shadow),
+        scriptId,
+        matchedFields
+      });
+      if (matches.length >= limit) break;
+    }
+    if (matches.length >= limit) break;
+  }
+
+  return {
+    query,
+    matches,
+    truncated: matches.length >= limit
+  };
+};
+
+/**
+ * Get runtime state without changing anything.
+ * @param {object} vm Scratch VM.
+ * @returns {object} Runtime state.
+ */
+const getRuntimeState = (vm) => {
+  const runtime = (vm && vm.runtime) || {};
+  const threads = Array.isArray(runtime.threads) ? runtime.threads : [];
+  const editingTarget = getEditingTarget(vm);
+  return {
+    isRunning: threads.length > 0,
+    threadCount: threads.length,
+    targetCount: getTargets(vm).length,
+    currentTarget: editingTarget ? getTargetIdentity(editingTarget) : null
+  };
+};
+
+export const TOOL_DEFINITIONS = [
+  {
+    type: 'function',
+    function: {
+      name: 'get_project_summary',
+      description:
+        'Get a compact overview of the current Scratch project: stage, sprites, variables, lists, broadcasts, loaded extensions, and block/script counts.',
+      parameters: {
+        type: 'object',
+        properties: {},
+        additionalProperties: false
+      }
+    }
+  },
+  {
+    type: 'function',
+    function: {
+      name: 'list_targets',
+      description:
+        'List every target in the project with its name, type, visible state, block count, and script count.',
+      parameters: {
+        type: 'object',
+        properties: {},
+        additionalProperties: false
+      }
+    }
+  },
+  {
+    type: 'function',
+    function: {
+      name: 'get_target',
+      description:
+        'Get detailed information about one target, including local/global variables, lists, broadcasts, costumes, sounds, and block counts.',
+      parameters: {
+        type: 'object',
+        properties: {
+          target: {
+            type: 'string',
+            description: 'Target name or ID. Omit to inspect the current editing target.'
+          }
+        },
+        additionalProperties: false
+      }
+    }
+  },
+  {
+    type: 'function',
+    function: {
+      name: 'list_scripts',
+      description:
+        'List the top-level scripts of a target. Each result includes a readable hat label, a short DSL preview, position, and block count. Script IDs are internal handles for get_script.',
+      parameters: {
+        type: 'object',
+        properties: {
+          target: {
+            type: 'string',
+            description: 'Target name or ID. Omit to inspect the current editing target.'
+          },
+          limit: {
+            type: 'integer',
+            minimum: 1,
+            maximum: 100,
+            description: 'Maximum number of scripts to return. Defaults to 50.'
+          }
+        },
+        additionalProperties: false
+      }
+    }
+  },
+  {
+    type: 'function',
+    function: {
+      name: 'get_script',
+      description:
+        'Get a script as a readable Scratch DSL. Pass a script ID from list_scripts or search_blocks; the tool resolves the containing top-level script. The DSL renders core blocks, custom blocks, and extension blocks with their arguments, and does not expose per-block IDs.',
+      parameters: {
+        type: 'object',
+        properties: {
+          blockId: {
+            type: 'string',
+            description: 'Script ID from list_scripts or search_blocks.'
+          },
+          target: {
+            type: 'string',
+            description: 'Target name or ID. Omit to inspect the current editing target.'
+          },
+          maxBlocks: {
+            type: 'integer',
+            minimum: 1,
+            maximum: 400,
+            description: 'Maximum number of blocks to serialize. Defaults to 200.'
+          }
+        },
+        required: ['blockId'],
+        additionalProperties: false
+      }
+    }
+  },
+  {
+    type: 'function',
+    function: {
+      name: 'search_blocks',
+      description:
+        'Search blocks by opcode, field value, or block ID. Returns readable labels and the containing script ID, not raw block IDs.',
+      parameters: {
+        type: 'object',
+        properties: {
+          query: {
+            type: 'string',
+            description: 'Text to search for.'
+          },
+          target: {
+            type: 'string',
+            description: 'Optional target name or ID. Omit to search all targets.'
+          },
+          limit: {
+            type: 'integer',
+            minimum: 1,
+            maximum: 50,
+            description: 'Maximum number of matches. Defaults to 25.'
+          }
+        },
+        required: ['query'],
+        additionalProperties: false
+      }
+    }
+  },
+  {
+    type: 'function',
+    function: {
+      name: 'get_extension_source',
+      description:
+        "Read a loaded extension's metadata (name, blocks, arguments, menus) and, when available, its JavaScript source code. Use this to understand how an extension works or how its blocks behave. The project summary lists loaded extension IDs.",
+      parameters: {
+        type: 'object',
+        properties: {
+          extensionId: {
+            type: 'string',
+            description: 'Extension ID or name, for example "pen" or "music".'
+          },
+          includeSource: {
+            type: 'boolean',
+            description: 'Whether to include source code when available. Defaults to true.'
+          }
+        },
+        required: ['extensionId'],
+        additionalProperties: false
+      }
+    }
+  },
+  {
+    type: 'function',
+    function: {
+      name: 'get_runtime_state',
+      description:
+        'Get read-only runtime information: whether threads are running, thread count, target count, and the current editing target.',
+      parameters: {
+        type: 'object',
+        properties: {},
+        additionalProperties: false
+      }
+    }
+  }
+];
+
+/**
+ * Create read-only Scratch tool handlers bound to a VM.
+ * @param {object} vm Scratch VM.
+ * @returns {object} Tool handlers.
+ */
+export const createScratchTools = (vm) => ({
+  get_project_summary: () => getProjectSummary(vm),
+  list_targets: () => ({
+    targets: getTargets(vm).map(getTargetSummary),
+    currentTarget: getEditingTarget(vm) ? getTargetIdentity(getEditingTarget(vm)) : null
+  }),
+  get_target: (args) => getTargetDetails(vm, args || {}),
+  list_scripts: (args) => listScripts(vm, args || {}),
+  get_script: (args) => getScript(vm, args || {}),
+  search_blocks: (args) => searchBlocks(vm, args || {}),
+  get_extension_source: (args) => getExtensionSource(vm, args || {}),
+  get_runtime_state: () => getRuntimeState(vm)
+});

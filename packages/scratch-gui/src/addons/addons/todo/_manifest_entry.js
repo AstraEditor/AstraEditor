@@ -2,7 +2,7 @@ const manifest = {
   editorOnly: true,
   name: 'To-Do',
   description: 'Record your project to-do!',
-  tags: ['new', 'recommanded'],
+  tags: ['recommended'],
   credits: [
     {
       name: 'KOSHINO',
