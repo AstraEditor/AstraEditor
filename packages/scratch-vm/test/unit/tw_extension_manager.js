@@ -105,6 +105,40 @@ test('loadExtensionURL supports shorthand and URL normalization', async (t) => {
   t.end();
 });
 
+test('failed extension registration is tracked and can be retried', async (t) => {
+  const fakeRuntime = {};
+  const manager = new ExtensionManager(fakeRuntime);
+
+  t.throws(
+    () => manager._registerExtensionInfo('extension.0.0', { id: 'not valid!' }),
+    /Invalid extension id/,
+    'invalid extension id throws'
+  );
+  t.equal(manager.getFailedExtensions().get('not valid!'), 'Invalid extension id', 'failure is recorded');
+
+  const copy = manager.getFailedExtensions();
+  copy.set('other', 'error');
+  t.equal(manager.getFailedExtensions().has('other'), false, 'getFailedExtensions returns a copy');
+
+  const originalCall = dispatch.call;
+  try {
+    // A registration attempt clears the previous failure.
+    dispatch.call = () => Promise.resolve();
+    manager._registerExtensionInfo('extension.0.0', { id: 'reloaded' });
+    t.equal(manager.getFailedExtensions().has('reloaded'), false, 'successful registration has no failure');
+
+    // A rejected registration is recorded again.
+    dispatch.call = () => Promise.reject(new Error('registration boom'));
+    manager._registerExtensionInfo('extension.0.0', { id: 'rejectedext' });
+    await new Promise((resolve) => setImmediate(resolve));
+    t.equal(manager.getFailedExtensions().get('rejectedext'), 'registration boom');
+  } finally {
+    dispatch.call = originalCall;
+  }
+
+  t.end();
+});
+
 test('isExtensionURLLoaded supports equivalent URL variants', (t) => {
   const vm = new VM();
   const loaded = 'https://raw.githubusercontent.com/example/repo/main/ext.js';
@@ -277,6 +311,7 @@ test('unloadExtension removes blocks and runtime state', (t) => {
   };
 
   manager._loadedExtensions.set(extensionId, 'unsandboxed.1.testext');
+  manager._failedExtensions.set(extensionId, 'registration boom');
   manager.workerURLs[1] = 'https://example.com/ext.js';
   dispatch.services['unsandboxed.1.testext'] = {};
 
@@ -295,6 +330,7 @@ test('unloadExtension removes blocks and runtime state', (t) => {
   t.notOk(blocks.nestedNonExt, 'input subtree under removed reporter is deleted');
 
   t.equal(manager.isExtensionLoaded(extensionId), false);
+  t.equal(manager.getFailedExtensions().has(extensionId), false, 'failure state is cleared');
   t.equal(manager.workerURLs[1], undefined);
   t.equal(dispatch.services['unsandboxed.1.testext'], undefined);
 

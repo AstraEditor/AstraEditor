@@ -42,6 +42,11 @@ const messages = defineMessages({
   byBuiltIn: {
     defaultMessage: 'Built-in Extension',
     id: 'tw.extensionManager.byBuiltIn'
+  },
+  dropOnlyJS: {
+    defaultMessage: 'Only .js extension files can be loaded by dragging them here.',
+    description: 'Shown when files other than JavaScript extension files are dropped on the extension manager',
+    id: 'tw.extensionManager.dropOnlyJS'
   }
 });
 
@@ -99,6 +104,10 @@ const ExtensionChooser = (props) => {
     props;
   const [extensions, setExtensions] = useState([]);
   const [updateExts, setUpdateExts] = useState(false);
+  const [reloadingExtensions, setReloadingExtensions] = useState({});
+  const [draggingFiles, setDraggingFiles] = useState(false);
+  const isMountedRef = useRef(false);
+  const dropFilesRef = useRef(null);
   const [galleryData, setGalleryData] = useState({});
   const [backgroundLoaded, setBackgroundLoaded] = useState({});
   const [search, setSearch] = useState('');
@@ -115,6 +124,167 @@ const ExtensionChooser = (props) => {
    *这里下载的文件实际上为html
    */
   const TurboWarp_IncludeExts = Object.keys(vm.extensionManager.builtinExtensions);
+
+  /**
+   * 收集已加载的扩展：已成功注册的分类，以及已加载但注册失败的扩展。
+   * 失败条目带有 failed: true，用于在列表中显示“重新加载”。
+   * @returns {Array<object>} 扩展条目列表
+   */
+  const collectLoadedExtensions = () => {
+    if (!vm || !vm.runtime) return [];
+    const extensionMap = new Map();
+    (vm.runtime._blockInfo || []).forEach((ext) => {
+      if (ext && ext.id) {
+        extensionMap.set(ext.id, ext);
+      }
+    });
+
+    const manager = vm.extensionManager;
+    const failedExtensions =
+      manager && typeof manager.getFailedExtensions === 'function'
+        ? manager.getFailedExtensions()
+        : (manager && manager._failedExtensions) || new Map();
+
+    failedExtensions.forEach((error, extensionId) => {
+      if (!extensionId) return;
+      const existing = extensionMap.get(extensionId);
+      extensionMap.set(
+        extensionId,
+        existing
+          ? { ...existing, failed: true, failureReason: error }
+          : {
+              id: extensionId,
+              name: extensionId,
+              failed: true,
+              failureReason: error,
+              color1: '#cf4a4a',
+              color2: '#a83232'
+            }
+      );
+    });
+
+    return Array.from(extensionMap.values()).filter((ext) => ext && ext.id);
+  };
+
+  /**
+   * 重新加载注册失败的扩展。
+   * @param {string} extensionId 扩展 ID
+   * @returns {Promise<void>} 无返回值
+   */
+  const handleReloadExtension = async (extensionId) => {
+    if (!vm || !vm.extensionManager) return;
+    const manager = vm.extensionManager;
+    setReloadingExtensions((prev) => ({ ...prev, [extensionId]: true }));
+    try {
+      const urls = typeof manager.getExtensionURLs === 'function' ? manager.getExtensionURLs() : {};
+      const url = urls[extensionId] || (manager.isBuiltinExtension(extensionId) ? extensionId : null);
+      if (!url) {
+        throw new Error(`Cannot find the URL of extension: ${extensionId}`);
+      }
+      // 先清掉残留的加载 / 注册状态，再完整地重新加载一次
+      if (manager.isExtensionLoaded(extensionId)) {
+        manager.unloadExtension(extensionId, { skipConfirm: true });
+      }
+      await manager.loadExtensionURL(url);
+      setExtensions(collectLoadedExtensions());
+      // 块注册可能是异步完成的，稍后再刷新一次以拿到最终状态
+      setTimeout(() => {
+        if (isMountedRef.current) {
+          setExtensions(collectLoadedExtensions());
+        }
+      }, 1000);
+    } catch (err) {
+      console.error(`Failed to reload extension: ${extensionId}`, err);
+      // eslint-disable-next-line no-alert
+      alert(err);
+      setExtensions(collectLoadedExtensions());
+    } finally {
+      setReloadingExtensions((prev) => {
+        const next = { ...prev };
+        delete next[extensionId];
+        return next;
+      });
+    }
+  };
+
+  /**
+   * 把拖入的文件读取为 data URL，并强制使用 JavaScript MIME 类型。
+   * @param {File} file 扩展文件
+   * @returns {Promise<string>} data URL
+   */
+  const readExtensionFile = (file) =>
+    new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        const result = String(reader.result || '');
+        const comma = result.indexOf(',');
+        if (comma === -1) {
+          reject(new Error(`Could not read extension file: ${file.name}`));
+          return;
+        }
+        const isBase64 = /;base64$/i.test(result.substring(0, comma));
+        resolve(`data:application/javascript${isBase64 ? ';base64' : ''},${result.substring(comma + 1)}`);
+      };
+      reader.onerror = () => reject(new Error(`Could not read extension file: ${file.name}`));
+      reader.readAsDataURL(file);
+    });
+
+  /**
+   * 加载拖入的 .js 扩展文件。加载前会通过现有的安全确认模态框询问用户。
+   * @param {Array<File>} files 拖入的文件列表
+   * @returns {Promise<void>} 无返回值
+   */
+  const handleDroppedFiles = async (files) => {
+    if (!vm || !vm.extensionManager) return;
+
+    const jsFiles = files.filter((file) => /\.js$/i.test(file.name));
+    if (jsFiles.length === 0) {
+      if (files.length > 0) {
+        // eslint-disable-next-line no-alert
+        alert(intl.formatMessage(messages.dropOnlyJS));
+      }
+      return;
+    }
+
+    const manager = vm.extensionManager;
+    const droppedExtensions = await Promise.all(
+      jsFiles.map(async (file, index) => ({
+        // id 只用于确认模态框中的展示，真正加载时使用 url
+        id: jsFiles.length > 1 ? `#${index + 1} ${file.name}` : file.name,
+        name: file.name,
+        url: await readExtensionFile(file)
+      }))
+    );
+
+    // 复用现有的“加载扩展”确认模态框
+    const securityManager = manager.securityManager;
+    let allowed = true;
+    if (securityManager && typeof securityManager.canLoadMultipleExtensionsFromProject === 'function') {
+      allowed = await securityManager.canLoadMultipleExtensionsFromProject(droppedExtensions);
+    } else if (securityManager && typeof securityManager.canLoadExtensionFromProject === 'function') {
+      for (const extension of droppedExtensions) {
+        if (!(await securityManager.canLoadExtensionFromProject(extension.id, extension.url))) {
+          allowed = false;
+          break;
+        }
+      }
+    }
+    if (!allowed) return;
+
+    for (const extension of droppedExtensions) {
+      try {
+        await manager.loadExtensionURL(extension.url);
+      } catch (err) {
+        console.error(`Failed to load dropped extension: ${extension.name}`, err);
+        // eslint-disable-next-line no-alert
+        alert(err);
+      }
+    }
+    setExtensions(collectLoadedExtensions());
+  };
+
+  dropFilesRef.current = handleDroppedFiles;
+
   // 删除扩展
   const handleRemoveExtension = (extensionId) => {
     if (!vm || !vm.extensionManager) return;
@@ -176,33 +346,69 @@ const ExtensionChooser = (props) => {
 
   useEffect(() => {
     if (vm && vm.runtime && vm.runtime._blockInfo) {
-      const extensionMap = new Map();
-      vm.runtime._blockInfo.forEach((ext) => {
-        if (ext.id) {
-          extensionMap.set(ext.id, ext);
-        }
-      });
-      const uniqueExtensions = Array.from(extensionMap.values());
-      setExtensions(uniqueExtensions);
+      setExtensions(collectLoadedExtensions());
     }
   }, [vm, updateExts]);
+
+  useEffect(() => {
+    isMountedRef.current = true;
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    const hasFiles = (event) => !!event.dataTransfer && Array.from(event.dataTransfer.types || []).includes('Files');
+
+    const handleWindowDragOver = (event) => {
+      if (!hasFiles(event)) return;
+      event.preventDefault();
+      if (event.dataTransfer) {
+        event.dataTransfer.dropEffect = 'copy';
+      }
+      setDraggingFiles(true);
+    };
+
+    const handleWindowDragLeave = (event) => {
+      // relatedTarget 为 null 表示已经拖出窗口
+      if (event.relatedTarget === null) {
+        setDraggingFiles(false);
+      }
+    };
+
+    const handleWindowDrop = (event) => {
+      if (!hasFiles(event)) return;
+      event.preventDefault();
+      setDraggingFiles(false);
+      const files = Array.from((event.dataTransfer && event.dataTransfer.files) || []);
+      if (dropFilesRef.current) {
+        Promise.resolve(dropFilesRef.current(files)).catch((err) => {
+          console.error('Failed to load dropped extensions:', err);
+          // eslint-disable-next-line no-alert
+          alert(err);
+        });
+      }
+    };
+
+    window.addEventListener('dragover', handleWindowDragOver);
+    window.addEventListener('dragleave', handleWindowDragLeave);
+    window.addEventListener('drop', handleWindowDrop);
+    return () => {
+      window.removeEventListener('dragover', handleWindowDragOver);
+      window.removeEventListener('dragleave', handleWindowDragLeave);
+      window.removeEventListener('drop', handleWindowDrop);
+    };
+  }, []);
 
   useEffect(() => {
     if (!vm || !vm.runtime) return;
 
     const updateInfo = () => {
       if (vm.runtime && vm.runtime._blockInfo) {
-        const extensionMap = new Map();
-        vm.runtime._blockInfo.forEach((ext) => {
-          if (ext.id) {
-            extensionMap.set(ext.id, ext);
-          }
-        });
-        const uniqueExtensions = Array.from(extensionMap.values());
-        setExtensions(uniqueExtensions);
+        setExtensions(collectLoadedExtensions());
         queueMicrotask(() => {
-          setExtensionsURLs({urls: vm.extensionManager.workerURLs, exts: vm.extensionManager._loadedExtensions });
-        })
+          setExtensionsURLs({ urls: vm.extensionManager.workerURLs, exts: vm.extensionManager._loadedExtensions });
+        });
       }
     };
 
@@ -341,6 +547,24 @@ const ExtensionChooser = (props) => {
       onRequestClose={handleClose}
     >
       <div className={styles.container}>
+        {draggingFiles && (
+          <div className={styles.dropOverlay}>
+            <div className={styles.dropOverlayInner}>
+              <FormattedMessage
+                defaultMessage="Drop .js extension files to load them"
+                description="Shown while dragging files over the extension manager"
+                id="tw.extensionManager.dropOverlay"
+              />
+              <div className={styles.dropOverlayHint}>
+                <FormattedMessage
+                  defaultMessage="You will be asked to confirm before loading."
+                  description="Secondary text shown while dragging files over the extension manager"
+                  id="tw.extensionManager.dropOverlayHint"
+                />
+              </div>
+            </div>
+          </div>
+        )}
         <Box className={styles.header}>
           <button className={styles.openCodeButton} onClick={handleOpenCode}>
             <img src={code} draggable={false} className={styles.openLibraryButtonIcon} />
@@ -353,6 +577,13 @@ const ExtensionChooser = (props) => {
           </button>
         </Box>
         <div className={styles.content}>
+          <span className={styles.dropHint}>
+            <FormattedMessage
+              defaultMessage="Tip: drag and drop .js extension files into this window to load them."
+              description="Hint shown in the extension manager about drag and drop loading"
+              id="tw.extensionManager.dropHint"
+            />
+          </span>
           <>
             {extensions.filter((item) => !TurboWarp_Exts.includes(item.id)).length == 0 ? (
               <span className={styles.tip}>
@@ -382,9 +613,16 @@ const ExtensionChooser = (props) => {
                     key={item.id || `ext-${index}`}
                     style={{
                       backgroundColor: item.color2 == undefined ? item.color1 : item.color2,
-                      position: 'relative'
+                      position: 'relative',
+                      ...(item.failed
+                        ? {
+                            border: '2px dashed rgba(255, 255, 255, 0.85)',
+                            boxSizing: 'border-box'
+                          }
+                        : {})
                     }}
                     className={styles.Extbg}
+                    title={item.failed ? item.failureReason : undefined}
                   >
                     <ExtensionImage
                       src={getExtensionBackground(item)}
@@ -445,26 +683,70 @@ const ExtensionChooser = (props) => {
                           >
                             {item.id}
                           </span>
+                          {item.failed && (
+                            <div className={styles.failedInfo} title={item.failureReason}>
+                              <span className={styles.failedBadge}>
+                                <FormattedMessage
+                                  defaultMessage="Registration failed"
+                                  description="Badge shown when an extension loaded but failed to register its blocks"
+                                  id="tw.extensionManager.registrationFailed"
+                                />
+                              </span>
+                              <span className={styles.failedHint}>
+                                <FormattedMessage
+                                  defaultMessage="Open the console to view the loading error."
+                                  description="Hint shown in a failed extension card telling the user where to find the error"
+                                  id="tw.extensionManager.checkConsole"
+                                />
+                              </span>
+                            </div>
+                          )}
                         </div>
                       </div>
                       <div>
-                       {<button
-                          className={styles.button}
-                          style={{
-                            color: item.color2 == undefined ? item.color1 : item.color2
-                          }}
-                          onClick={() => {
-                            dispatch(setPreviewExtData({data: vm.extensionManager.getExtensionURLs()[item.id] ?? `data:text/plain;base64,VEFUIFRoaXMgRXh0ZW5zaW9uIGlzIGJ1aWx0SW4gb3IgY2FuJ3QgYmUgbG9hZC4=`, svgs: getSVGfromOpcodes(getOpcodefromExt(item))}));
-                            dispatch(openPreviewExt());
-                          }}
-                        >
-                          <FormattedMessage
-                            defaultMessage="Preview"
-                            description="text of View "
-                            id="tw.extensionManager.preview"
-                          />
-                        </button>}
-                        {!TurboWarp_IncludeExts.includes(item.id) && (
+                        {item.failed && (
+                          <button
+                            className={styles.button}
+                            style={{
+                              color: '#cf4a4a'
+                            }}
+                            disabled={!!reloadingExtensions[item.id]}
+                            onClick={() => handleReloadExtension(item.id)}
+                          >
+                            {reloadingExtensions[item.id] ? (
+                              <FormattedMessage
+                                defaultMessage="Reloading..."
+                                description="Text of the reload button while an extension is being reloaded"
+                                id="tw.extensionManager.reloading"
+                              />
+                            ) : (
+                              <FormattedMessage
+                                defaultMessage="Reload"
+                                description="Text of the reload button for an extension that failed to register"
+                                id="tw.extensionManager.reload"
+                              />
+                            )}
+                          </button>
+                        )}
+                        {!item.failed && (
+                          <button
+                            className={styles.button}
+                            style={{
+                              color: item.color2 == undefined ? item.color1 : item.color2
+                            }}
+                            onClick={() => {
+                              dispatch(setPreviewExtData({data: vm.extensionManager.getExtensionURLs()[item.id] ?? `data:text/plain;base64,VEFUIFRoaXMgRXh0ZW5zaW9uIGlzIGJ1aWx0SW4gb3IgY2FuJ3QgYmUgbG9hZC4=`, svgs: getSVGfromOpcodes(getOpcodefromExt(item))}));
+                              dispatch(openPreviewExt());
+                            }}
+                          >
+                            <FormattedMessage
+                              defaultMessage="Preview"
+                              description="text of View "
+                              id="tw.extensionManager.preview"
+                            />
+                          </button>
+                        )}
+                        {!item.failed && !TurboWarp_IncludeExts.includes(item.id) && (
                           <button
                             className={styles.button}
                             style={{

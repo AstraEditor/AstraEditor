@@ -107,6 +107,14 @@ class ExtensionManager {
     this._loadedExtensions = new Map();
 
     /**
+     * Map of extension IDs which were loaded but failed to register their blocks to the runtime.
+     * The value is a human-readable error message.
+     * @type {Map.<string,string>}
+     * @private
+     */
+    this._failedExtensions = new Map();
+
+    /**
      * Responsible for determining security policies related to custom extensions.
      */
     this.securityManager = new SecurityManager();
@@ -565,10 +573,40 @@ class ExtensionManager {
    * @private
    */
   _registerExtensionInfo(serviceName, extensionInfo) {
-    extensionInfo = this._prepareExtensionInfo(serviceName, extensionInfo);
-    dispatch.call('runtime', '_registerExtensionPrimitives', extensionInfo).catch((e) => {
+    const extensionId = extensionInfo && extensionInfo.id;
+    let preparedInfo;
+    try {
+      preparedInfo = this._prepareExtensionInfo(serviceName, extensionInfo);
+    } catch (e) {
+      if (extensionId) {
+        this._failedExtensions.set(extensionId, ExtensionManager._getErrorMessage(e));
+      }
+      throw e;
+    }
+    // Clear any previous failure before registering so that listeners of EXTENSION_ADDED
+    // don't observe the extension as still failed.
+    if (extensionId) {
+      this._failedExtensions.delete(extensionId);
+    }
+    dispatch.call('runtime', '_registerExtensionPrimitives', preparedInfo).catch((e) => {
+      if (extensionId) {
+        this._failedExtensions.set(extensionId, ExtensionManager._getErrorMessage(e));
+      }
       log.error(`Failed to register primitives for extension on service ${serviceName}:`, e);
     });
+  }
+
+  /**
+   * Convert an error to a human-readable message.
+   * @param {*} error - the error to convert
+   * @returns {string} the error message
+   * @private
+   */
+  static _getErrorMessage(error) {
+    if (!error) {
+      return 'Unknown error';
+    }
+    return typeof error === 'string' ? error : error.message || String(error);
   }
 
   /**
@@ -1070,6 +1108,7 @@ class ExtensionManager {
 
     const serviceName = this._loadedExtensions.get(extensionId);
     this._loadedExtensions.delete(extensionId);
+    this._failedExtensions.delete(extensionId);
     if (serviceName && Object.prototype.hasOwnProperty.call(dispatch.services, serviceName)) {
       delete dispatch.services[serviceName];
     }
@@ -1090,6 +1129,15 @@ class ExtensionManager {
     };
     this.runtime.emit('EXTENSION_REMOVED', extensionId, removalDetail);
     return true;
+  }
+
+  /**
+   * Get extensions which were loaded but failed to register their blocks.
+   * These extensions are not present in `runtime._blockInfo` and usually need to be reloaded.
+   * @returns {Map.<string,string>} Map of extension ID to error message
+   */
+  getFailedExtensions() {
+    return new Map(this._failedExtensions);
   }
 
   getExtensionURLs() {

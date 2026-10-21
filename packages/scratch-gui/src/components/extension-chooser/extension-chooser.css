@@ -117,6 +117,35 @@
   box-shadow: 0 0 0 3px $looks-transparent;
 }
 
+.button:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.failedInfo {
+  display: flex;
+  align-items: center;
+  margin: 4px 0 0 10px;
+}
+
+.failedBadge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background-color: rgba(0, 0, 0, 0.45);
+  color: white;
+  font-size: 12px;
+  font-weight: bold;
+  white-space: nowrap;
+}
+
+.failedHint {
+  margin-left: 8px;
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 12px;
+  text-shadow: 0 0 3px rgba(0, 0, 0, 0.8);
+}
+
 .openLibraryButtonIcon {
   width: 16px;
   height: 16px;
@@ -127,4 +156,41 @@
   height: 20px;
   padding-left: 5px;
   filter: invert(1) drop-shadow(rgba(0, 0, 0, 0.8) 0px 0px 3px);
+}
+
+.dropHint {
+  margin: 0 auto 10px;
+  color: white;
+  font-size: 14px;
+  opacity: 0.75;
+  text-align: center;
+}
+
+.dropOverlay {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: rgba(0, 0, 0, 0.55);
+  border: 4px dashed rgba(255, 255, 255, 0.85);
+}
+
+.dropOverlayInner {
+  color: white;
+  font-size: 24px;
+  font-weight: bold;
+  text-align: center;
+  pointer-events: none;
+}
+
+.dropOverlayHint {
+  margin-top: 8px;
+  font-size: 16px;
+  font-weight: normal;
+  opacity: 0.8;
 }
