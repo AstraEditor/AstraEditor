@@ -7,9 +7,11 @@ import DataURL from './data-url.jsx';
 import FancyCheckbox from '../tw-fancy-checkbox/checkbox.jsx';
 import { APP_NAME } from '../../lib/brand';
 
+const hasExtensions = (extensions) => extensions && Object.keys(extensions).length > 0;
+
 const LoadExtensionModal = (props) => (
   <div>
-    {props.extensions && Object.keys(props.extensions).length > 0 ? (
+    {hasExtensions(props.extensions) ? (
       <React.Fragment>
         <FormattedMessage
           defaultMessage="The project wants to load the following custom extensions:"
@@ -44,7 +46,7 @@ const LoadExtensionModal = (props) => (
       </React.Fragment>
     ) : null}
 
-    {props.extensions && Object.keys(props.extensions).length > 0 ? (
+    {hasExtensions(props.extensions) ? (
       <FormattedMessage
         defaultMessage="All Extensions will run without sandbox"
         description="sandbox is unable all the time"
@@ -81,7 +83,9 @@ const LoadExtensionModal = (props) => (
         </React.Fragment>
       )
     )}
-    {!props.unsandboxed && (
+    {/* The multi-extension prompt states that every extension will run without the
+        sandbox, so the sandboxed hint must not be rendered in that case. */}
+    {!props.unsandboxed && !hasExtensions(props.extensions) && (
       <div className={styles.sandboxed}>
         <FormattedMessage
           // eslint-disable-next-line max-len

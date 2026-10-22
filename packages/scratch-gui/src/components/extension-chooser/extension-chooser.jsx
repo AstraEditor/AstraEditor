@@ -248,9 +248,9 @@ const ExtensionChooser = (props) => {
 
     const manager = vm.extensionManager;
     const droppedExtensions = await Promise.all(
-      jsFiles.map(async (file, index) => ({
+      jsFiles.map(async (file) => ({
         // id 只用于确认模态框中的展示，真正加载时使用 url
-        id: jsFiles.length > 1 ? `#${index + 1} ${file.name}` : file.name,
+        id: file.name,
         name: file.name,
         url: await readExtensionFile(file)
       }))
@@ -555,13 +555,6 @@ const ExtensionChooser = (props) => {
                 description="Shown while dragging files over the extension manager"
                 id="tw.extensionManager.dropOverlay"
               />
-              <div className={styles.dropOverlayHint}>
-                <FormattedMessage
-                  defaultMessage="You will be asked to confirm before loading."
-                  description="Secondary text shown while dragging files over the extension manager"
-                  id="tw.extensionManager.dropOverlayHint"
-                />
-              </div>
             </div>
           </div>
         )}
@@ -577,13 +570,6 @@ const ExtensionChooser = (props) => {
           </button>
         </Box>
         <div className={styles.content}>
-          <span className={styles.dropHint}>
-            <FormattedMessage
-              defaultMessage="Tip: drag and drop .js extension files into this window to load them."
-              description="Hint shown in the extension manager about drag and drop loading"
-              id="tw.extensionManager.dropHint"
-            />
-          </span>
           <>
             {extensions.filter((item) => !TurboWarp_Exts.includes(item.id)).length == 0 ? (
               <span className={styles.tip}>
@@ -796,6 +782,13 @@ const ExtensionChooser = (props) => {
             })}
           </>
         </div>
+        <span className={styles.dropHint}>
+          <FormattedMessage
+            defaultMessage="Drag extension files into this window to load them."
+            description="Hint shown in the extension manager about drag and drop loading"
+            id="tw.extensionManager.dropHint"
+          />
+        </span>
       </div>
     </Modal>
   );
