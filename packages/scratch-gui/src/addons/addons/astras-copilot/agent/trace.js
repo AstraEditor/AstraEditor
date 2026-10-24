@@ -14,6 +14,12 @@ export const previewToolResult = (result, name) => {
       source: `[${result.source.length} characters of source code]`
     };
   }
+  if (name === 'fetch_url' && result && typeof result === 'object' && typeof result.text === 'string') {
+    value = {
+      ...result,
+      text: `[${result.text.length} characters of text]`
+    };
+  }
 
   let text = '';
   try {
@@ -91,6 +97,48 @@ export const describeToolResult = (name, args, result, ok) => {
         kind: 'runtime',
         running: Boolean(result.isRunning),
         threads: result.threadCount || 0
+      };
+    case 'search_web':
+      return {
+        kind: 'web-search',
+        query: String(result.query || ''),
+        count: Array.isArray(result.results) ? result.results.length : 0
+      };
+    case 'fetch_url':
+      return {
+        kind: 'page',
+        url: String(result.url || ''),
+        chars: Number(result.chars) || 0
+      };
+    case 'apply_scripts':
+      return {
+        kind: 'apply-scripts',
+        name: (result.target && result.target.name) || '',
+        scripts: result.scripts || 0
+      };
+    case 'delete_scripts':
+      return {
+        kind: 'delete-scripts',
+        name: (result.target && result.target.name) || '',
+        count: result.deleted || 0
+      };
+    case 'create_variable':
+      return {
+        kind: 'create-variable',
+        name: result.name || '',
+        variableKind: result.kind || 'variable',
+        created: Boolean(result.created)
+      };
+    case 'rename_target':
+      return {
+        kind: 'rename-target',
+        before: result.before || '',
+        after: result.after || ''
+      };
+    case 'block_catalog':
+      return {
+        kind: 'block-catalog',
+        count: result.count || 0
       };
     default:
       return null;

@@ -15,6 +15,7 @@ import { renderMarkdown } from './agent/markdown.js';
 import { MAX_CONTEXT_MESSAGES, runAgent } from './agent/loop.js';
 import { buildSystemPrompt } from './agent/prompt.js';
 import { TOOL_DEFINITIONS } from './agent/tools.js';
+import { setApplier } from './agent/writer.js';
 
 const PLUGIN_ID = 'astras-copilot';
 const CONFIG_KEY = 'astras-agent-config-v2';
@@ -35,7 +36,14 @@ const DEFAULT_CONFIG = {
   apiKey: '',
   model: 'gpt-4o-mini',
   headers: {},
-  stream: true
+  stream: true,
+  temperature: 0.2,
+  maxTokens: 3000,
+  retries: 2,
+  streamIdleTimeoutMs: 30000,
+  webProxy: '',
+  searchEndpoint: '',
+  searchEngine: 'duckduckgo'
 };
 
 /**
@@ -134,7 +142,16 @@ const loadConfig = () => {
     model: typeof stored.model === 'string' && stored.model ? stored.model : DEFAULT_CONFIG.model,
     headers:
       stored.headers && typeof stored.headers === 'object' && !Array.isArray(stored.headers) ? stored.headers : {},
-    stream: stored.stream !== false
+    stream: stored.stream !== false,
+    temperature: Number.isFinite(Number(stored.temperature)) ? Number(stored.temperature) : DEFAULT_CONFIG.temperature,
+    maxTokens: Number.isFinite(Number(stored.maxTokens)) ? Number(stored.maxTokens) : DEFAULT_CONFIG.maxTokens,
+    retries: Number.isFinite(Number(stored.retries)) ? Number(stored.retries) : DEFAULT_CONFIG.retries,
+    streamIdleTimeoutMs: Number.isFinite(Number(stored.streamIdleTimeoutMs))
+      ? Number(stored.streamIdleTimeoutMs)
+      : DEFAULT_CONFIG.streamIdleTimeoutMs,
+    webProxy: typeof stored.webProxy === 'string' ? stored.webProxy : DEFAULT_CONFIG.webProxy,
+    searchEndpoint: typeof stored.searchEndpoint === 'string' ? stored.searchEndpoint : DEFAULT_CONFIG.searchEndpoint,
+    searchEngine: typeof stored.searchEngine === 'string' ? stored.searchEngine : DEFAULT_CONFIG.searchEngine
   };
 };
 
@@ -334,6 +351,9 @@ export default async ({ addon, msg }) => {
   let conversationLayoutObserver = null;
   let isWideLayout = false;
   let conversationPaneOpen = false;
+  let pendingDeleteId = null;
+  let sessionMenu = null;
+  let statusRow = null;
   let statusElement = null;
   let inputElement = null;
   let sendButton = null;
@@ -356,6 +376,14 @@ export default async ({ addon, msg }) => {
   let streamInput = null;
   let autoApproveInput = null;
   let autoApproveTools = false;
+  let writeEnabled = false;
+  let writeEnabledInput = null;
+  const approvedConversations = new Set();
+  let temperatureInput = null;
+  let maxTokensInput = null;
+  let retriesInput = null;
+  let searchEngineInput = null;
+  let searchEndpointInput = null;
   let contextElement = null;
   let compressButton = null;
   let compressController = null;
@@ -363,9 +391,14 @@ export default async ({ addon, msg }) => {
   let compressing = false;
   let autoScrollEnabled = true;
   let liveTrace = [];
+  let liveParts = [];
   let liveTraceElement = null;
+  const disclosureElements = new WeakMap();
   const approvalResolvers = new Map();
   let streamingText = '';
+  let streamingReasoning = '';
+  let streamingReasoningElement = null;
+  let streamingReasoningBody = null;
   let streamingSanitize = true;
   let streamingRow = null;
   let streamingBubble = null;
@@ -418,24 +451,20 @@ export default async ({ addon, msg }) => {
   };
 
   /**
-   * Update the status line below the message list.
+   * Show a trailing status bubble in the conversation's scrolling timeline.
    * @param {string} text Status text.
    * @param {boolean} [isError] Whether this is an error status.
    */
   const setStatus = (text, isError = false) => {
-    if (!statusElement) return;
+    if (!statusElement || !messagesElement) return;
+    const stick = isNearBottom() || autoScrollEnabled;
     statusElement.textContent = text || '';
     statusElement.classList.toggle('sa-agent-status-error', Boolean(isError));
-    const settingsOpen = Boolean(settingsPanel && settingsPanel.style.display !== 'none');
-    statusElement.style.display = text && !settingsOpen ? 'block' : 'none';
+    statusElement.setAttribute('role', isError ? 'alert' : 'status');
+    if (text) messagesElement.appendChild(statusRow);
+    else statusRow.remove();
+    if (stick) scrollToBottom();
   };
-
-  /**
-   * Compose a localized status message for a tool call.
-   * @param {string} toolName Tool name.
-   * @returns {string} Status message.
-   */
-  const getToolStatus = (toolName) => msg('status-tool', { name: getToolLabel(toolName) });
 
   /**
    * Update the enablement of the composer controls.
@@ -534,7 +563,9 @@ export default async ({ addon, msg }) => {
           },
           ...history.map((message) => ({ role: message.role, content: message.content }))
         ],
-        signal: controller.signal
+        signal: controller.signal,
+        onRetry: (info) =>
+          setStatus(msg('status-retrying', { attempt: Number(info.attempt) || 1, max: Number(info.max) || 1 }))
       });
       if (requestId !== compressRequestId || conversationId !== activeConversationId) return;
 
@@ -599,8 +630,18 @@ export default async ({ addon, msg }) => {
     get_script: msg('tool-get-script'),
     search_blocks: msg('tool-search-blocks'),
     get_extension_source: msg('tool-get-extension-source'),
-    get_runtime_state: msg('tool-get-runtime-state')
+    get_runtime_state: msg('tool-get-runtime-state'),
+    search_web: msg('tool-search-web'),
+    fetch_url: msg('tool-fetch-url'),
+    block_catalog: msg('tool-block-catalog'),
+    apply_scripts: msg('tool-apply-scripts'),
+    delete_scripts: msg('tool-delete-scripts'),
+    create_variable: msg('tool-create-variable'),
+    rename_target: msg('tool-rename-target')
   };
+
+  /** Tools that modify the project (approval prompt wording differs). */
+  const WRITE_TOOL_SET = new Set(['apply_scripts', 'delete_scripts', 'create_variable', 'rename_target']);
 
   /**
    * Get a localized tool name.
@@ -783,15 +824,11 @@ export default async ({ addon, msg }) => {
    * Delete a conversation.
    * @param {string} id Conversation id.
    */
-  const deleteConversation = async (id) => {
+  const deleteConversation = (id) => {
     const conversation = findConversation(id);
     if (!conversation) return;
-    const confirmed = await addon.tab.confirm(
-      msg('conversation-delete'),
-      msg('conversation-delete-confirm', { title: getConversationTitle(conversation) }),
-      { useEditorClasses: true }
-    );
-    if (!confirmed) return;
+    pendingDeleteId = null;
+    approvedConversations.delete(id);
 
     const wasActive = conversation.id === activeConversationId;
     cancelCompression();
@@ -813,6 +850,7 @@ export default async ({ addon, msg }) => {
         lastUsage = null;
       }
       liveTrace = [];
+      liveParts = [];
       liveTraceElement = null;
       clearStreaming();
       renderMessages();
@@ -864,17 +902,68 @@ export default async ({ addon, msg }) => {
       deleteButton.setAttribute('aria-label', msg('conversation-delete'));
       deleteButton.addEventListener('click', (event) => {
         event.stopPropagation();
-        deleteConversation(conversation.id).catch(() => {});
+        pendingDeleteId = conversation.id;
+        renderConversationList();
+        const cancel = conversationListElement.querySelector('.sa-agent-delete-cancel');
+        if (cancel) cancel.focus();
       });
 
       actions.appendChild(renameButton);
       actions.appendChild(deleteButton);
       item.appendChild(titleButton);
       item.appendChild(actions);
+      if (pendingDeleteId === conversation.id) {
+        item.classList.add('sa-agent-conversation-item-confirming');
+        const confirmation = document.createElement('div');
+        confirmation.className = 'sa-agent-delete-confirm';
+        confirmation.setAttribute('role', 'group');
+        const prompt = document.createElement('div');
+        prompt.textContent = msg('conversation-delete-confirm', { title: getConversationTitle(conversation) });
+        confirmation.appendChild(prompt);
+        const buttons = document.createElement('div');
+        buttons.className = 'sa-agent-delete-actions';
+        const cancel = document.createElement('button');
+        cancel.type = 'button';
+        cancel.className = 'sa-agent-tool-approval-button sa-agent-delete-cancel';
+        cancel.textContent = msg('cancel');
+        const dismiss = () => {
+          pendingDeleteId = null;
+          renderConversationList();
+          const restored = Array.from(conversationListElement.children).find(
+            (element) => element.dataset.conversationId === conversation.id
+          );
+          if (restored) restored.querySelector('.sa-agent-delete-button').focus();
+        };
+        cancel.addEventListener('click', dismiss);
+        confirmation.addEventListener('keydown', (event) => {
+          if (event.key === 'Escape') {
+            event.preventDefault();
+            event.stopPropagation();
+            dismiss();
+          }
+        });
+        const confirm = document.createElement('button');
+        confirm.type = 'button';
+        confirm.className = 'sa-agent-tool-approval-button sa-agent-delete-accept';
+        confirm.textContent = msg('conversation-delete');
+        confirm.addEventListener('click', () => {
+          deleteConversation(conversation.id);
+          const next = conversationListElement.querySelector('.sa-agent-conversation-item-title');
+          if (next) next.focus();
+        });
+        buttons.appendChild(cancel);
+        buttons.appendChild(confirm);
+        confirmation.appendChild(buttons);
+        item.appendChild(confirmation);
+      }
+      item.dataset.conversationId = conversation.id;
+      deleteButton.classList.add('sa-agent-delete-button');
       conversationListElement.appendChild(item);
     }
 
     updateHeaderTitle();
+    autoApproveTools = approvedConversations.has(activeConversationId);
+    if (autoApproveInput) autoApproveInput.checked = autoApproveTools;
     conversationListElement.scrollTop = scrollTop;
     const activeItem = conversationListElement.querySelector('.sa-agent-conversation-item-active');
     if (activeItem) {
@@ -900,6 +989,9 @@ export default async ({ addon, msg }) => {
     streamingRow = null;
     streamingBubble = null;
     streamingText = '';
+    streamingReasoning = '';
+    streamingReasoningElement = null;
+    streamingReasoningBody = null;
   };
 
   /**
@@ -907,17 +999,32 @@ export default async ({ addon, msg }) => {
    */
   const renderStreamingBubble = () => {
     streamingRenderFrame = 0;
-    if (!streamingBubble) return;
+    if (!streamingRow) return;
+    const stick = isNearBottom() || autoScrollEnabled;
+    if (streamingReasoning) {
+      if (!streamingReasoningElement) {
+        streamingReasoningElement = buildReasoningElement(streamingReasoning, {}, true);
+        streamingReasoningBody = streamingReasoningElement.querySelector('.sa-agent-reasoning-body');
+        streamingRow.insertBefore(streamingReasoningElement, streamingBubble);
+      }
+      streamingReasoningBody.textContent = '';
+      streamingReasoningBody.appendChild(renderMarkdown(streamingReasoning));
+      streamingReasoningElement.querySelector('summary').textContent = msg(
+        streamingText ? 'reasoning-title' : 'reasoning-active'
+      );
+    }
     const content = streamingSanitize ? replaceInternalIds(vm, streamingText) : streamingText;
     streamingBubble.textContent = '';
     streamingBubble.appendChild(renderMarkdown(content));
+    streamingBubble.hidden = !streamingText;
+    if (stick) scrollToBottom();
   };
 
   /**
    * Append streaming text and update the live assistant bubble.
    */
   const updateStreaming = () => {
-    if (!messagesElement || !streamingText) return;
+    if (!messagesElement || (!streamingText && !streamingReasoning)) return;
     const stick = isNearBottom();
     if (!streamingRow || !streamingRow.isConnected) {
       streamingRow = document.createElement('div');
@@ -929,7 +1036,7 @@ export default async ({ addon, msg }) => {
       streamingBubble.className = 'sa-agent-bubble sa-agent-streaming-bubble';
       streamingRow.appendChild(role);
       streamingRow.appendChild(streamingBubble);
-      messagesElement.appendChild(streamingRow);
+      messagesElement.insertBefore(streamingRow, statusRow.parentNode === messagesElement ? statusRow : null);
     }
     if (!streamingRenderFrame) streamingRenderFrame = requestAnimationFrame(renderStreamingBubble);
     if (stick) {
@@ -968,6 +1075,28 @@ export default async ({ addon, msg }) => {
           state: msg(summary.running ? 'trace-running' : 'trace-stopped'),
           threads: summary.threads
         });
+      case 'web-search':
+        return msg('trace-web-search', {
+          query: String(summary.query || '').slice(0, 120),
+          count: summary.count
+        });
+      case 'page':
+        return msg('trace-page', {
+          url: String(summary.url || '').slice(0, 80),
+          chars: summary.chars
+        });
+      case 'apply-scripts':
+        return msg('trace-apply-scripts', { name: summary.name, scripts: summary.scripts });
+      case 'delete-scripts':
+        return msg('trace-delete-scripts', { name: summary.name, count: summary.count });
+      case 'create-variable':
+        return msg(summary.created ? 'trace-create-variable' : 'trace-create-variable-exists', {
+          name: summary.name
+        });
+      case 'rename-target':
+        return msg('trace-rename-target', { before: summary.before, after: summary.after });
+      case 'block-catalog':
+        return msg('trace-block-catalog', { count: summary.count });
       case 'denied':
         return msg('trace-denied-summary');
       case 'error':
@@ -1069,6 +1198,9 @@ export default async ({ addon, msg }) => {
       const script = describeTraceScript(String(args.blockId));
       if (script) parts.push(msg('trace-args-script', { script }));
     }
+    if (args.url) {
+      parts.push(msg('trace-args-url', { url: String(args.url).slice(0, 160) }));
+    }
     if (args.limit) {
       parts.push(msg('trace-args-limit', { limit: args.limit }));
     }
@@ -1146,6 +1278,66 @@ export default async ({ addon, msg }) => {
       renderLiveTrace();
     });
 
+  /** Keep disclosure state while live content is rebuilt. */
+  const rememberDisclosure = (element, key, defaultOpen = false) => {
+    const previous = disclosureElements.get(key);
+    element.open = previous ? previous.open : defaultOpen;
+    disclosureElements.set(key, element);
+  };
+
+  /** Render only reasoning text actually returned by the API. */
+  const buildReasoningElement = (text, key, active = false) => {
+    const details = document.createElement('details');
+    details.className = 'sa-agent-reasoning';
+    rememberDisclosure(details, key, active);
+    const summary = document.createElement('summary');
+    summary.textContent = msg(active ? 'reasoning-active' : 'reasoning-title');
+    const body = document.createElement('div');
+    body.className = 'sa-agent-reasoning-body';
+    body.appendChild(renderMarkdown(text));
+    details.appendChild(summary);
+    details.appendChild(body);
+    return details;
+  };
+
+  /** Render assistant text and tool groups in their original order. */
+  const appendAssistantParts = (row, parts, interactive = false) => {
+    for (const part of parts) {
+      if (!part) continue;
+      if (part.type === 'tools' && Array.isArray(part.trace) && part.trace.length) {
+        row.appendChild(buildTraceElement(part.trace, interactive));
+      } else if (part.type === 'response') {
+        if (part.reasoning) row.appendChild(buildReasoningElement(part.reasoning, part));
+        if (part.content) {
+          const bubble = document.createElement('div');
+          bubble.className = 'sa-agent-bubble';
+          renderFormattedContent(bubble, part.content);
+          row.appendChild(bubble);
+        }
+      }
+    }
+  };
+
+  /** Group consecutive tool calls without displacing preceding assistant text. */
+  const addLiveTool = (entry) => {
+    liveTrace.push(entry);
+    let part = liveParts[liveParts.length - 1];
+    if (!part || part.type !== 'tools') {
+      part = { type: 'tools', trace: [] };
+      liveParts.push(part);
+    }
+    part.trace.push(entry);
+  };
+
+  /** This permission belongs to the current conversation in this browser session. */
+  const setAutoApproveTools = (allowed) => {
+    autoApproveTools = allowed;
+    if (allowed) approvedConversations.add(activeConversationId);
+    else approvedConversations.delete(activeConversationId);
+    if (autoApproveInput) autoApproveInput.checked = allowed;
+    if (allowed) Array.from(approvalResolvers.keys()).forEach((id) => resolveToolApproval(id, true));
+  };
+
   /**
    * Build a single tool-call row.
    * @param {object} entry Trace entry.
@@ -1159,6 +1351,7 @@ export default async ({ addon, msg }) => {
 
     const details = document.createElement('details');
     details.className = 'sa-agent-tool';
+    rememberDisclosure(details, entry, status !== 'awaiting');
 
     const summary = document.createElement('summary');
     summary.className = 'sa-agent-tool-summary';
@@ -1233,7 +1426,9 @@ export default async ({ addon, msg }) => {
 
       const hint = document.createElement('span');
       hint.className = 'sa-agent-tool-approval-hint';
-      hint.textContent = msg('trace-approval-hint');
+      const isWrite = WRITE_TOOL_SET.has(entry.name);
+      hint.textContent = msg(isWrite ? 'trace-write-approval-hint' : 'trace-approval-hint');
+      if (isWrite) row.classList.add('sa-agent-tool-write');
 
       const allow = document.createElement('button');
       allow.type = 'button';
@@ -1252,9 +1447,7 @@ export default async ({ addon, msg }) => {
       allowAll.className = 'sa-agent-tool-approval-button sa-agent-tool-allow-all';
       allowAll.textContent = msg('trace-allow-all');
       allowAll.addEventListener('click', () => {
-        autoApproveTools = true;
-        if (autoApproveInput) autoApproveInput.checked = true;
-        resolveToolApproval(entry.id, true);
+        setAutoApproveTools(true);
       });
 
       approval.appendChild(hint);
@@ -1276,9 +1469,35 @@ export default async ({ addon, msg }) => {
   const buildTraceElement = (trace, interactive = false) => {
     const wrapper = document.createElement('div');
     wrapper.className = 'sa-agent-trace';
-    for (const entry of trace) {
-      wrapper.appendChild(buildToolRow(entry, interactive));
+    const awaiting = interactive ? trace.filter((entry) => entry.status === 'awaiting') : [];
+    const stacked = trace.filter((entry) => !awaiting.includes(entry));
+    if (stacked.length) {
+      const stack = document.createElement('details');
+      stack.className = 'sa-agent-tool-stack';
+      stack.classList.toggle('sa-agent-tool-stack-multiple', stacked.length > 1);
+      rememberDisclosure(stack, trace);
+      const summary = document.createElement('summary');
+      summary.className = 'sa-agent-tool-stack-summary';
+      const title = document.createElement('span');
+      title.textContent = msg('trace-stack-title', { count: stacked.length });
+      const state = document.createElement('span');
+      state.className = 'sa-agent-tool-stack-state';
+      const latest = stacked[stacked.length - 1];
+      const failures = stacked.filter((entry) => entry.status === 'error' || entry.status === 'denied').length;
+      state.textContent = failures
+        ? msg('trace-stack-errors', { count: failures })
+        : `${getToolLabel(latest.name)} · ${formatTraceStatus(latest.status)}`;
+      summary.appendChild(title);
+      summary.appendChild(state);
+      const body = document.createElement('div');
+      body.className = 'sa-agent-tool-stack-body';
+      for (const entry of stacked) body.appendChild(buildToolRow(entry, false));
+      stack.appendChild(summary);
+      stack.appendChild(body);
+      wrapper.appendChild(stack);
     }
+    // Keep pending approval actions reachable even when the completed stack is collapsed.
+    for (const entry of awaiting) wrapper.appendChild(buildToolRow(entry, true));
     return wrapper;
   };
 
@@ -1287,15 +1506,21 @@ export default async ({ addon, msg }) => {
    */
   const renderLiveTrace = () => {
     if (!messagesElement) return;
+    const stick = isNearBottom() || autoScrollEnabled;
     if (liveTraceElement && liveTraceElement.parentNode) liveTraceElement.parentNode.removeChild(liveTraceElement);
     liveTraceElement = null;
-    if (liveTrace.length === 0) return;
-    const stick = isNearBottom();
-    liveTraceElement = buildTraceElement(liveTrace, true);
+    if (liveParts.length === 0) return;
+    liveTraceElement = document.createElement('div');
+    liveTraceElement.className = 'sa-agent-message sa-agent-message-assistant';
+    const role = document.createElement('div');
+    role.className = 'sa-agent-message-role';
+    role.textContent = msg('role-agent');
+    liveTraceElement.appendChild(role);
+    appendAssistantParts(liveTraceElement, liveParts, true);
     if (streamingRow && streamingRow.parentNode === messagesElement) {
       messagesElement.insertBefore(liveTraceElement, streamingRow);
     } else {
-      messagesElement.appendChild(liveTraceElement);
+      messagesElement.insertBefore(liveTraceElement, statusRow.parentNode === messagesElement ? statusRow : null);
     }
     if (stick) {
       autoScrollEnabled = true;
@@ -1309,11 +1534,9 @@ export default async ({ addon, msg }) => {
   const renderMessages = () => {
     if (!messagesElement) return;
     const stick = isNearBottom() || autoScrollEnabled;
+    clearStreaming();
     messagesElement.textContent = '';
     liveTraceElement = null;
-    streamingRow = null;
-    streamingBubble = null;
-    streamingText = '';
     updateContextUsage();
 
     if (chatMessages.length === 0) {
@@ -1324,17 +1547,19 @@ export default async ({ addon, msg }) => {
       title.textContent = msg('title');
       const text = document.createElement('div');
       text.className = 'sa-agent-welcome-text';
-      text.textContent = msg('welcome');
+      text.textContent = msg(writeEnabled ? 'welcome-edit' : 'welcome');
       welcome.appendChild(title);
       welcome.appendChild(text);
       messagesElement.appendChild(welcome);
+      if (statusElement.textContent) messagesElement.appendChild(statusRow);
       return;
     }
 
     for (const message of chatMessages) {
       const trace = Array.isArray(message.trace) ? message.trace : null;
+      const parts = message.role === 'assistant' && Array.isArray(message.parts) ? message.parts : null;
       const hasContent = typeof message.content === 'string' && message.content.trim().length > 0;
-      if (!hasContent && (!trace || trace.length === 0)) continue;
+      if (!hasContent && (!trace || trace.length === 0) && (!parts || !parts.length) && !message.notice) continue;
 
       const row = document.createElement('div');
       row.className = `sa-agent-message sa-agent-message-${message.role}`;
@@ -1344,19 +1569,29 @@ export default async ({ addon, msg }) => {
       role.textContent = message.role === 'user' ? msg('role-you') : msg('role-agent');
       row.appendChild(role);
 
-      if (message.role === 'assistant' && trace && trace.length > 0) {
+      if (parts && parts.length) {
+        appendAssistantParts(row, parts);
+      } else if (message.role === 'assistant' && trace && trace.length > 0) {
         row.appendChild(buildTraceElement(trace));
       }
 
-      if (hasContent) {
+      if (hasContent && (!parts || !parts.length)) {
         const bubble = document.createElement('div');
         bubble.className = 'sa-agent-bubble';
         renderFormattedContent(bubble, message.content);
         row.appendChild(bubble);
       }
+      if (message.notice) {
+        const notice = document.createElement('div');
+        notice.className = 'sa-agent-bubble sa-agent-status';
+        notice.classList.toggle('sa-agent-status-error', Boolean(message.error));
+        notice.textContent = message.notice;
+        row.appendChild(notice);
+      }
 
       messagesElement.appendChild(row);
     }
+    if (statusElement.textContent) messagesElement.appendChild(statusRow);
 
     if (stick) {
       autoScrollEnabled = true;
@@ -1384,15 +1619,22 @@ export default async ({ addon, msg }) => {
    * @param {string} content Assistant content.
    * @param {boolean} [isError] Whether the run failed.
    */
-  const commitTrace = (trace, content, isError) => {
-    const hasTrace = Array.isArray(trace) && trace.length > 0;
-    const hasContent = typeof content === 'string' && content.trim().length > 0;
-    if (!hasTrace && !hasContent) return;
-    if (!hasTrace) {
-      addMessage('assistant', content, isError ? { error: true } : undefined);
-      return;
+  const commitTrace = (trace, content, isError, notice = '') => {
+    const parts = liveParts;
+    if (!parts.length && content) parts.push({ type: 'response', content, reasoning: '' });
+    if (!parts.length && trace.length) parts.push({ type: 'tools', trace });
+    const text = parts
+      .filter((part) => part.type === 'response')
+      .map((part) => part.content || '')
+      .join('\n\n');
+    liveParts = [];
+    liveTrace = [];
+    liveTraceElement = null;
+    if (parts.length || notice) {
+      const extras = { parts, error: Boolean(isError), notice };
+      if (trace.length) extras.trace = trace;
+      addMessage('assistant', text, extras);
     }
-    addMessage('assistant', content, isError ? { trace, error: true } : { trace });
   };
 
   /**
@@ -1413,21 +1655,20 @@ export default async ({ addon, msg }) => {
    * @param {string} content Assistant content.
    * @param {boolean} [isError] Whether the run failed.
    */
-  const commitLiveTrace = (content, isError) => {
-    const trace = liveTrace.map((entry) => {
+  const commitLiveTrace = (content, isError, notice = '') => {
+    if (content || streamingReasoning) {
+      liveParts.push({ type: 'response', content, reasoning: streamingReasoning });
+    }
+    clearStreaming();
+    for (const entry of liveTrace) {
       if (entry.status === 'pending' || entry.status === 'awaiting') {
-        return {
-          ...entry,
-          status: 'error',
-          ok: false,
-          summary: { kind: 'error', message: msg('status-stopped') }
-        };
+        entry.status = 'error';
+        entry.ok = false;
+        entry.summary = { kind: 'error', message: notice || msg('status-stopped') };
       }
-      return entry;
-    });
-    liveTrace = [];
-    liveTraceElement = null;
-    commitTrace(trace, content, isError);
+    }
+    setStatus('');
+    commitTrace(liveTrace, content, isError, notice);
   };
 
   /**
@@ -1438,10 +1679,8 @@ export default async ({ addon, msg }) => {
     if (!activeController) return;
     requestGeneration++;
     const partial = streamingText ? (streamingSanitize ? replaceInternalIds(vm, streamingText) : streamingText) : '';
-    clearStreaming();
     cancelAllApprovals();
-    commitLiveTrace(partial, true);
-    setStatus(msg('status-stopped'));
+    commitLiveTrace(partial, false, msg('status-stopped'));
     activeController.abort();
   };
 
@@ -1459,9 +1698,12 @@ export default async ({ addon, msg }) => {
     saveCurrentHistory();
 
     activeConversationId = id;
+    pendingDeleteId = null;
+    if (sessionMenu) sessionMenu.open = false;
     chatMessages = next.messages;
     lastUsage = next.lastUsage || null;
     liveTrace = [];
+    liveParts = [];
     liveTraceElement = null;
     clearStreaming();
     persistConversations();
@@ -1496,12 +1738,15 @@ export default async ({ addon, msg }) => {
     }
 
     const conversation = createConversation([]);
+    pendingDeleteId = null;
+    if (sessionMenu) sessionMenu.open = false;
     conversations.unshift(conversation);
     activeConversationId = conversation.id;
     conversations = trimConversations(conversations, activeConversationId);
     chatMessages = conversation.messages;
     lastUsage = null;
     liveTrace = [];
+    liveParts = [];
     liveTraceElement = null;
     clearStreaming();
     persistConversations();
@@ -1537,9 +1782,11 @@ export default async ({ addon, msg }) => {
     const activeConversation = findConversation(conversationId);
     if (activeConversation) activeConversation.lastUsage = null;
     liveTrace = [];
+    liveParts = [];
     liveTraceElement = null;
     streamingSanitize = true;
     clearStreaming();
+    setStatus('');
     addMessage('user', content);
     scrollToBottom(true);
     busy = true;
@@ -1557,6 +1804,7 @@ export default async ({ addon, msg }) => {
         messages: chatMessages.map((message) => ({ role: message.role, content: message.content })),
         signal: controller.signal,
         requestApproval: requestToolApproval,
+        writeEnabled,
         onEvent: (event) => {
           if (!busy || generation !== requestGeneration || conversationId !== activeConversationId) return;
           if (event.type === 'thinking') {
@@ -1564,27 +1812,39 @@ export default async ({ addon, msg }) => {
           } else if (event.type === 'stream-start') {
             clearStreaming();
             streamingSanitize = event.sanitize !== false;
-            setStatus(msg('status-streaming'));
+            setStatus(msg('status-thinking'));
+          } else if (event.type === 'reasoning-delta') {
+            if (typeof event.delta === 'string' && event.delta) {
+              streamingReasoning += event.delta;
+              updateStreaming();
+              setStatus('');
+            }
           } else if (event.type === 'stream-delta') {
             if (typeof event.delta === 'string' && event.delta) {
               streamingText += event.delta;
               updateStreaming();
-              setStatus(msg('status-streaming'));
+              setStatus('');
             }
           } else if (event.type === 'stream-end') {
-            if (!streamingText) setStatus(msg('status-thinking'));
-          } else if (event.type === 'tool-request') {
+            if (!streamingText && !streamingReasoning) setStatus(msg('status-thinking'));
+          } else if (event.type === 'assistant-step') {
+            if (event.content || event.reasoning) {
+              liveParts.push({ type: 'response', content: event.content || '', reasoning: event.reasoning || '' });
+            }
             clearStreaming();
+            renderLiveTrace();
+          } else if (event.type === 'retry') {
+            clearStreaming();
+            setStatus(msg('status-retrying', { attempt: event.attempt, max: event.max }));
+          } else if (event.type === 'tool-request') {
             const autoApproved = autoApproveTools;
-            liveTrace.push({
+            addLiveTool({
               id: event.id,
               name: event.name,
               args: event.args || {},
               status: autoApproved ? 'pending' : 'awaiting'
             });
-            setStatus(
-              autoApproved ? getToolStatus(event.name) : msg('status-approval', { name: getToolLabel(event.name) })
-            );
+            setStatus('');
             renderLiveTrace();
           } else if (event.type === 'tool-start') {
             const entry = findTraceEntry(event);
@@ -1592,14 +1852,14 @@ export default async ({ addon, msg }) => {
               entry.status = 'pending';
               entry.args = event.args || entry.args || {};
             } else {
-              liveTrace.push({
+              addLiveTool({
                 id: event.id,
                 name: event.name,
                 args: event.args || {},
                 status: 'pending'
               });
             }
-            setStatus(getToolStatus(event.name));
+            setStatus('');
             renderLiveTrace();
           } else if (event.type === 'tool-end') {
             const entry = findTraceEntry(event);
@@ -1609,7 +1869,7 @@ export default async ({ addon, msg }) => {
               entry.summary = event.summary;
               entry.preview = event.preview;
             } else {
-              liveTrace.push({
+              addLiveTool({
                 id: event.id,
                 name: event.name,
                 args: event.args || {},
@@ -1626,28 +1886,23 @@ export default async ({ addon, msg }) => {
 
       if (generation !== requestGeneration || conversationId !== activeConversationId) return;
       const trace = Array.isArray(result.trace) ? result.trace : [];
-      liveTrace = [];
-      liveTraceElement = null;
       clearStreaming();
       if (result.usage && typeof result.usage === 'object') {
         lastUsage = result.usage;
         const conversation = findConversation(conversationId);
         if (conversation) conversation.lastUsage = result.usage;
       }
-      if (trace.length > 0) addMessage('assistant', result.content, { trace });
-      else addMessage('assistant', result.content);
-      updateContextUsage();
       setStatus('');
+      commitTrace(trace, result.content, false);
+      updateContextUsage();
     } catch (error) {
       if (generation !== requestGeneration || conversationId !== activeConversationId) return;
       const partial = streamingText ? (streamingSanitize ? replaceInternalIds(vm, streamingText) : streamingText) : '';
-      clearStreaming();
-      if (error && error.name === 'AbortError') {
-        setStatus(msg('status-stopped'));
-      } else {
-        setStatus(`${msg('error-prefix')} ${error && error.message ? error.message : String(error)}`, true);
-      }
-      commitLiveTrace(partial, true);
+      const aborted = error && error.name === 'AbortError';
+      const notice = aborted
+        ? msg('status-stopped')
+        : `${msg('error-prefix')} ${error && error.message ? error.message : String(error)}`;
+      commitLiveTrace(partial, !aborted, notice);
     } finally {
       activeController = null;
       // Only one request can be active, so this assignment is safe.
@@ -1667,7 +1922,6 @@ export default async ({ addon, msg }) => {
     if (!wasOpen) return;
     if (headerElement) headerElement.style.display = '';
     if (chatContentElement) chatContentElement.style.display = '';
-    if (statusElement) statusElement.style.display = statusElement.textContent ? 'block' : 'none';
   };
 
   /**
@@ -1689,6 +1943,11 @@ export default async ({ addon, msg }) => {
     headersInput.value = JSON.stringify(config.headers || {}, null, 2);
     if (streamInput) streamInput.checked = config.stream !== false;
     if (autoApproveInput) autoApproveInput.checked = autoApproveTools;
+    if (temperatureInput) temperatureInput.value = String(config.temperature);
+    if (maxTokensInput) maxTokensInput.value = String(config.maxTokens);
+    if (retriesInput) retriesInput.value = String(config.retries);
+    if (searchEngineInput) searchEngineInput.value = config.searchEngine;
+    if (searchEndpointInput) searchEndpointInput.value = config.searchEndpoint || '';
     settingsErrorElement.textContent = '';
     settingsErrorElement.style.display = 'none';
   };
@@ -1703,11 +1962,11 @@ export default async ({ addon, msg }) => {
       focusFrame = 0;
     }
     populateSettings();
+    if (sessionMenu) sessionMenu.open = false;
     conversationPaneOpen = false;
     updateConversationPane();
     if (headerElement) headerElement.style.display = 'none';
     if (chatContentElement) chatContentElement.style.display = 'none';
-    if (statusElement) statusElement.style.display = 'none';
     settingsPanel.style.display = 'flex';
     requestAnimationFrame(() => {
       if (apiUrlInput && settingsPanel.style.display !== 'none') apiUrlInput.focus();
@@ -1742,7 +2001,17 @@ export default async ({ addon, msg }) => {
       apiKey: apiKeyInput.value.trim(),
       model: modelInput.value.trim() || DEFAULT_CONFIG.model,
       headers,
-      stream: streamInput ? Boolean(streamInput.checked) : config.stream !== false
+      stream: streamInput ? Boolean(streamInput.checked) : config.stream !== false,
+      temperature: Math.max(0, Math.min(2, Number(temperatureInput.value))),
+      maxTokens: Math.max(1, Math.min(32000, Number(maxTokensInput.value) || DEFAULT_CONFIG.maxTokens)),
+      retries: Math.max(0, Math.min(5, Number(retriesInput.value))),
+      streamIdleTimeoutMs:
+        typeof config.streamIdleTimeoutMs === 'number'
+          ? config.streamIdleTimeoutMs
+          : DEFAULT_CONFIG.streamIdleTimeoutMs,
+      webProxy: typeof config.webProxy === 'string' ? config.webProxy : DEFAULT_CONFIG.webProxy,
+      searchEndpoint: searchEndpointInput ? searchEndpointInput.value.trim() : config.searchEndpoint,
+      searchEngine: searchEngineInput && searchEngineInput.value ? searchEngineInput.value : config.searchEngine
     };
     saveConfig(config);
     closeSettingsPanel();
@@ -1785,6 +2054,7 @@ export default async ({ addon, msg }) => {
     const addField = (labelText, field) => {
       const label = document.createElement('label');
       label.className = 'sa-agent-settings-field';
+      if (field.type === 'checkbox') label.classList.add('sa-agent-settings-field-toggle');
       const labelSpan = document.createElement('span');
       labelSpan.className = 'sa-agent-settings-label';
       labelSpan.textContent = labelText;
@@ -1811,24 +2081,58 @@ export default async ({ addon, msg }) => {
     modelInput.spellcheck = false;
     addField(msg('model'), modelInput);
 
+    temperatureInput = document.createElement('input');
+    temperatureInput.className = 'sa-agent-settings-input';
+    temperatureInput.type = 'number';
+    temperatureInput.min = '0';
+    temperatureInput.max = '2';
+    temperatureInput.step = '0.1';
+    addField(msg('settings-temperature'), temperatureInput);
+
+    maxTokensInput = document.createElement('input');
+    maxTokensInput.className = 'sa-agent-settings-input';
+    maxTokensInput.type = 'number';
+    maxTokensInput.min = '1';
+    maxTokensInput.max = '32000';
+    maxTokensInput.step = '100';
+    addField(msg('settings-max-tokens'), maxTokensInput);
+
+    retriesInput = document.createElement('input');
+    retriesInput.className = 'sa-agent-settings-input';
+    retriesInput.type = 'number';
+    retriesInput.min = '0';
+    retriesInput.max = '5';
+    retriesInput.step = '1';
+    addField(msg('settings-retries'), retriesInput);
+
+    searchEngineInput = document.createElement('select');
+    searchEngineInput.className = 'sa-agent-settings-input sa-agent-settings-select';
+    const engineOptions = [
+      { value: 'duckduckgo', label: msg('engine-duckduckgo') },
+      { value: 'bing', label: msg('engine-bing') },
+      { value: 'duckduckgo-html', label: msg('engine-duckduckgo-html') },
+      { value: 'scratch-wiki', label: msg('engine-scratch-wiki') },
+      { value: 'custom', label: msg('engine-custom') }
+    ];
+    for (const engineOption of engineOptions) {
+      const optionElement = document.createElement('option');
+      optionElement.value = engineOption.value;
+      optionElement.textContent = engineOption.label;
+      searchEngineInput.appendChild(optionElement);
+    }
+    addField(msg('settings-search-engine'), searchEngineInput);
+
+    searchEndpointInput = document.createElement('input');
+    searchEndpointInput.className = 'sa-agent-settings-input';
+    searchEndpointInput.type = 'url';
+    searchEndpointInput.spellcheck = false;
+    searchEndpointInput.placeholder = 'https://...';
+    addField(msg('settings-search-endpoint'), searchEndpointInput);
+
     streamInput = document.createElement('input');
     streamInput.className = 'sa-agent-settings-checkbox';
     streamInput.type = 'checkbox';
     addField(msg('settings-stream'), streamInput);
-
-    autoApproveInput = document.createElement('input');
-    autoApproveInput.className = 'sa-agent-settings-checkbox';
-    autoApproveInput.type = 'checkbox';
-    autoApproveInput.checked = autoApproveTools;
-    autoApproveInput.addEventListener('change', () => {
-      autoApproveTools = autoApproveInput.checked;
-      if (autoApproveTools) {
-        Array.from(approvalResolvers.keys()).forEach((id) => {
-          resolveToolApproval(id, true);
-        });
-      }
-    });
-    addField(msg('settings-auto-approve'), autoApproveInput);
 
     headersInput = document.createElement('textarea');
     headersInput.className = 'sa-agent-settings-input sa-agent-settings-textarea';
@@ -1866,6 +2170,136 @@ export default async ({ addon, msg }) => {
     settingsPanel.appendChild(form);
     chatContainer.appendChild(settingsPanel);
   };
+
+  // --- Editor write bridge -------------------------------------------------
+
+  /** Cached scratch-blocks namespace. */
+  let blocklyRef = null;
+  /** Serialises write operations so blocks never interleave. */
+  let writeQueue = Promise.resolve();
+
+  /**
+   * Load the scratch-blocks namespace exposed by addons.
+   * @returns {Promise<object>} Blockly.
+   */
+  const ensureBlockly = async () => {
+    if (blocklyRef) return blocklyRef;
+    const resolved = await addon.tab.traps.getBlockly();
+    // eslint-disable-next-line require-atomic-updates
+    blocklyRef = resolved;
+    return resolved;
+  };
+
+  /**
+   * Get the main editing workspace (the one that edits the current sprite).
+   * @param {object} Blockly scratch-blocks namespace.
+   * @returns {object|null} Workspace.
+   */
+  const getMainWorkspace = (Blockly) => {
+    const workspace = Blockly && typeof Blockly.getMainWorkspace === 'function' ? Blockly.getMainWorkspace() : null;
+    if (!workspace) return null;
+    // Scratch's workspace holds the editing workspace under targetWorkspace.
+    if (workspace.targetWorkspace) return workspace.targetWorkspace;
+    return workspace;
+  };
+
+  /**
+   * Delete a top-level script through Blockly so the VM stays in sync and the
+   * deletion is undoable.
+   * @param {object} Blockly scratch-blocks namespace.
+   * @param {object} workspace Main workspace.
+   * @param {string} scriptId Top-level block id.
+   * @returns {boolean} Whether a block was deleted.
+   */
+  const disposeScript = (Blockly, workspace, scriptId) => {
+    const block = typeof workspace.getBlockById === 'function' ? workspace.getBlockById(scriptId) : null;
+    if (!block) return false;
+    // The caller wraps the whole write in one undo group, so dispose here
+    // without touching the group state.
+    block.dispose(true);
+    return true;
+  };
+
+  /**
+   * Apply a write request coming from the agent tools.
+   * @param {string} xml Compiled block XML (may be empty).
+   * @param {object} meta Write instructions.
+   * @returns {Promise<object>} Result summary.
+   */
+  const applyWrite = (xml, meta = {}) => {
+    const run = async () => {
+      const Blockly = await ensureBlockly();
+      if (!Blockly) throw new Error('scratch-blocks is not available.');
+      const workspace = getMainWorkspace(Blockly);
+      if (!workspace) throw new Error('The block workspace is not ready.');
+
+      const result = { blockIds: [], deleted: 0, id: undefined };
+
+      const hasBlocks = Boolean(xml && xml.trim());
+      const hasDeletes = Array.isArray(meta.deleteScriptIds) && meta.deleteScriptIds.length > 0;
+      const hasLocalDecl = Array.isArray(meta.declarations) && meta.declarations.some((decl) => decl && decl.isLocal);
+      const needEditingTarget = hasBlocks || hasDeletes || hasLocalDecl;
+
+      const requestedTargetId = meta.targetId || (vm.editingTarget ? vm.editingTarget.id : null);
+      if (needEditingTarget && requestedTargetId && vm.editingTarget && requestedTargetId !== vm.editingTarget.id) {
+        vm.setEditingTarget(requestedTargetId);
+        // Let the GUI reload the workspace for the new editing target.
+        await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+      }
+
+      Blockly.Events.setGroup(true);
+      try {
+        // 1. Create declared variables/lists/broadcasts.
+        // workspace.createVariable only updates the Blockly variable map; firing
+        // a VarCreate event lets vm.blockListener mirror it into the VM (and
+        // keeps the creation on the undo stack).
+        if (Array.isArray(meta.declarations) && Blockly.Events.VarCreate) {
+          for (const decl of meta.declarations) {
+            if (!decl || !decl.name || !decl.id) continue;
+            const type = decl.type || '';
+            const isLocal = Boolean(decl.isLocal);
+            const isCloud = Boolean(decl.isCloud);
+            workspace.createVariable(decl.name, type, decl.id, isLocal, isCloud);
+            const model = workspace.getVariableById ? workspace.getVariableById(decl.id) : null;
+            if (model && typeof Blockly.Events.fire === 'function') {
+              Blockly.Events.fire(new Blockly.Events.VarCreate(model));
+            }
+          }
+        }
+
+        // 2. Rename a sprite.
+        if (meta.renameTarget) {
+          const targetId = meta.targetId || (vm.editingTarget && vm.editingTarget.id);
+          if (targetId) vm.renameSprite(targetId, String(meta.renameTarget));
+        }
+
+        // 3. Delete requested scripts first (so replacing a script is safe).
+        if (Array.isArray(meta.deleteScriptIds)) {
+          for (const scriptId of meta.deleteScriptIds) {
+            if (disposeScript(Blockly, workspace, scriptId)) result.deleted++;
+          }
+        }
+
+        // 4. Load new blocks from XML.
+        if (xml && xml.trim()) {
+          const dom = Blockly.Xml.textToDom(xml);
+          const ids = Blockly.Xml.domToWorkspace(dom.documentElement || dom, workspace);
+          if (Array.isArray(ids)) result.blockIds = ids;
+        }
+      } finally {
+        Blockly.Events.setGroup(false);
+      }
+
+      return result;
+    };
+
+    const next = writeQueue.then(run, run);
+    // Keep the queue alive even if a write rejects.
+    writeQueue = next.catch(() => {});
+    return next;
+  };
+
+  setApplier(applyWrite);
 
   /**
    * Build the conversation UI.
@@ -2000,8 +2434,25 @@ export default async ({ addon, msg }) => {
     messagesElement.addEventListener('scroll', updateAutoScroll, { passive: true });
 
     statusElement = document.createElement('div');
-    statusElement.className = 'sa-agent-status';
-    statusElement.style.display = 'none';
+    statusElement.className = 'sa-agent-bubble sa-agent-status';
+    statusRow = document.createElement('div');
+    statusRow.className = 'sa-agent-message sa-agent-message-assistant sa-agent-status-row';
+    statusRow.appendChild(statusElement);
+
+    sessionMenu = document.createElement('details');
+    sessionMenu.className = 'sa-agent-session-menu';
+    const sessionSummary = document.createElement('summary');
+    sessionSummary.className = 'sa-agent-icon-button sa-agent-session-summary';
+    sessionSummary.textContent = '⋯';
+    sessionSummary.title = msg('conversation-options');
+    sessionSummary.setAttribute('aria-label', msg('conversation-options'));
+    sessionMenu.appendChild(sessionSummary);
+    const sessionPanel = document.createElement('div');
+    sessionPanel.className = 'sa-agent-session-panel';
+    const sessionTitle = document.createElement('div');
+    sessionTitle.className = 'sa-agent-settings-label';
+    sessionTitle.textContent = msg('conversation-options');
+    sessionPanel.appendChild(sessionTitle);
 
     const contextBar = document.createElement('div');
     contextBar.className = 'sa-agent-context-bar';
@@ -2012,10 +2463,55 @@ export default async ({ addon, msg }) => {
     compressButton.className = 'sa-agent-button sa-agent-button-secondary sa-agent-compress-button';
     compressButton.textContent = msg('context-compress');
     compressButton.addEventListener('click', () => {
+      sessionMenu.open = false;
       compressContext().catch(() => {});
     });
     contextBar.appendChild(contextElement);
     contextBar.appendChild(compressButton);
+    sessionPanel.appendChild(contextBar);
+
+    const permissionLabel = document.createElement('label');
+    permissionLabel.className = 'sa-agent-session-permission';
+    const permissionText = document.createElement('span');
+    permissionText.textContent = msg('conversation-auto-approve');
+    autoApproveInput = document.createElement('input');
+    autoApproveInput.className = 'sa-agent-settings-checkbox';
+    autoApproveInput.type = 'checkbox';
+    autoApproveInput.checked = autoApproveTools;
+    autoApproveInput.addEventListener('change', () => setAutoApproveTools(autoApproveInput.checked));
+    permissionLabel.appendChild(permissionText);
+    permissionLabel.appendChild(autoApproveInput);
+    sessionPanel.appendChild(permissionLabel);
+
+    const writeLabel = document.createElement('label');
+    writeLabel.className = 'sa-agent-session-permission sa-agent-session-write';
+    const writeText = document.createElement('span');
+    writeText.textContent = msg('conversation-allow-edit');
+    writeEnabledInput = document.createElement('input');
+    writeEnabledInput.className = 'sa-agent-settings-checkbox';
+    writeEnabledInput.type = 'checkbox';
+    writeEnabledInput.checked = writeEnabled;
+    writeEnabledInput.addEventListener('change', () => {
+      writeEnabled = Boolean(writeEnabledInput.checked);
+      updateComposer();
+    });
+    writeLabel.appendChild(writeText);
+    writeLabel.appendChild(writeEnabledInput);
+    sessionPanel.appendChild(writeLabel);
+
+    sessionMenu.appendChild(sessionPanel);
+    actions.insertBefore(sessionMenu, newConversationButton);
+    sessionMenu.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        event.stopPropagation();
+        sessionMenu.open = false;
+        sessionSummary.focus();
+      }
+    });
+    document.addEventListener('pointerdown', (event) => {
+      if (sessionMenu.open && !sessionMenu.contains(event.target)) sessionMenu.open = false;
+    });
 
     const composer = document.createElement('div');
     composer.className = 'sa-agent-composer';
@@ -2081,8 +2577,6 @@ export default async ({ addon, msg }) => {
     const chatMain = document.createElement('div');
     chatMain.className = 'sa-agent-main';
     chatMain.appendChild(messagesElement);
-    chatMain.appendChild(statusElement);
-    chatMain.appendChild(contextBar);
     chatMain.appendChild(composer);
 
     chatContentElement.appendChild(conversationPane);
@@ -2356,6 +2850,7 @@ export default async ({ addon, msg }) => {
    */
   const handleDeactivate = () => {
     hideSettingsPanel();
+    if (sessionMenu) sessionMenu.open = false;
     if (positionPopup) positionPopup.style.display = 'none';
     if (positionPopupTimeout) {
       clearTimeout(positionPopupTimeout);
@@ -2453,8 +2948,9 @@ export default async ({ addon, msg }) => {
       focusFrame = 0;
     }
     const partial = streamingText ? (streamingSanitize ? replaceInternalIds(vm, streamingText) : streamingText) : '';
-    clearStreaming();
-    commitLiveTrace(partial, true);
+    cancelCompression();
+    cancelAllApprovals();
+    commitLiveTrace(partial, false, busy ? msg('status-stopped') : '');
     saveCurrentHistory();
     if (activeController) activeController.abort();
     hideSettingsPanel();

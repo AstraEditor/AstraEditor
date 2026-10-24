@@ -1,10 +1,11 @@
 import { callChatCompletion } from './client.js';
 import { replaceInternalIds } from './dsl.js';
 import { buildSystemPrompt } from './prompt.js';
-import { createScratchTools, TOOL_DEFINITIONS } from './tools.js';
+import { createScratchTools, TOOL_DEFINITIONS, WRITE_TOOL_NAMES } from './tools.js';
 import { describeToolResult, previewToolResult } from './trace.js';
 
 export const MAX_CONTEXT_MESSAGES = 24;
+const MAX_TOOL_RESULT_CHARS = 12000;
 
 const ID_PATTERN = /\bids?\b|identifier|编号|标识/i;
 const ID_NEGATIVE_PATTERN =
@@ -77,7 +78,7 @@ const throwIfAborted = (signal) => {
 };
 
 /**
- * Run the Astra Copilot agent loop with approval-gated read-only tools.
+ * Run the Astra Copilot agent loop with approval-gated tools.
  * @param {object} options Options.
  * @param {object} options.vm Scratch VM.
  * @param {object} options.config Agent configuration.
@@ -85,15 +86,28 @@ const throwIfAborted = (signal) => {
  * @param {AbortSignal} options.signal Abort signal.
  * @param {Function} [options.onEvent] Event callback.
  * @param {Function} [options.requestApproval] Async approval callback.
+ * @param {boolean} [options.writeEnabled] Whether edit tools are exposed.
  * @param {number} [options.maxSteps] Maximum tool steps.
  * @returns {Promise<object>} Final result.
  */
-export const runAgent = async ({ vm, config, messages, signal, onEvent, requestApproval, maxSteps = 8 }) => {
-  const tools = createScratchTools(vm);
+export const runAgent = async ({
+  vm,
+  config,
+  messages,
+  signal,
+  onEvent,
+  requestApproval,
+  writeEnabled = false,
+  maxSteps = 8
+}) => {
+  const tools = createScratchTools(vm, config);
+  const activeTools = writeEnabled
+    ? TOOL_DEFINITIONS
+    : TOOL_DEFINITIONS.filter((definition) => !WRITE_TOOL_NAMES.includes(definition.function.name));
   const apiMessages = [
     {
       role: 'system',
-      content: buildSystemPrompt()
+      content: buildSystemPrompt({ writeEnabled })
     },
     ...messages
       .filter(
@@ -121,11 +135,20 @@ export const runAgent = async ({ vm, config, messages, signal, onEvent, requestA
     const response = await callChatCompletion({
       config,
       messages: apiMessages,
-      tools: TOOL_DEFINITIONS,
+      tools: activeTools,
       signal,
-      onDelta: (delta) => emitEvent(onEvent, { type: 'stream-delta', delta, step: step + 1 })
+      onDelta: (delta) => emitEvent(onEvent, { type: 'stream-delta', delta, step: step + 1 }),
+      onReasoning: (delta) => emitEvent(onEvent, { type: 'reasoning-delta', delta, step: step + 1 }),
+      onRetry: (info) => emitEvent(onEvent, { type: 'retry', attempt: info.attempt, max: info.max, step: step + 1 })
     });
+    throwIfAborted(signal);
     emitEvent(onEvent, { type: 'stream-end', step: step + 1 });
+    emitEvent(onEvent, {
+      type: 'assistant-step',
+      step: step + 1,
+      content: wantsIds ? response.content : replaceInternalIds(vm, response.content),
+      reasoning: response.reasoning || ''
+    });
 
     if (!response.toolCalls) {
       const content = response.content.trim();
@@ -137,11 +160,14 @@ export const runAgent = async ({ vm, config, messages, signal, onEvent, requestA
       };
     }
 
-    apiMessages.push({
+    const assistantMessage = {
       role: 'assistant',
       content: response.content || null,
       tool_calls: response.toolCalls
-    });
+    };
+    // Thinking-enabled providers may require their returned reasoning on tool continuations.
+    if (response.reasoning) assistantMessage.reasoning_content = response.reasoning;
+    apiMessages.push(assistantMessage);
 
     for (const toolCall of response.toolCalls) {
       throwIfAborted(signal);
@@ -232,6 +258,7 @@ export const runAgent = async ({ vm, config, messages, signal, onEvent, requestA
         succeeded = false;
         result = { error: error && error.message ? error.message : String(error) };
       }
+      throwIfAborted(signal);
 
       entry.status = succeeded ? 'ok' : 'error';
       entry.ok = succeeded;
@@ -248,11 +275,15 @@ export const runAgent = async ({ vm, config, messages, signal, onEvent, requestA
         preview: entry.preview,
         traceIndex
       });
+      const serializedResult = JSON.stringify(result === undefined ? null : result);
       apiMessages.push({
         role: 'tool',
         tool_call_id: toolCall.id,
         name: toolName,
-        content: JSON.stringify(result === undefined ? null : result)
+        content:
+          serializedResult.length > MAX_TOOL_RESULT_CHARS
+            ? `${serializedResult.slice(0, MAX_TOOL_RESULT_CHARS)}...[truncated]`
+            : serializedResult
       });
     }
   }

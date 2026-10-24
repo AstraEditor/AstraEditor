@@ -4,8 +4,9 @@ const BLOCKQUOTE_PATTERN = /^\s*>\s?(.*)$/;
 const UNORDERED_ITEM_PATTERN = /^(\s*)[-*+]\s+(.*)$/;
 const ORDERED_ITEM_PATTERN = /^(\s*)\d+[.)]\s+(.*)$/;
 const RULE_PATTERN = /^\s{0,3}(?:(?:-\s*){3,}|(?:\*\s*){3,}|(?:_\s*){3,})$/;
+const TABLE_SEPARATOR = /^\s*\|?\s*:?-{3,}:?\s*(\|\s*:?-{3,}:?\s*)+\|?\s*$/;
 const INLINE_PATTERN =
-  /(`[^`\n]+`|\*\*[^*\n]+\*\*|__[^_\n]+__|~~[^~\n]+~~|\*[^*\n]+\*|_[^_\n]+_|\[[^\]\n]+\]\([^)\s]+\))/g;
+  /(!\[[^\]\n]*\]\([^)\s]+\)|`[^`\n]+`|\*\*[^*\n]+\*\*|__[^_\n]+__|~~[^~\n]+~~|\*[^*\n]+\*|_[^_\n]+_|\[[^\]\n]+\]\([^)\s]+\))/g;
 
 /**
  * Match a Markdown list item.
@@ -90,6 +91,20 @@ const appendInline = (text, container) => {
       const deleted = document.createElement('del');
       appendInline(token.slice(2, -2), deleted);
       container.appendChild(deleted);
+    } else if (token.startsWith('![')) {
+      const imageMatch = /^!\[([^\]]*)\]\(([^)]+)\)$/.exec(token);
+      const href = imageMatch ? safeHref(imageMatch[2]) : null;
+      if (href) {
+        const link = document.createElement('a');
+        link.className = 'sa-agent-md-image';
+        link.href = href;
+        link.target = '_blank';
+        link.rel = 'noopener noreferrer';
+        link.textContent = `${imageMatch[1] || 'image'} ↗`;
+        container.appendChild(link);
+      } else {
+        container.appendChild(document.createTextNode(token));
+      }
     } else if (token.startsWith('[')) {
       const linkMatch = /^\[([^\]]+)\]\(([^)]+)\)$/.exec(token);
       const href = linkMatch ? safeHref(linkMatch[2]) : null;
@@ -186,6 +201,17 @@ const appendList = (lines, start, container) => {
       index++;
     }
 
+    const taskMatch = /^\[([ xX])\]\s+(.*)$/.exec(itemText.trim());
+    if (taskMatch) {
+      const checkbox = document.createElement('input');
+      checkbox.type = 'checkbox';
+      checkbox.className = 'sa-agent-md-task';
+      checkbox.disabled = true;
+      checkbox.checked = taskMatch[1].toLowerCase() === 'x';
+      listItem.appendChild(checkbox);
+      itemText = taskMatch[2];
+    }
+
     appendInline(itemText, listItem);
 
     while (index < lines.length) {
@@ -213,6 +239,92 @@ const appendParagraph = (lines, container) => {
     appendInline(line.trim(), paragraph);
   });
   container.appendChild(paragraph);
+};
+
+/**
+ * Split a Markdown table row into trimmed cells.
+ * @param {string} line Table row.
+ * @returns {Array<string>} Cells.
+ */
+const splitTableRow = (line) => {
+  let text = String(line || '').trim();
+  if (text.startsWith('|')) text = text.slice(1);
+  if (text.endsWith('|')) text = text.slice(0, -1);
+  return text.split('|').map((cell) => cell.trim());
+};
+
+/**
+ * Parse a GFM table starting at a given line.
+ * @param {Array<string>} lines Source lines.
+ * @param {number} start Header row index.
+ * @returns {object} Parsed table and the next line index.
+ */
+const parseTable = (lines, start) => {
+  const header = splitTableRow(lines[start]);
+  const alignments = splitTableRow(lines[start + 1]).map((cell) => {
+    const left = /^:/.test(cell);
+    const right = /:$/.test(cell);
+    if (left && right) return 'center';
+    if (right) return 'right';
+    if (left) return 'left';
+    return '';
+  });
+  const rows = [];
+  let index = start + 2;
+  while (index < lines.length && lines[index].trim()) {
+    if (TABLE_SEPARATOR.test(lines[index]) || !lines[index].includes('|')) break;
+    rows.push(splitTableRow(lines[index]));
+    index++;
+  }
+  return { header, alignments, rows, next: index };
+};
+
+/**
+ * Render a Markdown table into a scrollable wrapper.
+ * @param {Array<string>} lines Source lines.
+ * @param {number} start Header row index.
+ * @param {HTMLElement} container Destination element.
+ * @returns {number} Next line index.
+ */
+const appendTable = (lines, start, container) => {
+  const table = parseTable(lines, start);
+  const element = document.createElement('table');
+  element.className = 'sa-agent-md-table';
+
+  if (table.header.length > 0) {
+    const thead = document.createElement('thead');
+    const tr = document.createElement('tr');
+    table.header.forEach((cell, index) => {
+      const th = document.createElement('th');
+      if (table.alignments[index]) th.style.textAlign = table.alignments[index];
+      appendInline(cell, th);
+      tr.appendChild(th);
+    });
+    thead.appendChild(tr);
+    element.appendChild(thead);
+  }
+
+  if (table.rows.length > 0) {
+    const tbody = document.createElement('tbody');
+    for (const row of table.rows) {
+      const tr = document.createElement('tr');
+      for (let index = 0; index < table.header.length; index++) {
+        const td = document.createElement('td');
+        const cell = row[index] !== undefined ? row[index] : '';
+        if (table.alignments[index]) td.style.textAlign = table.alignments[index];
+        appendInline(cell, td);
+        tr.appendChild(td);
+      }
+      tbody.appendChild(tr);
+    }
+    element.appendChild(tbody);
+  }
+
+  const wrapper = document.createElement('div');
+  wrapper.className = 'sa-agent-md-table-wrap';
+  wrapper.appendChild(element);
+  container.appendChild(wrapper);
+  return table.next;
 };
 
 /**
@@ -271,6 +383,11 @@ const appendBlocks = (lines, container) => {
 
     if (matchListItem(line)) {
       index = appendList(lines, index, container);
+      continue;
+    }
+
+    if (line.includes('|') && index + 1 < lines.length && TABLE_SEPARATOR.test(lines[index + 1])) {
+      index = appendTable(lines, index, container);
       continue;
     }
 

@@ -1,6 +1,9 @@
 import dispatch from 'scratch-vm/src/dispatch/central-dispatch';
 
 import { getBlockLabel, scriptToDSL, previewScriptDSL } from './dsl.js';
+import { createWebTools } from './web.js';
+import { buildScriptsXml, describeCoreBlocks, generateId } from './block-xml.js';
+import { applyXml, hasApplier } from './writer.js';
 
 const MAX_FIELD_LENGTH = 500;
 const MAX_LIST_ITEMS = 30;
@@ -697,6 +700,207 @@ const getRuntimeState = (vm) => {
   };
 };
 
+/**
+ * Get the stage target.
+ * @param {object} vm Scratch VM.
+ * @returns {object|null} Stage.
+ */
+const getStage = (vm) => {
+  return vm && vm.runtime && typeof vm.runtime.getTargetForStage === 'function' ? vm.runtime.getTargetForStage() : null;
+};
+
+/**
+ * Build a name-resolution context for the block XML compiler.
+ *
+ * Variables, lists and broadcasts referenced by name are looked up on the
+ * target then the stage; anything missing is declared in a <variables> preamble
+ * so the workspace creates it on load (which the VM mirrors via blockListener).
+ * @param {object} vm Scratch VM.
+ * @param {object} target Editing target the blocks belong to.
+ * @returns {object} Compiler context.
+ */
+const makeVarContext = (vm, target) => {
+  const stage = getStage(vm);
+  const declarations = [];
+  const cache = new Map();
+
+  const lookup = (holder, type, name) => {
+    return holder && typeof holder.lookupVariableByNameAndType === 'function'
+      ? holder.lookupVariableByNameAndType(name, type)
+      : null;
+  };
+  const findVariable = (type, name) => lookup(target, type, name) || lookup(stage, type, name);
+
+  const firstCostume = target && typeof target.getCostumes === 'function' ? target.getCostumes()[0] : null;
+  const stageCostumes = stage && typeof stage.getCostumes === 'function' ? stage.getCostumes() : [];
+  const backdrop = stageCostumes[stageCostumes.length - 1] || stageCostumes[0] || null;
+  const firstSound = target && typeof target.getSounds === 'function' ? target.getSounds()[0] : null;
+
+  return {
+    defaultCostume: firstCostume ? firstCostume.name : '',
+    defaultBackdrop: backdrop ? backdrop.name : '',
+    defaultSound: firstSound ? firstSound.name : '',
+    resolveField(fieldName, rawName) {
+      const name = String(rawName === undefined || rawName === null ? '' : rawName);
+      const type = fieldName === 'LIST' ? 'list' : fieldName === 'BROADCAST_OPTION' ? 'broadcast_msg' : '';
+      const key = `${type}:${name}`;
+      if (cache.has(key)) return cache.get(key);
+      const existing = findVariable(type, name);
+      if (existing) {
+        const resolved = { id: existing.id, name: existing.name, type: existing.type || '' };
+        cache.set(key, resolved);
+        return resolved;
+      }
+      const id = generateId();
+      const created = { id, name, type, isLocal: false };
+      declarations.push(created);
+      cache.set(key, created);
+      return created;
+    },
+    drainDeclarations() {
+      const out = declarations.slice();
+      declarations.length = 0;
+      return out;
+    }
+  };
+};
+
+/**
+ * Report whether the write bridge is ready.
+ * @returns {object} Status.
+ */
+const getWriteReady = () => ({
+  ready: hasApplier(),
+  canApply: hasApplier()
+});
+
+/**
+ * Tool names that change the project. The agent loop only exposes these to the
+ * model when write mode is enabled for the conversation.
+ */
+export const WRITE_TOOL_NAMES = ['apply_scripts', 'delete_scripts', 'create_variable', 'rename_target'];
+
+// --- Write tools -----------------------------------------------------------
+
+/**
+ * Apply one script to a target's workspace.
+ * @param {object} vm Scratch VM.
+ * @param {object} args Tool arguments.
+ * @param {object} args.target Target name or ID (omit for editing target).
+ * @param {Array<object>} args.scripts Script descriptors.
+ * @returns {Promise<object>} Result.
+ */
+const applyScripts = async (vm, args) => {
+  if (!Array.isArray(args.scripts) || args.scripts.length === 0) {
+    throw new Error('scripts is required: provide an array of { blocks: [...] } entries.');
+  }
+  const target = requireTarget(vm, args.target);
+  if (!target || target.isStage === undefined) throw new Error('Target not found.');
+  const ctx = makeVarContext(vm, target);
+  const compiled = buildScriptsXml(args.scripts, ctx);
+  const result = await applyXml(compiled.xml, {
+    targetId: target.id,
+    declarations: compiled.declarations
+  });
+  return {
+    ok: true,
+    target: getTargetIdentity(target),
+    scripts: compiled.scripts,
+    warnings: compiled.warnings,
+    applied: result && result.blockIds ? result.blockIds.length : compiled.scripts
+  };
+};
+
+/**
+ * Delete top-level scripts from a target.
+ * @param {object} vm Scratch VM.
+ * @param {object} args Tool arguments.
+ * @param {object} args.target Target name or ID.
+ * @param {Array<string>} args.scriptIds Script root IDs (from list_scripts).
+ * @returns {Promise<object>} Result.
+ */
+const deleteScripts = async (vm, args) => {
+  const ids = Array.isArray(args.scriptIds)
+    ? args.scriptIds.filter((id) => typeof id === 'string' && id)
+    : args.scriptId
+      ? [args.scriptId]
+      : [];
+  if (ids.length === 0) throw new Error('scriptIds is required (use list_scripts to get them).');
+  const target = requireTarget(vm, args.target);
+  const blocks = getBlockMap(target);
+  const existing = ids.filter((id) => blocks[id] && blocks[id].topLevel);
+  if (existing.length === 0) throw new Error('None of the given script IDs are top-level scripts of this target.');
+  const result = await applyXml('', { targetId: target.id, deleteScriptIds: existing });
+  return {
+    ok: true,
+    target: getTargetIdentity(target),
+    deleted: existing.length,
+    skipped: ids.length - existing.length,
+    applied: result && result.deleted !== undefined ? result.deleted : existing.length
+  };
+};
+
+/**
+ * Create a variable, list or broadcast.
+ * @param {object} vm Scratch VM.
+ * @param {object} args Tool arguments.
+ * @returns {Promise<object>} Result.
+ */
+const createVariable = async (vm, args) => {
+  const name = String(args.name || '').trim();
+  if (!name) throw new Error('name is required.');
+  const kind = String(args.kind || 'variable').toLowerCase();
+  const type = kind === 'list' ? 'list' : kind === 'broadcast' ? 'broadcast_msg' : '';
+  const target = requireTarget(vm, args.target);
+  // Broadcasts and global variables live on the stage; locals on the sprite.
+  const isLocal = Boolean(args.local) && !target.isStage && type !== 'broadcast_msg';
+  const holder = isLocal ? target : getStage(vm);
+  if (!holder) throw new Error('Stage not found.');
+  const existing = holder.lookupVariableByNameAndType(name, type);
+  if (existing) {
+    return { ok: true, created: false, name, kind, existing: true };
+  }
+  const id = generateId();
+  const result = await applyXml('', {
+    targetId: holder.id,
+    declarations: [{ id, name, type, isLocal, isCloud: Boolean(args.cloud) && !isLocal }]
+  });
+  return { ok: true, created: true, name, kind, applied: 1, id: result && result.id ? result.id : id };
+};
+
+/**
+ * Rename a target (sprite/stage).
+ * @param {object} vm Scratch VM.
+ * @param {object} args Tool arguments.
+ * @returns {Promise<object>} Result.
+ */
+const renameTarget = async (vm, args) => {
+  const currentName = String(args.target || '').trim();
+  const newName = String(args.newName || '').trim();
+  if (!newName) throw new Error('newName is required.');
+  const target = requireTarget(vm, currentName);
+  if (!target || typeof target.setName !== 'function') throw new Error('Target cannot be renamed.');
+  if (target.isStage) throw new Error('The stage cannot be renamed.');
+  const before = target.getName();
+  await applyXml('', { targetId: target.id, renameTarget: newName });
+  const after = target.getName();
+  return { ok: true, before, after };
+};
+
+/**
+ * List core block opcodes an agent may use, optionally filtered.
+ * @param {object} args Tool arguments.
+ * @returns {object} Catalog.
+ */
+const blockCatalog = (args) => {
+  const filter = String(args.query || '').trim();
+  const blocks = describeCoreBlocks(filter);
+  return {
+    count: blocks.length,
+    blocks: blocks.slice(0, 200)
+  };
+};
+
 export const TOOL_DEFINITIONS = [
   {
     type: 'function',
@@ -859,15 +1063,188 @@ export const TOOL_DEFINITIONS = [
         additionalProperties: false
       }
     }
+  },
+  {
+    type: 'function',
+    function: {
+      name: 'search_web',
+      description:
+        'Search the web for current or external information: documentation, tutorials, forums, or news. Use this when an answer needs knowledge outside the project or beyond your own knowledge. Tries several web search engines (DuckDuckGo, Bing) and falls back to the Scratch Wiki if they are unreachable. Returns up to 8 results with a title, URL, and snippet.',
+      parameters: {
+        type: 'object',
+        properties: {
+          query: {
+            type: 'string',
+            description: 'Search query.'
+          },
+          limit: {
+            type: 'integer',
+            minimum: 1,
+            maximum: 20,
+            description: 'Maximum number of results. Defaults to 8.'
+          }
+        },
+        required: ['query'],
+        additionalProperties: false
+      }
+    }
+  },
+  {
+    type: 'function',
+    function: {
+      name: 'fetch_url',
+      description:
+        'Fetch a web page or text document and return its readable text content. Use for a specific URL, for example a link returned by search_web or a URL the user provided. Only http(s) URLs are allowed; the content is truncated to about 20000 characters.',
+      parameters: {
+        type: 'object',
+        properties: {
+          url: {
+            type: 'string',
+            description: 'The http(s) URL to fetch.'
+          },
+          maxChars: {
+            type: 'integer',
+            minimum: 500,
+            maximum: 80000,
+            description: 'Maximum characters of text to return. Defaults to 20000.'
+          }
+        },
+        required: ['url'],
+        additionalProperties: false
+      }
+    }
+  },
+  {
+    type: 'function',
+    function: {
+      name: 'apply_scripts',
+      description:
+        'ADD OR MODIFY blocks in a sprite or the stage. Compiles a JSON block tree into Scratch blocks and loads them into the real editor workspace (the change is undoable with Ctrl+Z). Use list_scripts/get_script first to see existing code, and block_catalog to confirm opcodes and input names. Only include the blocks you intend to add; this never deletes existing scripts. Provide blocks as a nested tree: {opcode, fields:{}, inputs:{}} where inputs are literal values or nested block trees, and control blocks use substack/substack2 arrays plus next for the following statement.',
+      parameters: {
+        type: 'object',
+        properties: {
+          target: {
+            type: 'string',
+            description: 'Sprite name or ID. Omit to use the current editing target.'
+          },
+          scripts: {
+            type: 'array',
+            description:
+              'Array of scripts. Each script is {x, y, blocks: [blockTree, ...]} where blocks is the whole stack starting from a hat block.',
+            items: {
+              type: 'object',
+              properties: {
+                x: { type: 'number', description: 'X position of the script on the workspace.' },
+                y: { type: 'number', description: 'Y position of the script on the workspace.' },
+                blocks: {
+                  type: 'array',
+                  description: 'Statement stack; the first item is usually a hat block like event_whenflagclicked.',
+                  items: { type: 'object' }
+                }
+              },
+              required: ['blocks']
+            }
+          }
+        },
+        required: ['scripts'],
+        additionalProperties: false
+      }
+    }
+  },
+  {
+    type: 'function',
+    function: {
+      name: 'delete_scripts',
+      description:
+        'DELETE one or more top-level scripts from a sprite or the stage. Get script IDs from list_scripts or search_blocks. Undoable with Ctrl+Z.',
+      parameters: {
+        type: 'object',
+        properties: {
+          target: {
+            type: 'string',
+            description: 'Sprite name or ID. Omit to use the current editing target.'
+          },
+          scriptIds: {
+            type: 'array',
+            description: 'Script root IDs to delete.',
+            items: { type: 'string' }
+          }
+        },
+        required: ['scriptIds'],
+        additionalProperties: false
+      }
+    }
+  },
+  {
+    type: 'function',
+    function: {
+      name: 'create_variable',
+      description:
+        'Create a variable, list, or broadcast message. Creates nothing if it already exists. Undoable with Ctrl+Z.',
+      parameters: {
+        type: 'object',
+        properties: {
+          name: { type: 'string', description: 'Variable/list/broadcast name.' },
+          kind: {
+            type: 'string',
+            enum: ['variable', 'list', 'broadcast'],
+            description: 'What to create. Defaults to variable.'
+          },
+          target: {
+            type: 'string',
+            description: 'Sprite name or ID that should own a local variable. Omit for a global (stage) variable.'
+          },
+          local: {
+            type: 'boolean',
+            description: 'Create a sprite-local variable instead of a global. Ignored for broadcasts and the stage.'
+          },
+          cloud: { type: 'boolean', description: 'Create a cloud variable. Requires a stage/global variable.' }
+        },
+        required: ['name'],
+        additionalProperties: false
+      }
+    }
+  },
+  {
+    type: 'function',
+    function: {
+      name: 'rename_target',
+      description: 'Rename a sprite (not the stage). The rename is applied immediately.',
+      parameters: {
+        type: 'object',
+        properties: {
+          target: { type: 'string', description: 'Current sprite/stage name or ID.' },
+          newName: { type: 'string', description: 'New name.' }
+        },
+        required: ['newName'],
+        additionalProperties: false
+      }
+    }
+  },
+  {
+    type: 'function',
+    function: {
+      name: 'block_catalog',
+      description:
+        'List core Scratch block opcodes with their input names, optionally filtered. Use this to look up exact opcodes/inputs before calling apply_scripts.',
+      parameters: {
+        type: 'object',
+        properties: {
+          query: { type: 'string', description: 'Optional case-insensitive filter, e.g. "motion" or "data_".' }
+        },
+        additionalProperties: false
+      }
+    }
   }
 ];
 
 /**
- * Create read-only Scratch tool handlers bound to a VM.
+ * Create Scratch tool handlers bound to a VM.
  * @param {object} vm Scratch VM.
+ * @param {object} [config] Agent configuration (used by web tools).
  * @returns {object} Tool handlers.
  */
-export const createScratchTools = (vm) => ({
+export const createScratchTools = (vm, config) => ({
   get_project_summary: () => getProjectSummary(vm),
   list_targets: () => ({
     targets: getTargets(vm).map(getTargetSummary),
@@ -878,5 +1255,12 @@ export const createScratchTools = (vm) => ({
   get_script: (args) => getScript(vm, args || {}),
   search_blocks: (args) => searchBlocks(vm, args || {}),
   get_extension_source: (args) => getExtensionSource(vm, args || {}),
-  get_runtime_state: () => getRuntimeState(vm)
+  get_runtime_state: () => getRuntimeState(vm),
+  block_catalog: (args) => blockCatalog(args || {}),
+  get_write_status: () => getWriteReady(),
+  apply_scripts: (args) => applyScripts(vm, args || {}),
+  delete_scripts: (args) => deleteScripts(vm, args || {}),
+  create_variable: (args) => createVariable(vm, args || {}),
+  rename_target: (args) => renameTarget(vm, args || {}),
+  ...createWebTools(config || {})
 });
