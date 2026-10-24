@@ -1,7 +1,6 @@
 import dispatch from 'scratch-vm/src/dispatch/central-dispatch';
 
 import { getBlockLabel, scriptToDSL, previewScriptDSL } from './dsl.js';
-import { createWebTools } from './web.js';
 import { buildScriptsXml, describeCoreBlocks, generateId } from './block-xml.js';
 import { applyXml, hasApplier } from './writer.js';
 
@@ -1261,6 +1260,5 @@ export const createScratchTools = (vm, config) => ({
   apply_scripts: (args) => applyScripts(vm, args || {}),
   delete_scripts: (args) => deleteScripts(vm, args || {}),
   create_variable: (args) => createVariable(vm, args || {}),
-  rename_target: (args) => renameTarget(vm, args || {}),
-  ...createWebTools(config || {})
+  rename_target: (args) => renameTarget(vm, args || {})
 });

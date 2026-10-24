@@ -7,6 +7,9 @@ import iconBack from '!../../../lib/tw-recolor/build!./icon-back.svg';
 import iconPlus from '!../../../lib/tw-recolor/build!./icon-plus.svg';
 import iconRename from '!../../../lib/tw-recolor/build!./icon-rename.svg';
 import iconTrash from '!../../../lib/tw-recolor/build!./icon-trash.svg';
+import iconMore from '!../../../lib/tw-recolor/build!./icon-more.svg';
+import iconBuild from '!../../../lib/tw-recolor/build!./icon-build.svg';
+import iconPlan from '!../../../lib/tw-recolor/build!./icon-plan.svg';
 import SideBar from '../../ui/side-bar/side-bar.js';
 import BottomPanel from '../../ui/bottom-panel/bottom-panel.js';
 import { callChatCompletion } from './agent/client.js';
@@ -22,6 +25,7 @@ const CONFIG_KEY = 'astras-agent-config-v2';
 const HISTORY_KEY = 'astras-agent-history-v2';
 const CONVERSATIONS_KEY = 'astras-agent-conversations-v1';
 const POSITION_KEY = 'AEAstrasCopilotPosition';
+const WRITE_ENABLED_KEY = 'astras-agent-write-enabled-v1';
 const MAX_HISTORY_MESSAGES = 40;
 const MAX_CONVERSATIONS = 30;
 const WIDE_LAYOUT_MIN_WIDTH = 560;
@@ -31,19 +35,26 @@ const POSITION_TYPES = {
   BOTTOM: 'bottom'
 };
 
+const DEFAULT_MODELS = [
+  'gpt-4o-mini',
+  'gpt-4o',
+  'claude-3-7-sonnet',
+  'claude-3-5-sonnet',
+  'deepseek-chat',
+  'deepseek-reasoner'
+];
+
 const DEFAULT_CONFIG = {
   apiUrl: 'https://api.openai.com/v1/chat/completions',
   apiKey: '',
   model: 'gpt-4o-mini',
+  models: DEFAULT_MODELS.join('\n'),
   headers: {},
   stream: true,
   temperature: 0.2,
   maxTokens: 3000,
   retries: 2,
-  streamIdleTimeoutMs: 30000,
-  webProxy: '',
-  searchEndpoint: '',
-  searchEngine: 'duckduckgo'
+  streamIdleTimeoutMs: 30000
 };
 
 /**
@@ -112,6 +123,30 @@ const savePosition = (position) => {
 };
 
 /**
+ * Load write mode enabled state.
+ * @returns {boolean} Whether write mode is enabled.
+ */
+const loadWriteEnabled = () => {
+  try {
+    return localStorage.getItem(WRITE_ENABLED_KEY) === 'true';
+  } catch (error) {
+    return false;
+  }
+};
+
+/**
+ * Save write mode enabled state.
+ * @param {boolean} enabled Whether write mode is enabled.
+ */
+const saveWriteEnabled = (enabled) => {
+  try {
+    localStorage.setItem(WRITE_ENABLED_KEY, enabled ? 'true' : 'false');
+  } catch (error) {
+    // Ignore storage failures.
+  }
+};
+
+/**
  * Load the agent configuration, migrating the API fields from the old AC format.
  * @returns {object} Agent configuration.
  */
@@ -140,6 +175,7 @@ const loadConfig = () => {
     apiUrl: typeof stored.apiUrl === 'string' && stored.apiUrl ? stored.apiUrl : DEFAULT_CONFIG.apiUrl,
     apiKey: typeof stored.apiKey === 'string' ? stored.apiKey : DEFAULT_CONFIG.apiKey,
     model: typeof stored.model === 'string' && stored.model ? stored.model : DEFAULT_CONFIG.model,
+    models: typeof stored.models === 'string' && stored.models ? stored.models : DEFAULT_CONFIG.models,
     headers:
       stored.headers && typeof stored.headers === 'object' && !Array.isArray(stored.headers) ? stored.headers : {},
     stream: stored.stream !== false,
@@ -148,10 +184,7 @@ const loadConfig = () => {
     retries: Number.isFinite(Number(stored.retries)) ? Number(stored.retries) : DEFAULT_CONFIG.retries,
     streamIdleTimeoutMs: Number.isFinite(Number(stored.streamIdleTimeoutMs))
       ? Number(stored.streamIdleTimeoutMs)
-      : DEFAULT_CONFIG.streamIdleTimeoutMs,
-    webProxy: typeof stored.webProxy === 'string' ? stored.webProxy : DEFAULT_CONFIG.webProxy,
-    searchEndpoint: typeof stored.searchEndpoint === 'string' ? stored.searchEndpoint : DEFAULT_CONFIG.searchEndpoint,
-    searchEngine: typeof stored.searchEngine === 'string' ? stored.searchEngine : DEFAULT_CONFIG.searchEngine
+      : DEFAULT_CONFIG.streamIdleTimeoutMs
   };
 };
 
@@ -301,8 +334,8 @@ const renderFormattedContent = (container, content) => {
  */
 const createIcon = (iconSource, className) => {
   const image = document.createElement('img');
-  image.className = className;
-  image.src = iconSource();
+  image.className = `sa-agent-icon ${className || ''}`.trim();
+  image.src = typeof iconSource === 'function' ? iconSource() : iconSource;
   image.draggable = false;
   image.alt = '';
   return image;
@@ -371,19 +404,18 @@ export default async ({ addon, msg }) => {
   let settingsErrorElement = null;
   let apiUrlInput = null;
   let apiKeyInput = null;
-  let modelInput = null;
   let headersInput = null;
   let streamInput = null;
   let autoApproveInput = null;
   let autoApproveTools = false;
-  let writeEnabled = false;
-  let writeEnabledInput = null;
+  let modeButton = null;
+  let modelSelectElement = null;
+  let modelsInput = null;
+  let writeEnabled = loadWriteEnabled();
   const approvedConversations = new Set();
   let temperatureInput = null;
   let maxTokensInput = null;
   let retriesInput = null;
-  let searchEngineInput = null;
-  let searchEndpointInput = null;
   let contextElement = null;
   let compressButton = null;
   let compressController = null;
@@ -467,6 +499,61 @@ export default async ({ addon, msg }) => {
   };
 
   /**
+   * Get the list of configured model names.
+   * @returns {Array<string>} Model names.
+   */
+  const getConfiguredModels = () => {
+    const raw = String(config.models || '').trim();
+    const list = raw
+      ? raw
+          .split(/[\n,]+/)
+          .map((item) => item.trim())
+          .filter(Boolean)
+      : [];
+    if (config.model && !list.includes(config.model)) {
+      list.unshift(config.model);
+    }
+    if (!list.length) {
+      list.push('gpt-4o-mini');
+    }
+    return [...new Set(list)];
+  };
+
+  /**
+   * Update the model selector dropdown in the composer toolbar.
+   */
+  const updateModelSelector = () => {
+    if (!modelSelectElement) return;
+    const models = getConfiguredModels();
+    modelSelectElement.innerHTML = '';
+    for (const m of models) {
+      const option = document.createElement('option');
+      option.value = m;
+      option.textContent = m;
+      if (m === config.model) option.selected = true;
+      modelSelectElement.appendChild(option);
+    }
+    modelSelectElement.value = config.model;
+  };
+
+  /**
+   * Update the mode button UI state (Build / Plan).
+   */
+  const updateModeUI = () => {
+    if (modeButton) {
+      modeButton.className = `sa-agent-mode-button ${writeEnabled ? 'sa-agent-mode-build' : 'sa-agent-mode-plan'}`;
+      modeButton.innerHTML = '';
+      const modeIcon = createIcon(writeEnabled ? iconBuild : iconPlan, 'sa-agent-mode-icon');
+      const modeText = document.createElement('span');
+      modeText.textContent = writeEnabled ? msg('mode-build') : msg('mode-plan');
+      modeButton.appendChild(modeIcon);
+      modeButton.appendChild(modeText);
+      modeButton.title = writeEnabled ? msg('mode-switch-build') : msg('mode-switch-plan');
+      modeButton.setAttribute('aria-label', modeButton.title);
+    }
+  };
+
+  /**
    * Update the enablement of the composer controls.
    */
   const updateComposer = () => {
@@ -474,6 +561,7 @@ export default async ({ addon, msg }) => {
     sendButton.disabled = busy || compressing || inputElement.value.trim().length === 0;
     stopButton.style.display = busy ? 'inline-flex' : 'none';
     if (compressButton) compressButton.disabled = busy || compressing;
+    updateModeUI();
   };
 
   /**
@@ -611,13 +699,18 @@ export default async ({ addon, msg }) => {
    */
   const resizeInput = () => {
     if (!inputElement) return;
+    if (!inputElement.value) {
+      inputElement.style.height = '20px';
+      inputElement.style.overflowY = 'hidden';
+      return;
+    }
     inputElement.style.height = 'auto';
     const styles = window.getComputedStyle(inputElement);
     const maxHeight = parseFloat(styles.maxHeight);
     const borderHeight = Math.max(0, inputElement.offsetHeight - inputElement.clientHeight);
     const contentHeight = inputElement.scrollHeight + borderHeight;
     const nextHeight = Number.isFinite(maxHeight) ? Math.min(contentHeight, maxHeight) : contentHeight;
-    inputElement.style.height = `${nextHeight}px`;
+    inputElement.style.height = `${Math.max(20, nextHeight)}px`;
     inputElement.style.overflowY = contentHeight > nextHeight ? 'auto' : 'hidden';
     scrollToBottom();
   };
@@ -1351,7 +1444,7 @@ export default async ({ addon, msg }) => {
 
     const details = document.createElement('details');
     details.className = 'sa-agent-tool';
-    rememberDisclosure(details, entry, status !== 'awaiting');
+    rememberDisclosure(details, entry, false);
 
     const summary = document.createElement('summary');
     summary.className = 'sa-agent-tool-summary';
@@ -1589,6 +1682,36 @@ export default async ({ addon, msg }) => {
         row.appendChild(notice);
       }
 
+      if (message.role === 'assistant' && (message.mode || message.model || message.duration)) {
+        const metaBar = document.createElement('div');
+        metaBar.className = 'sa-agent-message-meta';
+        if (message.mode) {
+          const isBuild = message.mode === 'build';
+          const modeBadge = document.createElement('span');
+          modeBadge.className = `sa-agent-meta-badge ${isBuild ? 'sa-agent-meta-mode-build' : 'sa-agent-meta-mode-plan'}`;
+          const badgeIcon = createIcon(isBuild ? iconBuild : iconPlan, 'sa-agent-meta-icon');
+          const badgeText = document.createElement('span');
+          badgeText.textContent = isBuild ? msg('mode-build') : msg('mode-plan');
+          modeBadge.appendChild(badgeIcon);
+          modeBadge.appendChild(badgeText);
+          metaBar.appendChild(modeBadge);
+        }
+        if (message.model) {
+          const modelBadge = document.createElement('span');
+          modelBadge.className = 'sa-agent-meta-badge sa-agent-meta-model';
+          modelBadge.textContent = message.model;
+          metaBar.appendChild(modelBadge);
+        }
+        if (typeof message.duration === 'number' && message.duration > 0) {
+          const durationBadge = document.createElement('span');
+          durationBadge.className = 'sa-agent-meta-badge sa-agent-meta-duration';
+          const sec = (message.duration / 1000).toFixed(1);
+          durationBadge.textContent = `${sec}s`;
+          metaBar.appendChild(durationBadge);
+        }
+        row.appendChild(metaBar);
+      }
+
       messagesElement.appendChild(row);
     }
     if (statusElement.textContent) messagesElement.appendChild(statusRow);
@@ -1618,8 +1741,10 @@ export default async ({ addon, msg }) => {
    * @param {Array<object>} trace Trace entries.
    * @param {string} content Assistant content.
    * @param {boolean} [isError] Whether the run failed.
+   * @param {string} [notice] Notice text.
+   * @param {object} [meta] Metadata (mode, model, duration).
    */
-  const commitTrace = (trace, content, isError, notice = '') => {
+  const commitTrace = (trace, content, isError, notice = '', meta = null) => {
     const parts = liveParts;
     if (!parts.length && content) parts.push({ type: 'response', content, reasoning: '' });
     if (!parts.length && trace.length) parts.push({ type: 'tools', trace });
@@ -1633,6 +1758,7 @@ export default async ({ addon, msg }) => {
     if (parts.length || notice) {
       const extras = { parts, error: Boolean(isError), notice };
       if (trace.length) extras.trace = trace;
+      if (meta && typeof meta === 'object') Object.assign(extras, meta);
       addMessage('assistant', text, extras);
     }
   };
@@ -1654,8 +1780,10 @@ export default async ({ addon, msg }) => {
    * Commit the in-flight trace, if any.
    * @param {string} content Assistant content.
    * @param {boolean} [isError] Whether the run failed.
+   * @param {string} [notice] Notice text.
+   * @param {object} [meta] Metadata (mode, model, duration).
    */
-  const commitLiveTrace = (content, isError, notice = '') => {
+  const commitLiveTrace = (content, isError, notice = '', meta = null) => {
     if (content || streamingReasoning) {
       liveParts.push({ type: 'response', content, reasoning: streamingReasoning });
     }
@@ -1668,7 +1796,7 @@ export default async ({ addon, msg }) => {
       }
     }
     setStatus('');
-    commitTrace(liveTrace, content, isError, notice);
+    commitTrace(liveTrace, content, isError, notice, meta);
   };
 
   /**
@@ -1793,6 +1921,10 @@ export default async ({ addon, msg }) => {
     updateComposer();
     setStatus(msg('status-thinking'));
 
+    const startTime = Date.now();
+    const requestMode = writeEnabled ? 'build' : 'plan';
+    const requestModel = config.model;
+
     const controller = new AbortController();
     const generation = ++requestGeneration;
     activeController = controller;
@@ -1893,7 +2025,11 @@ export default async ({ addon, msg }) => {
         if (conversation) conversation.lastUsage = result.usage;
       }
       setStatus('');
-      commitTrace(trace, result.content, false);
+      commitTrace(trace, result.content, false, '', {
+        mode: requestMode,
+        model: requestModel,
+        duration: Date.now() - startTime
+      });
       updateContextUsage();
     } catch (error) {
       if (generation !== requestGeneration || conversationId !== activeConversationId) return;
@@ -1902,7 +2038,11 @@ export default async ({ addon, msg }) => {
       const notice = aborted
         ? msg('status-stopped')
         : `${msg('error-prefix')} ${error && error.message ? error.message : String(error)}`;
-      commitLiveTrace(partial, !aborted, notice);
+      commitLiveTrace(partial, !aborted, notice, {
+        mode: requestMode,
+        model: requestModel,
+        duration: Date.now() - startTime
+      });
     } finally {
       activeController = null;
       // Only one request can be active, so this assignment is safe.
@@ -1939,15 +2079,13 @@ export default async ({ addon, msg }) => {
     if (!apiUrlInput) return;
     apiUrlInput.value = config.apiUrl;
     apiKeyInput.value = config.apiKey;
-    modelInput.value = config.model;
+    if (modelsInput) modelsInput.value = config.models || config.model || '';
     headersInput.value = JSON.stringify(config.headers || {}, null, 2);
     if (streamInput) streamInput.checked = config.stream !== false;
     if (autoApproveInput) autoApproveInput.checked = autoApproveTools;
     if (temperatureInput) temperatureInput.value = String(config.temperature);
     if (maxTokensInput) maxTokensInput.value = String(config.maxTokens);
     if (retriesInput) retriesInput.value = String(config.retries);
-    if (searchEngineInput) searchEngineInput.value = config.searchEngine;
-    if (searchEndpointInput) searchEndpointInput.value = config.searchEndpoint || '';
     settingsErrorElement.textContent = '';
     settingsErrorElement.style.display = 'none';
   };
@@ -1996,24 +2134,29 @@ export default async ({ addon, msg }) => {
       return;
     }
 
+    const rawModels = modelsInput ? modelsInput.value.trim() : config.models || '';
+    config.models = rawModels;
+    const modelList = getConfiguredModels();
+    let activeModel = config.model;
+    if (!modelList.includes(activeModel)) {
+      activeModel = modelList[0] || DEFAULT_CONFIG.model;
+    }
+
     config = {
       apiUrl: apiUrlInput.value.trim() || DEFAULT_CONFIG.apiUrl,
       apiKey: apiKeyInput.value.trim(),
-      model: modelInput.value.trim() || DEFAULT_CONFIG.model,
+      model: activeModel,
+      models: rawModels,
       headers,
       stream: streamInput ? Boolean(streamInput.checked) : config.stream !== false,
       temperature: Math.max(0, Math.min(2, Number(temperatureInput.value))),
       maxTokens: Math.max(1, Math.min(32000, Number(maxTokensInput.value) || DEFAULT_CONFIG.maxTokens)),
       retries: Math.max(0, Math.min(5, Number(retriesInput.value))),
       streamIdleTimeoutMs:
-        typeof config.streamIdleTimeoutMs === 'number'
-          ? config.streamIdleTimeoutMs
-          : DEFAULT_CONFIG.streamIdleTimeoutMs,
-      webProxy: typeof config.webProxy === 'string' ? config.webProxy : DEFAULT_CONFIG.webProxy,
-      searchEndpoint: searchEndpointInput ? searchEndpointInput.value.trim() : config.searchEndpoint,
-      searchEngine: searchEngineInput && searchEngineInput.value ? searchEngineInput.value : config.searchEngine
+        typeof config.streamIdleTimeoutMs === 'number' ? config.streamIdleTimeoutMs : DEFAULT_CONFIG.streamIdleTimeoutMs
     };
     saveConfig(config);
+    updateModelSelector();
     closeSettingsPanel();
     setStatus(msg('settings-saved'));
   };
@@ -2031,8 +2174,10 @@ export default async ({ addon, msg }) => {
 
     const backButton = document.createElement('button');
     backButton.type = 'button';
-    backButton.className = 'sa-agent-settings-back';
-    backButton.textContent = msg('back');
+    backButton.className = 'sa-agent-icon-button sa-agent-settings-back';
+    backButton.title = msg('back');
+    backButton.setAttribute('aria-label', msg('back'));
+    backButton.appendChild(createIcon(iconBack, 'sa-agent-settings-back-icon'));
     backButton.addEventListener('click', closeSettingsPanel);
 
     const settingsTitle = document.createElement('span');
@@ -2075,11 +2220,12 @@ export default async ({ addon, msg }) => {
     apiKeyInput.autocomplete = 'off';
     addField(msg('api-key'), apiKeyInput);
 
-    modelInput = document.createElement('input');
-    modelInput.className = 'sa-agent-settings-input';
-    modelInput.type = 'text';
-    modelInput.spellcheck = false;
-    addField(msg('model'), modelInput);
+    modelsInput = document.createElement('textarea');
+    modelsInput.className = 'sa-agent-settings-input sa-agent-settings-textarea';
+    modelsInput.style.minHeight = '70px';
+    modelsInput.spellcheck = false;
+    modelsInput.placeholder = 'gpt-4o-mini\ngpt-4o\nclaude-3-7-sonnet';
+    addField(msg('settings-models'), modelsInput);
 
     temperatureInput = document.createElement('input');
     temperatureInput.className = 'sa-agent-settings-input';
@@ -2104,30 +2250,6 @@ export default async ({ addon, msg }) => {
     retriesInput.max = '5';
     retriesInput.step = '1';
     addField(msg('settings-retries'), retriesInput);
-
-    searchEngineInput = document.createElement('select');
-    searchEngineInput.className = 'sa-agent-settings-input sa-agent-settings-select';
-    const engineOptions = [
-      { value: 'duckduckgo', label: msg('engine-duckduckgo') },
-      { value: 'bing', label: msg('engine-bing') },
-      { value: 'duckduckgo-html', label: msg('engine-duckduckgo-html') },
-      { value: 'scratch-wiki', label: msg('engine-scratch-wiki') },
-      { value: 'custom', label: msg('engine-custom') }
-    ];
-    for (const engineOption of engineOptions) {
-      const optionElement = document.createElement('option');
-      optionElement.value = engineOption.value;
-      optionElement.textContent = engineOption.label;
-      searchEngineInput.appendChild(optionElement);
-    }
-    addField(msg('settings-search-engine'), searchEngineInput);
-
-    searchEndpointInput = document.createElement('input');
-    searchEndpointInput.className = 'sa-agent-settings-input';
-    searchEndpointInput.type = 'url';
-    searchEndpointInput.spellcheck = false;
-    searchEndpointInput.placeholder = 'https://...';
-    addField(msg('settings-search-endpoint'), searchEndpointInput);
 
     streamInput = document.createElement('input');
     streamInput.className = 'sa-agent-settings-checkbox';
@@ -2443,7 +2565,7 @@ export default async ({ addon, msg }) => {
     sessionMenu.className = 'sa-agent-session-menu';
     const sessionSummary = document.createElement('summary');
     sessionSummary.className = 'sa-agent-icon-button sa-agent-session-summary';
-    sessionSummary.textContent = '⋯';
+    sessionSummary.appendChild(createIcon(iconMore, 'sa-agent-icon'));
     sessionSummary.title = msg('conversation-options');
     sessionSummary.setAttribute('aria-label', msg('conversation-options'));
     sessionMenu.appendChild(sessionSummary);
@@ -2483,22 +2605,6 @@ export default async ({ addon, msg }) => {
     permissionLabel.appendChild(autoApproveInput);
     sessionPanel.appendChild(permissionLabel);
 
-    const writeLabel = document.createElement('label');
-    writeLabel.className = 'sa-agent-session-permission sa-agent-session-write';
-    const writeText = document.createElement('span');
-    writeText.textContent = msg('conversation-allow-edit');
-    writeEnabledInput = document.createElement('input');
-    writeEnabledInput.className = 'sa-agent-settings-checkbox';
-    writeEnabledInput.type = 'checkbox';
-    writeEnabledInput.checked = writeEnabled;
-    writeEnabledInput.addEventListener('change', () => {
-      writeEnabled = Boolean(writeEnabledInput.checked);
-      updateComposer();
-    });
-    writeLabel.appendChild(writeText);
-    writeLabel.appendChild(writeEnabledInput);
-    sessionPanel.appendChild(writeLabel);
-
     sessionMenu.appendChild(sessionPanel);
     actions.insertBefore(sessionMenu, newConversationButton);
     sessionMenu.addEventListener('keydown', (event) => {
@@ -2516,6 +2622,9 @@ export default async ({ addon, msg }) => {
     const composer = document.createElement('div');
     composer.className = 'sa-agent-composer';
 
+    const composerCard = document.createElement('div');
+    composerCard.className = 'sa-agent-composer-card';
+
     inputElement = document.createElement('textarea');
     inputElement.className = 'sa-agent-input';
     inputElement.rows = 1;
@@ -2531,8 +2640,41 @@ export default async ({ addon, msg }) => {
       }
     });
 
-    const composerActions = document.createElement('div');
-    composerActions.className = 'sa-agent-composer-actions';
+    const composerToolbar = document.createElement('div');
+    composerToolbar.className = 'sa-agent-composer-toolbar';
+
+    const toolbarLeft = document.createElement('div');
+    toolbarLeft.className = 'sa-agent-composer-toolbar-left';
+
+    modeButton = document.createElement('button');
+    modeButton.type = 'button';
+    modeButton.className = 'sa-agent-mode-button';
+    modeButton.addEventListener('click', () => {
+      writeEnabled = !writeEnabled;
+      saveWriteEnabled(writeEnabled);
+      updateComposer();
+      updateModeUI();
+    });
+    toolbarLeft.appendChild(modeButton);
+
+    const modelSelectWrapper = document.createElement('div');
+    modelSelectWrapper.className = 'sa-agent-model-select-wrapper';
+    modelSelectElement = document.createElement('select');
+    modelSelectElement.className = 'sa-agent-model-select';
+    modelSelectElement.title = msg('model-switch');
+    modelSelectElement.setAttribute('aria-label', msg('model-switch'));
+    modelSelectElement.addEventListener('change', () => {
+      config.model = modelSelectElement.value;
+      saveConfig(config);
+    });
+    modelSelectWrapper.appendChild(modelSelectElement);
+    toolbarLeft.appendChild(modelSelectWrapper);
+
+    updateModeUI();
+    updateModelSelector();
+
+    const toolbarRight = document.createElement('div');
+    toolbarRight.className = 'sa-agent-composer-toolbar-right';
 
     stopButton = document.createElement('button');
     stopButton.type = 'button';
@@ -2543,16 +2685,21 @@ export default async ({ addon, msg }) => {
 
     sendButton = document.createElement('button');
     sendButton.type = 'button';
-    sendButton.className = 'sa-agent-button sa-agent-button-primary';
+    sendButton.className = 'sa-agent-button sa-agent-button-primary sa-agent-send-button';
     sendButton.textContent = msg('send');
     sendButton.addEventListener('click', () => {
       sendMessage(inputElement.value).catch(() => {});
     });
 
-    composerActions.appendChild(stopButton);
-    composerActions.appendChild(sendButton);
-    composer.appendChild(inputElement);
-    composer.appendChild(composerActions);
+    toolbarRight.appendChild(stopButton);
+    toolbarRight.appendChild(sendButton);
+
+    composerToolbar.appendChild(toolbarLeft);
+    composerToolbar.appendChild(toolbarRight);
+
+    composerCard.appendChild(inputElement);
+    composerCard.appendChild(composerToolbar);
+    composer.appendChild(composerCard);
 
     chatContentElement = document.createElement('div');
     chatContentElement.className = 'sa-agent-content';
@@ -2726,12 +2873,23 @@ export default async ({ addon, msg }) => {
    */
   const updateToggleButtonState = () => {
     if (!sidebarToggleButton || !bottomToggleButton) return;
-    const active = isChatVisible();
+    const sidebarActive = SideBar.isOpen() && SideBar.getActivePlugin() === PLUGIN_ID;
+    const bottomActive = BottomPanel.isOpen() && BottomPanel.getActivePlugin() === PLUGIN_ID;
 
-    sidebarToggleButton.classList.toggle('sa-agent-toggle-active', active);
-    sidebarToggleButton.setAttribute('aria-selected', active ? 'true' : 'false');
-    bottomToggleButton.classList.toggle('sa-agent-toggle-active', active);
-    bottomToggleButton.setAttribute('aria-pressed', active ? 'true' : 'false');
+    sidebarToggleButton.classList.toggle('sa-agent-toggle-active', sidebarActive);
+    sidebarToggleButton.classList.toggle('is-selected', sidebarActive);
+    sidebarToggleButton.setAttribute('aria-selected', sidebarActive ? 'true' : 'false');
+    const sidebarIcon = sidebarToggleButton.querySelector('.sa-agent-toggle-icon');
+    if (sidebarIcon) {
+      sidebarIcon.style.filter = sidebarActive ? 'grayscale(0%)' : 'grayscale(100%)';
+    }
+
+    bottomToggleButton.classList.toggle('sa-agent-toggle-active', bottomActive);
+    bottomToggleButton.setAttribute('aria-pressed', bottomActive ? 'true' : 'false');
+    const bottomIcon = bottomToggleButton.querySelector('.sa-agent-toggle-icon');
+    if (bottomIcon) {
+      bottomIcon.style.filter = bottomActive ? 'grayscale(0%)' : 'grayscale(100%)';
+    }
   };
 
   /**
@@ -2862,12 +3020,16 @@ export default async ({ addon, msg }) => {
     }
     if (inputElement) inputElement.blur();
     if (sidebarToggleButton) {
-      sidebarToggleButton.classList.remove('sa-agent-toggle-active');
+      sidebarToggleButton.classList.remove('sa-agent-toggle-active', 'is-selected');
       sidebarToggleButton.setAttribute('aria-selected', 'false');
+      const icon = sidebarToggleButton.querySelector('.sa-agent-toggle-icon');
+      if (icon) icon.style.filter = 'grayscale(100%)';
     }
     if (bottomToggleButton) {
       bottomToggleButton.classList.remove('sa-agent-toggle-active');
       bottomToggleButton.setAttribute('aria-pressed', 'false');
+      const icon = bottomToggleButton.querySelector('.sa-agent-toggle-icon');
+      if (icon) icon.style.filter = 'grayscale(100%)';
     }
     // The panel still reports this plugin as active during onDeactivate.
     requestAnimationFrame(updateToggleButtonState);
@@ -2891,12 +3053,44 @@ export default async ({ addon, msg }) => {
 
   buildChatUI();
   SideBar.register(PLUGIN_ID, chatContainer, {
-    onActivate: handleActivate,
-    onDeactivate: handleDeactivate
+    onActivate: () => {
+      if (sidebarToggleButton) {
+        sidebarToggleButton.classList.add('sa-agent-toggle-active', 'is-selected');
+        sidebarToggleButton.setAttribute('aria-selected', 'true');
+        const icon = sidebarToggleButton.querySelector('.sa-agent-toggle-icon');
+        if (icon) icon.style.filter = 'grayscale(0%)';
+      }
+      handleActivate();
+    },
+    onDeactivate: () => {
+      if (sidebarToggleButton) {
+        sidebarToggleButton.classList.remove('sa-agent-toggle-active', 'is-selected');
+        sidebarToggleButton.setAttribute('aria-selected', 'false');
+        const icon = sidebarToggleButton.querySelector('.sa-agent-toggle-icon');
+        if (icon) icon.style.filter = 'grayscale(100%)';
+      }
+      handleDeactivate();
+    }
   });
   BottomPanel.register(PLUGIN_ID, chatContainer, {
-    onActivate: handleActivate,
-    onDeactivate: handleDeactivate
+    onActivate: () => {
+      if (bottomToggleButton) {
+        bottomToggleButton.classList.add('sa-agent-toggle-active');
+        bottomToggleButton.setAttribute('aria-pressed', 'true');
+        const icon = bottomToggleButton.querySelector('.sa-agent-toggle-icon');
+        if (icon) icon.style.filter = 'grayscale(0%)';
+      }
+      handleActivate();
+    },
+    onDeactivate: () => {
+      if (bottomToggleButton) {
+        bottomToggleButton.classList.remove('sa-agent-toggle-active');
+        bottomToggleButton.setAttribute('aria-pressed', 'false');
+        const icon = bottomToggleButton.querySelector('.sa-agent-toggle-icon');
+        if (icon) icon.style.filter = 'grayscale(100%)';
+      }
+      handleDeactivate();
+    }
   });
 
   sidebarToggleButton = document.createElement('button');
@@ -2908,7 +3102,6 @@ export default async ({ addon, msg }) => {
   sidebarToggleButton.tabIndex = 0;
   sidebarToggleButton.setAttribute('role', 'tab');
   sidebarToggleButton.setAttribute('aria-selected', 'false');
-  sidebarToggleButton.title = msg('button');
   sidebarToggleButton.setAttribute('aria-label', msg('button'));
   sidebarToggleButton.appendChild(createIcon(icon, 'sa-agent-toggle-icon'));
   sidebarToggleButton.addEventListener('click', () => {

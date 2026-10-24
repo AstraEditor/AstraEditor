@@ -60,8 +60,12 @@
 
 .sa-agent-session-summary {
   list-style: none;
-  font-size: 20px;
   cursor: pointer;
+}
+
+.sa-agent-session-summary .sa-agent-icon {
+  width: 16px;
+  height: 16px;
 }
 
 .sa-agent-session-summary::-webkit-details-marker {
@@ -105,12 +109,20 @@
   display: none;
 }
 
+.sa-agent-icon,
 .sa-agent-conversation-toggle-icon,
 .sa-agent-new-chat-button-icon {
   width: 16px;
   height: 16px;
   flex-shrink: 0;
   filter: grayscale(100%);
+  transition: filter 0.2s ease;
+}
+
+.sa-agent-icon-button:hover .sa-agent-icon,
+.sa-agent-icon-button:hover .sa-agent-conversation-toggle-icon,
+.sa-agent-icon-button:hover .sa-agent-new-chat-button-icon {
+  filter: none !important;
 }
 
 .sa-agent-content {
@@ -282,6 +294,11 @@
   height: 14px;
   flex-shrink: 0;
   filter: grayscale(100%);
+  transition: filter 0.2s ease;
+}
+
+.sa-agent-conversation-action:hover .sa-agent-conversation-action-icon {
+  filter: none !important;
 }
 
 .sa-agent-conversation-rename {
@@ -333,6 +350,11 @@
   height: 16px;
   flex-shrink: 0;
   filter: grayscale(100%);
+  transition: filter 0.2s ease;
+}
+
+button:hover .sa-agent-settings-icon {
+  filter: none !important;
 }
 
 .sa-agent-position-switch {
@@ -370,6 +392,11 @@
   height: 16px;
   flex-shrink: 0;
   filter: grayscale(100%);
+  transition: filter 0.2s ease;
+}
+
+.sa-agent-rotate-button:hover .sa-agent-rotate-icon {
+  filter: none !important;
 }
 
 .sa-agent-position-popup {
@@ -427,10 +454,12 @@
   height: 16px;
   flex-shrink: 0;
   filter: grayscale(100%);
+  transition: filter 0.2s ease;
 }
 
+.sa-agent-popup-button:hover .sa-agent-popup-icon,
 .sa-agent-popup-button.sa-agent-position-active .sa-agent-popup-icon {
-  filter: none;
+  filter: none !important;
 }
 
 .sa-agent-messages {
@@ -982,65 +1011,240 @@
 }
 
 .sa-agent-composer {
-  display: flex;
-  align-items: flex-end;
-  gap: 8px;
   flex-shrink: 0;
-  padding: 8px 12px 10px;
+  padding: 8px 10px 10px;
   border-top: 1px solid var(--ui-black-transparent);
   background: var(--ui-white);
 }
 
+.sa-agent-composer-card {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--ui-black-transparent);
+  border-radius: 6px;
+  background: var(--ui-white);
+  padding: 5px 6px 4px;
+  box-sizing: border-box;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.sa-agent-composer-card:focus-within {
+  border-color: var(--looks-secondary);
+  box-shadow: 0 0 0 1px var(--looks-secondary);
+}
+
 .sa-agent-input {
-  flex: 1;
+  width: 100%;
   min-width: 0;
-  min-height: 30px;
-  max-height: 66px;
-  padding: 6px 8px;
+  height: 20px;
+  min-height: 20px;
+  max-height: 160px;
+  padding: 0 4px;
   overflow-y: hidden;
   resize: none;
-  border: 1px solid var(--ui-black-transparent);
-  border-radius: 5px;
+  border: 0;
   outline: none;
   color: var(--text-primary);
-  background: var(--ui-white);
+  background: transparent;
   box-sizing: border-box;
   font-family: inherit;
   font-size: 12px;
-  line-height: 1.4;
-  transition: none;
+  line-height: 20px;
+  vertical-align: middle;
 }
 
-.sa-agent-input:focus {
+.sa-agent-input::placeholder {
+  color: var(--text-primary);
+  opacity: 0.45;
+  line-height: 20px;
+}
+
+.sa-agent-composer-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding-top: 4px;
+  margin-top: 4px;
+  border-top: 1px solid var(--ui-black-transparent);
+}
+
+.sa-agent-composer-toolbar-left {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  flex: 1;
+}
+
+.sa-agent-composer-toolbar-right {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.sa-agent-mode-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: 24px;
+  padding: 0 7px;
+  border: 1px solid var(--ui-black-transparent);
+  border-radius: 4px;
+  color: var(--text-primary);
+  background: transparent;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: 500;
+  white-space: nowrap;
+  user-select: none;
+  transition: all 0.15s ease;
+}
+
+.sa-agent-mode-icon {
+  width: 13px;
+  height: 13px;
+  flex-shrink: 0;
+  transition: filter 0.15s ease;
+}
+
+.sa-agent-mode-button:hover {
+  background: var(--ui-primary-transparent);
   border-color: var(--looks-secondary);
 }
 
-.sa-agent-composer-actions {
-  display: flex;
+.sa-agent-mode-button:active {
+  transform: scale(0.96);
+}
+
+.sa-agent-mode-button.sa-agent-mode-build {
+  color: #ffffff;
+  border-color: var(--looks-secondary);
+  background: var(--looks-secondary);
+  font-weight: 600;
+}
+
+.sa-agent-mode-button.sa-agent-mode-build .sa-agent-mode-icon {
+  filter: brightness(0) invert(1) !important;
+}
+
+.sa-agent-mode-button.sa-agent-mode-build:hover {
+  filter: brightness(1.08);
+}
+
+.sa-agent-mode-button.sa-agent-mode-plan {
+  color: var(--text-primary);
+  opacity: 0.85;
+}
+
+.sa-agent-mode-button.sa-agent-mode-plan .sa-agent-mode-icon {
+  filter: grayscale(100%);
+}
+
+.sa-agent-mode-button.sa-agent-mode-plan:hover .sa-agent-mode-icon {
+  filter: none !important;
+}
+
+.sa-agent-model-select-wrapper {
+  position: relative;
+  display: inline-flex;
   align-items: center;
-  gap: 4px;
-  flex-shrink: 0;
+  flex: 0 1 auto;
+  min-width: 0;
+  max-width: none;
+}
+
+.sa-agent-model-select {
+  height: 24px;
+  width: auto;
+  min-width: 0;
+  max-width: none;
+  padding: 0 18px 0 7px;
+  border: 1px solid var(--ui-black-transparent);
+  border-radius: 4px;
+  outline: none;
+  color: var(--text-primary);
+  background-color: var(--ui-white);
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: 500;
+  white-space: nowrap;
+  appearance: none;
+  -webkit-appearance: none;
+  transition: border-color 0.15s ease, background-color 0.15s ease;
+}
+
+.sa-agent-model-select:hover {
+  border-color: var(--looks-secondary);
+  background-color: var(--ui-primary-transparent);
+}
+
+.sa-agent-model-select:focus {
+  border-color: var(--looks-secondary);
+  box-shadow: 0 0 0 1px var(--looks-secondary);
+}
+
+/* 显式定义下拉展开选项的文字颜色与背景，杜绝因系统深浅色差异导致白底浅灰字或可读性差的问题 */
+.sa-agent-model-select option {
+  color: var(--text-primary) !important;
+  background-color: var(--ui-white) !important;
+  font-size: 12px;
+  font-weight: normal;
+  padding: 4px 8px;
+}
+
+.sa-agent-model-select option:checked {
+  color: var(--looks-secondary) !important;
+  background-color: var(--ui-primary-transparent) !important;
+  font-weight: 600;
+}
+
+.sa-agent-model-select-wrapper::after {
+  content: '';
+  position: absolute;
+  right: 6px;
+  pointer-events: none;
+  width: 0;
+  height: 0;
+  border-left: 3.5px solid transparent;
+  border-right: 3.5px solid transparent;
+  border-top: 4px solid var(--text-primary);
+  opacity: 0.6;
+  transition: opacity 0.15s ease;
+}
+
+.sa-agent-model-select-wrapper:hover::after {
+  opacity: 0.9;
 }
 
 .sa-agent-button {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-height: 30px;
+  gap: 4px;
+  height: 24px;
+  min-height: 24px;
   padding: 0 10px;
   border: 1px solid var(--ui-black-transparent);
-  border-radius: 5px;
+  border-radius: 4px;
   cursor: pointer;
   font-family: inherit;
   font-size: 12px;
-  font-weight: bold;
+  font-weight: 600;
   white-space: nowrap;
-  transition: none;
+  transition: opacity 0.15s ease, background 0.15s ease, transform 0.1s ease;
 }
 
 .sa-agent-button:disabled {
   opacity: 0.45;
   cursor: not-allowed;
+}
+
+.sa-agent-button:active:not(:disabled) {
+  transform: scale(0.96);
 }
 
 .sa-agent-button-primary {
@@ -1051,6 +1255,7 @@
 
 .sa-agent-button-primary:hover:not(:disabled) {
   filter: brightness(1.08);
+  opacity: 0.95;
 }
 
 .sa-agent-button-secondary {
@@ -1064,6 +1269,57 @@
 
 .sa-agent-stop-button {
   color: #d93025;
+  border-color: rgba(217, 48, 37, 0.3);
+}
+
+.sa-agent-stop-button:hover:not(:disabled) {
+  background: rgba(217, 48, 37, 0.08);
+}
+
+.sa-agent-message-meta {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin-top: 4px;
+  font-size: 10px;
+  color: var(--text-primary);
+  opacity: 0.65;
+}
+
+.sa-agent-meta-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 1px 5px;
+  border-radius: 3px;
+  background: var(--ui-black-transparent);
+  font-size: 10px;
+  line-height: 1.3;
+}
+
+.sa-agent-meta-icon {
+  width: 11px;
+  height: 11px;
+  flex-shrink: 0;
+}
+
+.sa-agent-meta-mode-build {
+  color: var(--looks-secondary);
+  background: var(--ui-primary-transparent);
+  font-weight: 600;
+}
+
+.sa-agent-meta-mode-build .sa-agent-meta-icon {
+  filter: none !important;
+}
+
+.sa-agent-meta-mode-plan {
+  color: var(--text-primary);
+  background: var(--ui-black-transparent);
+}
+
+.sa-agent-meta-mode-plan .sa-agent-meta-icon {
+  filter: grayscale(100%);
 }
 
 .addons-side-bar .sa-agent-header {
@@ -1079,7 +1335,7 @@
 }
 
 .addons-side-bar .sa-agent-composer {
-  padding: 6px 8px 8px;
+  padding: 6px 6px 8px;
 }
 
 .addons-side-bar .sa-agent-message-role {
@@ -1091,12 +1347,17 @@
 }
 
 .addons-side-bar .sa-agent-button {
+  min-height: 24px;
   padding: 0 7px;
 }
 
 .addons-side-bar .sa-agent-input {
-  max-height: 62px;
-  font-size: 11px;
+  height: 20px;
+  min-height: 20px;
+  max-height: 120px;
+  padding: 0 4px;
+  font-size: 12px;
+  line-height: 20px;
 }
 
 .sa-agent-toggle-icon {
@@ -1142,28 +1403,36 @@
 }
 
 .addons-bottom-panel-button-bar .sa-agent-toggle-button.sa-agent-toggle-active {
-  color: var(--looks-secondary);
-  background: var(--ui-white);
-  border-bottom: 2px solid var(--looks-secondary);
-  font-weight: bold;
+  color: var(--looks-secondary) !important;
+  background: var(--ui-white) !important;
+  border-bottom: 2px solid var(--looks-secondary) !important;
+  font-weight: bold !important;
 }
 
 .addons-bottom-panel-button-bar .sa-agent-toggle-button.sa-agent-toggle-active:hover {
-  background: var(--ui-white);
+  background: var(--ui-white) !important;
 }
 
 .addons-bottom-panel-button-bar .sa-agent-toggle-button.sa-agent-toggle-active .sa-agent-toggle-label {
-  color: var(--looks-secondary);
+  color: var(--looks-secondary) !important;
+  font-weight: bold !important;
 }
 
 .addons-bottom-panel-button-bar .sa-agent-toggle-button .sa-agent-toggle-icon {
-  filter: grayscale(100%);
+  width: 16px !important;
+  height: 16px !important;
+  margin: 0 !important;
+  filter: grayscale(100%) !important;
+  transition: filter 0.2s ease !important;
 }
 
+/* 仅在激活状态下图标恢复主题色，hover 状态保持灰度 */
 .addons-bottom-panel-button-bar .sa-agent-toggle-button.sa-agent-toggle-active .sa-agent-toggle-icon {
-  filter: none;
+  filter: none !important;
 }
 
+/* VSCode 布局下的侧边栏按钮样式 - 严格对齐 SPA、AddToBar 与 Terminal 规范 */
+.sa-agent-toggle-tab.vscode-tab,
 [class*='tabs'][class*='vscodeList'] .sa-agent-toggle-tab.vscode-tab {
   box-sizing: border-box;
   display: flex;
@@ -1181,43 +1450,70 @@
   border: 0 !important;
   border-radius: 0 !important;
   color: inherit;
-  background: transparent !important;
+  background-color: transparent !important;
   cursor: pointer;
   font-family: inherit;
   font-size: 0;
   line-height: 0;
   outline: none;
   appearance: none;
+  position: relative;
   transition: none;
 }
 
-[class*='tabs'][class*='vscodeList'] .sa-agent-toggle-tab.vscode-tab:not(.sa-agent-toggle-active):hover {
-  background: var(--ui-primary-transparent) !important;
+.sa-agent-toggle-tab.vscode-tab:hover,
+[class*='tabs'][class*='vscodeList'] .sa-agent-toggle-tab.vscode-tab:hover {
+  border-color: transparent !important;
 }
 
-[class*='tabs'][class*='vscodeList'] .sa-agent-toggle-tab.vscode-tab:not(.sa-agent-toggle-active):active {
-  background: var(--ui-primary-transparent) !important;
+/* VSCode 侧边栏按钮图标 - 默认未激活状态为 100% 灰度 */
+.sa-agent-toggle-tab.vscode-tab .sa-agent-toggle-icon,
+.sa-agent-toggle-tab.vscode-tab img,
+[class*='tabs'][class*='vscodeList'] .sa-agent-toggle-tab.vscode-tab .sa-agent-toggle-icon,
+[class*='tabs'][class*='vscodeList'] .sa-agent-toggle-tab.vscode-tab img {
+  width: 22px;
+  height: auto;
+  margin: 0 !important;
+  filter: grayscale(100%);
+  -webkit-filter: grayscale(100%);
+  transition: filter 0.2s ease;
 }
 
+/* VSCode 侧边栏按钮 hover 状态：规范只提升亮度（brightness(150%)），保持灰度，不包含饱和度 */
+.sa-agent-toggle-tab.vscode-tab:not(.sa-agent-toggle-active):not(.is-selected):hover .sa-agent-toggle-icon,
+.sa-agent-toggle-tab.vscode-tab:not(.sa-agent-toggle-active):not(.is-selected):hover img,
+[class*='tabs'][class*='vscodeList'] .sa-agent-toggle-tab.vscode-tab:not(.sa-agent-toggle-active):not(.is-selected):hover .sa-agent-toggle-icon,
+[class*='tabs'][class*='vscodeList'] .sa-agent-toggle-tab.vscode-tab:not(.sa-agent-toggle-active):not(.is-selected):hover img {
+  filter: brightness(150%) grayscale(100%) !important;
+  -webkit-filter: brightness(150%) grayscale(100%) !important;
+}
+
+.sa-agent-toggle-tab.vscode-tab:focus-visible,
 [class*='tabs'][class*='vscodeList'] .sa-agent-toggle-tab.vscode-tab:focus-visible {
   outline: 2px solid var(--looks-secondary);
   outline-offset: -2px;
 }
 
-[class*='tabs'][class*='vscodeList'] .sa-agent-toggle-tab.vscode-tab .sa-agent-toggle-icon {
-  width: 22px;
-  height: 22px;
-  margin: 0 !important;
-  filter: grayscale(100%);
+/* VSCode 布局下按钮激活/选中状态：背景变白，左侧呈现主题强调色指示条 */
+.sa-agent-toggle-tab.vscode-tab.sa-agent-toggle-active,
+.sa-agent-toggle-tab.vscode-tab.is-selected,
+[class*='tabs'][class*='vscodeList'] .sa-agent-toggle-tab.vscode-tab.sa-agent-toggle-active,
+[class*='tabs'][class*='vscodeList'] .sa-agent-toggle-tab.vscode-tab.is-selected {
+  background-color: var(--ui-white) !important;
+  box-shadow: inset 3px 0px 0px 0px var(--looks-secondary) !important;
 }
 
-[class*='tabs'][class*='vscodeList'] .sa-agent-toggle-tab.vscode-tab.sa-agent-toggle-active {
-  background: var(--ui-white) !important;
-  box-shadow: inset 3px 0 0 var(--looks-secondary) !important;
-}
-
-[class*='tabs'][class*='vscodeList'] .sa-agent-toggle-tab.vscode-tab.sa-agent-toggle-active .sa-agent-toggle-icon {
-  filter: grayscale(0%);
+/* 激活状态下图标恢复主题色（移除灰度，展现饱和度） */
+.sa-agent-toggle-tab.vscode-tab.sa-agent-toggle-active .sa-agent-toggle-icon,
+.sa-agent-toggle-tab.vscode-tab.sa-agent-toggle-active img,
+.sa-agent-toggle-tab.vscode-tab.is-selected .sa-agent-toggle-icon,
+.sa-agent-toggle-tab.vscode-tab.is-selected img,
+[class*='tabs'][class*='vscodeList'] .sa-agent-toggle-tab.vscode-tab.sa-agent-toggle-active .sa-agent-toggle-icon,
+[class*='tabs'][class*='vscodeList'] .sa-agent-toggle-tab.vscode-tab.sa-agent-toggle-active img,
+[class*='tabs'][class*='vscodeList'] .sa-agent-toggle-tab.vscode-tab.is-selected .sa-agent-toggle-icon,
+[class*='tabs'][class*='vscodeList'] .sa-agent-toggle-tab.vscode-tab.is-selected img {
+  filter: grayscale(0%) !important;
+  -webkit-filter: grayscale(0%) !important;
 }
 
 .sa-agent-settings-panel {
@@ -1243,24 +1539,40 @@
 }
 
 .sa-agent-settings-back {
+  box-sizing: border-box;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-height: 24px;
-  padding: 0 8px;
+  width: 24px;
+  height: 24px;
+  min-width: 24px;
+  padding: 0;
   border: 1px solid var(--ui-black-transparent);
   border-radius: 4px;
   color: var(--text-primary);
   background: transparent;
   cursor: pointer;
-  font-family: inherit;
-  font-size: 12px;
-  line-height: 1;
-  transition: none;
+  transition: all 0.15s ease;
 }
 
 .sa-agent-settings-back:hover {
   background: var(--ui-primary-transparent);
+}
+
+.sa-agent-settings-back:active {
+  transform: scale(0.95);
+}
+
+.sa-agent-settings-back-icon {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+  filter: grayscale(100%);
+  transition: filter 0.2s ease;
+}
+
+.sa-agent-settings-back:hover .sa-agent-settings-back-icon {
+  filter: none !important;
 }
 
 .sa-agent-settings-title {
@@ -1363,20 +1675,50 @@
   padding-top: 4px;
 }
 
+/* 内部滚动条统一规范：细长矩形（无圆角，现代 IDE 极简风格） */
+.sa-agent-container *::-webkit-scrollbar,
 .sa-agent-messages::-webkit-scrollbar,
-.sa-agent-settings-panel::-webkit-scrollbar {
-  width: 8px;
+.sa-agent-settings-panel::-webkit-scrollbar,
+.sa-agent-conversation-list::-webkit-scrollbar,
+.sa-agent-session-panel::-webkit-scrollbar {
+  width: 4px !important;
+  height: 4px !important;
 }
 
+.sa-agent-container *::-webkit-scrollbar-track,
 .sa-agent-messages::-webkit-scrollbar-track,
-.sa-agent-settings-panel::-webkit-scrollbar-track {
-  background: transparent;
+.sa-agent-settings-panel::-webkit-scrollbar-track,
+.sa-agent-conversation-list::-webkit-scrollbar-track,
+.sa-agent-session-panel::-webkit-scrollbar-track {
+  background: transparent !important;
 }
 
+.sa-agent-container *::-webkit-scrollbar-thumb,
 .sa-agent-messages::-webkit-scrollbar-thumb,
-.sa-agent-settings-panel::-webkit-scrollbar-thumb {
-  border-radius: 4px;
-  background: var(--ui-black-transparent);
+.sa-agent-settings-panel::-webkit-scrollbar-thumb,
+.sa-agent-conversation-list::-webkit-scrollbar-thumb,
+.sa-agent-session-panel::-webkit-scrollbar-thumb {
+  border-radius: 0 !important;
+  background: rgba(128, 128, 128, 0.35) !important;
+  transition: background 0.15s ease;
+}
+
+.sa-agent-container *::-webkit-scrollbar-thumb:hover,
+.sa-agent-messages::-webkit-scrollbar-thumb:hover,
+.sa-agent-settings-panel::-webkit-scrollbar-thumb:hover,
+.sa-agent-conversation-list::-webkit-scrollbar-thumb:hover,
+.sa-agent-session-panel::-webkit-scrollbar-thumb:hover {
+  background: rgba(128, 128, 128, 0.6) !important;
+}
+
+.sa-agent-container *::-webkit-scrollbar-corner {
+  background: transparent !important;
+}
+
+.sa-agent-container,
+.sa-agent-container * {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(128, 128, 128, 0.35) transparent;
 }
 
 .sa-agent-md-table-wrap {
