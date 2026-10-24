@@ -10,6 +10,9 @@ import iconTrash from '!../../../lib/tw-recolor/build!./icon-trash.svg';
 import iconMore from '!../../../lib/tw-recolor/build!./icon-more.svg';
 import iconBuild from '!../../../lib/tw-recolor/build!./icon-build.svg';
 import iconPlan from '!../../../lib/tw-recolor/build!./icon-plan.svg';
+import iconUndo from '!../../../lib/tw-recolor/build!./icon-undo.svg';
+import iconRetry from '!../../../lib/tw-recolor/build!./icon-retry.svg';
+import iconBranch from '!../../../lib/tw-recolor/build!./icon-branch.svg';
 import SideBar from '../../ui/side-bar/side-bar.js';
 import BottomPanel from '../../ui/bottom-panel/bottom-panel.js';
 import { callChatCompletion } from './agent/client.js';
@@ -1622,6 +1625,85 @@ export default async ({ addon, msg }) => {
   };
 
   /**
+   * Undo to a specific user message by reverting history and restoring input.
+   * @param {number} targetIndex Message index.
+   */
+  const undoToMessage = (targetIndex) => {
+    if (targetIndex < 0 || targetIndex >= chatMessages.length) return;
+    if (busy) stopRequest();
+    const targetMsg = chatMessages[targetIndex];
+    const text = targetMsg ? targetMsg.content : '';
+    chatMessages = chatMessages.slice(0, targetIndex);
+    saveCurrentHistory();
+    renderMessages();
+    if (inputElement) {
+      inputElement.value = text;
+      resizeInput();
+      inputElement.focus();
+    }
+    updateComposer();
+  };
+
+  /**
+   * Retry generating from a specific user message.
+   * @param {number} targetIndex Message index.
+   */
+  const retryFromMessage = (targetIndex) => {
+    if (busy || targetIndex < 0 || targetIndex >= chatMessages.length) return;
+    const targetMsg = chatMessages[targetIndex];
+    if (!targetMsg) return;
+    const prompt = targetMsg.content;
+    chatMessages = chatMessages.slice(0, targetIndex);
+    saveCurrentHistory();
+    renderMessages();
+    sendMessage(prompt).catch(() => {});
+  };
+
+  /**
+   * Branch a new conversation up to the given message index.
+   * @param {number} targetIndex Message index.
+   */
+  const branchFromMessage = (targetIndex) => {
+    if (targetIndex < 0 || targetIndex >= chatMessages.length) return;
+    cancelCompression();
+    if (busy) stopRequest();
+    saveCurrentHistory();
+
+    const current = findConversation(activeConversationId);
+    const baseTitle =
+      current && current.title ? current.title : makeConversationTitle(chatMessages[targetIndex]?.content || '');
+    const branchTitle = `${msg('branch-prefix')}${baseTitle}`;
+
+    const branchedMessages = chatMessages.slice(0, targetIndex + 1).map((m) => ({ ...m }));
+    const conversation = createConversation(branchedMessages);
+    conversation.title = branchTitle;
+    pendingDeleteId = null;
+    if (sessionMenu) sessionMenu.open = false;
+    conversations.unshift(conversation);
+    activeConversationId = conversation.id;
+    conversations = trimConversations(conversations, activeConversationId);
+    chatMessages = conversation.messages;
+    lastUsage = null;
+    liveTrace = [];
+    liveParts = [];
+    liveTraceElement = null;
+    clearStreaming();
+    persistConversations();
+    renderConversationList();
+    renderMessages();
+    updateContextUsage();
+    closeConversationPane();
+    setStatus(msg('status-branched'));
+    requestAnimationFrame(() => scrollToBottom(true));
+    if (inputElement) {
+      inputElement.value = '';
+      updateComposer();
+      resizeInput();
+      inputElement.focus();
+    }
+  };
+
+  /**
    * Render the current conversation into the messages container.
    */
   const renderMessages = () => {
@@ -1673,6 +1755,50 @@ export default async ({ addon, msg }) => {
         bubble.className = 'sa-agent-bubble';
         renderFormattedContent(bubble, message.content);
         row.appendChild(bubble);
+
+        if (message.role === 'user') {
+          const targetIndex = chatMessages.indexOf(message);
+          const actionsBar = document.createElement('div');
+          actionsBar.className = 'sa-agent-user-actions';
+
+          const undoButton = document.createElement('button');
+          undoButton.type = 'button';
+          undoButton.className = 'sa-agent-user-action-btn';
+          undoButton.title = msg('action-undo');
+          undoButton.setAttribute('aria-label', msg('action-undo'));
+          undoButton.appendChild(createIcon(iconUndo, 'sa-agent-user-action-icon'));
+          const undoSpan = document.createElement('span');
+          undoSpan.textContent = msg('action-undo');
+          undoButton.appendChild(undoSpan);
+          undoButton.addEventListener('click', () => undoToMessage(targetIndex));
+          actionsBar.appendChild(undoButton);
+
+          const retryButton = document.createElement('button');
+          retryButton.type = 'button';
+          retryButton.className = 'sa-agent-user-action-btn';
+          retryButton.title = msg('action-retry');
+          retryButton.setAttribute('aria-label', msg('action-retry'));
+          retryButton.appendChild(createIcon(iconRetry, 'sa-agent-user-action-icon'));
+          const retrySpan = document.createElement('span');
+          retrySpan.textContent = msg('action-retry');
+          retryButton.appendChild(retrySpan);
+          retryButton.addEventListener('click', () => retryFromMessage(targetIndex));
+          actionsBar.appendChild(retryButton);
+
+          const branchButton = document.createElement('button');
+          branchButton.type = 'button';
+          branchButton.className = 'sa-agent-user-action-btn';
+          branchButton.title = msg('action-branch');
+          branchButton.setAttribute('aria-label', msg('action-branch'));
+          branchButton.appendChild(createIcon(iconBranch, 'sa-agent-user-action-icon'));
+          const branchSpan = document.createElement('span');
+          branchSpan.textContent = msg('action-branch');
+          branchButton.appendChild(branchSpan);
+          branchButton.addEventListener('click', () => branchFromMessage(targetIndex));
+          actionsBar.appendChild(branchButton);
+
+          row.appendChild(actionsBar);
+        }
       }
       if (message.notice) {
         const notice = document.createElement('div');

@@ -544,6 +544,66 @@ button:hover .sa-agent-settings-icon {
   border-bottom-right-radius: 2px;
 }
 
+.sa-agent-user-actions {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  margin-top: 3px;
+  opacity: 0.5;
+  transition: opacity 0.15s ease;
+}
+
+.sa-agent-message-user:hover .sa-agent-user-actions,
+.sa-agent-user-actions:focus-within {
+  opacity: 1;
+}
+
+.sa-agent-user-action-btn {
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  height: 20px;
+  padding: 0 5px;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  color: var(--text-primary);
+  background: transparent;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 11px;
+  line-height: 1;
+  white-space: nowrap;
+  user-select: none;
+  transition: all 0.15s ease;
+}
+
+.sa-agent-user-action-btn:hover:not(:disabled) {
+  background: var(--ui-primary-transparent);
+  border-color: var(--ui-black-transparent);
+}
+
+.sa-agent-user-action-btn:active:not(:disabled) {
+  transform: scale(0.96);
+}
+
+.sa-agent-user-action-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.sa-agent-user-action-icon {
+  width: 12px;
+  height: 12px;
+  flex-shrink: 0;
+  filter: grayscale(100%);
+  transition: filter 0.15s ease;
+}
+
+.sa-agent-user-action-btn:hover:not(:disabled) .sa-agent-user-action-icon {
+  filter: none !important;
+}
+
 .sa-agent-message-assistant .sa-agent-bubble {
   color: var(--text-primary);
   background: var(--ui-primary-transparent);

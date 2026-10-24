@@ -676,5 +676,10 @@
   "astras-copilot/tool-delete-scripts": "delete scripts",
   "astras-copilot/tool-create-variable": "create variable",
   "astras-copilot/tool-rename-target": "rename sprite",
-  "astras-copilot/welcome-edit": "Write mode is ON: I can add, delete, and change your blocks. Tell me what to build or fix; every edit is undoable with Ctrl+Z."
+  "astras-copilot/welcome-edit": "Write mode is ON: I can add, delete, and change your blocks. Tell me what to build or fix; every edit is undoable with Ctrl+Z.",
+  "astras-copilot/action-undo": "Undo",
+  "astras-copilot/action-retry": "Retry",
+  "astras-copilot/action-branch": "Branch from here",
+  "astras-copilot/branch-prefix": "[Branch] ",
+  "astras-copilot/status-branched": "Branched conversation from this message"
 }

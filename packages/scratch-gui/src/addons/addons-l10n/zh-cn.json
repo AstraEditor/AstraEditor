@@ -667,5 +667,10 @@
   "astras-copilot/tool-delete-scripts": "删除脚本",
   "astras-copilot/tool-create-variable": "创建变量",
   "astras-copilot/tool-rename-target": "重命名角色",
-  "astras-copilot/welcome-edit": "写模式已开启：我可以添加、删除和修改积木。告诉我你想要做什么，所有修改都可以用 Ctrl+Z 撤销。"
+  "astras-copilot/welcome-edit": "写模式已开启：我可以添加、删除和修改积木。告诉我你想要做什么，所有修改都可以用 Ctrl+Z 撤销。",
+  "astras-copilot/action-undo": "撤销",
+  "astras-copilot/action-retry": "重试",
+  "astras-copilot/action-branch": "从此处创建分支",
+  "astras-copilot/branch-prefix": "【分支】",
+  "astras-copilot/status-branched": "已从该节点创建分支会话"
 }
