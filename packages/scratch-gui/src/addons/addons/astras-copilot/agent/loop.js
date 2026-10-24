@@ -100,7 +100,7 @@ export const runAgent = async ({
   writeEnabled = false,
   maxSteps = 8
 }) => {
-  const tools = createScratchTools(vm, config);
+  const tools = createScratchTools(vm);
   const activeTools = writeEnabled
     ? TOOL_DEFINITIONS
     : TOOL_DEFINITIONS.filter((definition) => !WRITE_TOOL_NAMES.includes(definition.function.name));

@@ -1066,56 +1066,6 @@ export const TOOL_DEFINITIONS = [
   {
     type: 'function',
     function: {
-      name: 'search_web',
-      description:
-        'Search the web for current or external information: documentation, tutorials, forums, or news. Use this when an answer needs knowledge outside the project or beyond your own knowledge. Tries several web search engines (DuckDuckGo, Bing) and falls back to the Scratch Wiki if they are unreachable. Returns up to 8 results with a title, URL, and snippet.',
-      parameters: {
-        type: 'object',
-        properties: {
-          query: {
-            type: 'string',
-            description: 'Search query.'
-          },
-          limit: {
-            type: 'integer',
-            minimum: 1,
-            maximum: 20,
-            description: 'Maximum number of results. Defaults to 8.'
-          }
-        },
-        required: ['query'],
-        additionalProperties: false
-      }
-    }
-  },
-  {
-    type: 'function',
-    function: {
-      name: 'fetch_url',
-      description:
-        'Fetch a web page or text document and return its readable text content. Use for a specific URL, for example a link returned by search_web or a URL the user provided. Only http(s) URLs are allowed; the content is truncated to about 20000 characters.',
-      parameters: {
-        type: 'object',
-        properties: {
-          url: {
-            type: 'string',
-            description: 'The http(s) URL to fetch.'
-          },
-          maxChars: {
-            type: 'integer',
-            minimum: 500,
-            maximum: 80000,
-            description: 'Maximum characters of text to return. Defaults to 20000.'
-          }
-        },
-        required: ['url'],
-        additionalProperties: false
-      }
-    }
-  },
-  {
-    type: 'function',
-    function: {
       name: 'apply_scripts',
       description:
         'ADD OR MODIFY blocks in a sprite or the stage. Compiles a JSON block tree into Scratch blocks and loads them into the real editor workspace (the change is undoable with Ctrl+Z). Use list_scripts/get_script first to see existing code, and block_catalog to confirm opcodes and input names. Only include the blocks you intend to add; this never deletes existing scripts. Provide blocks as a nested tree: {opcode, fields:{}, inputs:{}} where inputs are literal values or nested block trees, and control blocks use substack/substack2 arrays plus next for the following statement.',
@@ -1240,10 +1190,9 @@ export const TOOL_DEFINITIONS = [
 /**
  * Create Scratch tool handlers bound to a VM.
  * @param {object} vm Scratch VM.
- * @param {object} [config] Agent configuration (used by web tools).
  * @returns {object} Tool handlers.
  */
-export const createScratchTools = (vm, config) => ({
+export const createScratchTools = (vm) => ({
   get_project_summary: () => getProjectSummary(vm),
   list_targets: () => ({
     targets: getTargets(vm).map(getTargetSummary),
