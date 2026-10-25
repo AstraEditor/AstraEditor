@@ -16,6 +16,7 @@ import _asset12 from '!url-loader?{"esModule":false}!./icons/warning.svg';
 import _asset13 from '!url-loader?{"esModule":false}!./icons/variables.svg';
 import _asset14 from '!url-loader?{"esModule":false}!./icons/favorites.svg';
 import _asset15 from '!url-loader?{"esModule":false}!./icons/favorited.svg';
+import _asset16 from '!url-loader?{"esModule":false}!./icons/timing.svg';
 
 export const resources = {
   'userscript.js': _js,
@@ -34,5 +35,6 @@ export const resources = {
   'icons/warning.svg': _asset12,
   'icons/variables.svg': _asset13,
   'icons/favorites.svg': _asset14,
-  'icons/favorited.svg': _asset15
+  'icons/favorited.svg': _asset15,
+  'icons/timing.svg': _asset16
 };

@@ -2,6 +2,7 @@ import { isPaused, setPaused, onPauseChanged, setup } from './module.js';
 import createLogsTab from './logs.js';
 import createThreadsTab from './threads.js';
 import createPerformanceTab from './performance.js';
+import createTimingTab from './timing/createTimingTab.js';
 import createVariablesTab from './variables.js';
 import Utils from '../find-bar/blockly/Utils.js';
 import addSmallStageClass from '../../libraries/common/cs/small-stage.js';
@@ -16,6 +17,7 @@ export default async function ({ addon, console, msg }) {
   setup(addon);
 
   let logsTab;
+  let timingTab;
   const messagesLoggedBeforeLogsTabLoaded = [];
   const logMessage = (...args) => {
     if (logsTab) {
@@ -63,6 +65,25 @@ export default async function ({ addon, console, msg }) {
       logMessage(content, thread, 'error');
     }
   });
+  addon.tab.addBlock('\u200B\u200Bstart timer\u200B\u200B %s', {
+    // TurboWarp's addon block API expects argument names rather than descriptor objects.
+    args: ['label'],
+    defaults: [msg('default-timer-label')],
+    displayName: msg('block-start-timer'),
+    callback: ({ label }, thread) => {
+      const normalizedLabel = label === '' || typeof label === 'undefined' ? msg('default-timer-label') : label;
+      if (timingTab) timingTab.startTimer(normalizedLabel, thread.target.id, thread.peekStack());
+    }
+  });
+  addon.tab.addBlock('\u200B\u200Bstop timer\u200B\u200B %s', {
+    args: ['label'],
+    defaults: [msg('default-timer-label')],
+    displayName: msg('block-stop-timer'),
+    callback: ({ label }, thread) => {
+      const normalizedLabel = label === '' || typeof label === 'undefined' ? msg('default-timer-label') : label;
+      if (timingTab) timingTab.stopTimer(normalizedLabel);
+    }
+  });
 
   const vm = addon.tab.traps.vm;
   await new Promise((resolve, reject) => {
@@ -105,6 +126,14 @@ export default async function ({ addon, console, msg }) {
   const tabContentContainer = Object.assign(document.createElement('div'), {
     className: 'sa-debugger-tab-content'
   });
+  const interfaceFooter = Object.assign(document.createElement('div'), {
+    className: 'sa-debugger-footer',
+    style: 'display: none'
+  });
+  const footerButtonContainer = Object.assign(document.createElement('div'), {
+    className: 'sa-debugger-footer-buttons'
+  });
+  interfaceFooter.appendChild(footerButtonContainer);
 
   const compilerWarning = document.createElement('a');
   compilerWarning.addEventListener('click', () => {
@@ -115,8 +144,9 @@ export default async function ({ addon, console, msg }) {
   });
   compilerWarning.className = 'sa-debugger-log sa-debugger-compiler-warning';
   compilerWarning.textContent = msg('compiler-warning');
+  let isTimingTabActive = false;
   const updateCompilerWarningVisibility = () => {
-    compilerWarning.hidden = !vm.runtime.compilerOptions.enabled;
+    compilerWarning.hidden = !vm.runtime.compilerOptions.enabled || isTimingTabActive;
   };
   vm.on('COMPILER_OPTIONS_CHANGED', updateCompilerWarningVisibility);
   updateCompilerWarningVisibility();
@@ -173,7 +203,7 @@ export default async function ({ addon, console, msg }) {
   interfaceHeader.addEventListener('mousedown', handleStartDrag);
 
   interfaceHeader.append(tabListElement, buttonContainerElement);
-  interfaceContainer.append(interfaceHeader, compilerWarning, tabContentContainer);
+  interfaceContainer.append(interfaceHeader, compilerWarning, tabContentContainer, interfaceFooter);
   document.body.append(interfaceContainer);
 
   const createHeaderButton = ({ text, icon, description }) => {
@@ -184,14 +214,17 @@ export default async function ({ addon, console, msg }) {
     if (description) {
       button.title = description;
     }
-    const imageElement = Object.assign(document.createElement('img'), {
-      src: icon,
-      draggable: false
-    });
+    let imageElement = null;
+    if (icon) {
+      imageElement = Object.assign(document.createElement('img'), {
+        src: icon,
+        draggable: false
+      });
+      button.appendChild(imageElement);
+    }
     const textElement = Object.assign(document.createElement('span'), {
       textContent: text
     });
-    button.appendChild(imageElement);
     button.appendChild(textElement);
     return {
       element: button,
@@ -525,8 +558,9 @@ export default async function ({ addon, console, msg }) {
   logsTab = await createLogsTab(api);
   const threadsTab = await createThreadsTab(api);
   const performanceTab = await createPerformanceTab(api);
+  timingTab = await createTimingTab(api);
   const variablesTab = await createVariablesTab(api);
-  const allTabs = [logsTab, threadsTab, performanceTab, variablesTab];
+  const allTabs = [logsTab, threadsTab, performanceTab, timingTab, variablesTab];
 
   for (const message of messagesLoggedBeforeLogsTabLoaded) {
     logsTab.addLog(...message);
@@ -543,14 +577,28 @@ export default async function ({ addon, console, msg }) {
     }
     tab.tab.element.classList.add(selectedClass);
     activeTab = tab;
+    isTimingTabActive = tab === timingTab;
+    updateCompilerWarningVisibility();
 
     removeAllChildren(tabContentContainer);
     tabContentContainer.appendChild(tab.content);
 
     removeAllChildren(buttonContainerElement);
     buttonContainerElement.appendChild(unpauseButton.element);
-    for (const button of tab.buttons) {
-      buttonContainerElement.appendChild(button.element);
+
+    removeAllChildren(footerButtonContainer);
+
+    if (tab === timingTab) {
+      // In timing tab (hybrid mode): action buttons go to footer so they don't crowd the header
+      interfaceFooter.style.display = '';
+      for (const button of tab.buttons) {
+        footerButtonContainer.appendChild(button.element);
+      }
+    } else {
+      interfaceFooter.style.display = 'none';
+      for (const button of tab.buttons) {
+        buttonContainerElement.appendChild(button.element);
+      }
     }
     buttonContainerElement.appendChild(closeButton.element);
 
@@ -573,6 +621,7 @@ export default async function ({ addon, console, msg }) {
     if (addon.settings.get('log_clear_greenflag')) {
       logsTab.clearLogs();
     }
+    if (timingTab) timingTab.clearTimers();
     if (addon.settings.get('log_greenflag')) {
       logsTab.addLog(msg('log-msg-flag-clicked'), null, 'internal');
     }

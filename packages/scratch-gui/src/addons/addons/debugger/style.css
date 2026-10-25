@@ -39,9 +39,8 @@
   top: calc(50% - 12.5rem); /* 25rem / 2 */
   left: calc(50% - 352.5px); /* 705px / 2 */
   resize: both;
-  padding-bottom: 10px;
-  min-width: 350px;
-  min-height: 120px;
+  min-width: 480px;
+  min-height: 240px;
 }
 
 .sa-debugger-interface [class*='card_header-buttons_'] {
@@ -60,22 +59,23 @@
   margin: 0;
   display: flex;
   align-items: center;
-  padding: 0 15px;
+  align-content: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 6px 15px;
   font-size: 0.75rem;
 }
 .sa-debugger-tabs li {
   margin: 0;
   display: flex;
   align-items: center;
-  padding: 0.5em 1em;
+  padding: 0.4em 0.8em;
   background-color: rgba(0, 0, 0, 0.1);
   border: 1px solid rgba(0, 0, 0, 0.15);
   border-radius: 1rem;
   color: white;
   cursor: pointer;
-}
-.sa-debugger-tabs li + li {
-  margin-inline-start: 10px;
+  font-weight: bold;
 }
 .sa-debugger-tabs li:hover {
   background-color: rgba(0, 0, 0, 0.15);
@@ -117,8 +117,54 @@
 .sa-debugger-tab-content {
   width: 100%;
   height: 100%;
+  flex: 1 1 auto;
+  min-height: 0;
   overflow: auto;
   cursor: auto;
+}
+
+.sa-debugger-footer {
+  flex: 0 0 auto;
+  border-top: 1px solid var(--editorDarkMode-border, rgba(0, 0, 0, 0.15));
+  display: flex;
+  justify-content: center;
+  padding: 8px 15px;
+  width: 100%;
+  box-sizing: border-box;
+  cursor: auto;
+}
+
+.sa-debugger-footer-buttons {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  align-content: center;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.sa-debugger-footer-buttons [class*='card_shrink-expand-button'] {
+  background-color: var(--looks-secondary, #29beb8);
+  font-weight: bold;
+  border-radius: 4px;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  box-sizing: content-box;
+  padding: 0.3rem 0.6rem;
+  color: white;
+  cursor: pointer;
+  gap: 4px;
+  font-size: 12px;
+}
+
+.sa-debugger-footer-buttons [class*='card_shrink-expand-button']:hover {
+  filter: brightness(0.9);
+}
+
+.sa-debugger-footer-buttons img {
+  width: 16px;
+  height: 16px;
 }
 
 .sa-debugger-chart {
@@ -419,4 +465,269 @@
   width: 16px;
   height: 16px;
   display: block;
+}
+
+.sa-timing-restart-notice {
+  position: static;
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-height: 32px;
+  height: auto;
+  box-sizing: border-box;
+  padding: 6px 12px;
+  border-bottom: 1px solid var(--ui-black-transparent);
+  background-color: var(--ui-modal-background);
+  text-align: center;
+  font-family: monospace;
+  font-size: 12px;
+  line-height: 1.3;
+}
+
+.sa-timing-timer {
+  position: absolute;
+  top: 0px;
+  width: 100%;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  border-bottom: 1px solid var(--ui-black-transparent);
+  padding-left: 4px;
+  font-family: monospace;
+  justify-content: space-around;
+  padding-top: 2px;
+  padding-bottom: 2px;
+}
+
+.sa-timing-content {
+  display: flex;
+  flex-direction: column;
+  height: 100%; /* Ensure the parent has a specific height */
+}
+
+.sa-timing-unsupported-notice {
+  display: block;
+}
+
+.sa-timing-unsupported-notice a {
+  color: var(--link-color);
+  cursor: pointer;
+}
+
+.sa-timing-restart-notice[hidden] {
+  display: none;
+}
+
+.sa-timing-content .sa-debugger-log-outer {
+  height: auto;
+  flex-grow: 1;
+}
+
+.sa-timing-timer > span {
+  width: 95px;
+  text-align: center;
+}
+
+.sa-timing-timer > :first-child {
+  width: 100px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* The sampling profiler doesn't measure average time or call count */
+.sa-timing-sampling .sa-timing-timer > :nth-child(3),
+.sa-timing-sampling .sa-timing-timer > :nth-child(5) {
+  display: none;
+}
+
+.sa-timing-header {
+  position: relative;
+  font-weight: bold;
+}
+
+.sa-timing-header span {
+  cursor: pointer;
+  user-select: none;
+}
+
+.sa-timing-header span.active-header {
+  font-weight: bold;
+  color: var(--looks-secondary);
+}
+
+.sa-timing-disabled {
+  opacity: 0.5;
+  cursor: not-allowed !important;
+}
+
+.sa-timing-content .sa-debugger-block-preview,
+.sa-timing-content .sa-debugger-log-link,
+.sa-timing-content .sa-timing-plain-label {
+  width: 115px;
+  text-wrap: nowrap;
+  text-align: center;
+  margin: 0px;
+  box-sizing: border-box;
+}
+
+/* Tooltip container (the second item) */
+.sa-timing-tooltip-container {
+  position: relative;
+  display: inline-block;
+}
+
+/* invisible container to use as a hit box */
+.sa-timing-tooltip-outer {
+  visibility: hidden;
+  position: absolute;
+  transform: translate(-25%, 96px);
+  padding-top: 22px;
+  cursor: default;
+}
+
+/* Tooltip content (hidden by default, positioned above the container) */
+.sa-timing-tooltip-content {
+  background-color: var(--ui-modal-background);
+  color: var(--ui-modal-foreground);
+  border: 1px solid var(--ui-black-transparent);
+  padding: 10px;
+  z-index: 1000;
+  width: 240px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  border-radius: 8px;
+  text-align: center;
+  position: relative;
+}
+
+/* Tooltip content text */
+.sa-timing-tooltip-content p {
+  font-size: 14px;
+  color: inherit;
+  margin: 0;
+}
+
+/* Tooltip image placeholder */
+.sa-timing-tooltip-image {
+  display: block;
+  margin-top: 10px;
+  width: 100%;
+  height: auto;
+}
+
+/* Tooltip arrow */
+.sa-timing-tooltip-content::before {
+  content: '';
+  position: absolute;
+  top: -11px;
+  left: 50%;
+  transform: translateX(-50%) rotate(45deg);
+  width: 20px;
+  height: 20px;
+  background: inherit;
+  border-left: 1px solid var(--ui-black-transparent);
+  border-top: 1px solid var(--ui-black-transparent);
+  z-index: -1;
+}
+
+/* Show tooltip when hovering over the container */
+.sa-timing-tooltip-container:hover .sa-timing-tooltip-outer,
+.sa-timing-tooltip-outer:hover {
+  visibility: visible;
+}
+
+.sa-timing-tooltip-content a {
+  pointer-events: auto;
+}
+
+/* Shared checkbox styles for timing controls */
+
+.sa-timing-checkbox {
+  margin-right: 4px;
+  cursor: pointer;
+  transform: scale(1.2);
+  appearance: none;
+  -webkit-appearance: none;
+  width: 12px;
+  height: 12px;
+  background-color: white;
+  border: none;
+  border-radius: 2px;
+}
+
+/* Make checkbox buttons same height as icon buttons */
+.sa-timing-profiling-toggle {
+  height: 16px;
+}
+
+.sa-timing-heatmap-content-wrapper {
+  height: 16px;
+}
+
+.sa-timing-checkbox:checked {
+  background-color: white;
+  position: relative;
+}
+
+.sa-timing-checkbox:checked::after {
+  content: '';
+  position: absolute;
+  left: 3.75px;
+  top: 1px;
+  width: 3px;
+  height: 6px;
+  border: solid #29beb8;
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+}
+
+/* Heatmap button layout modifications */
+.sa-timing-heatmap-toggle {
+  flex-direction: column !important;
+  align-items: stretch !important;
+  margin-top: -8px;
+  margin-bottom: -8px;
+}
+
+.sa-timing-heatmap-content-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+}
+
+/* Heatmap slider styles */
+.sa-timing-heatmap-slider-container {
+  width: 100%;
+  margin-top: 4px;
+  padding: 0 8px 4px 8px;
+  box-sizing: border-box;
+}
+
+.sa-timing-heatmap-slider-track {
+  position: relative;
+  width: 100%;
+  height: 2px;
+  background-color: white;
+  border-radius: 1px;
+  cursor: pointer;
+}
+
+.sa-timing-heatmap-slider-thumb {
+  position: absolute;
+  top: -4px;
+  left: 100%;
+  width: 10px;
+  height: 10px;
+  background-color: white;
+  border-radius: 50%;
+  cursor: grab;
+  transform: translateX(-50%);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+}
+
+.sa-timing-heatmap-slider-thumb:active {
+  cursor: grabbing;
 }

@@ -3,7 +3,7 @@ const manifest = {
   editorOnly: true,
   name: 'Debugger (With New Tab)',
   description:
-    'A new "debugger" window is added to the editor. It allows logging into the "Logs" tab of the debugger window using the "log", "warn", and "error" blocks. The "breakpoint" block pauses the project when executed. All running stacks of blocks can be viewed in the "Threads" tab of the debugger window, and when paused, the "Step" button can be used to execute the next block. A graph of frames per second and the number of clones can be viewed in the "Performance" tab. A new "Variables" tab (from the Variable Manager plugin) allows you to bookmark variables you need to monitor or modify their names/values.',
+    'A new "debugger" window is added to the editor. It allows logging into the "Logs" tab of the debugger window using the "log", "warn", and "error" blocks. The "breakpoint" block pauses the project when executed. All running stacks of blocks can be viewed in the "Threads" tab of the debugger window, and when paused, the "Step" button can be used to execute the next block. A graph of frames per second and the number of clones can be viewed in the "Performance" tab. The "Timing" tab allows timing sections of your code with the "start timer" and "stop timer" blocks, with a per-block profiler and heatmap. A new "Variables" tab (from the Variable Manager plugin) allows you to bookmark variables you need to monitor or modify their names/values.',
   incompatible: ['Terminal'],
   credits: [
     {
@@ -25,6 +25,10 @@ const manifest = {
     {
       name: 'KOSHINO',
       link: 'https://github.com/KOSHINOawa'
+    },
+    {
+      name: 'Chrome_Cat',
+      link: 'https://scratch.mit.edu/users/Chrome_Cat/'
     }
   ],
   userscripts: [
@@ -84,7 +88,23 @@ const manifest = {
       type: 'boolean',
       default: false
     },
-    { name: 'Animated graphs (may affect performance)', id: 'fancy_graphs', type: 'boolean', default: false }
+    { name: 'Animated graphs (may affect performance)', id: 'fancy_graphs', type: 'boolean', default: false },
+    {
+      name: 'Stop previous timing on start timing',
+      id: 'auto_stop_timing',
+      type: 'boolean',
+      default: false,
+      description:
+        'Automatically stops the previous timing block when a new one starts—ideal for timing consecutive sections. Only the final block needs an explicit stop.'
+    },
+    {
+      name: 'Ratio Time instead of Percentage Time',
+      id: 'show_ratio_time',
+      type: 'boolean',
+      default: false,
+      description:
+        "Replaces the percentage column with a ratio of each block's total time to the smallest block's total time."
+    }
   ],
   tags: ['recommended'],
   enabledByDefault: true
