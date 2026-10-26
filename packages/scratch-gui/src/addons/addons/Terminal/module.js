@@ -168,9 +168,23 @@ const singleStepThread = (thread) => {
   if (thread.status === STATUS_DONE) {
     return false;
   }
-  // TW: Can't single-step compiled threads
+  // TW: Compiled threads execution
   if (thread.isCompiled) {
-    return false;
+    pauseNewThreads = true;
+    vm.runtime.sequencer.activeThread = thread;
+    try {
+      thread.status = STATUS_RUNNING;
+      vm.runtime.sequencer.stepThread(thread);
+    } catch (e) {
+      // ignore
+    } finally {
+      pauseNewThreads = false;
+      vm.runtime.sequencer.activeThread = null;
+      if (thread.status !== STATUS_DONE) {
+        thread.status = STATUS_PROMISE_WAIT;
+      }
+    }
+    return thread.status !== STATUS_DONE;
   }
 
   const currentBlockId = thread.peekStack();
@@ -297,10 +311,6 @@ const findNewSteppingThread = (startingIndex) => {
       // Never single-step monitor update threads.
       continue;
     }
-    // TW: Can't single-step compiled threads
-    if (possibleNewThread.isCompiled) {
-      continue;
-    }
     const status = getRealStatus(possibleNewThread);
     if (status === STATUS_RUNNING || status === STATUS_YIELD || status === STATUS_YIELD_TICK) {
       // Thread must not be running for single stepping to work.
@@ -313,8 +323,14 @@ const findNewSteppingThread = (startingIndex) => {
 
 export const singleStep = () => {
   if (steppingThread) {
-    const pauseState = pausedThreadState.get(steppingThread);
-    // We can assume pauseState is defined as any single stepping threads must already be paused.
+    let pauseState = pausedThreadState.get(steppingThread);
+    if (!pauseState) {
+      pauseThread(steppingThread);
+      pauseState = pausedThreadState.get(steppingThread) || {
+        time: vm.runtime.currentMSecs,
+        status: steppingThread.status
+      };
+    }
 
     // Make it look like no time has passed
     compensateForTimePassedWhilePaused(steppingThread, pauseState);
@@ -329,29 +345,38 @@ export const singleStep = () => {
     }
   }
 
-  // If we don't have a thread, than we are between VM steps and should search for a new thread
+  // If we don't have a thread, then we are between VM steps and should search for a new thread
   if (!steppingThread) {
     setSteppingThread(findNewSteppingThread(0));
 
     // End of VM step, emulate one frame of time passing.
-    vm.runtime.ioDevices.clock._pausedTime += vm.runtime.currentStepTime;
-    // Skip all sounds forward by vm.runtime.currentStepTime milliseconds so it's as
-    //  if they where playing for one frame.
-    const audioContext = vm.runtime.audioEngine.audioContext;
-    for (const target of vm.runtime.targets) {
-      for (const soundId of Object.keys(target.sprite.soundBank.soundPlayers)) {
-        const soundPlayer = target.sprite.soundBank.soundPlayers[soundId];
-        if (soundPlayer.outputNode) {
-          soundPlayer.outputNode.stop(audioContext.currentTime);
-          soundPlayer._createSource();
-          soundPlayer.outputNode.start(
-            audioContext.currentTime,
-            audioContext.currentTime - soundPlayer.startingUntil + vm.runtime.currentStepTime / 1000
-          );
-          soundPlayer.startingUntil -= vm.runtime.currentStepTime / 1000;
+    if (vm.runtime.ioDevices?.clock?._paused) {
+      vm.runtime.ioDevices.clock._pausedTime = (vm.runtime.ioDevices.clock._pausedTime || 0) + vm.runtime.currentStepTime;
+    }
+
+    try {
+      const audioContext = vm.runtime.audioEngine?.audioContext;
+      if (audioContext) {
+        for (const target of vm.runtime.targets) {
+          if (!target?.sprite?.soundBank?.soundPlayers) continue;
+          for (const soundId of Object.keys(target.sprite.soundBank.soundPlayers)) {
+            const soundPlayer = target.sprite.soundBank.soundPlayers[soundId];
+            if (soundPlayer?.outputNode) {
+              try {
+                soundPlayer.outputNode.stop(audioContext.currentTime);
+                soundPlayer._createSource();
+                soundPlayer.outputNode.start(
+                  audioContext.currentTime,
+                  audioContext.currentTime - soundPlayer.startingUntil + vm.runtime.currentStepTime / 1000
+                );
+                soundPlayer.startingUntil -= vm.runtime.currentStepTime / 1000;
+              } catch (_) {}
+            }
+          }
         }
       }
-    }
+    } catch (_) {}
+
     // Move all threads forward one frame in time. For blocks like `wait () seconds`
     for (const thread of vm.runtime.threads) {
       if (pausedThreadState.has(thread)) {

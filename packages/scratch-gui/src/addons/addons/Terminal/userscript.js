@@ -5,9 +5,18 @@ import iconSidebar from '!../../../lib/tw-recolor/build!./icon-sidebar.svg';
 import iconBottom from '!../../../lib/tw-recolor/build!./icon-bottom.svg';
 import iconWindow from '!../../../lib/tw-recolor/build!./icon-window.svg';
 import iconContinue from '!../../../lib/tw-recolor/build!./icon-continue.svg';
+import iconStep from '!../../../lib/tw-recolor/build!./icon-step.svg';
 import iconExport from '!../../../lib/tw-recolor/build!./icon-export.svg';
 import iconSetting from '!../../../lib/tw-recolor/build!./icon-setting.svg';
-import { setup as setupDebugger, setPaused as setPausedDebugger } from './module.js';
+import {
+  setup as setupDebugger,
+  setPaused as setPausedDebugger,
+  singleStep as singleStepDebugger,
+  isPaused as isPausedDebugger,
+  onPauseChanged as onPauseChangedDebugger,
+  getRunningThread as getRunningThreadDebugger
+} from './module.js';
+import HeatmapManager from './heatmap.js';
 import aeVersion from '../../../lib/ae-version.js';
 
 const clamp = (i, min, max) => Math.max(min, Math.min(max, i));
@@ -888,7 +897,28 @@ export default async function ({ addon, console, msg }) {
 
   continueButton.addEventListener('click', () => {
     setPausedDebugger(false);
-    continueButton.style.display = 'none';
+  });
+
+  // 创建单步执行按钮（默认隐藏）
+  const stepButton = document.createElement('button');
+  stepButton.className = 'sa-terminal-step-button';
+  stepButton.title = msg('button-step') || '单步执行 (Step)';
+  stepButton.style.display = 'none';
+
+  const stepBtnIcon = document.createElement('img');
+  stepBtnIcon.src = iconStep();
+  stepBtnIcon.style.width = '16px';
+  stepBtnIcon.style.height = '16px';
+  stepBtnIcon.style.filter = 'grayscale(100%)';
+  stepButton.appendChild(stepBtnIcon);
+
+  stepButton.addEventListener('click', () => {
+    singleStepDebugger();
+  });
+
+  onPauseChangedDebugger((paused) => {
+    continueButton.style.display = paused ? 'flex' : 'none';
+    stepButton.style.display = paused ? 'flex' : 'none';
   });
 
   // 创建导出日志按钮
@@ -1535,6 +1565,7 @@ export default async function ({ addon, console, msg }) {
 
   // 将按钮添加到容器中
   buttonContainer.appendChild(continueButton);
+  buttonContainer.appendChild(stepButton);
   buttonContainer.appendChild(exportButton);
   buttonContainer.appendChild(settingsButton);
   buttonContainer.appendChild(positionSwitchContainer);
@@ -1559,7 +1590,7 @@ export default async function ({ addon, console, msg }) {
   virtualList.appendLog({ element: welcomeLine1, contentHash: welcomeLine1.textContent });
 
   const welcomeLine2 = document.createElement('div');
-  welcomeLine2.textContent = msg('welcome-help') || "Type 'help' for available commands.";
+  welcomeLine2.textContent = msg('welcome-help') || "输入 'help' 查看可用命令。";
   virtualList.appendLog({ element: welcomeLine2, contentHash: welcomeLine2.textContent });
 
   const welcomeLine3 = document.createElement('div');
@@ -1963,8 +1994,8 @@ export default async function ({ addon, console, msg }) {
       }
 
       setPausedDebugger(true);
-
-      continueButton.style.display = 'inline-block';
+      continueButton.style.display = 'flex';
+      stepButton.style.display = 'flex';
 
       if (terminalOutput) {
         const line = document.createElement('div');
@@ -2003,7 +2034,7 @@ export default async function ({ addon, console, msg }) {
 
   addon.tab.addBlock('\u200B\u200Bclear\u200B\u200B', {
     args: [],
-    displayName: msg('block-clear') || 'Clear Terminal',
+    displayName: msg('block-clear') || '清空终端',
     callback: () => {
       virtualList.clear();
       resetLogTracking();
@@ -2012,7 +2043,7 @@ export default async function ({ addon, console, msg }) {
 
   addon.tab.addBlock('\u200B\u200Bdelete_last\u200B\u200B', {
     args: [],
-    displayName: msg('block-delete-last') || 'Delete Last Output',
+    displayName: msg('block-delete-last') || '删除上一句输出',
     callback: () => {
       if (lastLogData && lastLogData.count > 1) {
         lastLogData.count--;
@@ -2525,7 +2556,7 @@ export default async function ({ addon, console, msg }) {
   // 添加用户指令积木
   addon.tab.addBlock('\u200B\u200Badd_user_command\u200B\u200B %s %s', {
     args: ['name', 'description'],
-    displayName: msg('block-add-user-command') || 'Add User Command',
+    displayName: msg('block-add-user-command') || '添加用户指令 %s 简介 %s',
     callback: ({ name, description }) => {
       if (name && description) {
         userCommands[name.trim()] = description.trim();
@@ -2536,7 +2567,7 @@ export default async function ({ addon, console, msg }) {
   // 添加导出日志积木
   addon.tab.addBlock('\u200B\u200Bexport_logs\u200B\u200B', {
     args: [],
-    displayName: msg('block-export-logs') || 'Export Logs',
+    displayName: msg('block-export-logs') || '导出日志',
     callback: () => {
       exportLogs();
     }
@@ -2606,6 +2637,304 @@ export default async function ({ addon, console, msg }) {
     return: 1
   });
 
+  // 创建 CUI 性能监控状态条 (停靠在输入框上一行)
+  const cuiBar = document.createElement('div');
+  cuiBar.className = 'sa-terminal-cui-bar';
+  cuiBar.style.display = 'none';
+
+  const cuiBadge = document.createElement('span');
+  cuiBadge.className = 'sa-terminal-cui-badge';
+  cuiBadge.textContent = 'TOP';
+
+  const cuiChartBox = document.createElement('div');
+  cuiChartBox.className = 'sa-terminal-cui-chart-box';
+  const cuiCanvas = document.createElement('canvas');
+  cuiCanvas.className = 'sa-terminal-cui-canvas';
+  cuiCanvas.width = 110;
+  cuiCanvas.height = 24;
+  cuiChartBox.appendChild(cuiCanvas);
+
+  const cuiFps = document.createElement('span');
+  cuiFps.className = 'sa-terminal-cui-fps';
+  cuiFps.textContent = '60 FPS';
+
+  const createCuiSeparator = () => {
+    const sep = document.createElement('span');
+    sep.className = 'sa-terminal-cui-separator';
+    sep.textContent = '│';
+    return sep;
+  };
+
+  const cuiClones = document.createElement('div');
+  cuiClones.className = 'sa-terminal-cui-section';
+  cuiClones.title = '克隆体数量';
+  const cuiClonesVal = document.createElement('span');
+  cuiClonesVal.className = 'cui-val';
+  cuiClonesVal.textContent = '0/300';
+  cuiClones.append('Clones: ', cuiClonesVal);
+
+  const cuiThreads = document.createElement('div');
+  cuiThreads.className = 'sa-terminal-cui-section';
+  cuiThreads.title = '活动线程数量';
+  const cuiThreadsVal = document.createElement('span');
+  cuiThreadsVal.className = 'cui-val';
+  cuiThreadsVal.textContent = '0';
+  cuiThreads.append('Threads: ', cuiThreadsVal);
+
+  const cuiFrame = document.createElement('div');
+  cuiFrame.className = 'sa-terminal-cui-section';
+  cuiFrame.title = 'VM单帧耗时';
+  const cuiFrameVal = document.createElement('span');
+  cuiFrameVal.className = 'cui-val';
+  cuiFrameVal.textContent = '0.0ms';
+  cuiFrame.append('Step: ', cuiFrameVal);
+
+  const cuiTarget = document.createElement('div');
+  cuiTarget.className = 'sa-terminal-cui-section';
+  cuiTarget.title = '当前活动角色';
+  const cuiTargetVal = document.createElement('span');
+  cuiTargetVal.className = 'cui-val';
+  cuiTargetVal.textContent = 'Stage';
+  cuiTarget.append('Target: ', cuiTargetVal);
+
+  const cuiCloseBtn = document.createElement('button');
+  cuiCloseBtn.className = 'sa-terminal-cui-close';
+  cuiCloseBtn.title = '关闭监控条 (或输入 top)';
+  cuiCloseBtn.textContent = '✕';
+
+  cuiBar.append(
+    cuiBadge,
+    cuiChartBox,
+    cuiFps,
+    createCuiSeparator(),
+    cuiClones,
+    createCuiSeparator(),
+    cuiThreads,
+    createCuiSeparator(),
+    cuiFrame,
+    createCuiSeparator(),
+    cuiTarget,
+    cuiCloseBtn
+  );
+
+  let isCuiActive = false;
+  const fpsHistory = Array(25).fill(60);
+  const renderTimes = [];
+  let lastFpsCalcTime = performance.now();
+  let currentFps = 60;
+  let lastStepDuration = 0;
+
+  const drawFpsChart = (fps, maxFps = 60) => {
+    const ctx = cuiCanvas.getContext('2d');
+    if (!ctx) return;
+    const w = cuiCanvas.width;
+    const h = cuiCanvas.height;
+
+    ctx.clearRect(0, 0, w, h);
+
+    // 绘制微弱背景参考线 (30fps 和 60fps)
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.08)';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(0, h * 0.5);
+    ctx.lineTo(w, h * 0.5);
+    ctx.stroke();
+
+    let strokeColor = '#29beb8';
+    let gradientStart = 'rgba(41, 190, 184, 0.4)';
+    if (fps < 30) {
+      strokeColor = '#e06c75';
+      gradientStart = 'rgba(224, 108, 117, 0.4)';
+    } else if (fps < 50) {
+      strokeColor = '#e5c07b';
+      gradientStart = 'rgba(229, 192, 123, 0.4)';
+    }
+
+    const len = fpsHistory.length;
+    const stepX = w / (len - 1);
+
+    // 渐变填充折线下方区域
+    const gradient = ctx.createLinearGradient(0, 0, 0, h);
+    gradient.addColorStop(0, gradientStart);
+    gradient.addColorStop(1, 'rgba(0, 0, 0, 0)');
+
+    ctx.beginPath();
+    ctx.moveTo(0, h);
+    for (let i = 0; i < len; i++) {
+      const val = Math.max(0, Math.min(maxFps, fpsHistory[i]));
+      const x = i * stepX;
+      const y = h - (val / maxFps) * (h - 4) - 2;
+      ctx.lineTo(x, y);
+    }
+    ctx.lineTo(w, h);
+    ctx.closePath();
+    ctx.fillStyle = gradient;
+    ctx.fill();
+
+    // 绘制折线
+    ctx.beginPath();
+    for (let i = 0; i < len; i++) {
+      const val = Math.max(0, Math.min(maxFps, fpsHistory[i]));
+      const x = i * stepX;
+      const y = h - (val / maxFps) * (h - 4) - 2;
+      if (i === 0) ctx.moveTo(x, y);
+      else ctx.lineTo(x, y);
+    }
+    ctx.strokeStyle = strokeColor;
+    ctx.lineWidth = 1.6;
+    ctx.stroke();
+
+    // 绘制末端指示光点
+    const lastVal = Math.max(0, Math.min(maxFps, fpsHistory[len - 1]));
+    const lastX = w - 1;
+    const lastY = h - (lastVal / maxFps) * (h - 4) - 2;
+    ctx.fillStyle = '#ffffff';
+    ctx.beginPath();
+    ctx.arc(lastX, lastY, 2, 0, Math.PI * 2);
+    ctx.fill();
+  };
+
+  const updateCuiDisplay = () => {
+    if (!isCuiActive) return;
+
+    const maxFps = vm.runtime.frameLoop.framerate === 0 ? 60 : vm.runtime.frameLoop.framerate;
+
+    cuiFps.textContent = `${currentFps} FPS`;
+    cuiFps.style.color = currentFps >= 50 ? '#29beb8' : currentFps >= 30 ? '#e5c07b' : '#e06c75';
+
+    const clones = vm.runtime._cloneCounter || 0;
+    cuiClonesVal.textContent = `${clones}/300`;
+    cuiClonesVal.style.color = clones > 250 ? '#e06c75' : '#ffffff';
+
+    const threadsCount = vm.runtime.threads ? vm.runtime.threads.length : 0;
+    cuiThreadsVal.textContent = threadsCount;
+
+    cuiFrameVal.textContent = `${lastStepDuration.toFixed(1)}ms`;
+
+    const target = vm.runtime.getEditingTarget();
+    cuiTargetVal.textContent = target ? target.getName() : 'Stage';
+
+    drawFpsChart(currentFps, maxFps);
+  };
+
+  const toggleCui = (forceState) => {
+    isCuiActive = typeof forceState === 'boolean' ? forceState : !isCuiActive;
+    cuiBar.style.display = isCuiActive ? 'flex' : 'none';
+    if (isCuiActive) {
+      updateCuiDisplay();
+    }
+    return isCuiActive;
+  };
+
+  cuiCloseBtn.addEventListener('click', () => {
+    toggleCui(false);
+  });
+
+  // 变量查找与监听管理
+  const findVariable = (name) => {
+    const target = vm.runtime.getEditingTarget();
+    const stage = vm.runtime.getTargetForStage();
+
+    if (target && !target.isStage && target.variables) {
+      for (const v of Object.values(target.variables)) {
+        if (v.name === name) {
+          return { variable: v, target, isLocal: true };
+        }
+      }
+    }
+    if (stage && stage.variables) {
+      for (const v of Object.values(stage.variables)) {
+        if (v.name === name) {
+          return { variable: v, target: stage, isLocal: false };
+        }
+      }
+    }
+    return null;
+  };
+
+  const watchedVariables = new Map();
+  // 积木执行热力图管理器
+  const heatmapManager = new HeatmapManager(() => addon.tab.traps.getWorkspace(), vm);
+
+  const checkWatchedVariables = () => {
+    if (watchedVariables.size === 0) return;
+    for (const [id, info] of watchedVariables) {
+      const target = vm.runtime.getTargetById(info.targetId);
+      if (!target || !target.variables || !target.variables[id]) continue;
+      const v = target.variables[id];
+      const currentVal = Array.isArray(v.value) ? JSON.stringify(v.value) : v.value;
+      if (currentVal !== info.lastValue) {
+        const line = document.createElement('div');
+        line.className = 'sa-terminal-log-line';
+
+        const mark = document.createElement('span');
+        mark.className = 'sa-terminal-log-mark warn';
+        mark.textContent = '[watch]';
+        line.appendChild(mark);
+
+        const textSpan = document.createElement('span');
+        textSpan.className = 'sa-terminal-log-text';
+        textSpan.innerHTML = ` 变量 <b>${escapeHTML(info.name)}</b>: <code>${escapeHTML(String(info.lastValue))}</code> &rarr; <b style="color: #4ec9b0;">${escapeHTML(String(currentVal))}</b>`;
+        line.appendChild(textSpan);
+
+        addLogLineWithElement(line);
+        info.lastValue = currentVal;
+      }
+    }
+  };
+
+  // 挂钩 VM 执行步进，实时采集性能并检测监听变量与热力图
+  const originalStep = vm.runtime._step;
+  vm.runtime._step = function (...args) {
+    const start = performance.now();
+    const ret = originalStep.call(this, ...args);
+    const end = performance.now();
+    lastStepDuration = end - start;
+
+    if (heatmapManager && heatmapManager.isActive && this.threads) {
+      for (const thread of this.threads) {
+        if (!thread.updateMonitor) {
+          const blockId = thread.peekStack ? thread.peekStack() : thread.topBlock;
+          if (blockId) {
+            heatmapManager.trackBlock(blockId);
+          }
+        }
+      }
+    }
+
+    renderTimes.push(end);
+    while (renderTimes.length > 0 && renderTimes[0] <= end - 1000) {
+      renderTimes.shift();
+    }
+
+    if (end - lastFpsCalcTime >= 200) {
+      lastFpsCalcTime = end;
+      const maxFps = vm.runtime.frameLoop.framerate === 0 ? 60 : vm.runtime.frameLoop.framerate;
+      currentFps = Math.min(renderTimes.length, maxFps);
+      fpsHistory.shift();
+      fpsHistory.push(currentFps);
+      if (isCuiActive) {
+        updateCuiDisplay();
+      }
+    }
+
+    checkWatchedVariables();
+    return ret;
+  };
+
+  if (vm.runtime.sequencer && vm.runtime.sequencer.stepThread) {
+    const originalStepThread = vm.runtime.sequencer.stepThread;
+    vm.runtime.sequencer.stepThread = function (thread) {
+      if (heatmapManager && heatmapManager.isActive && thread && !thread.updateMonitor) {
+        const blockId = thread.peekStack ? thread.peekStack() : thread.topBlock;
+        if (blockId) {
+          heatmapManager.trackBlock(blockId);
+        }
+      }
+      return originalStepThread.call(this, thread);
+    };
+  }
+
   // 创建输入行
   const inputLine = document.createElement('div');
   inputLine.className = 'sa-terminal-input-line';
@@ -2617,10 +2946,11 @@ export default async function ({ addon, console, msg }) {
   const terminalInput = document.createElement('input');
   terminalInput.type = 'text';
   terminalInput.className = 'sa-terminal-input';
-  terminalInput.placeholder = msg('input-placeholder') || 'Enter command...';
+  terminalInput.placeholder = msg('input-placeholder') || '输入命令... (输入 help 查看帮助)';
 
   inputLine.appendChild(prompt);
   inputLine.appendChild(terminalInput);
+  terminalContainer.appendChild(cuiBar);
   terminalContainer.appendChild(inputLine);
 
   // 命令历史
@@ -2635,32 +2965,104 @@ export default async function ({ addon, console, msg }) {
   // 存储用户指令
   const userCommands = {};
 
+  // 渲染多行输出并解析 BBCode 格式
+  const renderOutputLines = (text) => {
+    if (!text) return;
+    const lines = text.split('\n');
+    lines.forEach((lineContent) => {
+      const resultLine = document.createElement('div');
+      resultLine.className = 'sa-terminal-result-line';
+      let parsedContent = parseBBCode(lineContent);
+      parsedContent = parsedContent.replace(
+        /(^|>)([^<]*)(?=<|$)/g,
+        (match, prefix, content) => prefix + content.replace(/ /g, '&nbsp;')
+      );
+      resultLine.innerHTML = parsedContent;
+      resultLine.title = lineContent;
+      virtualList.appendLog({ element: resultLine, contentHash: lineContent });
+    });
+  };
+
+  // 生成格式化的指令帮助信息卡片
+  const formatCommandHelp = (name, cmd) => {
+    let out = `【指令】${name.toUpperCase()}\n`;
+    out += `  说明：${cmd.description || '暂无说明'}\n`;
+    if (cmd.usage) {
+      out += `  用法：${cmd.usage}\n`;
+    }
+    if (cmd.example) {
+      const exLines = cmd.example.split('\n');
+      if (exLines.length === 1) {
+        out += `  示例：${cmd.example}\n`;
+      } else {
+        out += `  示例：${exLines[0]}\n`;
+        for (let i = 1; i < exLines.length; i++) {
+          out += `        ${exLines[i]}\n`;
+        }
+      }
+    }
+    if (cmd.aliases && cmd.aliases.length > 0) {
+      out += `  别名：${cmd.aliases.join(', ')}\n`;
+    }
+    return out.trimEnd();
+  };
+
   // 可用命令
   const commands = {
     help: {
-      description: msg('command-help-desc') || 'Show available commands',
-      execute: () => {
-        let output = `${msg('command-help-available') || 'Available commands:'}\n\n`;
+      description: msg('command-help-desc') || '显示可用命令列表，或查询指定指令的详细用法',
+      usage: 'help [指令名]',
+      example: 'help\nhelp step\nhelp heatmap',
+      aliases: ['?'],
+      execute: (args) => {
+        if (args && args.length > 0) {
+          const target = args[0].toLowerCase();
+          const targetCmd = commands[target];
+          if (targetCmd) {
+            return formatCommandHelp(target, targetCmd);
+          }
+          if (userCommands[target]) {
+            return `【自定义指令】${target}\n  说明：${userCommands[target]}\n  用法：${target} [参数...]`;
+          }
+          return `未找到指令 "${target}"。输入 "help" 查看所有可用指令。`;
+        }
+
+        let output = `${msg('command-help-available') || '可用指令列表：'}\n\n`;
         for (const [name, cmd] of Object.entries(commands)) {
           if (name !== 'creeper?') {
-            output += `  ${name} - ${cmd.description}\n`;
+            output += `  ${name.padEnd(12)} - ${cmd.description}\n`;
           }
         }
 
         // 显示用户指令
         const userCommandCount = Object.keys(userCommands).length;
         if (userCommandCount > 0) {
-          output += `\n${msg('command-user-command') || 'User Command：'}\n`;
+          output += `\n${msg('command-user-command') || '自定义积木指令：'}\n`;
           for (const [name, description] of Object.entries(userCommands)) {
-            output += `  ${name} - ${description}\n`;
+            output += `  ${name.padEnd(12)} - ${description}\n`;
           }
         }
 
+        output += '\n提示: 输入 "<指令名> help" 或 "help <指令名>" 可查询指定指令的详细用法。';
         return output;
       }
     },
+    clear: {
+      description: '清空终端屏幕历史日志',
+      usage: 'clear',
+      example: 'clear',
+      aliases: [],
+      execute: () => {
+        virtualList.clear();
+        resetLogTracking();
+        return null;
+      }
+    },
     fastfetch: {
-      description: msg('command-fastfetch-desc') || 'Show device status information',
+      description: msg('command-fastfetch-desc') || '显示系统与设备运行环境状态信息',
+      usage: 'fastfetch',
+      example: 'fastfetch',
+      aliases: [],
       execute: async () => {
         const asciiArt = `               ░░░░░░░░░                                
           ░░░░░░░░░░░░░░░░░░░                           
@@ -2686,94 +3088,84 @@ export default async function ({ addon, console, msg }) {
      ░░░░░░░░░░░░░░░                                    
        ░░░░░░░░░░░                                       `;
 
-        let output = 'Device Status:\n\n';
+        let output = '【系统与设备环境状态】:\n\n';
 
-        // Navigator API information
         if (navigator.userAgent) {
-          output += `  User Agent: ${navigator.userAgent.substring(0, 100)}${navigator.userAgent.length > 100 ? '...' : ''}\n`;
+          output += `  用户代理 (UA): ${navigator.userAgent.substring(0, 100)}${navigator.userAgent.length > 100 ? '...' : ''}\n`;
         }
 
         if (navigator.platform) {
-          output += `  Platform: ${navigator.platform}\n`;
+          output += `  操作系统: ${navigator.platform}\n`;
         }
 
         if (navigator.language) {
-          output += `  Language: ${navigator.language}\n`;
+          output += `  系统语言: ${navigator.language}\n`;
         }
 
         if (navigator.hardwareConcurrency) {
-          output += `  CPU Cores: ${navigator.hardwareConcurrency}\n`;
+          output += `  CPU 逻辑核心: ${navigator.hardwareConcurrency}\n`;
         }
 
         if (navigator.deviceMemory) {
-          output += `  Device Memory: ${navigator.deviceMemory} GB\n`;
+          output += `  设备物理内存: ${navigator.deviceMemory} GB\n`;
         }
 
-        // Screen information
         if (screen.width && screen.height) {
-          output += `  Screen Resolution: ${screen.width}x${screen.height}\n`;
+          output += `  屏幕分辨率: ${screen.width}x${screen.height}\n`;
         }
 
         if (screen.colorDepth) {
-          output += `  Color Depth: ${screen.colorDepth} bits\n`;
+          output += `  色彩深度: ${screen.colorDepth} bits\n`;
         }
 
-        // WebGPU support and details
         if ('gpu' in navigator) {
-          output += `  WebGPU: Supported\n`;
+          output += `  WebGPU 加速: 支持\n`;
           try {
-            // Get GPU adapter information
             const adapter = await navigator.gpu.requestAdapter();
             if (adapter) {
-              output += `  GPU Adapter: ${adapter.name}\n`;
+              output += `  图形适配器: ${adapter.name || '默认适配器'}\n`;
 
-              // Get adapter features
               const features = [];
               for (const feature of adapter.features) {
                 features.push(feature);
               }
               if (features.length > 0) {
-                output += `  GPU Features: ${features.slice(0, 5).join(', ')}${features.length > 5 ? '...' : ''}\n`;
+                output += `  GPU 特性: ${features.slice(0, 5).join(', ')}${features.length > 5 ? '...' : ''}\n`;
               }
 
-              // Get adapter limits
               const limits = adapter.limits;
               if (limits && limits.maxTextureDimension2D) {
-                output += `  Max Texture Size: ${limits.maxTextureDimension2D}x${limits.maxTextureDimension2D}\n`;
+                output += `  最大纹理尺寸: ${limits.maxTextureDimension2D}x${limits.maxTextureDimension2D}\n`;
               }
 
-              // Try to get device info
               try {
                 const device = await adapter.requestDevice();
-                output += `  GPU Device: ${device.label || 'Default Device'}\n`;
-                device.destroy(); // Cleanup
-              } catch (deviceError) {
-                // Device request might fail, but that's okay
-              }
+                output += `  GPU 设备名称: ${device.label || 'Default Device'}\n`;
+                device.destroy();
+              } catch (deviceError) {}
             } else {
-              output += `  GPU Adapter: Not available\n`;
+              output += `  图形适配器: 无法获取\n`;
             }
           } catch (error) {
-            output += `  GPU Info: Error retrieving details - ${error.message}\n`;
+            output += `  GPU 信息错误: ${error.message}\n`;
           }
         } else {
-          output += `  WebGPU: Not Supported\n`;
+          output += `  WebGPU 加速: 不支持\n`;
         }
 
-        // Network information
         if (navigator.connection) {
           const connection = navigator.connection;
-          output += `  Network Type: ${connection.type || 'Unknown'}\n`;
+          output += `  网络类型: ${connection.type || '未知'}\n`;
           if (connection.effectiveType) {
-            output += `  Effective Type: ${connection.effectiveType}\n`;
+            output += `  网络制式: ${connection.effectiveType}\n`;
           }
           if (connection.downlink) {
-            output += `  Downlink: ${connection.downlink} Mbps\n`;
+            output += `  下行速率: ${connection.downlink} Mbps\n`;
           }
         }
 
-        output += `\n  AstraEditor Version: ${aeVersion.version} ( Built in ${aeVersion.date} )\n`;
-        output += '  Terminal Version: 1.3.0\n';
+        output += `\n  AstraEditor 版本: ${aeVersion.version} (构建于 ${aeVersion.date})\n`;
+        output += '  终端组件版本: 1.3.0\n';
 
         const asciiLines = asciiArt.split('\n');
         const infoLines = output.split('\n');
@@ -2791,91 +3183,481 @@ export default async function ({ addon, console, msg }) {
       }
     },
     echo: {
-      description: msg('command-echo-desc') || 'Echo the input text',
+      description: msg('command-echo-desc') || '在终端回显输出指定的文本内容（支持 BBCode 颜色与样式）',
+      usage: 'echo <文本内容>',
+      example: 'echo [color=#4ec9b0]Hello AstraEditor[/color]\necho [b]加粗文本[/b]',
+      aliases: [],
       execute: (args) => {
         const text = args.join(' ');
         if (text) {
-          // 直接走 BBCode 输出队列，支持颜色、链接、粗体等格式
           createBBCodeLogLines(text, null);
         }
         return null;
       }
     },
     project: {
-      description: msg('command-project-desc') || 'Show project information',
+      description: msg('command-project-desc') || '显示当前 Scratch 项目基本统计信息',
+      usage: 'project',
+      example: 'project',
+      aliases: [],
       execute: () => {
         try {
-          const vm = addon.tab.traps.vm;
           const target = vm.runtime.getEditingTarget();
           const stage = vm.runtime.getTargetForStage();
 
-          return `${msg('command-project-output') || 'Project Information'}:
-  ${msg('command-project-stage') || 'Stage'}: ${stage.getName()}
-  ${msg('command-project-sprite') || 'Current Sprite'}: ${target.getName()}
-  ${msg('command-project-sprites') || 'Sprites'}: ${vm.runtime.targets.length - 1}
-  ${msg('command-project-variables') || 'Variables'}: ${Object.keys(stage.variables).length}
-  ${msg('command-project-broadcasts') || 'Broadcasts'}: ${Object.keys(stage.blocks).filter((k) => k.startsWith('broadcast_')).length}
+          return `${msg('command-project-output') || '项目统计信息'}:
+  ${msg('command-project-stage') || '舞台背景'}: ${stage ? stage.getName() : 'Stage'}
+  ${msg('command-project-sprite') || '当前编辑角色'}: ${target ? target.getName() : '无'}
+  ${msg('command-project-sprites') || '角色总数'}: ${Math.max(0, vm.runtime.targets.length - 1)}
+  ${msg('command-project-variables') || '全局变量与列表数'}: ${stage ? Object.keys(stage.variables).length : 0}
+  ${msg('command-project-broadcasts') || '广播事件数'}: ${stage ? Object.keys(stage.blocks).filter((k) => k.startsWith('broadcast_')).length : 0}
 `;
         } catch (e) {
-          return msg('command-project-error') || 'Error: Unable to get project information';
+          return msg('command-project-error') || '错误：无法获取项目信息';
         }
       }
     },
     variables: {
-      description: msg('command-variables-desc') || 'List all variables',
+      description: msg('command-variables-desc') || '列出当前角色的私有变量与舞台全局变量',
+      usage: 'variables',
+      example: 'variables',
+      aliases: [],
       execute: () => {
         try {
-          const vm = addon.tab.traps.vm;
           const target = vm.runtime.getEditingTarget();
           const stage = vm.runtime.getTargetForStage();
 
-          let output = msg('command-variables-global') || 'Global Variables:\n';
-          Object.values(stage.variables).forEach((v) => {
-            if (v.type === '' || v.type === 'list') {
-              const value = v.type === 'list' ? `[${v.value.join(', ')}]` : v.value;
-              output += `  ${v.name} = ${value}\n`;
-            }
-          });
-
-          output += `\n${msg('command-variables-local') || 'Local Variables:'}\n`;
-          if (!target.isStage) {
-            Object.values(target.variables).forEach((v) => {
+          let output = `${msg('command-variables-global') || '全局变量与列表：'}\n`;
+          let hasGlobal = false;
+          if (stage && stage.variables) {
+            Object.values(stage.variables).forEach((v) => {
               if (v.type === '' || v.type === 'list') {
+                hasGlobal = true;
                 const value = v.type === 'list' ? `[${v.value.join(', ')}]` : v.value;
                 output += `  ${v.name} = ${value}\n`;
               }
             });
           }
+          if (!hasGlobal) output += '  (暂无全局变量)\n';
+
+          output += `\n${msg('command-variables-local') || '当前角色私有变量与列表：'}\n`;
+          let hasLocal = false;
+          if (target && !target.isStage && target.variables) {
+            Object.values(target.variables).forEach((v) => {
+              if (v.type === '' || v.type === 'list') {
+                hasLocal = true;
+                const value = v.type === 'list' ? `[${v.value.join(', ')}]` : v.value;
+                output += `  ${v.name} = ${value}\n`;
+              }
+            });
+          }
+          if (!hasLocal) output += '  (暂无私有变量)\n';
 
           return output;
         } catch (e) {
-          return msg('command-variables-error') || 'Error: Unable to get variables';
+          return msg('command-variables-error') || '错误：无法获取变量信息';
         }
       }
     },
     sprites: {
-      description: msg('command-sprites-desc') || 'List all sprites',
+      description: msg('command-sprites-desc') || '列出项目中所有的角色名称',
+      usage: 'sprites',
+      example: 'sprites',
+      aliases: [],
       execute: () => {
         try {
-          const vm = addon.tab.traps.vm;
-          let output = `${msg('command-sprites-output') || 'Sprites:'}\n`;
+          let output = `${msg('command-sprites-output') || '角色列表：'}\n`;
+          let count = 0;
           vm.runtime.targets.forEach((target) => {
             if (!target.isStage) {
-              output += `  ${target.getName()}\n`;
+              count++;
+              output += `  ${count}. ${target.getName()}\n`;
             }
           });
+          if (count === 0) output += '  (暂无角色)\n';
           return output;
         } catch (e) {
-          return msg('command-sprites-error') || 'Error: Unable to get sprites';
+          return msg('command-sprites-error') || '错误：无法获取角色列表';
         }
       }
     },
     version: {
-      description: msg('command-version-desc') || 'Show terminal version',
-      execute: () => `AstraEditor Terminal v${aeVersion.version}`
+      description: msg('command-version-desc') || '显示 AstraEditor Terminal 终端组件版本号',
+      usage: 'version',
+      example: 'version',
+      aliases: [],
+      execute: () => `AstraEditor Terminal v${aeVersion.version} (内核构建日期: ${aeVersion.date})`
+    },
+    top: {
+      description: msg('command-top-desc') || '切换输入框上方的实时 CUI 性能监控条 (FPS/克隆/线程)',
+      usage: 'top [-s | once]',
+      example: 'top  (开启或关闭 CUI 性能条)\ntop -s  (仅输出一次性能快照)',
+      aliases: ['perf'],
+      execute: (args) => {
+        if (args && (args[0] === '-s' || args[0] === 'once')) {
+          const maxFps = vm.runtime.frameLoop.framerate === 0 ? 60 : vm.runtime.frameLoop.framerate;
+          const clones = vm.runtime._cloneCounter || 0;
+          const threads = vm.runtime.threads ? vm.runtime.threads.length : 0;
+          const target = vm.runtime.getEditingTarget();
+          return `性能快照:\n  实时帧率 (FPS): ${currentFps} / ${maxFps}\n  克隆体数量: ${clones} / 300\n  运行中积木线程: ${threads}\n  单帧步进耗时: ${lastStepDuration.toFixed(2)}ms\n  当前编辑角色: ${target ? target.getName() : '舞台'}`;
+        }
+        const active = toggleCui();
+        if (active) {
+          return (
+            msg('top-started') || 'CUI 性能监控条已在输入框上方开启。输入 "top" 或点击 ✕ 可关闭。'
+          );
+        }
+        return msg('top-closed') || 'CUI 性能监控条已关闭。';
+      }
+    },
+    perf: {
+      description: msg('command-perf-desc') || 'top 指令的快捷别名',
+      usage: 'perf [-s | once]',
+      example: 'perf',
+      aliases: [],
+      execute: (args) => commands.top.execute(args)
+    },
+    fps: {
+      description: msg('command-fps-desc') || '查看当前实时帧率与目标帧率',
+      usage: 'fps',
+      example: 'fps',
+      aliases: [],
+      execute: (args) => {
+        if (!args || args.length === 0) {
+          const maxFps = vm.runtime.frameLoop.framerate === 0 ? 60 : vm.runtime.frameLoop.framerate;
+          return `当前实时帧率: ${currentFps} FPS (目标帧率: ${maxFps} FPS)`;
+        }
+        return commands.top.execute(args);
+      }
+    },
+    threads: {
+      description: msg('command-threads-desc') || '列出所有当前正在运行的积木线程栈与跳转定位',
+      usage: 'threads',
+      example: 'threads',
+      aliases: ['ps'],
+      execute: () => {
+        const threads = vm.runtime.threads;
+        if (!threads || threads.length === 0) {
+          return msg('no-threads-running') || '当前没有正在运行的积木线程。';
+        }
+        const statusMap = {
+          0: '运行中 (RUNNING)',
+          1: '等待中 (PROMISE_WAIT)',
+          2: '让步 (YIELD)',
+          3: '等待下一帧 (YIELD_TICK)',
+          4: '已结束 (DONE)'
+        };
+        for (let i = 0; i < threads.length; i++) {
+          const thread = threads[i];
+          const target = thread.target;
+          const targetInfo = getTargetInfoById(target ? target.id : null);
+          const topBlockId = thread.peekStack ? thread.peekStack() : thread.topBlock;
+          const status = statusMap[thread.status] || thread.status;
+
+          const line = document.createElement('div');
+          line.className = 'sa-terminal-result-line';
+          const infoSpan = document.createElement('span');
+          infoSpan.textContent = `  #${i + 1} [角色: ${targetInfo.name}] 状态: ${status} `;
+          line.appendChild(infoSpan);
+
+          if (topBlockId && targetInfo.exists) {
+            const linkWrapper = document.createElement('span');
+            linkWrapper.className = 'sa-terminal-log-link-wrapper';
+            linkWrapper.textContent = '[';
+            const link = createBlockLink(targetInfo, topBlockId);
+            link.className = 'sa-terminal-block-link';
+            linkWrapper.appendChild(link);
+            linkWrapper.appendChild(document.createTextNode(']'));
+            line.appendChild(linkWrapper);
+          }
+          virtualList.appendLog({ element: line, contentHash: line.textContent });
+        }
+        return `当前活跃线程总数: ${threads.length}`;
+      }
+    },
+    ps: {
+      description: msg('command-ps-desc') || 'threads 指令的快捷别名',
+      usage: 'ps',
+      example: 'ps',
+      aliases: [],
+      execute: () => commands.threads.execute()
+    },
+    step: {
+      description: msg('command-step-desc') || '单步执行积木（项目运行中会自动挂起并单步推进）',
+      usage: 'step [步数]',
+      example: 'step  (单步执行 1 个积木)\nstep 5  (连续单步推进 5 步)',
+      aliases: ['s'],
+      execute: (args) => {
+        if (!vm.runtime.threads || vm.runtime.threads.length === 0) {
+          return '当前项目中没有正在执行的积木线程。请点击绿旗启动项目或点击积木运行。';
+        }
+
+        let count = 1;
+        if (args && args.length > 0) {
+          const parsed = parseInt(args[0], 10);
+          if (!isNaN(parsed) && parsed > 0) {
+            count = Math.min(parsed, 100);
+          }
+        }
+
+        let autoPaused = false;
+        if (!isPausedDebugger()) {
+          setPausedDebugger(true);
+          autoPaused = true;
+        }
+
+        let lastTargetName = '';
+        let lastBlockId = '';
+        for (let i = 0; i < count; i++) {
+          singleStepDebugger();
+          const running = getRunningThreadDebugger
+            ? getRunningThreadDebugger()
+            : vm.runtime.sequencer
+              ? vm.runtime.sequencer.activeThread
+              : null;
+          if (running && running.target) {
+            lastTargetName = running.target.getName ? running.target.getName() : running.target.id;
+            lastBlockId = running.peekStack ? running.peekStack() : running.topBlock;
+          }
+        }
+
+        const isCompiled = vm.runtime.compilerOptions && vm.runtime.compilerOptions.enabled;
+        let compilerTip = '';
+        if (isCompiled) {
+          compilerTip =
+            '\n提示: 当前处于 TurboWarp 编译模式。输入 "compiler off" 可切换为解释器模式，享受逐积木高亮高保真调试！';
+        }
+
+        const prefix = autoPaused ? '【已自动挂起项目】' : '';
+        if (lastTargetName) {
+          return `${prefix}单步推进 ${count} 步 (当前角色: ${lastTargetName}${lastBlockId ? `, 积木ID: ${lastBlockId}` : ''})${compilerTip}`;
+        }
+        return `${prefix}单步推进 ${count} 步。${compilerTip}`;
+      }
+    },
+    s: {
+      description: 'step 指令的快捷别名',
+      usage: 's [步数]',
+      example: 's\ns 5',
+      aliases: [],
+      execute: (args) => commands.step.execute(args)
+    },
+    continue: {
+      description: msg('command-continue-desc') || '恢复被暂停的项目全速运行',
+      usage: 'continue',
+      example: 'continue',
+      aliases: ['c'],
+      execute: () => {
+        if (isPausedDebugger()) {
+          setPausedDebugger(false);
+          return '已恢复项目运行。';
+        }
+        return '项目当前正在全速运行中。';
+      }
+    },
+    c: {
+      description: 'continue 指令的快捷别名',
+      usage: 'c',
+      example: 'c',
+      aliases: [],
+      execute: () => commands.continue.execute()
+    },
+    pause: {
+      description: msg('command-pause-desc') || '暂停项目运行，准备单步调试',
+      usage: 'pause',
+      example: 'pause',
+      aliases: [],
+      execute: () => {
+        if (!isPausedDebugger()) {
+          setPausedDebugger(true);
+          const threadCount = vm.runtime.threads ? vm.runtime.threads.length : 0;
+          return `已暂停项目运行 (当前活跃线程: ${threadCount})。使用 "step" (或 "s") 进行单步调试，使用 "continue" (或 "c") 恢复全速运行。`;
+        }
+        return '项目当前已处于暂停状态。';
+      }
+    },
+    kill: {
+      description: msg('command-kill-desc') || '强制终止指定编号的执行线程（排查卡顿与死循环利器）',
+      usage: 'kill <线程序号>',
+      example: 'kill 1',
+      aliases: [],
+      execute: (args) => {
+        const id = parseInt(args[0], 10);
+        if (isNaN(id) || id < 1 || !vm.runtime.threads || id > vm.runtime.threads.length) {
+          const max = vm.runtime.threads ? vm.runtime.threads.length : 0;
+          return `用法: kill <1-${max}>。输入 "threads" 可查看当前活跃线程编号。`;
+        }
+        const thread = vm.runtime.threads[id - 1];
+        if (thread) {
+          thread.status = 4; // STATUS_DONE
+          return `已成功强制终止线程 #${id} (角色: ${thread.target ? thread.target.getName() : '未知'})。`;
+        }
+        return `未找到线程 #${id}。`;
+      }
+    },
+    get: {
+      description: msg('command-get-desc') || '获取指定变量或列表的当前数值',
+      usage: 'get <变量名称>',
+      example: 'get 得分\nget 玩家列表',
+      aliases: [],
+      execute: (args) => {
+        const name = args.join(' ').trim();
+        if (!name) return '用法: get <变量名称>';
+        const found = findVariable(name);
+        if (!found) return `未找到名为 "${name}" 的变量或列表。`;
+        const { variable, isLocal } = found;
+        const scope = isLocal ? '私有' : '全局';
+        if (variable.type === 'list') {
+          return `[${scope}列表] ${variable.name} (共 ${variable.value.length} 项):\n[ ${variable.value.join(', ')} ]`;
+        }
+        return `[${scope}] ${variable.name} = ${JSON.stringify(variable.value)}`;
+      }
+    },
+    set: {
+      description: msg('command-set-desc') || '直接动态修改运行中项目的变量或列表值',
+      usage: 'set <变量名称> <新数值>',
+      example: 'set 生命值 100\nset 游戏结束 true\nset 道具 [苹果, 香蕉]',
+      aliases: [],
+      execute: (args) => {
+        if (args.length < 2) return '用法: set <变量名称> <新数值>';
+        const name = args[0];
+        const rawVal = args.slice(1).join(' ').trim();
+        const found = findVariable(name);
+        if (!found) return `未找到名为 "${name}" 的变量或列表。`;
+        const { variable, target, isLocal } = found;
+
+        let parsedVal = rawVal;
+        if (rawVal === 'true') parsedVal = true;
+        else if (rawVal === 'false') parsedVal = false;
+        else if (!isNaN(Number(rawVal)) && rawVal !== '') parsedVal = Number(rawVal);
+        else if (variable.type === 'list') {
+          try {
+            parsedVal = JSON.parse(rawVal);
+            if (!Array.isArray(parsedVal)) parsedVal = rawVal.split(',');
+          } catch {
+            parsedVal = rawVal.split(',');
+          }
+        }
+
+        vm.setVariableValue(target.id, variable.id, parsedVal);
+        const scope = isLocal ? '私有' : '全局';
+        return `[${scope}] 已将 "${variable.name}" 的值修改为: ${JSON.stringify(parsedVal)}`;
+      }
+    },
+    watch: {
+      description: msg('command-watch-desc') || '监视指定变量数值变动（变动时在终端实时打日志）',
+      usage: 'watch [变量名称 | clear]',
+      example: 'watch 得分\nwatch  (查看监视列表)\nwatch clear  (清空所有监视)',
+      aliases: [],
+      execute: (args) => {
+        const name = args.join(' ').trim();
+        if (!name) {
+          if (watchedVariables.size === 0) return '当前没有监视任何变量。用法: watch <变量名称>';
+          let list = '当前监视的变量列表:\n';
+          for (const [id, info] of watchedVariables) {
+            list += `  - ${info.name} (当前数值: ${JSON.stringify(info.lastValue)})\n`;
+          }
+          return list;
+        }
+        if (name === 'clear') {
+          const count = watchedVariables.size;
+          watchedVariables.clear();
+          return `已清空所有 ${count} 个被监视的变量。`;
+        }
+        const found = findVariable(name);
+        if (!found) return `未找到名为 "${name}" 的变量。`;
+        const { variable, target, isLocal } = found;
+        const currentVal = Array.isArray(variable.value) ? JSON.stringify(variable.value) : variable.value;
+        watchedVariables.set(variable.id, {
+          name: variable.name,
+          targetId: target.id,
+          lastValue: currentVal,
+          isLocal
+        });
+        return `已开始监视变量 "${variable.name}"。当该变量在项目运行中变动时，将在终端实时输出日志。`;
+      }
+    },
+    unwatch: {
+      description: msg('command-unwatch-desc') || '取消对指定变量的数值变动监视',
+      usage: 'unwatch <变量名称>',
+      example: 'unwatch 得分',
+      aliases: [],
+      execute: (args) => {
+        const name = args.join(' ').trim();
+        if (!name) return '用法: unwatch <变量名称>';
+        for (const [id, info] of watchedVariables) {
+          if (info.name === name) {
+            watchedVariables.delete(id);
+            return `已停止对变量 "${name}" 的变动监视。`;
+          }
+        }
+        return `变量 "${name}" 当前并未被监视。`;
+      }
+    },
+    heatmap: {
+      description: msg('command-heatmap-desc') || '积木执行热力图（在 Blockly 编辑区直观染色展示执行热度）',
+      usage: 'heatmap [on | off | reset | max <数值> | status]',
+      example:
+        'heatmap on  (开启热力图实时染色)\nheatmap off  (关闭热力图并恢复原本色彩)\nheatmap reset  (重置频次计数)\nheatmap max 1000  (手动指定热度峰值)\nheatmap status  (查看统计状态)',
+      aliases: [],
+      execute: (args) => {
+        if (!args || args.length === 0 || args[0] === 'on' || args[0] === 'start') {
+          heatmapManager.start();
+          const status = heatmapManager.getStatus();
+          return `${msg('heatmap-started') || '已开启积木执行热力图！'}\n  当前追踪积木数: ${status.trackedBlocks}\n  最高执行频次: ${status.maxExecutions}\n  输入 "heatmap off" 可关闭。`;
+        }
+        const sub = args[0].toLowerCase();
+        if (sub === 'off' || sub === 'stop') {
+          heatmapManager.stop();
+          return msg('heatmap-stopped') || '已关闭热力图并恢复积木原本色彩。';
+        }
+        if (sub === 'reset' || sub === 'clear') {
+          heatmapManager.reset();
+          return msg('heatmap-reset') || '已重置积木热力图统计数据。';
+        }
+        if (sub === 'max') {
+          if (args.length < 2) {
+            return `当前热力图峰值上限: ${heatmapManager.customMax || '自动缩放 (自适应最大执行频次)'}\n用法: heatmap max <数值> (例如 heatmap max 500)`;
+          }
+          heatmapManager.setMax(args[1]);
+          return `热力图峰值上限已设置为: ${heatmapManager.customMax || '自动缩放'}`;
+        }
+        if (sub === 'status') {
+          const status = heatmapManager.getStatus();
+          return `积木执行热力图状态:\n  运行状态: ${status.active ? '【开启中】' : '【已关闭】'}\n  已追踪积木数: ${status.trackedBlocks}\n  最高执行频次: ${status.maxExecutions}\n  自定义上限: ${status.customMax || '自动缩放'}`;
+        }
+        return '未知参数。用法: heatmap on | off | reset | max <数值> | status';
+      }
+    },
+    compiler: {
+      description: msg('command-compiler-desc') || 'TurboWarp 编译器开关控制（解释器模式下支持精准积木单步高亮）',
+      usage: 'compiler [on | off]',
+      example: 'compiler off  (关闭编译器，进入解释器模式)\ncompiler on  (开启编译器，进入全速运行模式)',
+      aliases: [],
+      execute: (args) => {
+        const currentEnabled = !!(vm.runtime.compilerOptions && vm.runtime.compilerOptions.enabled);
+        if (!args || args.length === 0) {
+          return `当前编译器状态: ${currentEnabled ? '【已开启】(全速高性能模式)' : '【已关闭】(解释器模式，支持高保真单步调试与高亮)'}\n用法: compiler on (开启) 或 compiler off (关闭)`;
+        }
+        const opt = args[0].toLowerCase();
+        if (opt === 'on' || opt === 'enable' || opt === '1' || opt === 'true') {
+          vm.setCompilerOptions({ enabled: true });
+          return msg('compiler-on') || 'TurboWarp 编译器已开启（全速高性能模式）。';
+        } else if (opt === 'off' || opt === 'disable' || opt === '0' || opt === 'false') {
+          vm.setCompilerOptions({ enabled: false });
+          return (
+            msg('compiler-off') ||
+            'TurboWarp 编译器已关闭。项目现在处于解释器模式，支持最精准的积木单步调试与高亮！'
+          );
+        }
+        return '未知参数。用法: compiler on 或 compiler off';
+      }
     },
     'creeper?': {
       description: '',
+      usage: 'creeper?',
+      example: 'creeper?',
+      aliases: [],
       execute: () => msg('command-creeper') || 'Awwww Man!'
     }
   };
@@ -2895,12 +3677,6 @@ export default async function ({ addon, console, msg }) {
 
     resetLogTracking();
 
-    if (cmdName === 'clear') {
-      virtualList.clear();
-      resetLogTracking();
-      return;
-    }
-
     const commandLine = document.createElement('div');
     commandLine.className = 'sa-terminal-command-line';
     const commandText = document.createElement('span');
@@ -2914,26 +3690,29 @@ export default async function ({ addon, console, msg }) {
       return;
     }
 
+    const isHelpArg =
+      args.length > 0 && ['help', '-h', '--help', '-?', '?'].includes(args[0].toLowerCase());
+
+    if (cmdName === 'clear') {
+      if (isHelpArg) {
+        renderOutputLines(formatCommandHelp('clear', commands.clear));
+        return;
+      }
+      virtualList.clear();
+      resetLogTracking();
+      return;
+    }
+
     const cmd = commands[cmdName];
     if (cmd) {
+      if (isHelpArg) {
+        renderOutputLines(formatCommandHelp(cmdName, cmd));
+        return;
+      }
       try {
         const result = await cmd.execute(args);
         if (result) {
-          const lines = result.split('\n');
-          lines.forEach((lineContent) => {
-            const resultLine = document.createElement('div');
-            resultLine.className = 'sa-terminal-result-line';
-            // 解析 BBCode
-            let parsedContent = parseBBCode(lineContent);
-            // 将文本节点中的空格转换为非断行空格以保留格式（不破坏 BBCode 生成的标签属性）
-            parsedContent = parsedContent.replace(
-              /(^|>)([^<]*)(?=<|$)/g,
-              (match, prefix, content) => prefix + content.replace(/ /g, '&nbsp;')
-            );
-            resultLine.innerHTML = parsedContent;
-            resultLine.title = lineContent;
-            virtualList.appendLog({ element: resultLine, contentHash: lineContent });
-          });
+          renderOutputLines(result);
         }
       } catch (e) {
         const errorLine = document.createElement('div');
@@ -2942,6 +3721,19 @@ export default async function ({ addon, console, msg }) {
         errorLine.title = `Error: ${e.message}`;
         virtualList.appendLog({ element: errorLine, contentHash: errorLine.textContent });
       }
+    } else if (userCommands[cmdName]) {
+      if (isHelpArg) {
+        renderOutputLines(
+          `【自定义指令】${cmdName}\n  说明：${userCommands[cmdName]}\n  用法：${cmdName} [参数...]`
+        );
+        return;
+      }
+    } else {
+      const errorLine = document.createElement('div');
+      errorLine.className = 'sa-terminal-error-line';
+      errorLine.textContent = `未知指令: "${cmdName}"。输入 "help" 查看所有可用指令。`;
+      errorLine.title = errorLine.textContent;
+      virtualList.appendLog({ element: errorLine, contentHash: errorLine.textContent });
     }
   };
 
