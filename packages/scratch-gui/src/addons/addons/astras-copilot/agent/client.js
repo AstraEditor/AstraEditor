@@ -325,25 +325,20 @@ const readStreamingResponse = async (response, onDelta, onReasoning, idleTimeout
 };
 
 /**
- * HTTP status codes that warrant retrying the request.
- */
-const RETRYABLE_STATUS = new Set([408, 429, 500, 502, 503, 504]);
-
-/**
- * Whether an error is transient and worth retrying.
+ * Whether an error should be retried.
+ * API request errors (such as HTTP 404, 502, or application errors with status code) must NOT be retried.
+ * User aborts must NOT be retried.
+ * Other errors (empty response, network timeout, stream drops, parse error, etc.) must be retried.
  * @param {Error} error Error to inspect.
  * @returns {boolean} Whether the request should be retried.
  */
 const isRetryableError = (error) => {
   if (!error) return false;
+  // User explicitly aborted the request
   if (error.name === 'AbortError') return false;
-  if (error.name === 'TimeoutError') return true;
-  if (Number.isInteger(error.status)) {
-    // status 0 means the API reported an application error, not an HTTP status.
-    if (error.status === 0) return false;
-    return RETRYABLE_STATUS.has(error.status);
-  }
-  // Network failures and unparseable responses are transient by default.
+  // API request errors: HTTP status codes (e.g. 404, 502, 500) or application errors (status 0)
+  if (Number.isInteger(error.status)) return false;
+  // All other errors (empty response, network timeout, stream failures, etc.) must be retried
   return true;
 };
 
@@ -351,6 +346,7 @@ const isRetryableError = (error) => {
  * Perform one chat-completions attempt.
  * @param {object} options Options.
  * @param {object} options.config Agent configuration.
+ * @param {URL} options.url Validated API URL.
  * @param {Array<object>} options.messages Chat messages.
  * @param {Array<object>} options.tools Tool definitions.
  * @param {AbortSignal} options.signal Abort signal.
@@ -358,17 +354,7 @@ const isRetryableError = (error) => {
  * @param {Function} [options.onReasoning] Reasoning-content delta callback.
  * @returns {Promise<object>} Assistant message.
  */
-const attemptRequest = async ({ config, messages, tools, signal, onDelta, onReasoning }) => {
-  let url;
-  try {
-    url = new URL(config.apiUrl);
-  } catch (error) {
-    throw new Error('API URL is invalid.');
-  }
-  if (url.protocol !== 'http:' && url.protocol !== 'https:') {
-    throw new Error('API URL must use HTTP or HTTPS.');
-  }
-
+const attemptRequest = async ({ config, url, messages, tools, signal, onDelta, onReasoning }) => {
   const wantsStream = config.stream !== false;
   const headers = buildHeaders(config);
   if (wantsStream) headers.Accept = 'text/event-stream';
@@ -401,6 +387,7 @@ const attemptRequest = async ({ config, messages, tools, signal, onDelta, onReas
 
   const contentType = (response.headers.get('content-type') || '').toLowerCase();
   const isSse = contentType.includes('text/event-stream');
+  let result;
   if (contentType.includes('application/json') || (!wantsStream && !isSse)) {
     const data = await response.json();
     if (data && data.error) {
@@ -410,11 +397,20 @@ const attemptRequest = async ({ config, messages, tools, signal, onDelta, onReas
     }
     const choice = data && Array.isArray(data.choices) ? data.choices[0] : null;
     if (!choice || !choice.message) throw new Error('The API returned no assistant message.');
-    return normalizeAssistantMessage(choice.message, data.usage);
+    result = normalizeAssistantMessage(choice.message, data.usage);
+  } else {
+    const idleTimeoutMs = Math.max(0, Number(config.streamIdleTimeoutMs) || 30000);
+    result = await readStreamingResponse(response, onDelta, onReasoning, idleTimeoutMs);
   }
 
-  const idleTimeoutMs = Math.max(0, Number(config.streamIdleTimeoutMs) || 30000);
-  return readStreamingResponse(response, onDelta, onReasoning, idleTimeoutMs);
+  // Treat empty assistant responses (no tool calls and no text content) as retryable errors
+  const hasToolCalls = Array.isArray(result.toolCalls) && result.toolCalls.length > 0;
+  const hasContent = typeof result.content === 'string' && result.content.trim().length > 0;
+  if (!hasToolCalls && !hasContent) {
+    throw new Error('The model returned an empty response.');
+  }
+
+  return result;
 };
 
 /**
@@ -436,12 +432,22 @@ export const callChatCompletion = async ({ config, messages, tools, signal, onDe
   if (!config.apiUrl) throw new Error('API URL is not configured.');
   if (!config.model) throw new Error('Model is not configured.');
 
+  let url;
+  try {
+    url = new URL(config.apiUrl);
+  } catch (error) {
+    throw new Error('API URL is invalid.');
+  }
+  if (url.protocol !== 'http:' && url.protocol !== 'https:') {
+    throw new Error('API URL must use HTTP or HTTPS.');
+  }
+
   const retries = Number.isFinite(Number(config.retries)) ? Math.max(0, Math.min(5, Number(config.retries))) : 2;
   let attempt = 0;
 
   for (;;) {
     try {
-      return await attemptRequest({ config, messages, tools, signal, onDelta, onReasoning });
+      return await attemptRequest({ config, url, messages, tools, signal, onDelta, onReasoning });
     } catch (error) {
       if (attempt >= retries || !isRetryableError(error)) throw error;
       attempt++;
