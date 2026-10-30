@@ -21,6 +21,8 @@ import { renderMarkdown } from './agent/markdown.js';
 import { MAX_CONTEXT_MESSAGES, runAgent } from './agent/loop.js';
 import { buildSystemPrompt } from './agent/prompt.js';
 import { TOOL_DEFINITIONS } from './agent/tools.js';
+import { createScrathonWindow } from './agent/scrathon/window.js';
+import { buildSideBySideRows } from './agent/scrathon/diff.js';
 import { setApplier } from './agent/writer.js';
 
 const PLUGIN_ID = 'astras-copilot';
@@ -404,6 +406,7 @@ export default async ({ addon, msg }) => {
   let sidebarToggleButton = null;
   let bottomToggleButton = null;
   let settingsPanel = null;
+  let scrathonWindow = null;
   let settingsErrorElement = null;
   let apiUrlInput = null;
   let apiKeyInput = null;
@@ -968,7 +971,7 @@ export default async ({ addon, msg }) => {
     const ordered = conversations.slice().sort((a, b) => b.updatedAt - a.updatedAt);
     conversationListElement.textContent = '';
 
-    for (const conversation of ordered) {
+    const renderConversationItem = (conversation) => {
       const item = document.createElement('div');
       item.className = 'sa-agent-conversation-item';
       item.setAttribute('role', 'listitem');
@@ -1055,6 +1058,10 @@ export default async ({ addon, msg }) => {
       item.dataset.conversationId = conversation.id;
       deleteButton.classList.add('sa-agent-delete-button');
       conversationListElement.appendChild(item);
+    };
+
+    for (const conversation of ordered) {
+      renderConversationItem(conversation);
     }
 
     updateHeaderTitle();
@@ -1354,7 +1361,7 @@ export default async ({ addon, msg }) => {
    * @param {AbortSignal} options.signal Abort signal.
    * @returns {Promise<boolean>} Whether the call is allowed.
    */
-  const requestToolApproval = ({ id, traceIndex, signal }) =>
+  const requestToolApproval = ({ id, traceIndex, signal, diff }) =>
     new Promise((resolve) => {
       if (!id || (signal && signal.aborted)) {
         resolve(false);
@@ -1370,7 +1377,7 @@ export default async ({ addon, msg }) => {
         resolve(false);
       };
       if (signal) signal.addEventListener('abort', onAbort, { once: true });
-      approvalResolvers.set(id, { resolve, signal, onAbort, traceIndex });
+      approvalResolvers.set(id, { resolve, signal, onAbort, traceIndex, diff });
       renderLiveTrace();
     });
 
@@ -1401,7 +1408,7 @@ export default async ({ addon, msg }) => {
     for (const part of parts) {
       if (!part) continue;
       if (part.type === 'tools' && Array.isArray(part.trace) && part.trace.length) {
-        row.appendChild(buildTraceElement(part.trace, interactive));
+        appendTraceElements(row, part.trace, interactive);
       } else if (part.type === 'response') {
         if (part.reasoning) row.appendChild(buildReasoningElement(part.reasoning, part));
         if (part.content) {
@@ -1432,6 +1439,142 @@ export default async ({ addon, msg }) => {
     else approvedConversations.delete(activeConversationId);
     if (autoApproveInput) autoApproveInput.checked = allowed;
     if (allowed) Array.from(approvalResolvers.keys()).forEach((id) => resolveToolApproval(id, true));
+  };
+
+  /**
+   * Build an in-chat visual code diff card.
+   * @param {object} diff Diff data produced by computeToolDiff/computeScopeDiff.
+   * @returns {HTMLElement} Diff card element.
+   */
+  const buildDiffCard = (diff) => {
+    const card = document.createElement('div');
+    card.className = 'sa-agent-diff-card';
+
+    if (!diff || !diff.hasChanges || !Array.isArray(diff.scripts) || diff.scripts.length === 0) {
+      const empty = document.createElement('div');
+      empty.className = 'sa-agent-diff-empty';
+      empty.textContent = msg('diff-no-changes');
+      card.appendChild(empty);
+      return card;
+    }
+
+    const header = document.createElement('div');
+    header.className = 'sa-agent-diff-header';
+
+    const titleGroup = document.createElement('div');
+    titleGroup.className = 'sa-agent-diff-title';
+    if (diff.target) {
+      const targetBadge = document.createElement('span');
+      targetBadge.className = 'sa-agent-diff-target-badge';
+      targetBadge.textContent = diff.target;
+      titleGroup.appendChild(targetBadge);
+    }
+    const headerText = document.createElement('span');
+    headerText.className = 'sa-agent-diff-header-text';
+    headerText.textContent = msg('diff-title');
+    titleGroup.appendChild(headerText);
+
+    const stats = document.createElement('div');
+    stats.className = 'sa-agent-diff-stats';
+    if (diff.totalAdd > 0) {
+      const statAdd = document.createElement('span');
+      statAdd.className = 'sa-agent-diff-stat-add';
+      statAdd.textContent = `+${diff.totalAdd}`;
+      stats.appendChild(statAdd);
+    }
+    if (diff.totalDel > 0) {
+      const statDel = document.createElement('span');
+      statDel.className = 'sa-agent-diff-stat-del';
+      statDel.textContent = `-${diff.totalDel}`;
+      stats.appendChild(statDel);
+    }
+
+    header.appendChild(titleGroup);
+    header.appendChild(stats);
+    card.appendChild(header);
+
+    const body = document.createElement('div');
+    body.className = 'sa-agent-diff-body';
+
+    for (const script of diff.scripts) {
+      const scriptSection = document.createElement('div');
+      scriptSection.className = 'sa-agent-diff-script';
+
+      const scriptHeader = document.createElement('div');
+      scriptHeader.className = 'sa-agent-diff-script-header';
+
+      const scriptTitle = document.createElement('span');
+      scriptTitle.className = 'sa-agent-diff-script-title';
+      scriptTitle.textContent = script.title || 'Script';
+
+      const badge = document.createElement('span');
+      badge.className = `sa-agent-diff-script-badge ${
+        script.isNew ? 'is-new' : script.isDelete ? 'is-delete' : 'is-modified'
+      }`;
+      badge.textContent = script.isNew
+        ? msg('diff-badge-new')
+        : script.isDelete
+          ? msg('diff-badge-del')
+          : msg('diff-badge-mod');
+
+      scriptHeader.appendChild(scriptTitle);
+      scriptHeader.appendChild(badge);
+      scriptSection.appendChild(scriptHeader);
+
+      const linesContainer = document.createElement('div');
+      linesContainer.className = 'sa-agent-diff-lines';
+
+      const renderLine = (entry) => {
+        const lineRow = document.createElement('div');
+        lineRow.className = `sa-agent-diff-line sa-agent-diff-line-${entry.type}`;
+
+        const oldNo = document.createElement('span');
+        oldNo.className = 'sa-agent-diff-lineno sa-agent-diff-lineno-old';
+        oldNo.textContent = entry.oldLineNo !== null ? String(entry.oldLineNo) : '';
+
+        const newNo = document.createElement('span');
+        newNo.className = 'sa-agent-diff-lineno sa-agent-diff-lineno-new';
+        newNo.textContent = entry.newLineNo !== null ? String(entry.newLineNo) : '';
+
+        const prefix = document.createElement('span');
+        prefix.className = 'sa-agent-diff-prefix';
+        prefix.textContent = entry.type === 'add' ? '+' : entry.type === 'del' ? '-' : ' ';
+
+        const text = document.createElement('span');
+        text.className = 'sa-agent-diff-text';
+        text.textContent = entry.line;
+
+        lineRow.appendChild(oldNo);
+        lineRow.appendChild(newNo);
+        lineRow.appendChild(prefix);
+        lineRow.appendChild(text);
+        return lineRow;
+      };
+
+      const hunks = Array.isArray(script.hunks) && script.hunks.length > 0 ? script.hunks : null;
+      if (hunks) {
+        for (const hunk of hunks) {
+          const hunkHeader = document.createElement('div');
+          hunkHeader.className = 'sa-agent-diff-hunk-header';
+          hunkHeader.textContent = hunk.header;
+          linesContainer.appendChild(hunkHeader);
+
+          for (const lineEntry of hunk.lines) {
+            linesContainer.appendChild(renderLine(lineEntry));
+          }
+        }
+      } else if (Array.isArray(script.diff)) {
+        for (const lineEntry of script.diff) {
+          linesContainer.appendChild(renderLine(lineEntry));
+        }
+      }
+
+      scriptSection.appendChild(linesContainer);
+      body.appendChild(scriptSection);
+    }
+
+    card.appendChild(body);
+    return card;
   };
 
   /**
@@ -1513,18 +1656,33 @@ export default async ({ addon, msg }) => {
       body.appendChild(pre);
     }
 
+    if (entry.diff && entry.diff.hasChanges && status !== 'awaiting') {
+      const diffTitle = document.createElement('div');
+      diffTitle.className = 'sa-agent-tool-line-label';
+      diffTitle.textContent = msg('diff-title');
+      body.appendChild(diffTitle);
+      body.appendChild(buildDiffCard(entry.diff));
+    }
+
     details.appendChild(body);
     row.appendChild(details);
 
     if (interactive && status === 'awaiting' && entry.id) {
       const approval = document.createElement('div');
       approval.className = 'sa-agent-tool-approval';
+      const isWrite = WRITE_TOOL_SET.has(entry.name);
+      if (isWrite) row.classList.add('sa-agent-tool-write');
+
+      if (entry.diff && entry.diff.hasChanges) {
+        approval.appendChild(buildDiffCard(entry.diff));
+      }
+
+      const controls = document.createElement('div');
+      controls.className = 'sa-agent-tool-approval-controls';
 
       const hint = document.createElement('span');
       hint.className = 'sa-agent-tool-approval-hint';
-      const isWrite = WRITE_TOOL_SET.has(entry.name);
       hint.textContent = msg(isWrite ? 'trace-write-approval-hint' : 'trace-approval-hint');
-      if (isWrite) row.classList.add('sa-agent-tool-write');
 
       const allow = document.createElement('button');
       allow.type = 'button';
@@ -1546,10 +1704,11 @@ export default async ({ addon, msg }) => {
         setAutoApproveTools(true);
       });
 
-      approval.appendChild(hint);
-      approval.appendChild(allow);
-      approval.appendChild(deny);
-      approval.appendChild(allowAll);
+      controls.appendChild(hint);
+      controls.appendChild(allow);
+      controls.appendChild(deny);
+      controls.appendChild(allowAll);
+      approval.appendChild(controls);
       row.appendChild(approval);
     }
 
@@ -1595,6 +1754,300 @@ export default async ({ addon, msg }) => {
     // Keep pending approval actions reachable even when the completed stack is collapsed.
     for (const entry of awaiting) wrapper.appendChild(buildToolRow(entry, true));
     return wrapper;
+  };
+
+  /**
+   * Determine whether a tool call represents a code modification (e.g. apply_scripts, delete_scripts).
+   * @param {object} entry Tool trace entry.
+   * @returns {boolean} True if code write tool.
+   */
+  const isCodeWriteTool = (entry) =>
+    Boolean(entry && (entry.name === 'apply_scripts' || entry.name === 'delete_scripts'));
+
+  /**
+   * Build a standalone in-chat code edit element with side-by-side split diff.
+   * Does not use a collapsible details card or bubble borders; renders directly on the background.
+   *
+   * Format:
+   * EDIT -> Target
+   * 10 xxx.xxx()      |  10 xxx.xxx()
+   *                   |+ 11 xxxx.xxxx(abc)
+   *                   |+ 12 xxx.xxxxxx()
+   * 11 xxxx.xx()      |~ 13 xxxx.xx()
+   *
+   * @param {object} entry Tool trace entry.
+   * @param {boolean} interactive Whether approval controls are available.
+   * @returns {HTMLElement} Code edit element.
+   */
+  const buildCodeEditElement = (entry, interactive = false) => {
+    const status = entry.status || (entry.ok === false ? 'error' : 'ok');
+    const container = document.createElement('div');
+    container.className = `sa-agent-code-edit sa-agent-status-${status}`;
+
+    const diff = entry.diff;
+    const targetName = (diff && diff.target) || (entry.args && entry.args.target) || '';
+
+    // Header: EDIT -> Target
+    const header = document.createElement('div');
+    header.className = 'sa-agent-code-edit-header';
+
+    const titleGroup = document.createElement('div');
+    titleGroup.className = 'sa-agent-code-edit-title';
+
+    const label = document.createElement('span');
+    label.className = 'sa-agent-code-edit-label';
+    label.textContent = 'EDIT';
+
+    const arrow = document.createElement('span');
+    arrow.className = 'sa-agent-code-edit-arrow';
+    arrow.textContent = '->';
+
+    titleGroup.appendChild(label);
+    titleGroup.appendChild(arrow);
+
+    if (targetName) {
+      const targetSpan = document.createElement('span');
+      targetSpan.className = 'sa-agent-code-edit-target';
+      targetSpan.textContent = targetName;
+      titleGroup.appendChild(targetSpan);
+    }
+
+    header.appendChild(titleGroup);
+
+    const meta = document.createElement('div');
+    meta.className = 'sa-agent-code-edit-meta';
+
+    if (diff) {
+      const stats = document.createElement('span');
+      stats.className = 'sa-agent-code-edit-stats';
+      if (diff.totalAdd > 0) {
+        const statAdd = document.createElement('span');
+        statAdd.className = 'sa-agent-diff-stat-add';
+        statAdd.textContent = `+${diff.totalAdd}`;
+        stats.appendChild(statAdd);
+      }
+      if (diff.totalDel > 0) {
+        const statDel = document.createElement('span');
+        statDel.className = 'sa-agent-diff-stat-del';
+        statDel.textContent = `-${diff.totalDel}`;
+        stats.appendChild(statDel);
+      }
+      meta.appendChild(stats);
+    }
+
+    const badge = document.createElement('span');
+    badge.className = `sa-agent-code-edit-status sa-agent-status-${status}`;
+    badge.textContent = formatTraceStatus(status);
+    meta.appendChild(badge);
+
+    header.appendChild(meta);
+    container.appendChild(header);
+
+    // Body: side-by-side split diff
+    const content = document.createElement('div');
+    content.className = 'sa-agent-code-edit-content';
+
+    const scripts = diff && Array.isArray(diff.scripts) && diff.scripts.length > 0 ? diff.scripts : null;
+
+    if (scripts) {
+      for (const script of scripts) {
+        if (scripts.length > 1 && script.title) {
+          const scriptHeader = document.createElement('div');
+          scriptHeader.className = 'sa-agent-code-edit-script-title';
+          scriptHeader.textContent = script.title;
+          content.appendChild(scriptHeader);
+        }
+
+        const table = document.createElement('div');
+        table.className = 'sa-agent-split-table';
+
+        const hunks = Array.isArray(script.hunks) && script.hunks.length > 0 ? script.hunks : null;
+        const hunkList = hunks || [{ header: null, lines: script.diff || [] }];
+
+        for (const hunk of hunkList) {
+          if (hunk.header) {
+            const hunkHeader = document.createElement('div');
+            hunkHeader.className = 'sa-agent-split-hunk-header';
+            hunkHeader.textContent = hunk.header;
+            table.appendChild(hunkHeader);
+          }
+
+          const splitRows = buildSideBySideRows(hunk.lines || []);
+          for (const rowData of splitRows) {
+            const row = document.createElement('div');
+            row.className = 'sa-agent-split-row';
+
+            // Left column (old code)
+            const leftCol = document.createElement('div');
+            leftCol.className = `sa-agent-split-col sa-agent-split-left is-${rowData.left.type}`;
+            const leftNo = document.createElement('span');
+            leftNo.className = 'sa-agent-split-lineno';
+            leftNo.textContent = rowData.left.lineNo !== null ? String(rowData.left.lineNo) : '';
+            const leftText = document.createElement('span');
+            leftText.className = 'sa-agent-split-text';
+            leftText.textContent = rowData.left.text;
+            leftCol.appendChild(leftNo);
+            leftCol.appendChild(leftText);
+
+            // Divider: |
+            const divider = document.createElement('div');
+            divider.className = 'sa-agent-split-divider';
+            divider.textContent = '|';
+
+            // Right column (new code)
+            const rightCol = document.createElement('div');
+            rightCol.className = `sa-agent-split-col sa-agent-split-right is-${rowData.right.type}`;
+            const rightMark = document.createElement('span');
+            rightMark.className = `sa-agent-split-mark is-${rowData.right.type}`;
+            rightMark.textContent = rowData.right.mark;
+            const rightNo = document.createElement('span');
+            rightNo.className = 'sa-agent-split-lineno';
+            rightNo.textContent = rowData.right.lineNo !== null ? String(rowData.right.lineNo) : '';
+            const rightText = document.createElement('span');
+            rightText.className = 'sa-agent-split-text';
+            rightText.textContent = rowData.right.text;
+            rightCol.appendChild(rightMark);
+            rightCol.appendChild(rightNo);
+            rightCol.appendChild(rightText);
+
+            row.appendChild(leftCol);
+            row.appendChild(divider);
+            row.appendChild(rightCol);
+            table.appendChild(row);
+          }
+        }
+
+        content.appendChild(table);
+      }
+    } else if (entry.args && typeof entry.args.code === 'string' && entry.args.code.trim()) {
+      // Fallback synthetic diff for plain code string
+      const lines = entry.args.code.trim().split('\n');
+      const table = document.createElement('div');
+      table.className = 'sa-agent-split-table';
+      lines.forEach((lineText, idx) => {
+        const row = document.createElement('div');
+        row.className = 'sa-agent-split-row';
+
+        const leftCol = document.createElement('div');
+        leftCol.className = 'sa-agent-split-col sa-agent-split-left is-empty';
+        const leftNo = document.createElement('span');
+        leftNo.className = 'sa-agent-split-lineno';
+        const leftText = document.createElement('span');
+        leftText.className = 'sa-agent-split-text';
+        leftCol.appendChild(leftNo);
+        leftCol.appendChild(leftText);
+
+        const divider = document.createElement('div');
+        divider.className = 'sa-agent-split-divider';
+        divider.textContent = '|';
+
+        const rightCol = document.createElement('div');
+        rightCol.className = 'sa-agent-split-col sa-agent-split-right is-add';
+        const rightMark = document.createElement('span');
+        rightMark.className = 'sa-agent-split-mark is-add';
+        rightMark.textContent = '+';
+        const rightNo = document.createElement('span');
+        rightNo.className = 'sa-agent-split-lineno';
+        rightNo.textContent = String(idx + 1);
+        const rightText = document.createElement('span');
+        rightText.className = 'sa-agent-split-text';
+        rightText.textContent = lineText;
+        rightCol.appendChild(rightMark);
+        rightCol.appendChild(rightNo);
+        rightCol.appendChild(rightText);
+
+        row.appendChild(leftCol);
+        row.appendChild(divider);
+        row.appendChild(rightCol);
+        table.appendChild(row);
+      });
+      content.appendChild(table);
+    } else {
+      const empty = document.createElement('div');
+      empty.className = 'sa-agent-code-edit-empty';
+      empty.textContent = msg('diff-no-changes');
+      content.appendChild(empty);
+    }
+
+    container.appendChild(content);
+
+    // Approval controls when awaiting approval
+    if (interactive && status === 'awaiting' && entry.id) {
+      const approval = document.createElement('div');
+      approval.className = 'sa-agent-code-edit-approval';
+
+      const controls = document.createElement('div');
+      controls.className = 'sa-agent-tool-approval-controls';
+
+      const hint = document.createElement('span');
+      hint.className = 'sa-agent-tool-approval-hint';
+      hint.textContent = msg('trace-write-approval-hint');
+
+      const allow = document.createElement('button');
+      allow.type = 'button';
+      allow.className = 'sa-agent-tool-approval-button sa-agent-tool-allow';
+      allow.textContent = msg('trace-allow');
+      allow.addEventListener('click', () => resolveToolApproval(entry.id, true));
+
+      const deny = document.createElement('button');
+      deny.type = 'button';
+      deny.className = 'sa-agent-tool-approval-button sa-agent-tool-deny';
+      deny.textContent = msg('trace-deny');
+      deny.addEventListener('click', () => resolveToolApproval(entry.id, false));
+
+      const allowAll = document.createElement('button');
+      allowAll.type = 'button';
+      allowAll.className = 'sa-agent-tool-approval-button sa-agent-tool-allow-all';
+      allowAll.textContent = msg('trace-allow-all');
+      allowAll.addEventListener('click', () => {
+        setAutoApproveTools(true);
+        resolveToolApproval(entry.id, true);
+      });
+
+      controls.appendChild(hint);
+      controls.appendChild(allow);
+      controls.appendChild(deny);
+      controls.appendChild(allowAll);
+      approval.appendChild(controls);
+      container.appendChild(approval);
+    }
+
+    // Error message display if failed
+    if ((status === 'error' || entry.ok === false) && entry.summary && (entry.summary.error || entry.summary.message)) {
+      const errorNotice = document.createElement('div');
+      errorNotice.className = 'sa-agent-code-edit-error';
+      errorNotice.textContent = entry.summary.error || entry.summary.message;
+      container.appendChild(errorNotice);
+    }
+
+    return container;
+  };
+
+  /**
+   * Append trace entries into a message row.
+   * Separates normal tool calls (placed into collapsible stack) from code-write tool calls
+   * (placed directly as standalone EDIT side-by-side elements without collapsible cards).
+   *
+   * @param {HTMLElement} container Message row element.
+   * @param {Array<object>} trace Tool entries.
+   * @param {boolean} interactive Whether approval controls are interactive.
+   */
+  const appendTraceElements = (container, trace, interactive = false) => {
+    let currentNormalGroup = [];
+    for (const entry of trace) {
+      if (isCodeWriteTool(entry)) {
+        if (currentNormalGroup.length > 0) {
+          container.appendChild(buildTraceElement(currentNormalGroup, interactive));
+          currentNormalGroup = [];
+        }
+        container.appendChild(buildCodeEditElement(entry, interactive));
+      } else {
+        currentNormalGroup.push(entry);
+      }
+    }
+    if (currentNormalGroup.length > 0) {
+      container.appendChild(buildTraceElement(currentNormalGroup, interactive));
+    }
   };
 
   /**
@@ -1744,13 +2197,14 @@ export default async ({ addon, msg }) => {
       role.textContent = message.role === 'user' ? msg('role-you') : msg('role-agent');
       row.appendChild(role);
 
+      const hasResponsePart = parts && parts.some((p) => p && p.type === 'response' && p.content && p.content.trim());
       if (parts && parts.length) {
         appendAssistantParts(row, parts);
       } else if (message.role === 'assistant' && trace && trace.length > 0) {
-        row.appendChild(buildTraceElement(trace));
+        appendTraceElements(row, trace, false);
       }
 
-      if (hasContent && (!parts || !parts.length)) {
+      if (hasContent && (!parts || !parts.length || !hasResponsePart)) {
         const bubble = document.createElement('div');
         bubble.className = 'sa-agent-bubble';
         renderFormattedContent(bubble, message.content);
@@ -1872,12 +2326,24 @@ export default async ({ addon, msg }) => {
    */
   const commitTrace = (trace, content, isError, notice = '', meta = null) => {
     const parts = liveParts;
-    if (!parts.length && content) parts.push({ type: 'response', content, reasoning: '' });
+    const trimmedContent = typeof content === 'string' ? content.trim() : '';
+    if (trimmedContent) {
+      const hasResponse = parts.some((p) => p && p.type === 'response' && p.content && p.content.trim());
+      const lastPart = parts[parts.length - 1];
+      if (!lastPart || lastPart.type !== 'response') {
+        parts.push({ type: 'response', content: trimmedContent, reasoning: '' });
+      } else if (!lastPart.content) {
+        lastPart.content = trimmedContent;
+      } else if (!hasResponse) {
+        parts.push({ type: 'response', content: trimmedContent, reasoning: '' });
+      }
+    }
     if (!parts.length && trace.length) parts.push({ type: 'tools', trace });
-    const text = parts
-      .filter((part) => part.type === 'response')
-      .map((part) => part.content || '')
-      .join('\n\n');
+    const text =
+      parts
+        .filter((part) => part.type === 'response')
+        .map((part) => part.content || '')
+        .join('\n\n') || trimmedContent;
     liveParts = [];
     liveTrace = [];
     liveTraceElement = null;
@@ -2100,6 +2566,7 @@ export default async ({ addon, msg }) => {
               id: event.id,
               name: event.name,
               args: event.args || {},
+              diff: event.diff || null,
               status: autoApproved ? 'pending' : 'awaiting'
             });
             setStatus('');
@@ -2109,11 +2576,13 @@ export default async ({ addon, msg }) => {
             if (entry) {
               entry.status = 'pending';
               entry.args = event.args || entry.args || {};
+              if (event.diff) entry.diff = event.diff;
             } else {
               addLiveTool({
                 id: event.id,
                 name: event.name,
                 args: event.args || {},
+                diff: event.diff || null,
                 status: 'pending'
               });
             }
@@ -2126,11 +2595,13 @@ export default async ({ addon, msg }) => {
               entry.status = status;
               entry.summary = event.summary;
               entry.preview = event.preview;
+              if (event.diff) entry.diff = event.diff;
             } else {
               addLiveTool({
                 id: event.id,
                 name: event.name,
                 args: event.args || {},
+                diff: event.diff || null,
                 status,
                 summary: event.summary,
                 preview: event.preview
@@ -2662,6 +3133,19 @@ export default async ({ addon, msg }) => {
     settingsButton.appendChild(createIcon(iconSetting, 'sa-agent-settings-icon'));
     settingsButton.addEventListener('click', showSettingsPanel);
 
+    const scrathonButton = document.createElement('button');
+    scrathonButton.type = 'button';
+    scrathonButton.className = 'sa-agent-icon-button sa-agent-scrathon-button';
+    scrathonButton.title = msg('scrathon');
+    scrathonButton.setAttribute('aria-label', msg('scrathon'));
+    scrathonButton.appendChild(createIcon(iconBuild, 'sa-agent-scrathon-icon'));
+    scrathonButton.addEventListener('click', () => {
+      if (!scrathonWindow) {
+        scrathonWindow = createScrathonWindow({ vm, msg });
+      }
+      scrathonWindow.toggle();
+    });
+
     newConversationButton = document.createElement('button');
     newConversationButton.type = 'button';
     newConversationButton.className = 'sa-agent-icon-button sa-agent-new-chat-button';
@@ -2672,6 +3156,7 @@ export default async ({ addon, msg }) => {
 
     actions.appendChild(newConversationButton);
     actions.appendChild(settingsButton);
+    actions.appendChild(scrathonButton);
     actions.appendChild(positionSwitchElement);
     header.appendChild(heading);
     header.appendChild(actions);

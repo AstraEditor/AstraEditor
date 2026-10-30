@@ -3,6 +3,7 @@ import { replaceInternalIds } from './dsl.js';
 import { buildSystemPrompt } from './prompt.js';
 import { createScratchTools, TOOL_DEFINITIONS, WRITE_TOOL_NAMES } from './tools.js';
 import { describeToolResult, previewToolResult } from './trace.js';
+import { computeToolDiff } from './scrathon/diff.js';
 
 export const MAX_CONTEXT_MESSAGES = 24;
 const MAX_TOOL_RESULT_CHARS = 12000;
@@ -124,7 +125,7 @@ export const runAgent = async ({
       }))
   ];
 
-  const stepLimit = Math.max(1, Math.min(12, Number(maxSteps) || 8));
+  const stepLimit = Math.max(1, Math.min(25, Number(maxSteps) || 16));
   const trace = [];
   const lastUserMessage = [...messages].reverse().find((message) => message && message.role === 'user');
   const wantsIds = Boolean(lastUserMessage && asksForIds(lastUserMessage.content));
@@ -188,6 +189,14 @@ export const runAgent = async ({
         args,
         status: canRun ? 'awaiting' : 'pending'
       };
+      if (canRun && (toolName === 'apply_scripts' || toolName === 'delete_scripts')) {
+        try {
+          const diff = computeToolDiff(vm, toolName, args);
+          if (diff) entry.diff = diff;
+        } catch (error) {
+          // Diff calculation is best effort and must not break the agent loop.
+        }
+      }
       trace.push(entry);
       const traceIndex = trace.length - 1;
 
@@ -197,6 +206,7 @@ export const runAgent = async ({
           name: toolName,
           id: toolCall.id,
           args,
+          diff: entry.diff,
           traceIndex
         });
 
@@ -204,7 +214,7 @@ export const runAgent = async ({
         try {
           approved =
             typeof requestApproval === 'function'
-              ? await requestApproval({ name: toolName, args, id: toolCall.id, traceIndex, signal })
+              ? await requestApproval({ name: toolName, args, id: toolCall.id, traceIndex, diff: entry.diff, signal })
               : false;
         } catch (error) {
           if (signal && signal.aborted) throw createAbortError();
@@ -224,6 +234,7 @@ export const runAgent = async ({
             ok: false,
             denied: true,
             args,
+            diff: entry.diff,
             summary: entry.summary,
             preview: entry.preview,
             traceIndex
@@ -256,7 +267,13 @@ export const runAgent = async ({
         result = await handler(args);
       } catch (error) {
         succeeded = false;
-        result = { error: error && error.message ? error.message : String(error) };
+        const message =
+          error && typeof error.format === 'function'
+            ? error.format()
+            : error && error.message
+              ? error.message
+              : String(error);
+        result = { error: message };
       }
       throwIfAborted(signal);
 
@@ -271,6 +288,7 @@ export const runAgent = async ({
         id: toolCall.id,
         ok: succeeded,
         args,
+        diff: entry.diff,
         summary: entry.summary,
         preview: entry.preview,
         traceIndex
@@ -288,5 +306,57 @@ export const runAgent = async ({
     }
   }
 
-  throw new Error('The agent reached the maximum number of tool steps.');
+  // When stepLimit is reached, request one final plain-text completion without tools
+  // so the agent can provide a coherent explanation of what was done and what remains.
+  try {
+    emitEvent(onEvent, { type: 'thinking', step: stepLimit + 1 });
+    emitEvent(onEvent, { type: 'stream-start', step: stepLimit + 1, sanitize: !wantsIds });
+    const finalResponse = await callChatCompletion({
+      config,
+      messages: [
+        ...apiMessages,
+        {
+          role: 'user',
+          content:
+            'You have reached the tool step limit. Please summarize the actions you took and provide your final response to the user.'
+        }
+      ],
+      tools: undefined,
+      signal,
+      onDelta: (delta) => emitEvent(onEvent, { type: 'stream-delta', delta, step: stepLimit + 1 }),
+      onReasoning: (delta) => emitEvent(onEvent, { type: 'reasoning-delta', delta, step: stepLimit + 1 })
+    });
+    throwIfAborted(signal);
+    emitEvent(onEvent, { type: 'stream-end', step: stepLimit + 1 });
+    const content = finalResponse && finalResponse.content ? finalResponse.content.trim() : '';
+    const finalContent = wantsIds ? content : replaceInternalIds(vm, content);
+    if (finalContent) {
+      emitEvent(onEvent, {
+        type: 'assistant-step',
+        step: stepLimit + 1,
+        content: finalContent,
+        reasoning: finalResponse.reasoning || ''
+      });
+      return {
+        content: finalContent,
+        usage: finalResponse.usage,
+        trace
+      };
+    }
+  } catch (error) {
+    if (signal && signal.aborted) throw createAbortError();
+  }
+
+  const fallbackMsg =
+    'The agent completed the maximum allowed tool steps. Please review the actions taken in the trace above.';
+  emitEvent(onEvent, {
+    type: 'assistant-step',
+    step: stepLimit + 1,
+    content: fallbackMsg,
+    reasoning: ''
+  });
+  return {
+    content: fallbackMsg,
+    trace
+  };
 };

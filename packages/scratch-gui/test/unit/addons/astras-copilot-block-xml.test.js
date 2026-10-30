@@ -2,7 +2,11 @@
  * @jest-environment node
  */
 /* eslint-env jest */
-import { buildScriptsXml, describeCoreBlocks, generateId } from '../../../src/addons/addons/astras-copilot/agent/block-xml';
+import {
+  buildScriptsXml,
+  describeCoreBlocks,
+  generateId
+} from '../../../src/addons/addons/astras-copilot/agent/block-xml';
 
 /**
  * A minimal stand-in for the VM-backed resolution context.

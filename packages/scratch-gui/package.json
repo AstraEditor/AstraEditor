@@ -160,6 +160,7 @@
   },
   "jest": {
     "setupFiles": [
+      "<rootDir>/test/helpers/polyfill-stream.cjs",
       "raf/polyfill",
       "<rootDir>/test/helpers/enzyme-setup.js"
     ],

@@ -47,6 +47,7 @@ export const BLOCK_INPUTS = {
   looks_changesizeby: ['CHANGE'],
   looks_setsizeto: ['SIZE'],
   looks_goforwardbackward: ['NUM'],
+  looks_goforwardbackwardlayers: ['NUM'],
   motion_movesteps: ['STEPS'],
   motion_gotoxy: ['X', 'Y'],
   motion_goto: ['TO'],
@@ -250,6 +251,31 @@ const makeShadow = (opcode, inputName, value, ctx) => {
   };
 };
 
+/**
+ * Build a shadow with an explicitly chosen type (used by the Scrathon compiler).
+ * Broadcast inputs resolve their variable id through the context so the VM
+ * learns about the broadcast; extension menu inputs may pass an explicit field
+ * name (the menu name). All other types store a plain literal.
+ * @param {string} shadowType Shadow block type.
+ * @param {*} value Literal value.
+ * @param {string} [explicitField] Explicit field name (extension menus).
+ * @param {object} ctx Resolution context.
+ * @returns {object} Shadow element node.
+ */
+const makeExplicitShadow = (shadowType, value, explicitField, ctx) => {
+  const fieldName = explicitField || SHADOW_FIELD[shadowType] || 'TEXT';
+  if (fieldName === 'BROADCAST_OPTION') {
+    return makeFieldBlock('event_broadcast_menu', 'BROADCAST_OPTION', value, ctx);
+  }
+  let text = value === undefined || value === null ? '' : String(value);
+  if (shadowType.startsWith('math_')) text = String(Number(value) || 0);
+  return {
+    tag: 'shadow',
+    attrs: { type: shadowType },
+    children: [{ tag: 'field', attrs: { name: fieldName }, text }]
+  };
+};
+
 const makeFieldBlock = (opcode, fieldName, value, ctx) => {
   let fieldAttrs = { name: fieldName };
   let text = String(value === undefined || value === null ? '' : value);
@@ -313,6 +339,10 @@ const buildBlock = (desc, ctx, warnings) => {
       valueEl.children.push(makeFieldBlock('data_variable', 'VARIABLE', value.variable, ctx));
     } else if (isPlainObject(value) && 'list' in value) {
       valueEl.children.push(makeFieldBlock('data_listcontents', 'LIST', value.list, ctx));
+    } else if (isPlainObject(value) && typeof value.__shadow === 'string') {
+      // Explicit shadow type (used by the Scrathon compiler for extension menus
+      // and broadcast inputs whose shadow type is not in the static tables).
+      valueEl.children.push(makeExplicitShadow(value.__shadow, value.value, value.__field, ctx));
     } else if (value === null || value === undefined) {
       if (!BOOLEAN_INPUTS.has(inputName)) {
         valueEl.children.push(makeShadow(opcode, inputName, '', ctx));
@@ -341,7 +371,27 @@ const buildBlock = (desc, ctx, warnings) => {
 
   // 4. Mutation (custom blocks / advanced blocks).
   if (isPlainObject(desc.mutation)) {
-    blockEl.children.push({ tag: 'mutation', attrs: serializeMutation(desc.mutation), children: [] });
+    if (opcode === 'procedures_definition') {
+      blockEl.children.push({
+        tag: 'statement',
+        attrs: { name: 'custom_block' },
+        children: [
+          {
+            tag: 'shadow',
+            attrs: { type: 'procedures_prototype' },
+            children: [
+              {
+                tag: 'mutation',
+                attrs: serializeMutation(desc.mutation),
+                children: []
+              }
+            ]
+          }
+        ]
+      });
+    } else {
+      blockEl.children.push({ tag: 'mutation', attrs: serializeMutation(desc.mutation), children: [] });
+    }
   }
 
   // 5. Substack / else branch.

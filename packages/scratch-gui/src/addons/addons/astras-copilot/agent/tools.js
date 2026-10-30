@@ -1,8 +1,13 @@
 import dispatch from 'scratch-vm/src/dispatch/central-dispatch';
 
 import { getBlockLabel, scriptToDSL, previewScriptDSL } from './dsl.js';
-import { buildScriptsXml, describeCoreBlocks, generateId } from './block-xml.js';
+import { buildScriptsXml, generateId } from './block-xml.js';
 import { applyXml, hasApplier } from './writer.js';
+import { parse as parseScrathon } from './scrathon/parser.js';
+import { compileFile as compileScrathon } from './scrathon/compiler.js';
+import { createDecompiler } from './scrathon/decompiler.js';
+import { toScrathonError } from './scrathon/error.js';
+import { describeScrathonCatalog } from './scrathon/mappings.js';
 
 const MAX_FIELD_LENGTH = 500;
 const MAX_LIST_ITEMS = 30;
@@ -608,14 +613,16 @@ const getScript = (vm, args) => {
   const root = getBlock(target, rootId);
   const maxBlocks = Math.max(1, Math.min(MAX_SCRIPT_BLOCKS, Number(args.maxBlocks) || 200));
   const result = scriptToDSL(vm, target, rootId, maxBlocks);
+  const scrathon = createDecompiler(vm, target).script(rootId);
   return {
     target: getTargetIdentity(target),
     root: {
       label: root ? getBlockLabel(vm, root.opcode, root.mutation) : null
     },
     dsl: result.dsl,
+    scrathon: scrathon.code,
     blockCount: countScriptBlocks(target, rootId),
-    truncated: result.truncated
+    truncated: result.truncated || scrathon.truncated
   };
 };
 
@@ -782,21 +789,50 @@ export const WRITE_TOOL_NAMES = ['apply_scripts', 'delete_scripts', 'create_vari
 // --- Write tools -----------------------------------------------------------
 
 /**
- * Apply one script to a target's workspace.
+ * Compile a Scrathon source string into block descriptors.
+ *
+ * Scrathon is the text DSL documented in `docs/scrathon.md`. Compilation is
+ * strict: an unknown instruction, a type mismatch or an unimported extension
+ * throws a `ScrathonError` whose message carries the source line, so the model
+ * can fix the code and retry.
+ * @param {object} vm Scratch VM (for extension metadata).
+ * @param {string} code Scrathon source.
+ * @param {object} [options] Options.
+ * @param {string} [options.target] Fallback target name from a `target` declaration.
+ * @returns {{scripts: Array<object>, target: (string|null), imports: Array<string>}} Compiled result.
+ */
+export const compileScrathonCode = (vm, code, options = {}) => {
+  if (typeof code !== 'string' || code.trim() === '') {
+    throw new Error('code is required: provide Scrathon source text.');
+  }
+  try {
+    const file = parseScrathon(code);
+    const compiled = compileScrathon(file, { vm });
+    return {
+      scripts: compiled.scripts,
+      target: file.target || options.target || null,
+      imports: compiled.imports
+    };
+  } catch (error) {
+    throw new Error(toScrathonError(error).format());
+  }
+};
+
+/**
+ * Apply a list of block descriptors to a target's workspace.
  * @param {object} vm Scratch VM.
- * @param {object} args Tool arguments.
- * @param {object} args.target Target name or ID (omit for editing target).
- * @param {Array<object>} args.scripts Script descriptors.
+ * @param {string|undefined} targetSelector Target name or ID (omit for editing target).
+ * @param {Array<object>} scripts Script descriptors.
  * @returns {Promise<object>} Result.
  */
-const applyScripts = async (vm, args) => {
-  if (!Array.isArray(args.scripts) || args.scripts.length === 0) {
-    throw new Error('scripts is required: provide an array of { blocks: [...] } entries.');
+export const applyScriptDescriptors = async (vm, targetSelector, scripts) => {
+  if (!Array.isArray(scripts) || scripts.length === 0) {
+    throw new Error('No blocks to apply.');
   }
-  const target = requireTarget(vm, args.target);
+  const target = requireTarget(vm, targetSelector);
   if (!target || target.isStage === undefined) throw new Error('Target not found.');
   const ctx = makeVarContext(vm, target);
-  const compiled = buildScriptsXml(args.scripts, ctx);
+  const compiled = buildScriptsXml(scripts, ctx);
   const result = await applyXml(compiled.xml, {
     targetId: target.id,
     declarations: compiled.declarations
@@ -808,6 +844,127 @@ const applyScripts = async (vm, args) => {
     warnings: compiled.warnings,
     applied: result && result.blockIds ? result.blockIds.length : compiled.scripts
   };
+};
+
+const BUILTIN_EXTENSIONS = ['pen', 'music', 'text2speech', 'translate', 'videoSensing'];
+
+/**
+ * Ensure extensions used in code are loaded into the VM.
+ * Also auto-adds missing import declarations for built-in extensions so scripts don't fail compilation.
+ * @param {object} vm Scratch VM.
+ * @param {string} code Scrathon source.
+ * @returns {Promise<string>} Prepared source code.
+ */
+export const prepareScrathonCodeAndExtensions = async (vm, code) => {
+  if (typeof code !== 'string') return code;
+  let prepared = code;
+  const declaredImports = new Set();
+  const importRegex = /^import\s+([A-Za-z0-9_]+)/gm;
+  let match;
+  while ((match = importRegex.exec(code)) !== null) {
+    declaredImports.add(match[1]);
+  }
+
+  // Detect used built-in extensions without import
+  const missingImports = [];
+  for (const ext of BUILTIN_EXTENSIONS) {
+    if (!declaredImports.has(ext)) {
+      const pattern = new RegExp(`\\b${ext}\\.[a-zA-Z0-9_]+`, 'g');
+      if (pattern.test(code)) {
+        missingImports.push(ext);
+        declaredImports.add(ext);
+      }
+    }
+  }
+
+  if (missingImports.length > 0) {
+    prepared = `${missingImports.map((ext) => `import ${ext}`).join('\n')}\n${prepared}`;
+  }
+
+  // Ensure all declared/detected extensions are loaded in VM
+  if (vm && vm.extensionManager) {
+    for (const ext of declaredImports) {
+      const isLoaded =
+        typeof vm.extensionManager.isExtensionLoaded === 'function' && vm.extensionManager.isExtensionLoaded(ext);
+      if (!isLoaded && typeof vm.extensionManager.loadExtensionURL === 'function') {
+        try {
+          await vm.extensionManager.loadExtensionURL(ext);
+        } catch (e) {
+          // Ignore failure if offline or unsupported
+        }
+      }
+    }
+  }
+
+  return prepared;
+};
+
+/**
+ * Compile Scrathon source and apply it to a target in one step. Used by the
+ * Scrathon window; the agent tool calls this through `apply_scripts`.
+ * @param {object} vm Scratch VM.
+ * @param {object} args Arguments.
+ * @param {string} args.code Scrathon source.
+ * @param {string} [args.target] Target name or ID.
+ * @returns {Promise<object>} Result.
+ */
+export const applyScrathonSource = async (vm, { code, target } = {}) => {
+  const preparedCode = await prepareScrathonCodeAndExtensions(vm, code);
+  const compiled = compileScrathonCode(vm, preparedCode, { target });
+  const targetSelector = target || compiled.target || undefined;
+  const result = await applyScriptDescriptors(vm, targetSelector, compiled.scripts);
+  return { ...result, imports: compiled.imports };
+};
+
+/**
+ * List a target's top-level scripts decompiled to Scrathon. Used by the Scrathon
+ * window's "blocks -> code" direction.
+ * @param {object} vm Scratch VM.
+ * @param {string} [targetSelector] Target name or ID. Defaults to the editing target.
+ * @returns {{target: object, scripts: Array<object>}} Target identity and scripts.
+ */
+export const decompileTargetScripts = (vm, targetSelector) => {
+  const target = requireTarget(vm, targetSelector);
+  const decompiler = createDecompiler(vm, target);
+  const scripts = getScriptIds(target).map((scriptId) => {
+    const block = getBlock(target, scriptId);
+    return {
+      id: scriptId,
+      label: block ? getBlockLabel(vm, block.opcode, block.mutation) : null,
+      code: decompiler.script(scriptId).code
+    };
+  });
+  const imports = typeof decompiler.getImports === 'function' ? decompiler.getImports() : [];
+  return { target: getTargetIdentity(target), scripts, imports };
+};
+
+/**
+ * Apply one script to a target's workspace.
+ * @param {object} vm Scratch VM.
+ * @param {object} args Tool arguments.
+ * @param {object} args.target Target name or ID (omit for editing target).
+ * @param {Array<object>} args.scripts Script descriptors.
+ * @param {string} [args.code] Scrathon source (alternative to `scripts`).
+ * @returns {Promise<object>} Result.
+ */
+const applyScripts = async (vm, args) => {
+  let scripts = args.scripts;
+  let targetSelector = args.target;
+  let imports = null;
+
+  if (typeof args.code === 'string' && args.code.trim() !== '') {
+    const code = await prepareScrathonCodeAndExtensions(vm, args.code);
+    const compiled = compileScrathonCode(vm, code, { target: args.target });
+    scripts = compiled.scripts;
+    imports = compiled.imports;
+    if (!targetSelector && compiled.target) targetSelector = compiled.target;
+  }
+
+  if (!Array.isArray(scripts) || scripts.length === 0) {
+    throw new Error('Provide Scrathon `code`, or `scripts` as an array of { blocks: [...] } entries.');
+  }
+  const result = await applyScriptDescriptors(vm, targetSelector, scripts);
+  return { ...result, imports };
 };
 
 /**
@@ -887,16 +1044,16 @@ const renameTarget = async (vm, args) => {
 };
 
 /**
- * List core block opcodes an agent may use, optionally filtered.
+ * List core Scrathon DSL functions and signatures an agent may use, optionally filtered.
  * @param {object} args Tool arguments.
  * @returns {object} Catalog.
  */
 const blockCatalog = (args) => {
   const filter = String(args.query || '').trim();
-  const blocks = describeCoreBlocks(filter);
+  const blocks = describeScrathonCatalog(filter);
   return {
     count: blocks.length,
-    blocks: blocks.slice(0, 200)
+    blocks: blocks.slice(0, 100)
   };
 };
 
@@ -974,7 +1131,7 @@ export const TOOL_DEFINITIONS = [
     function: {
       name: 'get_script',
       description:
-        'Get a script as a readable Scratch DSL. Pass a script ID from list_scripts or search_blocks; the tool resolves the containing top-level script. The DSL renders core blocks, custom blocks, and extension blocks with their arguments, and does not expose per-block IDs.',
+        'Get a script as readable text. Returns both a plain-English DSL and an equivalent Scrathon snippet (the strict text language in docs/scrathon.md). Pass a script ID from list_scripts or search_blocks; the tool resolves the containing top-level script. Does not expose per-block IDs.',
       parameters: {
         type: 'object',
         properties: {
@@ -1068,7 +1225,7 @@ export const TOOL_DEFINITIONS = [
     function: {
       name: 'apply_scripts',
       description:
-        'ADD OR MODIFY blocks in a sprite or the stage. Compiles a JSON block tree into Scratch blocks and loads them into the real editor workspace (the change is undoable with Ctrl+Z). Use list_scripts/get_script first to see existing code, and block_catalog to confirm opcodes and input names. Only include the blocks you intend to add; this never deletes existing scripts. Provide blocks as a nested tree: {opcode, fields:{}, inputs:{}} where inputs are literal values or nested block trees, and control blocks use substack/substack2 arrays plus next for the following statement.',
+        'ADD OR MODIFY blocks in a sprite or the stage. Prefer the Scrathon `code` parameter: pass Scrathon source (see docs/scrathon.md) and it is compiled to Scratch blocks and loaded into the real editor workspace (undoable with Ctrl+Z). Use list_scripts/get_script first to see existing code, and block_catalog for Scrathon instruction names and signatures. Only add the blocks you intend; this never deletes existing scripts. Alternatively pass `scripts` as a nested tree: {opcode, fields:{}, inputs:{}} where inputs are literal values or nested block trees, and control blocks use substack/substack2 arrays plus next for the following statement.',
       parameters: {
         type: 'object',
         properties: {
@@ -1076,10 +1233,15 @@ export const TOOL_DEFINITIONS = [
             type: 'string',
             description: 'Sprite name or ID. Omit to use the current editing target.'
           },
+          code: {
+            type: 'string',
+            description:
+              'Scrathon source to compile and apply. Preferred over `scripts`. Example: "@when_flag_clicked\\ndef main():\\n    move(${n:10})".'
+          },
           scripts: {
             type: 'array',
             description:
-              'Array of scripts. Each script is {x, y, blocks: [blockTree, ...]} where blocks is the whole stack starting from a hat block.',
+              'Array of scripts (legacy alternative to `code`). Each script is {x, y, blocks: [blockTree, ...]} where blocks is the whole stack starting from a hat block.',
             items: {
               type: 'object',
               properties: {
@@ -1095,7 +1257,6 @@ export const TOOL_DEFINITIONS = [
             }
           }
         },
-        required: ['scripts'],
         additionalProperties: false
       }
     }
@@ -1175,11 +1336,15 @@ export const TOOL_DEFINITIONS = [
     function: {
       name: 'block_catalog',
       description:
-        'List core Scratch block opcodes with their input names, optionally filtered. Use this to look up exact opcodes/inputs before calling apply_scripts.',
+        'List core Scrathon DSL functions, hat decorators, and expression signatures with typed sigils (${n:...}, ${s:...}, ${b:...}, etc.), optionally filtered. ALWAYS use this to look up valid Scrathon DSL function names and argument signatures before writing code for apply_scripts.',
       parameters: {
         type: 'object',
         properties: {
-          query: { type: 'string', description: 'Optional case-insensitive filter, e.g. "motion" or "data_".' }
+          query: {
+            type: 'string',
+            description:
+              'Optional name, category, or keyword to filter by (e.g. "motion", "sound", "control", "var", "looks", "hat").'
+          }
         },
         additionalProperties: false
       }
