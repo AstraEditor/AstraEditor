@@ -2190,6 +2190,29 @@ button:hover .sa-agent-scrathon-icon {
   opacity: 0.7;
 }
 
+.sa-agent-settings-hint {
+  font-size: 11px;
+  line-height: 1.4;
+  opacity: 0.7;
+  overflow-wrap: anywhere;
+}
+
+.sa-agent-settings-request-json {
+  box-sizing: border-box;
+  max-height: 260px;
+  margin: 0;
+  padding: 8px;
+  overflow: auto;
+  border: 1px solid var(--ui-black-transparent);
+  border-radius: 4px;
+  background: rgba(0, 0, 0, 0.08);
+  color: var(--text-primary);
+  font-family: 'Courier New', monospace;
+  font-size: 11px;
+  line-height: 1.5;
+  white-space: pre;
+}
+
 .sa-agent-settings-error {
   color: #d93025;
   font-size: 12px;

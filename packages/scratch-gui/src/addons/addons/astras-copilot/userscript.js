@@ -18,7 +18,7 @@ import BottomPanel from '../../ui/bottom-panel/bottom-panel.js';
 import { callChatCompletion } from './agent/client.js';
 import { getBlockLabel, replaceInternalIds } from './agent/dsl.js';
 import { renderMarkdown } from './agent/markdown.js';
-import { MAX_CONTEXT_MESSAGES, runAgent } from './agent/loop.js';
+import { buildRequestPreview, MAX_CONTEXT_MESSAGES, runAgent } from './agent/loop.js';
 import { buildSystemPrompt } from './agent/prompt.js';
 import { TOOL_DEFINITIONS } from './agent/tools.js';
 import { createScrathonWindow } from './agent/scrathon/window.js';
@@ -49,6 +49,8 @@ const DEFAULT_MODELS = [
   'deepseek-reasoner'
 ];
 
+const REASONING_EFFORTS = ['default', 'low', 'high', 'max'];
+
 const DEFAULT_CONFIG = {
   apiUrl: 'https://api.openai.com/v1/chat/completions',
   apiKey: '',
@@ -59,7 +61,34 @@ const DEFAULT_CONFIG = {
   temperature: 0.2,
   maxTokens: 3000,
   retries: 2,
+  reasoningEffort: 'default',
   streamIdleTimeoutMs: 30000
+};
+
+/**
+ * Convert a full API URL to the base URL shown in the settings field.
+ * @param {string} apiUrl API URL.
+ * @returns {string} Base URL.
+ */
+const getApiBaseUrl = (apiUrl) =>
+  String(apiUrl || '')
+    .trim()
+    .replace(/\/+$/, '')
+    .replace(/\/chat\/completions$/i, '');
+
+/**
+ * Convert the base URL entered by the user to a full chat-completions URL.
+ * @param {string} baseUrl Base URL, for example https://api.example.com/v1.
+ * @returns {string} Full endpoint.
+ */
+const buildApiEndpoint = (baseUrl) => {
+  const value = String(baseUrl || '')
+    .trim()
+    .replace(/\/+$/, '');
+  if (!value) return DEFAULT_CONFIG.apiUrl;
+  if (/\/chat\/completions$/i.test(value)) return value;
+  if (/\/v\d+[a-z0-9.]*$/i.test(value)) return `${value}/chat/completions`;
+  return `${value}/v1/chat/completions`;
 };
 
 /**
@@ -187,6 +216,7 @@ const loadConfig = () => {
     temperature: Number.isFinite(Number(stored.temperature)) ? Number(stored.temperature) : DEFAULT_CONFIG.temperature,
     maxTokens: Number.isFinite(Number(stored.maxTokens)) ? Number(stored.maxTokens) : DEFAULT_CONFIG.maxTokens,
     retries: Number.isFinite(Number(stored.retries)) ? Number(stored.retries) : DEFAULT_CONFIG.retries,
+    reasoningEffort: REASONING_EFFORTS.includes(stored.reasoningEffort) ? stored.reasoningEffort : 'default',
     streamIdleTimeoutMs: Number.isFinite(Number(stored.streamIdleTimeoutMs))
       ? Number(stored.streamIdleTimeoutMs)
       : DEFAULT_CONFIG.streamIdleTimeoutMs
@@ -409,10 +439,14 @@ export default async ({ addon, msg }) => {
   let scrathonWindow = null;
   let settingsErrorElement = null;
   let apiUrlInput = null;
+  let apiUrlHint = null;
   let apiKeyInput = null;
   let headersInput = null;
   let streamInput = null;
   let autoApproveInput = null;
+  let capabilitySelect = null;
+  let requestPreviewElement = null;
+  let requestPreviewTimer = 0;
   let autoApproveTools = false;
   let modeButton = null;
   let modelSelectElement = null;
@@ -2684,11 +2718,80 @@ export default async ({ addon, msg }) => {
   };
 
   /**
+   * Read the model list currently shown in the settings textarea.
+   * @returns {Array<string>} Model names.
+   */
+  const getModelsFromInput = () => {
+    const raw = String((modelsInput && modelsInput.value) || config.models || '').trim();
+    return raw
+      .split(/[\n,]/)
+      .map((model) => model.trim())
+      .filter(Boolean);
+  };
+
+  /**
+   * Build a config snapshot from the current form values for the request preview.
+   * @returns {object} Preview config.
+   */
+  const buildPreviewConfig = () => {
+    const models = getModelsFromInput();
+    let model = config.model;
+    if (!models.includes(model)) model = models[0] || DEFAULT_CONFIG.model;
+    return {
+      ...config,
+      apiUrl: buildApiEndpoint(apiUrlInput ? apiUrlInput.value : config.apiUrl),
+      model,
+      stream: streamInput ? Boolean(streamInput.checked) : config.stream !== false,
+      temperature: Math.max(0, Math.min(2, Number(temperatureInput.value))),
+      maxTokens: Math.max(1, Math.min(32000, Number(maxTokensInput.value) || DEFAULT_CONFIG.maxTokens)),
+      reasoningEffort: capabilitySelect ? capabilitySelect.value : config.reasoningEffort
+    };
+  };
+
+  /**
+   * Update the small endpoint hint under the API URL field.
+   */
+  const updateEndpointHint = () => {
+    if (!apiUrlHint || !apiUrlInput) return;
+    apiUrlHint.textContent = msg('settings-endpoint-hint', {
+      url: buildApiEndpoint(apiUrlInput.value)
+    });
+  };
+
+  /**
+   * Render the complete request JSON that the next send would use.
+   */
+  const updateRequestPreview = () => {
+    if (!requestPreviewElement) return;
+    try {
+      const body = buildRequestPreview({
+        config: buildPreviewConfig(),
+        messages: chatMessages,
+        writeEnabled
+      });
+      requestPreviewElement.textContent = JSON.stringify(body, null, 2);
+    } catch (error) {
+      requestPreviewElement.textContent = error && error.message ? error.message : String(error);
+    }
+  };
+
+  /**
+   * Debounce request-preview updates while the user edits settings.
+   */
+  const scheduleRequestPreview = () => {
+    if (requestPreviewTimer) clearTimeout(requestPreviewTimer);
+    requestPreviewTimer = setTimeout(() => {
+      requestPreviewTimer = 0;
+      updateRequestPreview();
+    }, 150);
+  };
+
+  /**
    * Populate the settings fields from the current config.
    */
   const populateSettings = () => {
     if (!apiUrlInput) return;
-    apiUrlInput.value = config.apiUrl;
+    apiUrlInput.value = getApiBaseUrl(config.apiUrl);
     apiKeyInput.value = config.apiKey;
     if (modelsInput) modelsInput.value = config.models || config.model || '';
     headersInput.value = JSON.stringify(config.headers || {}, null, 2);
@@ -2697,6 +2800,9 @@ export default async ({ addon, msg }) => {
     if (temperatureInput) temperatureInput.value = String(config.temperature);
     if (maxTokensInput) maxTokensInput.value = String(config.maxTokens);
     if (retriesInput) retriesInput.value = String(config.retries);
+    if (capabilitySelect) capabilitySelect.value = config.reasoningEffort || 'default';
+    updateEndpointHint();
+    updateRequestPreview();
     settingsErrorElement.textContent = '';
     settingsErrorElement.style.display = 'none';
   };
@@ -2754,7 +2860,7 @@ export default async ({ addon, msg }) => {
     }
 
     config = {
-      apiUrl: apiUrlInput.value.trim() || DEFAULT_CONFIG.apiUrl,
+      apiUrl: buildApiEndpoint(apiUrlInput.value),
       apiKey: apiKeyInput.value.trim(),
       model: activeModel,
       models: rawModels,
@@ -2763,6 +2869,7 @@ export default async ({ addon, msg }) => {
       temperature: Math.max(0, Math.min(2, Number(temperatureInput.value))),
       maxTokens: Math.max(1, Math.min(32000, Number(maxTokensInput.value) || DEFAULT_CONFIG.maxTokens)),
       retries: Math.max(0, Math.min(5, Number(retriesInput.value))),
+      reasoningEffort: capabilitySelect ? capabilitySelect.value : config.reasoningEffort,
       streamIdleTimeoutMs:
         typeof config.streamIdleTimeoutMs === 'number' ? config.streamIdleTimeoutMs : DEFAULT_CONFIG.streamIdleTimeoutMs
     };
@@ -2806,6 +2913,7 @@ export default async ({ addon, msg }) => {
      * Add a labeled field to the settings form.
      * @param {string} labelText Field label.
      * @param {HTMLElement} field Field element.
+     * @returns {HTMLLabelElement} Field wrapper.
      */
     const addField = (labelText, field) => {
       const label = document.createElement('label');
@@ -2817,13 +2925,17 @@ export default async ({ addon, msg }) => {
       label.appendChild(labelSpan);
       label.appendChild(field);
       form.appendChild(label);
+      return label;
     };
 
     apiUrlInput = document.createElement('input');
     apiUrlInput.className = 'sa-agent-settings-input';
     apiUrlInput.type = 'url';
     apiUrlInput.spellcheck = false;
-    addField(msg('api-url'), apiUrlInput);
+    const apiUrlField = addField(msg('api-url'), apiUrlInput);
+    apiUrlHint = document.createElement('div');
+    apiUrlHint.className = 'sa-agent-settings-hint';
+    apiUrlField.appendChild(apiUrlHint);
 
     apiKeyInput = document.createElement('input');
     apiKeyInput.className = 'sa-agent-settings-input';
@@ -2862,6 +2974,20 @@ export default async ({ addon, msg }) => {
     retriesInput.step = '1';
     addField(msg('settings-retries'), retriesInput);
 
+    capabilitySelect = document.createElement('select');
+    capabilitySelect.className = 'sa-agent-settings-input sa-agent-settings-select';
+    for (const effort of REASONING_EFFORTS) {
+      const option = document.createElement('option');
+      option.value = effort;
+      option.textContent = effort;
+      capabilitySelect.appendChild(option);
+    }
+    const capabilityField = addField(msg('settings-capability'), capabilitySelect);
+    const capabilityHint = document.createElement('div');
+    capabilityHint.className = 'sa-agent-settings-hint';
+    capabilityHint.textContent = msg('settings-capability-hint');
+    capabilityField.appendChild(capabilityHint);
+
     streamInput = document.createElement('input');
     streamInput.className = 'sa-agent-settings-checkbox';
     streamInput.type = 'checkbox';
@@ -2871,6 +2997,29 @@ export default async ({ addon, msg }) => {
     headersInput.className = 'sa-agent-settings-input sa-agent-settings-textarea';
     headersInput.spellcheck = false;
     addField(msg('extra-headers'), headersInput);
+
+    const previewLabel = document.createElement('div');
+    previewLabel.className = 'sa-agent-settings-label';
+    previewLabel.textContent = msg('settings-request-preview');
+    form.appendChild(previewLabel);
+
+    requestPreviewElement = document.createElement('pre');
+    requestPreviewElement.className = 'sa-agent-settings-request-json';
+    form.appendChild(requestPreviewElement);
+
+    const previewHint = document.createElement('div');
+    previewHint.className = 'sa-agent-settings-hint';
+    previewHint.textContent = msg('settings-request-preview-hint');
+    form.appendChild(previewHint);
+
+    form.addEventListener('input', () => {
+      updateEndpointHint();
+      scheduleRequestPreview();
+    });
+    form.addEventListener('change', () => {
+      updateEndpointHint();
+      scheduleRequestPreview();
+    });
 
     const note = document.createElement('div');
     note.className = 'sa-agent-settings-note';

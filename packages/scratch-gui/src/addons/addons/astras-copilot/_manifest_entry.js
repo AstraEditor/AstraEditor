@@ -3,7 +3,7 @@ const manifest = {
   editorOnly: true,
   name: 'Astra Copilot',
   description: 'A Scratch Agent for AstraEditor',
-  tags: ['new', 'recommanded'],
+  tags: ['new', 'recommended'],
   credits: [
     {
       name: 'Cyberexplorer',

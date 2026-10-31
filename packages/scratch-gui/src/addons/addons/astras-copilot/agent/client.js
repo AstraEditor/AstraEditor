@@ -343,6 +343,35 @@ const isRetryableError = (error) => {
 };
 
 /**
+ * Build the chat-completions request body.
+ * Shared by the real request path and the settings preview so both always match.
+ * @param {object} options Options.
+ * @param {object} options.config Agent configuration.
+ * @param {Array<object>} options.messages Chat messages.
+ * @param {Array<object>} [options.tools] Tool definitions.
+ * @param {boolean} [options.stream] Whether to stream; defaults to config.stream.
+ * @returns {object} Request body.
+ */
+export const buildRequestBody = ({ config, messages, tools, stream }) => {
+  const wantsStream = typeof stream === 'boolean' ? stream : config.stream !== false;
+  const body = {
+    model: config.model,
+    messages,
+    temperature: Number.isFinite(Number(config.temperature)) ? Number(config.temperature) : 0.2,
+    max_tokens: Math.max(1, Math.min(32000, Number(config.maxTokens) || 3000)),
+    stream: wantsStream
+  };
+  if (config.reasoningEffort && config.reasoningEffort !== 'default') {
+    body.reasoning_effort = config.reasoningEffort;
+  }
+  if (Array.isArray(tools) && tools.length > 0) {
+    body.tools = tools;
+    body.tool_choice = 'auto';
+  }
+  return body;
+};
+
+/**
  * Perform one chat-completions attempt.
  * @param {object} options Options.
  * @param {object} options.config Agent configuration.
@@ -359,17 +388,7 @@ const attemptRequest = async ({ config, url, messages, tools, signal, onDelta, o
   const headers = buildHeaders(config);
   if (wantsStream) headers.Accept = 'text/event-stream';
 
-  const body = {
-    model: config.model,
-    messages,
-    temperature: Number.isFinite(Number(config.temperature)) ? Number(config.temperature) : 0.2,
-    max_tokens: Math.max(1, Math.min(32000, Number(config.maxTokens) || 3000)),
-    stream: wantsStream
-  };
-  if (Array.isArray(tools) && tools.length > 0) {
-    body.tools = tools;
-    body.tool_choice = 'auto';
-  }
+  const body = buildRequestBody({ config, messages, tools, stream: wantsStream });
 
   const response = await fetch(url.toString(), {
     method: 'POST',

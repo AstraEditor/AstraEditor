@@ -1,4 +1,4 @@
-import { callChatCompletion } from './client.js';
+import { buildRequestBody, callChatCompletion } from './client.js';
 import { replaceInternalIds } from './dsl.js';
 import { buildSystemPrompt } from './prompt.js';
 import { createScratchTools, TOOL_DEFINITIONS, WRITE_TOOL_NAMES } from './tools.js';
@@ -79,6 +79,59 @@ const throwIfAborted = (signal) => {
 };
 
 /**
+ * Build the system + conversation messages sent to the model.
+ * @param {object} options Options.
+ * @param {Array<object>} options.messages Chat history.
+ * @param {boolean} [options.writeEnabled] Whether edit tools are available.
+ * @returns {Array<object>} API messages.
+ */
+export const buildApiMessages = ({ messages, writeEnabled = false }) => [
+  {
+    role: 'system',
+    content: buildSystemPrompt({ writeEnabled })
+  },
+  ...messages
+    .filter(
+      (message) =>
+        message &&
+        (message.role === 'user' || message.role === 'assistant') &&
+        typeof message.content === 'string' &&
+        message.content.trim().length > 0
+    )
+    .slice(-MAX_CONTEXT_MESSAGES)
+    .map((message) => ({
+      role: message.role,
+      content: message.content
+    }))
+];
+
+/**
+ * Select the tool definitions exposed to the model.
+ * @param {boolean} [writeEnabled] Whether edit tools are available.
+ * @returns {Array<object>} Active tool definitions.
+ */
+export const getActiveTools = (writeEnabled = false) => {
+  if (writeEnabled) return TOOL_DEFINITIONS;
+  return TOOL_DEFINITIONS.filter((definition) => !WRITE_TOOL_NAMES.includes(definition.function.name));
+};
+
+/**
+ * Build the exact request body that the next send would use.
+ * Used by the settings panel's request preview.
+ * @param {object} options Options.
+ * @param {object} options.config Agent configuration.
+ * @param {Array<object>} options.messages Chat history.
+ * @param {boolean} [options.writeEnabled] Whether edit tools are available.
+ * @returns {object} Request body.
+ */
+export const buildRequestPreview = ({ config, messages, writeEnabled = false }) =>
+  buildRequestBody({
+    config,
+    messages: buildApiMessages({ messages, writeEnabled }),
+    tools: getActiveTools(writeEnabled)
+  });
+
+/**
  * Run the Astra Copilot agent loop with approval-gated tools.
  * @param {object} options Options.
  * @param {object} options.vm Scratch VM.
@@ -102,28 +155,8 @@ export const runAgent = async ({
   maxSteps = 8
 }) => {
   const tools = createScratchTools(vm);
-  const activeTools = writeEnabled
-    ? TOOL_DEFINITIONS
-    : TOOL_DEFINITIONS.filter((definition) => !WRITE_TOOL_NAMES.includes(definition.function.name));
-  const apiMessages = [
-    {
-      role: 'system',
-      content: buildSystemPrompt({ writeEnabled })
-    },
-    ...messages
-      .filter(
-        (message) =>
-          message &&
-          (message.role === 'user' || message.role === 'assistant') &&
-          typeof message.content === 'string' &&
-          message.content.trim().length > 0
-      )
-      .slice(-MAX_CONTEXT_MESSAGES)
-      .map((message) => ({
-        role: message.role,
-        content: message.content
-      }))
-  ];
+  const activeTools = getActiveTools(writeEnabled);
+  const apiMessages = buildApiMessages({ messages, writeEnabled });
 
   const stepLimit = Math.max(1, Math.min(25, Number(maxSteps) || 16));
   const trace = [];
