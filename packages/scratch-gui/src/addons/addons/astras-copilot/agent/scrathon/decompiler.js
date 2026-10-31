@@ -502,7 +502,29 @@ export const createDecompiler = (vm, target) => {
       const rendered = renderShadow(child, tag);
       return rendered;
     }
+    // A variable/list reporter is a first-class value in number, string and
+    // colour slots; emit its resource sigil directly so scope round-trips.
+    if (
+      (tag === 'n' || tag === 's' || tag === 'c') &&
+      (child.opcode === 'data_variable' || child.opcode === 'data_listcontents')
+    ) {
+      return renderResourceSigil(child);
+    }
     return `\${${sigilTag}:${renderExpression(child, depth + 1)}}`;
+  };
+
+  /**
+   * Render a variable or list reporter as a resource sigil.
+   * @param {object} block data_variable / data_listcontents block.
+   * @returns {string} Resource sigil.
+   */
+  const renderResourceSigil = (block) => {
+    const isVariable = block.opcode === 'data_variable';
+    const field = isVariable ? (block.fields || {}).VARIABLE : (block.fields || {}).LIST;
+    const name = String(field ? field.value : isVariable ? 'variable' : 'list');
+    const tag = isVariable ? 'v' : 'l';
+    const prefix = getVariableScope(target, field) === 'local' ? 'local:' : '';
+    return `\${${tag}:${prefix}"${escapeString(name)}"}`;
   };
 
   /**

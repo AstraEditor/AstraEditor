@@ -139,7 +139,50 @@ export const compileFile = (file, { vm } = {}) => {
     // the legacy `${msg:"..."}` form. Both resolve to the broadcast menu
     // shadow / field id; broadcasts do not need localized message objects.
     const broadcastString = Boolean(expected && expected.t === 'msg' && sigil.tag === 's');
-    if (expected && expected.t && expected.t !== sigil.tag && !broadcastString && slotIsStrict(expected.t, sigil.tag)) {
+    const isResource = sigil.tag === 'v' || sigil.tag === 'l';
+
+    // Variables and lists are dynamic reporters: they can fill any value slot
+    // (number, string, colour) regardless of the slot's declared primitive
+    // type, because Scratch casts values at runtime. They still cannot fill
+    // boolean sockets or dropdown fields.
+    const resourceAllowed =
+      isResource &&
+      (!expected ||
+        (expected.t !== 'b' && expected.t !== 'm' && !(expected.k === 'field' && expected.t !== sigil.tag)));
+
+    if (isResource && expected && !resourceAllowed) {
+      if (expected.t === 'b') {
+        throw fail(
+          'TypeMismatchError',
+          `Slot "${expected.name}" is a boolean input and cannot accept a ${TAG_LABEL[sigil.tag]} reporter. ` +
+            'Use a comparison or a boolean expression inside ${b:...}.',
+          owner
+        );
+      }
+      if (expected.t === 'm') {
+        throw fail(
+          'TypeMismatchError',
+          `Slot "${expected.name}" is a dropdown menu and cannot accept a ${TAG_LABEL[sigil.tag]}. ` +
+            'Use ${m:...} with a menu option.',
+          owner
+        );
+      }
+      throw fail(
+        'TypeMismatchError',
+        `Slot "${expected.name}" expects a ${TAG_LABEL[expected.t]} field (${tagSyntax(expected.t)}), ` +
+          `but received a ${TAG_LABEL[sigil.tag]} sigil (${tagSyntax(sigil.tag)}).`,
+        owner
+      );
+    }
+
+    if (
+      !resourceAllowed &&
+      expected &&
+      expected.t &&
+      expected.t !== sigil.tag &&
+      !broadcastString &&
+      slotIsStrict(expected.t, sigil.tag)
+    ) {
       throw fail(
         'TypeMismatchError',
         `Slot "${expected.name}" expects a ${TAG_LABEL[expected.t]} token (${tagSyntax(expected.t)}), ` +
@@ -447,6 +490,18 @@ export const compileFile = (file, { vm } = {}) => {
       if (argInfo && (argInfo.menu || argInfo.type === 'menu')) {
         const menuName = argInfo.menu || argName;
         const menuInfo = meta.menus ? meta.menus[menuName] : null;
+        // Menus that accept reporters can take a variable/list reporter directly.
+        if (sigil && (sigil.tag === 'v' || sigil.tag === 'l')) {
+          if (menuInfo && menuInfo.acceptReporters) {
+            inputs[argName] = compileSigil(sigil, owner, { t: undefined, k: 'input', name: argName });
+            return;
+          }
+          throw fail(
+            'TypeMismatchError',
+            `Menu argument "${argName}" cannot accept a ${TAG_LABEL[sigil.tag]}. Use \${m:...} with a menu option.`,
+            owner
+          );
+        }
         const value = sigil ? resourceName(sigil.expr, owner) : literalScalar(argNode, owner);
         if (menuInfo && !menuInfo.acceptReporters) {
           fields[argName] = value;
@@ -460,6 +515,13 @@ export const compileFile = (file, { vm } = {}) => {
         return;
       }
 
+      if (type === 'boolean' && sigil && (sigil.tag === 'v' || sigil.tag === 'l')) {
+        throw fail(
+          'TypeMismatchError',
+          `Argument "${argName}" is a boolean input and cannot accept a ${TAG_LABEL[sigil.tag]} reporter.`,
+          owner
+        );
+      }
       if (type === 'boolean' || (sigil && sigil.tag === 'b')) {
         inputs[argName] = compileBoolean(sigil ? sigil.expr : argNode, owner);
         return;

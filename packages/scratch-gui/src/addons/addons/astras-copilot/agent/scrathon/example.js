@@ -40,6 +40,7 @@ export const SCRATHON_EXAMPLE = [
   '    list_delete_all(${l:"inventory"})',
   '    list_add(${l:"inventory"}, ${s:"Sword"})',
   '    list_add(${l:local:"backpack"}, ${s:"Potion"})',
+  '    set_size_to(${v:local:"hp"})  # variable reporter directly in a number slot',
   '    list_insert(${l:"inventory"}, ${n:1}, ${s:"Shield"})',
   '    set_var(${v:"first_item"}, ${s:list_item(${l:"inventory"}, ${n:1})})',
   '    set_var(${v:"item_count"}, ${n:list_length(${l:"inventory"})})',

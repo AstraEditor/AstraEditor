@@ -622,6 +622,32 @@ test('supports full-word variable and list sigils', () => {
   expect(fourth.fields.VARIABLE).toEqual({ __name: 'hp', __scope: 'local' });
 });
 
+test('accepts variable and list reporters in typed value slots', () => {
+  const scripts = compile(
+    ['@when_flag_clicked', 'def main():', '    move(${v:local:"speed"})', '    say(${l:"inventory"})', ''].join('\n')
+  );
+  const move = scripts[0].blocks[0].next[0];
+  const say = scripts[0].blocks[0].next[1];
+  expect(move.inputs.STEPS).toEqual({
+    opcode: 'data_variable',
+    fields: { VARIABLE: { __name: 'speed', __scope: 'local' } }
+  });
+  expect(say.inputs.MESSAGE).toEqual({
+    opcode: 'data_listcontents',
+    fields: { LIST: 'inventory' }
+  });
+});
+
+test('rejects variables in boolean and dropdown slots', () => {
+  const booleanError = compileError('wait_until(${v:"done"})');
+  expect(booleanError.type).toBe('TypeMismatchError');
+  expect(booleanError.message).toContain('boolean input');
+
+  const menuError = compileError('set_effect(${v:"effect"}, ${n:25})');
+  expect(menuError.type).toBe('TypeMismatchError');
+  expect(menuError.message).toContain('dropdown menu');
+});
+
 test('rejects n:list and points to the explicit list sigil', () => {
   const error = compileError('list_add(${n:list"列表名"}, ${s:"x"})');
   expect(error.type).toBe('SyntaxError');
@@ -640,6 +666,47 @@ test('scope prefixes are rejected on non-variable sigils', () => {
   const error = compileError('say(${n:local:"hp"})');
   expect(error.type).toBe('SyntaxError');
   expect(error.message).toContain('only valid for variable and list sigils');
+});
+
+test('decompiler emits direct resource sigils inside typed slots', () => {
+  const scripts = compile(
+    ['@when_flag_clicked', 'def main():', '    move(${v:local:"speed"})', '    say(${l:local:"inventory"})', ''].join(
+      '\n'
+    )
+  );
+  const target = makeTarget(scripts);
+  const localVar = { id: 'var-local-speed', name: 'speed', type: '' };
+  const localList = { id: 'list-local-inventory', name: 'inventory', type: 'list' };
+  target.isStage = false;
+  target.variables = {
+    [localVar.id]: localVar,
+    [localList.id]: localList
+  };
+  target.runtime = {
+    getTargetForStage: () => ({ isStage: true, variables: {} })
+  };
+  for (const block of Object.values(target.blocks._blocks)) {
+    if (block.fields.VARIABLE && block.fields.VARIABLE.value === 'speed') {
+      block.fields.VARIABLE.id = localVar.id;
+    }
+    if (block.fields.LIST && block.fields.LIST.value === 'inventory') {
+      block.fields.LIST.id = localList.id;
+    }
+  }
+  const rootId = Object.values(target.blocks._blocks).find((block) => block.topLevel).id;
+  const { code } = createDecompiler(null, target).script(rootId);
+  expect(code).toContain('move(${v:local:"speed"})');
+  expect(code).toContain('say(${l:local:"inventory"})');
+
+  const recompiled = compile(code);
+  expect(recompiled[0].blocks[0].next[0].inputs.STEPS).toEqual({
+    opcode: 'data_variable',
+    fields: { VARIABLE: { __name: 'speed', __scope: 'local' } }
+  });
+  expect(recompiled[0].blocks[0].next[1].inputs.MESSAGE).toEqual({
+    opcode: 'data_listcontents',
+    fields: { LIST: { __name: 'inventory', __scope: 'local' } }
+  });
 });
 
 test('makeVarContext creates local variables on sprites and globals on the stage', () => {
@@ -689,7 +756,7 @@ test('decompiler emits local scope for local variables and leaves globals unpref
   const { code } = createDecompiler(null, target).script(rootId);
   expect(code).toContain('set_var(${v:local:"hp"}, ${n:1})');
   expect(code).toContain('set_var(${v:"score"}, ${n:0})');
-  expect(code).toContain('say(${s:${v:local:"hp"}})');
+  expect(code).toContain('say(${v:local:"hp"})');
 
   // The emitted local-scope syntax parses back into the same scoped descriptor.
   const recompiled = compile(code);
@@ -851,6 +918,37 @@ test('prepareScrathonCodeAndExtensions auto-prepends missing extension imports',
   // Should compile cleanly now
   const compiled = compileFile(parse(prepared));
   expect(compiled.scripts[0].blocks[0].next[0].opcode).toBe('pen_clear');
+});
+
+test('extension menus accept variable reporters only when acceptReporters is set', () => {
+  const makeVm = (acceptReporters) => ({
+    runtime: {
+      _blockInfo: [
+        {
+          id: 'demo',
+          menuInfo: { CHOICE: { acceptReporters, items: ['a', 'b'] } },
+          blocks: [{ info: { opcode: 'pick', arguments: { CHOICE: { type: 'menu' } } } }]
+        }
+      ]
+    }
+  });
+  const source = ['import demo', '@when_flag_clicked', 'def main():', '    demo.pick(${v:"choice"})', ''].join('\n');
+
+  const result = compileFile(parse(source), { vm: makeVm(true) });
+  expect(result.scripts[0].blocks[0].next[0].inputs.CHOICE).toEqual({
+    opcode: 'data_variable',
+    fields: { VARIABLE: 'choice' }
+  });
+
+  let error = null;
+  try {
+    compileFile(parse(source), { vm: makeVm(false) });
+  } catch (compileFailure) {
+    error = compileFailure;
+  }
+  expect(error).not.toBeNull();
+  expect(error.type).toBe('TypeMismatchError');
+  expect(error.message).toContain('Menu argument');
 });
 
 test('compile user extension snippet', () => {
