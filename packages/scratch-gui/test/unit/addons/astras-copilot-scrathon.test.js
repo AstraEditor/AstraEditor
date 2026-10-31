@@ -638,6 +638,46 @@ test('accepts variable and list reporters in typed value slots', () => {
   });
 });
 
+test('reporter inputs keep a default shadow so unplugging restores the input box', () => {
+  const scripts = compile(
+    [
+      '@when_flag_clicked',
+      'def main():',
+      '    move(${v:local:"speed"})',
+      '    say(${l:"inventory"})',
+      '    touching_color(${v:"color"})',
+      ''
+    ].join('\n')
+  );
+  const { xml } = buildScriptsXml(scripts, makeCtx());
+  const inputFragment = (name) => {
+    const match = xml.match(new RegExp(`<value name="${name}">([\\s\\S]*?)</value>`));
+    return match ? match[1] : '';
+  };
+  const steps = inputFragment('STEPS');
+  expect(steps).toContain('<shadow type="math_number"><field name="NUM">0</field></shadow>');
+  expect(steps).toContain('<block type="data_variable"');
+
+  const message = inputFragment('MESSAGE');
+  expect(message).toContain('<shadow type="text"><field name="TEXT"/></shadow>');
+  expect(message).toContain('<block type="data_listcontents"');
+
+  const color = inputFragment('COLOR');
+  expect(color).toContain('<shadow type="colour_picker"><field name="COLOUR">#000000</field></shadow>');
+  expect(color).toContain('<block type="data_variable"');
+});
+
+test('extension reporter inputs keep their typed shadow', () => {
+  const scripts = compile(
+    ['import pen', '@when_flag_clicked', 'def main():', '    pen.changePenSizeBy(${v:"delta"})', ''].join('\n')
+  );
+  const { xml } = buildScriptsXml(scripts, makeCtx());
+  const match = xml.match(/<value name="SIZE">([\s\S]*?)<\/value>/);
+  expect(match).not.toBeNull();
+  expect(match[1]).toContain('<shadow type="math_number"><field name="NUM">0</field></shadow>');
+  expect(match[1]).toContain('<block type="data_variable"');
+});
+
 test('rejects variables in boolean and dropdown slots', () => {
   const booleanError = compileError('wait_until(${v:"done"})');
   expect(booleanError.type).toBe('TypeMismatchError');
@@ -935,9 +975,10 @@ test('extension menus accept variable reporters only when acceptReporters is set
   const source = ['import demo', '@when_flag_clicked', 'def main():', '    demo.pick(${v:"choice"})', ''].join('\n');
 
   const result = compileFile(parse(source), { vm: makeVm(true) });
-  expect(result.scripts[0].blocks[0].next[0].inputs.CHOICE).toEqual({
+  expect(result.scripts[0].blocks[0].next[0].inputs.CHOICE).toMatchObject({
     opcode: 'data_variable',
-    fields: { VARIABLE: 'choice' }
+    fields: { VARIABLE: 'choice' },
+    __defaultShadow: 'demo_menu_CHOICE'
   });
 
   let error = null;

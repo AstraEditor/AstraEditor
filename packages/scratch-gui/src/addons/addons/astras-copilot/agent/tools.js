@@ -745,11 +745,15 @@ export const makeVarContext = (vm, target) => {
   const stageCostumes = stage && typeof stage.getCostumes === 'function' ? stage.getCostumes() : [];
   const backdrop = stageCostumes[stageCostumes.length - 1] || stageCostumes[0] || null;
   const firstSound = target && typeof target.getSounds === 'function' ? target.getSounds()[0] : null;
+  const firstBroadcast = Object.values((stage && stage.variables) || {}).find(
+    (variable) => variable && variable.type === 'broadcast_msg'
+  );
 
   return {
     defaultCostume: firstCostume ? firstCostume.name : '',
     defaultBackdrop: backdrop ? backdrop.name : '',
     defaultSound: firstSound ? firstSound.name : '',
+    defaultBroadcast: firstBroadcast ? firstBroadcast.name : '',
     resolveField(fieldName, rawName, scope = null) {
       const name = String(rawName === undefined || rawName === null ? '' : rawName);
       const type = fieldName === 'LIST' ? 'list' : fieldName === 'BROADCAST_OPTION' ? 'broadcast_msg' : '';

@@ -493,7 +493,11 @@ export const compileFile = (file, { vm } = {}) => {
         // Menus that accept reporters can take a variable/list reporter directly.
         if (sigil && (sigil.tag === 'v' || sigil.tag === 'l')) {
           if (menuInfo && menuInfo.acceptReporters) {
-            inputs[argName] = compileSigil(sigil, owner, { t: undefined, k: 'input', name: argName });
+            const reporter = compileSigil(sigil, owner, { t: undefined, k: 'input', name: argName });
+            if (reporter && typeof reporter === 'object') {
+              reporter.__defaultShadow = `${meta.categoryId}_menu_${menuName}`;
+            }
+            inputs[argName] = reporter;
             return;
           }
           throw fail(
@@ -529,6 +533,9 @@ export const compileFile = (file, { vm } = {}) => {
       const shadowType = EXTENSION_SHADOW[type] || 'text';
       if (sigil) {
         const compiled = compileSigil(sigil, owner, { t: undefined, k: 'input', name: argName });
+        if (compiled && typeof compiled === 'object' && typeof compiled.opcode === 'string') {
+          compiled.__defaultShadow = shadowType;
+        }
         inputs[argName] = wrapShadowInput(shadowType, compiled);
         return;
       }

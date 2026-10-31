@@ -237,7 +237,62 @@ const defaultLiteralFor = (opcode, inputName, ctx) => {
     if (resource === 'backdrop' && ctx.defaultBackdrop) return ctx.defaultBackdrop;
     if (resource === 'sound' && ctx.defaultSound) return ctx.defaultSound;
   }
+  if (inputName === 'BROADCAST_INPUT' && ctx && ctx.defaultBroadcast) return ctx.defaultBroadcast;
   return '';
+};
+
+/**
+ * Build the default shadow that should sit underneath a reporter in a value
+ * input. Without it, unplugging the reporter leaves an empty socket instead of
+ * restoring the normal input box.
+ * @param {string} opcode Parent block opcode.
+ * @param {string} inputName Input name.
+ * @param {object} ctx Resolution context.
+ * @returns {object|null} Shadow element, or null when no shadow is appropriate.
+ */
+const makeDefaultShadowForInput = (opcode, inputName, ctx) => {
+  if (BOOLEAN_INPUTS.has(inputName)) return null;
+  const literal = defaultLiteralFor(opcode, inputName, ctx);
+  const shadowType = pickShadowType(opcode, inputName, literal);
+  if (!shadowType) return null;
+  // Do not create an empty broadcast just to provide a shadow.
+  if (shadowType === 'event_broadcast_menu' && !literal) return null;
+  const value = shadowType === 'colour_picker' && !literal ? '#000000' : literal;
+  return makeExplicitShadow(shadowType, value, undefined, ctx);
+};
+
+/**
+ * Default literal for a shadow type chosen by the compiler for an extension
+ * reporter input.
+ * @param {string} shadowType Shadow type.
+ * @returns {string} Literal value.
+ */
+const defaultLiteralForShadowType = (shadowType) => {
+  if (shadowType === 'colour_picker') return '#000000';
+  if (shadowType === 'note') return '60';
+  if (shadowType.startsWith('math_')) return '0';
+  return '';
+};
+
+/**
+ * Build the shadow underneath a reporter input, preferring the compiler's
+ * explicit extension shadow hint.
+ * @param {string} opcode Parent block opcode.
+ * @param {string} inputName Input name.
+ * @param {object} value Reporter descriptor.
+ * @param {object} ctx Resolution context.
+ * @returns {object|null} Shadow element.
+ */
+const makeShadowForReporterValue = (opcode, inputName, value, ctx) => {
+  if (value && typeof value.__defaultShadow === 'string') {
+    return makeExplicitShadow(
+      value.__defaultShadow,
+      defaultLiteralForShadowType(value.__defaultShadow),
+      undefined,
+      ctx
+    );
+  }
+  return makeDefaultShadowForInput(opcode, inputName, ctx);
 };
 
 /**
@@ -384,10 +439,18 @@ const buildBlock = (desc, ctx, warnings) => {
   for (const [inputName, value] of Object.entries(providedInputs)) {
     const valueEl = { tag: 'value', attrs: { name: inputName }, children: [] };
     if (isPlainObject(value) && typeof value.opcode === 'string') {
+      // Keep the normal input box underneath the reporter so unplugging it
+      // restores the shadow instead of leaving an empty socket.
+      const shadow = makeShadowForReporterValue(opcode, inputName, value, ctx);
+      if (shadow) valueEl.children.push(shadow);
       valueEl.children.push(buildBlock(value, ctx, warnings));
     } else if (isPlainObject(value) && 'variable' in value) {
+      const shadow = makeDefaultShadowForInput(opcode, inputName, ctx);
+      if (shadow) valueEl.children.push(shadow);
       valueEl.children.push(makeFieldBlock('data_variable', 'VARIABLE', value.variable, ctx));
     } else if (isPlainObject(value) && 'list' in value) {
+      const shadow = makeDefaultShadowForInput(opcode, inputName, ctx);
+      if (shadow) valueEl.children.push(shadow);
       valueEl.children.push(makeFieldBlock('data_listcontents', 'LIST', value.list, ctx));
     } else if (isPlainObject(value) && typeof value.__shadow === 'string') {
       // Explicit shadow type (used by the Scrathon compiler for extension menus
