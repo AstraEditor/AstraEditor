@@ -1261,8 +1261,10 @@ button:hover .sa-agent-scrathon-icon {
 
 .sa-agent-diff-header {
   display: flex;
+  flex-wrap: wrap;
   justify-content: space-between;
   align-items: center;
+  gap: 4px;
   padding: 4px 8px;
   background: rgba(0, 0, 0, 0.04);
   border-bottom: 1px solid var(--ui-black-transparent);
@@ -1303,6 +1305,114 @@ button:hover .sa-agent-scrathon-icon {
 
 .sa-agent-diff-stat-del {
   color: #cf222e;
+}
+
+.sa-agent-diff-view-toggle {
+  display: inline-flex;
+  overflow: hidden;
+  border: 1px solid var(--ui-black-transparent);
+  border-radius: 4px;
+}
+
+.sa-agent-diff-view-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 22px;
+  padding: 0;
+  border: 0;
+  border-right: 1px solid var(--ui-black-transparent);
+  color: var(--text-primary);
+  background: transparent;
+  opacity: 0.55;
+  cursor: pointer;
+}
+
+.sa-agent-diff-view-icon {
+  width: 14px;
+  height: 14px;
+  filter: none;
+}
+
+.sa-agent-diff-view-button:last-child {
+  border-right: 0;
+}
+
+.sa-agent-diff-view-button:hover {
+  background: var(--ui-primary-transparent);
+  opacity: 0.85;
+}
+
+.sa-agent-diff-view-button.is-active {
+  color: var(--looks-secondary);
+  background: var(--ui-primary-transparent);
+  opacity: 1;
+}
+
+.sa-agent-blocks-view {
+  display: none;
+  box-sizing: border-box;
+  max-height: 460px;
+  padding: 8px;
+  overflow: auto;
+  background: var(--ui-white);
+}
+
+.sa-agent-blocks-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.sa-agent-blocks-section {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.sa-agent-blocks-label {
+  font-size: 10px;
+  font-weight: bold;
+  opacity: 0.8;
+}
+
+.sa-agent-blocks-section.is-before .sa-agent-blocks-label {
+  color: #cf222e;
+}
+
+.sa-agent-blocks-section.is-after .sa-agent-blocks-label {
+  color: #2e9e4f;
+}
+
+.sa-agent-blocks-svg {
+  max-width: 100%;
+  height: auto;
+}
+
+.sa-agent-blocks-empty,
+.sa-agent-blocks-error {
+  font-size: 11px;
+  line-height: 1.4;
+  opacity: 0.75;
+}
+
+.sa-agent-blocks-error {
+  color: #cf222e;
+  overflow-wrap: anywhere;
+}
+
+.sa-agent-blocks-fallback {
+  max-height: 220px;
+  margin: 4px 0 0;
+  padding: 8px;
+  overflow: auto;
+  border-radius: 4px;
+  background: rgba(0, 0, 0, 0.08);
+  font-family: 'Courier New', monospace;
+  font-size: 11px;
+  white-space: pre;
 }
 
 .sa-agent-diff-body {

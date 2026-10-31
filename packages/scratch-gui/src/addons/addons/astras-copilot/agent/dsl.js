@@ -71,6 +71,7 @@ const CORE_TEMPLATES = {
   looks_nextbackdrop: 'next backdrop',
   looks_gotofrontback: 'go to {FRONT_BACK} layer',
   looks_goforwardbackward: 'go {FORWARD_BACKWARD} {NUMBER} layers',
+  looks_goforwardbackwardlayers: 'go {FORWARD_BACKWARD} {NUM} layers',
   looks_changeeffectby: 'change {EFFECT} effect by {CHANGE}',
   looks_seteffectto: 'set {EFFECT} effect to {VALUE}',
   looks_cleargraphiceffects: 'clear graphic effects',

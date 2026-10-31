@@ -26,11 +26,11 @@
   - [x] 左右双栏对比布局 (Side-by-Side Split Diff)：`EDIT -> Target` 头部，左栏显示原始行号与代码，中间竖线 `|` 分隔，右栏显示标记（` `、`+`、`~`）、新行号与变更代码。
   - [x] 集成审批控制（允许、拒绝、始终允许）与状态徽章展示。
 
-- [ ] **1.5 作品更改双模式视图切换 (Scrathon 代码 vs ScratchBlocks 积木)**
-  - [ ] 在对话流作品更改 / Diff 审查区域顶部提供视图切换按钮（支持「Scrathon 文本」与「ScratchBlocks 图形积木」双模切换）。
-  - [ ] **Scrathon 模式**：展示双栏文本 Split Diff，适合快速审查语法、行级增减与代码细节。
-  - [ ] **ScratchBlocks 模式**：调用 ScratchBlocks / Blockly SVG 渲染管线，将变更代码直接渲染为原生彩色积木形态，提供直观的图形化变更对比。
-  - [ ] 视图状态持久化与用户偏好记忆（默认优先或记住上次选择的查看模式）。
+- [x] **1.5 作品更改双模式视图切换 (Scrathon 代码 vs ScratchBlocks 积木)**
+  - [x] 在对话流作品更改 / Diff 审查区域顶部提供视图切换按钮（支持「Scrathon 文本」与「ScratchBlocks 图形积木」双模切换）。
+  - [x] **Scrathon 模式**：展示双栏文本 Split Diff，适合快速审查语法、行级增减与代码细节。
+  - [x] **ScratchBlocks 模式**：调用 scratch-blocks 原生 SVG 渲染管线，将修改前/修改后的脚本直接渲染为原生彩色积木形态，并提供直观的图形化变更对比。
+  - [x] 视图状态持久化与用户偏好记忆（`astras-agent-diff-view-v1`，默认积木模式；按钮使用图标）。
 
 ---
 

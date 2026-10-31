@@ -13,6 +13,8 @@ import iconPlan from '!../../../lib/tw-recolor/build!./icon-plan.svg';
 import iconUndo from '!../../../lib/tw-recolor/build!./icon-undo.svg';
 import iconRetry from '!../../../lib/tw-recolor/build!./icon-retry.svg';
 import iconBranch from '!../../../lib/tw-recolor/build!./icon-branch.svg';
+import iconDiffText from '!../../../lib/tw-recolor/build!./icon-diff-text.svg';
+import iconDiffBlocks from '!../../../lib/tw-recolor/build!./icon-diff-blocks.svg';
 import SideBar from '../../ui/side-bar/side-bar.js';
 import BottomPanel from '../../ui/bottom-panel/bottom-panel.js';
 import { callChatCompletion } from './agent/client.js';
@@ -23,6 +25,7 @@ import { buildSystemPrompt } from './agent/prompt.js';
 import { TOOL_DEFINITIONS } from './agent/tools.js';
 import { createScrathonWindow } from './agent/scrathon/window.js';
 import { buildSideBySideRows } from './agent/scrathon/diff.js';
+import { renderBlockPreview } from './agent/block-preview.js';
 import { setApplier } from './agent/writer.js';
 
 const PLUGIN_ID = 'astras-copilot';
@@ -31,6 +34,9 @@ const HISTORY_KEY = 'astras-agent-history-v2';
 const CONVERSATIONS_KEY = 'astras-agent-conversations-v1';
 const POSITION_KEY = 'AEAstrasCopilotPosition';
 const WRITE_ENABLED_KEY = 'astras-agent-write-enabled-v1';
+const DIFF_VIEW_KEY = 'astras-agent-diff-view-v1';
+const DIFF_VIEW_TEXT = 'text';
+const DIFF_VIEW_BLOCKS = 'blocks';
 const MAX_HISTORY_MESSAGES = 40;
 const MAX_CONVERSATIONS = 30;
 const WIDE_LAYOUT_MIN_WIDTH = 560;
@@ -175,6 +181,30 @@ const loadWriteEnabled = () => {
 const saveWriteEnabled = (enabled) => {
   try {
     localStorage.setItem(WRITE_ENABLED_KEY, enabled ? 'true' : 'false');
+  } catch (error) {
+    // Ignore storage failures.
+  }
+};
+
+/**
+ * Load the preferred diff review view.
+ * @returns {string} 'text' or 'blocks'.
+ */
+const loadDiffViewMode = () => {
+  try {
+    return localStorage.getItem(DIFF_VIEW_KEY) === DIFF_VIEW_TEXT ? DIFF_VIEW_TEXT : DIFF_VIEW_BLOCKS;
+  } catch (error) {
+    return DIFF_VIEW_BLOCKS;
+  }
+};
+
+/**
+ * Persist the preferred diff review view.
+ * @param {string} mode 'text' or 'blocks'.
+ */
+const saveDiffViewMode = (mode) => {
+  try {
+    localStorage.setItem(DIFF_VIEW_KEY, mode);
   } catch (error) {
     // Ignore storage failures.
   }
@@ -452,6 +482,7 @@ export default async ({ addon, msg }) => {
   let modelSelectElement = null;
   let modelsInput = null;
   let writeEnabled = loadWriteEnabled();
+  let diffViewMode = loadDiffViewMode();
   const approvedConversations = new Set();
   let temperatureInput = null;
   let maxTokensInput = null;
@@ -1490,6 +1521,159 @@ export default async ({ addon, msg }) => {
   };
 
   /**
+   * Build the Scrathon/Blocks segmented control.
+   * @returns {{element: HTMLElement, update: Function, onSelect: (Function|null)}} Toggle control.
+   */
+  const buildDiffViewToggle = () => {
+    const group = document.createElement('div');
+    group.className = 'sa-agent-diff-view-toggle';
+    group.setAttribute('role', 'group');
+    const buttons = new Map();
+    const options = [
+      [DIFF_VIEW_TEXT, msg('diff-view-text'), iconDiffText],
+      [DIFF_VIEW_BLOCKS, msg('diff-view-blocks'), iconDiffBlocks]
+    ];
+    const control = {
+      element: group,
+      onSelect: null,
+      update: (mode) => {
+        for (const [key, button] of buttons) {
+          const active = key === mode;
+          button.classList.toggle('is-active', active);
+          button.setAttribute('aria-pressed', active ? 'true' : 'false');
+        }
+      }
+    };
+    for (const [mode, label, iconSource] of options) {
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.className = 'sa-agent-diff-view-button';
+      button.title = label;
+      button.setAttribute('aria-label', label);
+      button.appendChild(createIcon(iconSource, 'sa-agent-diff-view-icon'));
+      button.addEventListener('click', () => {
+        if (typeof control.onSelect === 'function') control.onSelect(mode);
+      });
+      buttons.set(mode, button);
+      group.appendChild(button);
+    }
+    control.update(diffViewMode);
+    return control;
+  };
+
+  /**
+   * Remember the preferred diff view for newly rendered cards.
+   * @param {string} mode 'text' or 'blocks'.
+   */
+  const rememberDiffViewMode = (mode) => {
+    if (mode !== DIFF_VIEW_TEXT && mode !== DIFF_VIEW_BLOCKS) return;
+    diffViewMode = mode;
+    saveDiffViewMode(mode);
+  };
+
+  /**
+   * Render a script as ScratchBlocks SVG.
+   * @param {HTMLElement} container Target container.
+   * @param {Array<object>} pairs Script pairs `{label, code, kind}`.
+   */
+  const renderScratchBlocksView = async (container, pairs) => {
+    container.textContent = '';
+    const grid = document.createElement('div');
+    grid.className = 'sa-agent-blocks-grid';
+    container.appendChild(grid);
+    let blockly;
+    try {
+      blockly = await ensureBlockly();
+    } catch (error) {
+      const note = document.createElement('div');
+      note.className = 'sa-agent-blocks-error';
+      note.textContent = msg('blocks-preview-error', {
+        message: error && error.message ? error.message : String(error)
+      });
+      grid.appendChild(note);
+      return;
+    }
+    for (const pair of pairs) {
+      if (!pair || typeof pair.code !== 'string' || !pair.code.trim()) continue;
+      const section = document.createElement('div');
+      section.className = 'sa-agent-blocks-section';
+      if (pair.kind) section.classList.add(`is-${pair.kind}`);
+      const label = document.createElement('div');
+      label.className = 'sa-agent-blocks-label';
+      label.textContent = pair.label || '';
+      section.appendChild(label);
+      try {
+        const svg = await renderBlockPreview({
+          blockly,
+          vm,
+          targetName: pair.target,
+          code: pair.code
+        });
+        if (!svg) throw new Error('The preview returned no SVG.');
+        section.appendChild(svg);
+      } catch (error) {
+        if (typeof console !== 'undefined' && typeof console.warn === 'function') {
+          console.warn('[Astra Copilot] Failed to render block preview:', pair.label, error);
+        }
+        const reason = error && error.message ? error.message : String(error);
+        const note = document.createElement('div');
+        note.className = 'sa-agent-blocks-error';
+        note.textContent = msg('blocks-preview-error', { message: reason });
+        note.title = reason;
+        const code = document.createElement('pre');
+        code.className = 'sa-agent-blocks-fallback';
+        code.textContent = pair.code;
+        section.appendChild(note);
+        section.appendChild(code);
+      }
+      grid.appendChild(section);
+    }
+    if (grid.children.length === 0) {
+      const empty = document.createElement('div');
+      empty.className = 'sa-agent-blocks-empty';
+      empty.textContent = msg('blocks-preview-empty');
+      grid.appendChild(empty);
+    }
+  };
+
+  /**
+   * Attach a text/blocks view switch to a diff card.
+   * @param {object} options Options.
+   * @param {HTMLElement} options.textView Text view container.
+   * @param {HTMLElement} options.blocksView Blocks view container.
+   * @param {Array<object>} options.pairs Script pairs.
+   * @param {object} options.toggle Toggle control.
+   */
+  const attachDiffView = ({ textView, blocksView, pairs, toggle }) => {
+    let rendered = false;
+    let rendering = false;
+    const renderBlocks = async () => {
+      if (rendered || rendering) return;
+      rendering = true;
+      try {
+        await renderScratchBlocksView(blocksView, pairs);
+        // eslint-disable-next-line require-atomic-updates
+        rendered = true;
+      } finally {
+        // eslint-disable-next-line require-atomic-updates
+        rendering = false;
+      }
+    };
+    const apply = (mode) => {
+      const showBlocks = mode === DIFF_VIEW_BLOCKS;
+      textView.style.display = showBlocks ? 'none' : '';
+      blocksView.style.display = showBlocks ? 'block' : 'none';
+      toggle.update(mode);
+      if (showBlocks) renderBlocks().catch(() => {});
+    };
+    toggle.onSelect = (mode) => {
+      rememberDiffViewMode(mode);
+      apply(mode);
+    };
+    apply(diffViewMode);
+  };
+
+  /**
    * Build an in-chat visual code diff card.
    * @param {object} diff Diff data produced by computeToolDiff/computeScopeDiff.
    * @returns {HTMLElement} Diff card element.
@@ -1537,8 +1721,10 @@ export default async ({ addon, msg }) => {
       stats.appendChild(statDel);
     }
 
+    const toggle = buildDiffViewToggle();
     header.appendChild(titleGroup);
     header.appendChild(stats);
+    header.appendChild(toggle.element);
     card.appendChild(header);
 
     const body = document.createElement('div');
@@ -1622,6 +1808,32 @@ export default async ({ addon, msg }) => {
     }
 
     card.appendChild(body);
+
+    const blocksView = document.createElement('div');
+    blocksView.className = 'sa-agent-blocks-view';
+    card.appendChild(blocksView);
+
+    const pairs = [];
+    for (const script of diff.scripts) {
+      const title = script.title || 'Script';
+      if (script.oldCode && script.oldCode.trim()) {
+        pairs.push({
+          label: `${title} · ${msg('diff-before')}`,
+          code: script.oldCode,
+          kind: 'before',
+          target: diff.target
+        });
+      }
+      if (script.newCode && script.newCode.trim()) {
+        pairs.push({
+          label: `${title} · ${msg('diff-after')}`,
+          code: script.newCode,
+          kind: 'after',
+          target: diff.target
+        });
+      }
+    }
+    attachDiffView({ textView: body, blocksView, pairs, toggle });
     return card;
   };
 
@@ -1883,6 +2095,9 @@ export default async ({ addon, msg }) => {
       meta.appendChild(stats);
     }
 
+    const toggle = buildDiffViewToggle();
+    meta.appendChild(toggle.element);
+
     const badge = document.createElement('span');
     badge.className = `sa-agent-code-edit-status sa-agent-status-${status}`;
     badge.textContent = formatTraceStatus(status);
@@ -2018,6 +2233,41 @@ export default async ({ addon, msg }) => {
     }
 
     container.appendChild(content);
+
+    const blocksView = document.createElement('div');
+    blocksView.className = 'sa-agent-blocks-view';
+    container.appendChild(blocksView);
+
+    const pairs = [];
+    if (scripts) {
+      for (const script of scripts) {
+        const title = script.title || 'Script';
+        if (script.oldCode && script.oldCode.trim()) {
+          pairs.push({
+            label: `${title} · ${msg('diff-before')}`,
+            code: script.oldCode,
+            kind: 'before',
+            target: targetName
+          });
+        }
+        if (script.newCode && script.newCode.trim()) {
+          pairs.push({
+            label: `${title} · ${msg('diff-after')}`,
+            code: script.newCode,
+            kind: 'after',
+            target: targetName
+          });
+        }
+      }
+    } else if (entry.args && typeof entry.args.code === 'string' && entry.args.code.trim()) {
+      pairs.push({
+        label: msg('diff-after'),
+        code: entry.args.code,
+        kind: 'after',
+        target: targetName
+      });
+    }
+    attachDiffView({ textView: content, blocksView, pairs, toggle });
 
     // Approval controls when awaiting approval
     if (interactive && status === 'awaiting' && entry.id) {
