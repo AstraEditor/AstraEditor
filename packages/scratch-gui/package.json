@@ -13,6 +13,7 @@
   "packageManager": "pnpm@11.17.0",
   "scripts": {
     "build": "pnpm run clean && webpack --bail",
+    "build:scrathon-doc": "node scripts/build-scrathon-doc.mjs",
     "clean": "rimraf ./build && mkdirp build && rimraf ./dist && mkdirp dist",
     "deploy": "touch build/.nojekyll && gh-pages -t -d build -m \"[skip ci] Build for $(git log --pretty=format:%H -n1)\"",
     "prepublish": "node scripts/prepublish.mjs",
@@ -170,7 +171,6 @@
     "moduleNameMapper": {
       "\\.(jpg|jpeg|png|gif|eot|otf|webp|svg|ttf|woff|woff2|mp4|webm|wav|mp3|m4a|aac|oga)$": "<rootDir>/test/__mocks__/fileMock.js",
       "\\.(css|less)$": "<rootDir>/test/__mocks__/styleMock.js",
-      "\\.md$": "<rootDir>/test/__mocks__/mdMock.js",
       "editor-msgs(\\.js)?$": "<rootDir>/test/__mocks__/editor-msgs-mock.js"
     }
   }

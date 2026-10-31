@@ -3,7 +3,7 @@ import dispatch from 'scratch-vm/src/dispatch/central-dispatch';
 import { getBlockLabel, scriptToDSL, previewScriptDSL } from './dsl.js';
 import { buildScriptsXml, generateId } from './block-xml.js';
 import { applyXml, hasApplier } from './writer.js';
-import scrathonDoc from '../docs/scrathon.md';
+import { SCRATHON_DOC } from '../docs/scrathon-doc.js';
 import { parse as parseScrathon } from './scrathon/parser.js';
 import { collectExtensionBlocks, compileFile as compileScrathon } from './scrathon/compiler.js';
 import { createDecompiler } from './scrathon/decompiler.js';
@@ -1541,7 +1541,7 @@ export const createScratchTools = (vm) => ({
   get_extension_source: (args) => getExtensionSource(vm, args || {}),
   get_runtime_state: () => getRuntimeState(vm),
   block_catalog: (args) => blockCatalog(vm, args || {}),
-  Scrathon_doc: () => ({ content: scrathonDoc }),
+  Scrathon_doc: () => ({ content: SCRATHON_DOC }),
   scrathon_example: () => ({ code: SCRATHON_EXAMPLE }),
   get_write_status: () => getWriteReady(),
   apply_scripts: (args) => applyScripts(vm, args || {}),

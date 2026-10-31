@@ -3,6 +3,9 @@
  */
 /* eslint-env jest */
 /* eslint-disable no-template-curly-in-string */
+import fs from 'fs';
+import path from 'path';
+import { SCRATHON_DOC } from '../../../src/addons/addons/astras-copilot/docs/scrathon-doc';
 import { parse } from '../../../src/addons/addons/astras-copilot/agent/scrathon/parser';
 import { compileFile } from '../../../src/addons/addons/astras-copilot/agent/scrathon/compiler';
 import { createDecompiler } from '../../../src/addons/addons/astras-copilot/agent/scrathon/decompiler';
@@ -1096,6 +1099,11 @@ test('Scrathon_doc and scrathon_example are exposed to the model', () => {
   expect(names).toContain('Scrathon_doc');
   expect(names).toContain('scrathon_example');
   expect(names).toContain('block_catalog');
+});
+
+test('SCRATHON_DOC stays in sync with the markdown source', () => {
+  const mdPath = path.resolve(__dirname, '../../../src/addons/addons/astras-copilot/docs/scrathon.md');
+  expect(SCRATHON_DOC).toBe(fs.readFileSync(mdPath, 'utf8'));
 });
 
 test('Scrathon_doc returns the markdown reference', () => {

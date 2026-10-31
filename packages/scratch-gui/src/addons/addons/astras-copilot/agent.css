@@ -1085,7 +1085,7 @@ button:hover .sa-agent-scrathon-icon {
   width: 100%;
   max-height: 420px;
   overflow-y: auto;
-  overflow-x: auto;
+  overflow-x: hidden;
   border-radius: 4px;
   background: transparent;
 }
@@ -1115,8 +1115,9 @@ button:hover .sa-agent-scrathon-icon {
 .sa-agent-split-left {
   flex: 1;
   min-width: 0;
+  box-sizing: border-box;
   display: flex;
-  align-items: baseline;
+  align-items: flex-start;
   padding: 0 4px 0 0;
   border-radius: 2px 0 0 2px;
 }
@@ -1124,6 +1125,7 @@ button:hover .sa-agent-scrathon-icon {
 .sa-agent-split-divider {
   width: 16px;
   min-width: 16px;
+  flex-shrink: 0;
   text-align: center;
   user-select: none;
   color: var(--text-primary);
@@ -1137,8 +1139,9 @@ button:hover .sa-agent-scrathon-icon {
 .sa-agent-split-right {
   flex: 1;
   min-width: 0;
+  box-sizing: border-box;
   display: flex;
-  align-items: baseline;
+  align-items: flex-start;
   padding: 0 0 0 4px;
   border-radius: 0 2px 2px 0;
 }
@@ -1146,6 +1149,7 @@ button:hover .sa-agent-scrathon-icon {
 .sa-agent-split-mark {
   width: 14px;
   min-width: 14px;
+  flex-shrink: 0;
   text-align: center;
   user-select: none;
   font-weight: bold;
@@ -1166,6 +1170,7 @@ button:hover .sa-agent-scrathon-icon {
 .sa-agent-split-lineno {
   width: 26px;
   min-width: 26px;
+  flex-shrink: 0;
   text-align: right;
   padding-right: 6px;
   user-select: none;
@@ -1174,10 +1179,13 @@ button:hover .sa-agent-scrathon-icon {
   font-size: 10px;
 }
 
+/* Wrap long lines inside each column so the center divider, row backgrounds
+   and line numbers stay aligned even in a narrow chat panel. */
 .sa-agent-split-text {
   flex: 1;
   min-width: 0;
-  white-space: pre;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
   tab-size: 4;
   color: var(--text-primary);
 }

@@ -206,10 +206,6 @@ const base = {
         ]
       },
       {
-        test: /\.md$/,
-        type: 'asset/source'
-      },
-      {
         test: /\.ttf$/,
         type: 'asset/resource'
       }
