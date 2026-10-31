@@ -48,6 +48,13 @@ const TAG_LABEL = {
   msg: 'broadcast'
 };
 
+/** Example syntax for a tag in diagnostics. */
+const tagSyntax = (tag) => {
+  if (tag === 'v') return '${v:...} or ${variable:...}';
+  if (tag === 'l') return '${l:...} or ${list:...}';
+  return `\${${tag}:...}`;
+};
+
 /**
  * Tags whose slot type is enforced at compile time. Numeric and string slots
  * stay permissive (Scratch casts freely between them) but menus, colours,
@@ -128,23 +135,28 @@ export const compileFile = (file, { vm } = {}) => {
    * @returns {*} Input value understood by block-xml.js.
    */
   const compileSigil = (sigil, owner, expected) => {
-    if (expected && expected.t && expected.t !== sigil.tag && slotIsStrict(expected.t, sigil.tag)) {
+    // Broadcast slots accept a plain string sigil (`${s:"..."}`) as well as
+    // the legacy `${msg:"..."}` form. Both resolve to the broadcast menu
+    // shadow / field id; broadcasts do not need localized message objects.
+    const broadcastString = Boolean(expected && expected.t === 'msg' && sigil.tag === 's');
+    if (expected && expected.t && expected.t !== sigil.tag && !broadcastString && slotIsStrict(expected.t, sigil.tag)) {
       throw fail(
         'TypeMismatchError',
-        `Slot "${expected.name}" expects a ${TAG_LABEL[expected.t]} token (\${${expected.t}:...}), ` +
-          `but received a ${TAG_LABEL[sigil.tag]} token (\${${sigil.tag}:...}).`,
+        `Slot "${expected.name}" expects a ${TAG_LABEL[expected.t]} token (${tagSyntax(expected.t)}), ` +
+          `but received a ${TAG_LABEL[sigil.tag]} token (${tagSyntax(sigil.tag)}).`,
         owner
       );
     }
     if (sigil.tag === 'b') return compileBoolean(sigil.expr, owner);
 
     const isField = Boolean(expected && expected.k === 'field');
+    const scopedName = (name) => (sigil.scope ? { __name: name, __scope: sigil.scope } : name);
     if (sigil.tag === 'v') {
-      const name = resourceName(sigil.expr, owner);
+      const name = scopedName(resourceName(sigil.expr, owner));
       return isField ? name : { opcode: 'data_variable', fields: { VARIABLE: name } };
     }
     if (sigil.tag === 'l') {
-      const name = resourceName(sigil.expr, owner);
+      const name = scopedName(resourceName(sigil.expr, owner));
       return isField ? name : { opcode: 'data_listcontents', fields: { LIST: name } };
     }
     if (sigil.tag === 'msg') {
@@ -608,8 +620,8 @@ export const compileFile = (file, { vm } = {}) => {
       if (argNode.kind === 'sigil' && argNode.tag !== param.tag) {
         throw fail(
           'TypeMismatchError',
-          `Argument ${index + 1} of "${node.name}" expects ${TAG_LABEL[param.tag]} (\${${param.tag}:...}), ` +
-            `but received ${TAG_LABEL[argNode.tag]} (\${${argNode.tag}:...}).`,
+          `Argument ${index + 1} of "${node.name}" expects ${TAG_LABEL[param.tag]} (${tagSyntax(param.tag)}), ` +
+            `but received ${TAG_LABEL[argNode.tag]} (${tagSyntax(argNode.tag)}).`,
           node
         );
       }
@@ -901,7 +913,7 @@ export const STATIC_EXTENSION_BLOCKS = {
   music_restForBeats: { categoryId: 'music', arguments: { BEATS: { type: 'number' } }, menus: {} },
   music_playNoteForBeats: {
     categoryId: 'music',
-    arguments: { NOTE: { type: 'number' }, BEATS: { type: 'number' } },
+    arguments: { NOTE: { type: 'note' }, BEATS: { type: 'number' } },
     menus: {}
   },
   music_setInstrument: { categoryId: 'music', arguments: { INSTRUMENT: { type: 'menu' } }, menus: {} },

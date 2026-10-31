@@ -631,8 +631,9 @@ export const describeScrathonCatalog = (query = '') => {
     add(name, 'control', 'control', signature, descriptor.opcode);
   }
 
-  // If / else
+  // If / elif / else
   add('if', 'control', 'control', 'if ${b:condition}:', 'control_if');
+  add('elif', 'control', 'control', 'elif ${b:condition}:', 'control_if_else');
   add('else', 'control', 'control', 'else:', 'control_if_else');
 
   // 3. Statement / reporter functions

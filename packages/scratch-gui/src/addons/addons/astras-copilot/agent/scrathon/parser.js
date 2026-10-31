@@ -112,13 +112,54 @@ export const parseExpression = (src, line, baseCol = 1) => {
     const open = next(); // SIGIL
     const tagToken = peek();
     if (tagToken.type !== TT.IDENT) fail('Expected a type tag after "${".');
-    const tag = next().value;
-    if (peek().type !== TT.COLON) fail(`Expected ":" after type tag "${tag}".`);
+    const rawTag = next().value;
+    // Full-word aliases make the variable/list distinction explicit:
+    // ${list:"items"} == ${l:"items"}, ${variable:"score"} == ${v:"score"}.
+    const tag = rawTag === 'list' ? 'l' : rawTag === 'variable' || rawTag === 'var' ? 'v' : rawTag;
+    if (peek().type !== TT.COLON) fail(`Expected ":" after type tag "${rawTag}".`);
     next(); // COLON
+
+    // Guard the common `${n:list"items"}` / `${n:list:"items"}` mistake: `n` is
+    // the numeric tag, while names must use v/l (or their full-word aliases).
+    const firstInner = peek();
+    const secondInner = tokens[pos + 1];
+    if (
+      rawTag === 'n' &&
+      firstInner.type === TT.IDENT &&
+      (firstInner.value === 'list' || firstInner.value === 'variable' || firstInner.value === 'var') &&
+      secondInner &&
+      (secondInner.type === TT.STRING || secondInner.type === TT.COLON)
+    ) {
+      fail(
+        '`${n:...}` is the number tag. Use `${list:"name"}` (or `${l:"name"}`) for a list, ' +
+          'or `${variable:"name"}` (or `${v:"name"}`) for a variable.'
+      );
+    }
+
+    // Optional scope qualifier: ${v:local:"name"} / ${v:global:"name"}.
+    let scope = null;
+    const scopeToken = peek();
+    const afterScope = tokens[pos + 1];
+    if (
+      scopeToken.type === TT.IDENT &&
+      (scopeToken.value === 'local' || scopeToken.value === 'global') &&
+      afterScope &&
+      afterScope.type === TT.COLON
+    ) {
+      if (tag !== 'v' && tag !== 'l') {
+        fail(
+          `Scope prefix "${scopeToken.value}:" is only valid for variable and list sigils. ` +
+            'Use ${v:local:"name"} for a private variable or ${v:"name"} for a global variable.'
+        );
+      }
+      scope = next().value;
+      next(); // COLON
+    }
+
     const inner = parseExpr();
     if (peek().type !== TT.RBRACE) fail('Missing closing "}" for the type sigil.');
     next(); // RBRACE
-    return { kind: 'sigil', tag, expr: inner, line: line ? line.line : 0, col: open.col };
+    return { kind: 'sigil', tag, scope, expr: inner, line: line ? line.line : 0, col: open.col };
   };
 
   const parsePrimary = () => {
@@ -300,7 +341,14 @@ export const parse = (source) => {
       if (line.indent > indent) {
         throw syntaxError('Unexpected indentation.', line);
       }
-      if (line.text === 'else:' || line.text.startsWith('else ')) break;
+      if (
+        line.text === 'else:' ||
+        line.text.startsWith('else ') ||
+        line.text === 'elif:' ||
+        line.text.startsWith('elif ')
+      ) {
+        break;
+      }
       const [node, next] = parseSingle(index, indent);
       nodes.push(node);
       index = next;
@@ -308,7 +356,7 @@ export const parse = (source) => {
     return [nodes, index];
   };
 
-  const parseSingle = (start, indent) => {
+  const parseSingle = (start, indent, allowElif = false) => {
     const { decorators, index } = parseDecorators(start);
 
     if (decorators.length > 0) {
@@ -379,16 +427,31 @@ export const parse = (source) => {
         throw syntaxError('"else" without a matching "if".', line);
       }
 
-      const isIf = header.startsWith('if ') || header === 'if';
-      if (isIf) {
-        const condition = parseExpression(header.slice(2).trim(), line, line.indent + 4);
+      const isIf = header === 'if' || header.startsWith('if ');
+      const isElif = header === 'elif' || header.startsWith('elif ');
+      if (isElif && !allowElif) {
+        throw syntaxError('"elif" without a matching "if".', line);
+      }
+      if (isIf || isElif) {
+        const conditionSource = (isElif ? header.slice('elif'.length) : header.slice(2)).trim();
+        if (!conditionSource) {
+          throw syntaxError(`"${isElif ? 'elif' : 'if'}" needs a condition.`, line);
+        }
+        const condition = parseExpression(conditionSource, line, line.indent + 4);
         let elseBody = null;
         let next = afterBody;
         const elseLine = lines[next];
-        if (elseLine && elseLine.indent === indent && (elseLine.text === 'else:' || elseLine.text === 'else')) {
-          const [elseNodes, afterElse] = parseNodes(next + 1, bodyIndent);
-          elseBody = elseNodes;
-          next = afterElse;
+        if (elseLine && elseLine.indent === indent) {
+          if (elseLine.text === 'else:' || elseLine.text === 'else') {
+            const [elseNodes, afterElse] = parseNodes(next + 1, bodyIndent);
+            elseBody = elseNodes;
+            next = afterElse;
+          } else if (elseLine.text === 'elif:' || elseLine.text.startsWith('elif ')) {
+            // `elif cond:` is sugar for an `if` nested in the else branch.
+            const [elifNode, afterElif] = parseSingle(next, indent, true);
+            elseBody = [elifNode];
+            next = afterElif;
+          }
         }
         return [{ kind: 'if', condition, body, elseBody, line: line.line }, next];
       }

@@ -725,17 +725,18 @@ const getStage = (vm) => {
  * @param {object} target Editing target the blocks belong to.
  * @returns {object} Compiler context.
  */
-const makeVarContext = (vm, target) => {
+export const makeVarContext = (vm, target) => {
   const stage = getStage(vm);
   const declarations = [];
   const cache = new Map();
 
-  const lookup = (holder, type, name) => {
+  const lookup = (holder, type, name, skipStage = false) => {
     return holder && typeof holder.lookupVariableByNameAndType === 'function'
-      ? holder.lookupVariableByNameAndType(name, type)
+      ? holder.lookupVariableByNameAndType(name, type, skipStage)
       : null;
   };
-  const findVariable = (type, name) => lookup(target, type, name) || lookup(stage, type, name);
+  const findLocal = (type, name) => lookup(target, type, name, true);
+  const findGlobal = (type, name) => lookup(stage, type, name);
 
   const firstCostume = target && typeof target.getCostumes === 'function' ? target.getCostumes()[0] : null;
   const stageCostumes = stage && typeof stage.getCostumes === 'function' ? stage.getCostumes() : [];
@@ -746,19 +747,26 @@ const makeVarContext = (vm, target) => {
     defaultCostume: firstCostume ? firstCostume.name : '',
     defaultBackdrop: backdrop ? backdrop.name : '',
     defaultSound: firstSound ? firstSound.name : '',
-    resolveField(fieldName, rawName) {
+    resolveField(fieldName, rawName, scope = null) {
       const name = String(rawName === undefined || rawName === null ? '' : rawName);
       const type = fieldName === 'LIST' ? 'list' : fieldName === 'BROADCAST_OPTION' ? 'broadcast_msg' : '';
-      const key = `${type}:${name}`;
+      const isLocal = scope === 'local' && type !== 'broadcast_msg';
+      if (isLocal && (!target || target.isStage)) {
+        throw new Error(
+          `Cannot create local ${type === 'list' ? 'list' : 'variable'} "${name}" on the stage. ` +
+            'Apply the code to a sprite, or use a global variable without the local: prefix.'
+        );
+      }
+      const key = `${isLocal ? 'local' : 'global'}:${type}:${name}`;
       if (cache.has(key)) return cache.get(key);
-      const existing = findVariable(type, name);
+      const existing = isLocal ? findLocal(type, name) : findGlobal(type, name);
       if (existing) {
-        const resolved = { id: existing.id, name: existing.name, type: existing.type || '' };
+        const resolved = { id: existing.id, name: existing.name, type: existing.type || '', isLocal };
         cache.set(key, resolved);
         return resolved;
       }
       const id = generateId();
-      const created = { id, name, type, isLocal: false };
+      const created = { id, name, type, isLocal };
       declarations.push(created);
       cache.set(key, created);
       return created;
@@ -1290,7 +1298,7 @@ export const TOOL_DEFINITIONS = [
     function: {
       name: 'create_variable',
       description:
-        'Create a variable, list, or broadcast message. Creates nothing if it already exists. Undoable with Ctrl+Z.',
+        'Create a variable, list, or broadcast message. Pass kind:"list" explicitly for a list; omitting kind creates a variable. Creates nothing if it already exists. Undoable with Ctrl+Z.',
       parameters: {
         type: 'object',
         properties: {
@@ -1298,7 +1306,7 @@ export const TOOL_DEFINITIONS = [
           kind: {
             type: 'string',
             enum: ['variable', 'list', 'broadcast'],
-            description: 'What to create. Defaults to variable.'
+            description: 'What to create. Use "list" for a list and "variable" for a variable; defaults to variable.'
           },
           target: {
             type: 'string',

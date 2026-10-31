@@ -188,7 +188,9 @@ const SHADOW_FIELD = {
   event_broadcast_menu: 'BROADCAST_OPTION',
   sound_sounds_menu: 'SOUND_MENU',
   sensing_of_object_menu: 'OBJECT',
-  colour_picker: 'COLOUR'
+  colour_picker: 'COLOUR',
+  note: 'NOTE',
+  matrix: 'MATRIX'
 };
 
 /** Menu shadows whose value should default to a project resource when omitted. */
@@ -238,6 +240,32 @@ const defaultLiteralFor = (opcode, inputName, ctx) => {
   return '';
 };
 
+/**
+ * Build a field node, resolving variable/list/broadcast names to ids.
+ * @param {string} fieldName Field name.
+ * @param {*} value Field value.
+ * @param {object} ctx Resolution context.
+ * @returns {object} Field element node.
+ */
+const makeFieldNode = (fieldName, value, ctx) => {
+  let rawValue = value;
+  let scope = null;
+  if (value && typeof value === 'object' && typeof value.__name === 'string') {
+    rawValue = value.__name;
+    scope = value.__scope || null;
+  }
+  let attrs = { name: fieldName };
+  let text = String(rawValue === undefined || rawValue === null ? '' : rawValue);
+  if (fieldName === 'VARIABLE' || fieldName === 'LIST' || fieldName === 'BROADCAST_OPTION') {
+    const resolved = ctx && ctx.resolveField ? ctx.resolveField(fieldName, rawValue, scope) : null;
+    if (resolved) {
+      attrs = { name: fieldName, id: resolved.id, variabletype: resolved.type || '' };
+      text = resolved.name;
+    }
+  }
+  return { tag: 'field', attrs, text };
+};
+
 const makeShadow = (opcode, inputName, value, ctx) => {
   const shadowType = pickShadowType(opcode, inputName, value);
   const fieldName = SHADOW_FIELD[shadowType] || 'TEXT';
@@ -247,7 +275,7 @@ const makeShadow = (opcode, inputName, value, ctx) => {
   return {
     tag: 'shadow',
     attrs: { type: shadowType },
-    children: [{ tag: 'field', attrs: { name: fieldName }, text: String(text) }]
+    children: [makeFieldNode(fieldName, text, ctx)]
   };
 };
 
@@ -265,33 +293,28 @@ const makeShadow = (opcode, inputName, value, ctx) => {
 const makeExplicitShadow = (shadowType, value, explicitField, ctx) => {
   const fieldName = explicitField || SHADOW_FIELD[shadowType] || 'TEXT';
   if (fieldName === 'BROADCAST_OPTION') {
-    return makeFieldBlock('event_broadcast_menu', 'BROADCAST_OPTION', value, ctx);
+    return makeFieldShadow('event_broadcast_menu', fieldName, value, ctx);
   }
   let text = value === undefined || value === null ? '' : String(value);
   if (shadowType.startsWith('math_')) text = String(Number(value) || 0);
   return {
     tag: 'shadow',
     attrs: { type: shadowType },
-    children: [{ tag: 'field', attrs: { name: fieldName }, text }]
+    children: [makeFieldNode(fieldName, text, ctx)]
   };
 };
 
-const makeFieldBlock = (opcode, fieldName, value, ctx) => {
-  let fieldAttrs = { name: fieldName };
-  let text = String(value === undefined || value === null ? '' : value);
-  if (fieldName === 'VARIABLE' || fieldName === 'LIST' || fieldName === 'BROADCAST_OPTION') {
-    const resolved = ctx && ctx.resolveField ? ctx.resolveField(fieldName, value) : null;
-    if (resolved) {
-      fieldAttrs = { name: fieldName, id: resolved.id, variabletype: resolved.type || '' };
-      text = resolved.name;
-    }
-  }
-  return {
-    tag: 'block',
-    attrs: { type: opcode },
-    children: [{ tag: 'field', attrs: fieldAttrs, text }]
-  };
-};
+const makeFieldShadow = (opcode, fieldName, value, ctx) => ({
+  tag: 'shadow',
+  attrs: { type: opcode },
+  children: [makeFieldNode(fieldName, value, ctx)]
+});
+
+const makeFieldBlock = (opcode, fieldName, value, ctx) => ({
+  tag: 'block',
+  attrs: { type: opcode },
+  children: [makeFieldNode(fieldName, value, ctx)]
+});
 
 const serializeMutation = (mutation) => {
   const attrs = {};
@@ -317,7 +340,34 @@ const buildBlock = (desc, ctx, warnings) => {
   const opcode = desc.opcode;
   const blockEl = { tag: 'block', attrs: { type: opcode, id: desc.id || generateId() }, children: [] };
 
-  // 1. Pre-create default value inputs so the block is structurally complete.
+  // 1. Mutation first. Procedure calls create their argument inputs and
+  //    statement connections from the mutation, so it must be applied before
+  //    Blockly parses the <value> and <next> children.
+  if (isPlainObject(desc.mutation)) {
+    if (opcode === 'procedures_definition') {
+      blockEl.children.push({
+        tag: 'statement',
+        attrs: { name: 'custom_block' },
+        children: [
+          {
+            tag: 'shadow',
+            attrs: { type: 'procedures_prototype' },
+            children: [
+              {
+                tag: 'mutation',
+                attrs: serializeMutation(desc.mutation),
+                children: []
+              }
+            ]
+          }
+        ]
+      });
+    } else {
+      blockEl.children.push({ tag: 'mutation', attrs: serializeMutation(desc.mutation), children: [] });
+    }
+  }
+
+  // 2. Pre-create default value inputs so the block is structurally complete.
   const required = BLOCK_INPUTS[opcode] || [];
   const providedInputs = isPlainObject(desc.inputs) ? desc.inputs : {};
   for (const inputName of required) {
@@ -330,7 +380,7 @@ const buildBlock = (desc, ctx, warnings) => {
     });
   }
 
-  // 2. Explicit inputs.
+  // 3. Explicit inputs.
   for (const [inputName, value] of Object.entries(providedInputs)) {
     const valueEl = { tag: 'value', attrs: { name: inputName }, children: [] };
     if (isPlainObject(value) && typeof value.opcode === 'string') {
@@ -353,44 +403,10 @@ const buildBlock = (desc, ctx, warnings) => {
     blockEl.children.push(valueEl);
   }
 
-  // 3. Fields (dropdown / variable / list / broadcast).
+  // 4. Fields (dropdown / variable / list / broadcast).
   if (isPlainObject(desc.fields)) {
     for (const [fieldName, value] of Object.entries(desc.fields)) {
-      const field = { tag: 'field', attrs: { name: fieldName }, text: String(value ?? '') };
-      if (fieldName === 'VARIABLE' || fieldName === 'LIST' || fieldName === 'BROADCAST_OPTION') {
-        const resolved = ctx && ctx.resolveField ? ctx.resolveField(fieldName, value) : null;
-        if (resolved) {
-          field.attrs.id = resolved.id;
-          field.attrs.variabletype = resolved.type || '';
-          field.text = resolved.name;
-        }
-      }
-      blockEl.children.push(field);
-    }
-  }
-
-  // 4. Mutation (custom blocks / advanced blocks).
-  if (isPlainObject(desc.mutation)) {
-    if (opcode === 'procedures_definition') {
-      blockEl.children.push({
-        tag: 'statement',
-        attrs: { name: 'custom_block' },
-        children: [
-          {
-            tag: 'shadow',
-            attrs: { type: 'procedures_prototype' },
-            children: [
-              {
-                tag: 'mutation',
-                attrs: serializeMutation(desc.mutation),
-                children: []
-              }
-            ]
-          }
-        ]
-      });
-    } else {
-      blockEl.children.push({ tag: 'mutation', attrs: serializeMutation(desc.mutation), children: [] });
+      blockEl.children.push(makeFieldNode(fieldName, value, ctx));
     }
   }
 
@@ -421,7 +437,9 @@ const buildStack = (descriptors, ctx, warnings) => {
   const elements = descriptors.filter(Boolean).map((desc) => buildBlock(desc, ctx, warnings));
   if (elements.length === 0) return null;
   for (let i = elements.length - 1; i > 0; i--) {
-    elements[i - 1].children.unshift({ tag: 'next', attrs: {}, children: [elements[i]] });
+    // Append the next link after fields/inputs/mutation. Procedure calls in
+    // particular only gain their nextConnection when their mutation is applied.
+    elements[i - 1].children.push({ tag: 'next', attrs: {}, children: [elements[i]] });
   }
   return elements[0];
 };

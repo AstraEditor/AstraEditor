@@ -126,4 +126,42 @@ describe('Scrathon Converter Window', () => {
     expect(statusEl.textContent).toContain('scrathon-roundtrip-ok');
     expect(statusEl.classList.contains('sa-agent-scrathon-status-success')).toBe(true);
   });
+
+  test('falls back to English labels when translations are missing', () => {
+    const missingMsg = (key) => `astras-copilot/${key}`;
+    const controller = createScrathonWindow({ vm: mockVm, msg: missingMsg });
+    controller.open();
+
+    const windowEl = document.querySelector('.sa-agent-scrathon-window');
+    expect(windowEl.querySelector('.sa-agent-scrathon-title').textContent).toBe('Scrathon Debugger & Converter');
+    expect(windowEl.querySelector('.sa-agent-scrathon-status').textContent).toBe('Ready.');
+    expect(windowEl.textContent).not.toContain('astras-copilot/');
+  });
+
+  test('uses translated labels and templates when the locale provides them', () => {
+    const translations = {
+      'scrathon-window-title': 'Scrathon 调试与双向转换器',
+      'scrathon-ready': '就绪。',
+      'scrathon-export': '积木 → 代码',
+      'scrathon-exported-status': '已从 {target} 导出 {count} 个脚本。'
+    };
+    const translatedMsg = (key, vars) => {
+      const template = translations[key];
+      if (!template) return `astras-copilot/${key}`;
+      if (!vars) return template;
+      return template.replace(/\{(\w+)\}/g, (match, name) => {
+        return Object.prototype.hasOwnProperty.call(vars, name) ? String(vars[name]) : match;
+      });
+    };
+    const controller = createScrathonWindow({ vm: mockVm, msg: translatedMsg });
+    controller.open();
+
+    const windowEl = document.querySelector('.sa-agent-scrathon-window');
+    expect(windowEl.querySelector('.sa-agent-scrathon-title').textContent).toBe('Scrathon 调试与双向转换器');
+    expect(windowEl.querySelector('.sa-agent-scrathon-status').textContent).toBe('就绪。');
+
+    const exportBtn = Array.from(windowEl.querySelectorAll('button')).find((b) => b.textContent === '积木 → 代码');
+    exportBtn.click();
+    expect(windowEl.querySelector('.sa-agent-scrathon-status').textContent).toBe('已从 Sprite1 导出 1 个脚本。');
+  });
 });

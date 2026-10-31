@@ -9,7 +9,10 @@ import { createDecompiler } from '../../../src/addons/addons/astras-copilot/agen
 import { describeScrathonCatalog, FUNCTIONS } from '../../../src/addons/addons/astras-copilot/agent/scrathon/mappings';
 import { buildScriptsXml } from '../../../src/addons/addons/astras-copilot/agent/block-xml';
 import { ScrathonError } from '../../../src/addons/addons/astras-copilot/agent/scrathon/error';
-import { prepareScrathonCodeAndExtensions } from '../../../src/addons/addons/astras-copilot/agent/tools';
+import {
+  makeVarContext,
+  prepareScrathonCodeAndExtensions
+} from '../../../src/addons/addons/astras-copilot/agent/tools';
 
 /**
  * A minimal stand-in for the VM-backed resolution context.
@@ -23,15 +26,16 @@ const makeCtx = (existing = {}) => {
     defaultCostume: 'costume1',
     defaultBackdrop: 'backdrop1',
     defaultSound: '',
-    resolveField(fieldName, name) {
-      const key = `${fieldName}:${name}`;
+    resolveField(fieldName, name, scope) {
+      const isLocal = scope === 'local';
+      const key = `${isLocal ? 'local' : 'global'}:${fieldName}:${name}`;
       if (!seen.has(key)) {
         seen.set(key, {
           id: `id-${String(name).replace(/\s+/g, '_')}`,
           name: String(name),
           type: fieldName === 'LIST' ? 'list' : fieldName === 'BROADCAST_OPTION' ? 'broadcast_msg' : ''
         });
-        declared.push({ name: String(name), type: seen.get(key).type, id: seen.get(key).id, isLocal: false });
+        declared.push({ name: String(name), type: seen.get(key).type, id: seen.get(key).id, isLocal });
       }
       return seen.get(key);
     },
@@ -43,6 +47,32 @@ const makeCtx = (existing = {}) => {
     defaultLiteralFor: () => ''
   };
 };
+
+/**
+ * Minimal scratch-vm-like target for variable-scope tests.
+ * @param {string} name Target name.
+ * @param {boolean} isStage Whether this is the stage.
+ * @param {Function} getStage Stage getter.
+ * @returns {object} Target.
+ */
+const makeScratchTarget = (name, isStage, getStage) => ({
+  name,
+  isStage,
+  variables: {},
+  runtime: { getTargetForStage: getStage },
+  lookupVariableByNameAndType(varName, varType, skipStage) {
+    for (const variable of Object.values(this.variables)) {
+      if (variable.name === varName && variable.type === varType) return variable;
+    }
+    if (!skipStage && !this.isStage) {
+      const stage = this.runtime.getTargetForStage();
+      for (const variable of Object.values(stage ? stage.variables : {})) {
+        if (variable.name === varName && variable.type === varType) return variable;
+      }
+    }
+    return null;
+  }
+});
 
 /**
  * Parse + compile a snippet, returning the scripts array.
@@ -221,6 +251,8 @@ const blocksFromScripts = (scripts) => {
     if (opcode === 'event_broadcast_menu') return 'BROADCAST_OPTION';
     if (opcode === 'colour_picker') return 'COLOUR';
     if (opcode === 'text') return 'TEXT';
+    if (opcode === 'note') return 'NOTE';
+    if (opcode === 'matrix') return 'MATRIX';
     return 'NUM';
   };
 
@@ -254,7 +286,8 @@ const blocksFromScripts = (scripts) => {
     };
     if (descriptor.mutation) blocks[id].mutation = descriptor.mutation;
     for (const [name, value] of Object.entries(descriptor.fields || {})) {
-      blocks[id].fields[name] = { name, value };
+      const fieldValue = value && typeof value === 'object' && typeof value.__name === 'string' ? value.__name : value;
+      blocks[id].fields[name] = { name, value: fieldValue };
     }
     for (const [name, value] of Object.entries(descriptor.inputs || {})) {
       if (value && typeof value === 'object' && typeof value.opcode === 'string') {
@@ -358,8 +391,326 @@ test('decompiles an if/else with a boolean condition', () => {
   const { code } = createDecompiler(null, target).script(rootId);
   expect(code).toContain('if ${b:not (score < 100)}:');
   expect(code).toContain('else:');
-  expect(code).toContain('broadcast(${msg:"win"})');
+  expect(code).toContain('broadcast(${s:"win"})');
   expect(code).toContain('change_var(${v:"score"}, ${n:10})');
+});
+
+test('compiles elif into nested if/else blocks', () => {
+  const scripts = compile(
+    [
+      '@when_flag_clicked',
+      'def main():',
+      '    if ${b:score >= 100}:',
+      '        say(${s:"A"})',
+      '    elif ${b:score >= 50}:',
+      '        say(${s:"B"})',
+      '    elif ${b:score >= 10}:',
+      '        say(${s:"C"})',
+      '    else:',
+      '        say(${s:"D"})',
+      ''
+    ].join('\n')
+  );
+  const outer = scripts[0].blocks[0].next[0];
+  expect(outer.opcode).toBe('control_if_else');
+  expect(outer.substack[0].inputs.MESSAGE).toBe('A');
+
+  const second = outer.substack2[0];
+  expect(second.opcode).toBe('control_if_else');
+  expect(second.substack[0].inputs.MESSAGE).toBe('B');
+
+  const third = second.substack2[0];
+  expect(third.opcode).toBe('control_if_else');
+  expect(third.substack[0].inputs.MESSAGE).toBe('C');
+  expect(third.substack2[0].inputs.MESSAGE).toBe('D');
+});
+
+test('supports elif nested inside another if body', () => {
+  const scripts = compile(
+    [
+      '@when_flag_clicked',
+      'def main():',
+      '    if ${b:a}:',
+      '        if ${b:b}:',
+      '            say(${s:"inner-if"})',
+      '        elif ${b:c}:',
+      '            say(${s:"inner-elif"})',
+      '        else:',
+      '            say(${s:"inner-else"})',
+      '    else:',
+      '        say(${s:"outer-else"})',
+      ''
+    ].join('\n')
+  );
+  const outer = scripts[0].blocks[0].next[0];
+  expect(outer.opcode).toBe('control_if_else');
+  const inner = outer.substack[0];
+  expect(inner.opcode).toBe('control_if_else');
+  const innerElif = inner.substack2[0];
+  expect(innerElif.opcode).toBe('control_if_else');
+  expect(innerElif.substack2[0].inputs.MESSAGE).toBe('inner-else');
+  expect(outer.substack2[0].inputs.MESSAGE).toBe('outer-else');
+});
+
+test('compiles elif without a final else into control_if', () => {
+  const scripts = compile(
+    [
+      '@when_flag_clicked',
+      'def main():',
+      '    if ${b:score > 10}:',
+      '        say(${s:"A"})',
+      '    elif ${b:score > 5}:',
+      '        say(${s:"B"})',
+      ''
+    ].join('\n')
+  );
+  const outer = scripts[0].blocks[0].next[0];
+  expect(outer.opcode).toBe('control_if_else');
+  expect(outer.substack2[0].opcode).toBe('control_if');
+});
+
+test('rejects elif without a matching if', () => {
+  const error = compileError(['elif ${b:True}:', '    say(${s:"x"})', ''].join('\n'));
+  expect(error.type).toBe('SyntaxError');
+  expect(error.message).toContain('"elif" without a matching "if"');
+});
+
+test('decompiles nested if/else chains back to elif', () => {
+  const scripts = compile(
+    [
+      '@when_flag_clicked',
+      'def main():',
+      '    if ${b:score >= 100}:',
+      '        say(${s:"A"})',
+      '    elif ${b:score >= 50}:',
+      '        say(${s:"B"})',
+      '    elif ${b:score >= 10}:',
+      '        say(${s:"C"})',
+      '    else:',
+      '        say(${s:"D"})',
+      ''
+    ].join('\n')
+  );
+  const target = makeTarget(scripts);
+  const rootId = Object.keys(target.blocks._blocks)[0];
+  const { code } = createDecompiler(null, target).script(rootId);
+  expect(code).toContain('if ${b:not (score < 100)}:');
+  expect(code).toContain('elif ${b:not (score < 50)}:');
+  expect(code).toContain('elif ${b:not (score < 10)}:');
+  expect(code).toContain('else:');
+  expect(code).not.toContain('else:\n        if ');
+
+  // The emitted elif syntax parses back into the same nested structure.
+  const recompiled = compile(code);
+  const outer = recompiled[0].blocks[0].next[0];
+  expect(outer.opcode).toBe('control_if_else');
+  expect(outer.substack2[0].opcode).toBe('control_if_else');
+});
+
+test('broadcasts use ${s} sigils and emit real broadcast-menu shadows', () => {
+  const scripts = compile(['@when_flag_clicked', 'def main():', '    broadcast(${s:"win"})', ''].join('\n'));
+  const { xml } = buildScriptsXml(scripts, makeCtx());
+  expect(xml).toContain('<shadow type="event_broadcast_menu">');
+  expect(xml).not.toContain('<block type="event_broadcast_menu">');
+  expect(xml).toContain('<field name="BROADCAST_OPTION" id="id-win" variabletype="broadcast_msg">win</field>');
+
+  const target = makeTarget(scripts);
+  const rootId = Object.keys(target.blocks._blocks)[0];
+  const { code } = createDecompiler(null, target).script(rootId);
+  expect(code).toContain('broadcast(${s:"win"})');
+  expect(code).not.toContain('${msg:');
+});
+
+test('broadcast inputs with reporter values round-trip through ${s}', () => {
+  const scripts = compile(['@when_flag_clicked', 'def main():', '    broadcast(${s:${v:"message"}})', ''].join('\n'));
+  const target = makeTarget(scripts);
+  const rootId = Object.keys(target.blocks._blocks)[0];
+  const { code } = createDecompiler(null, target).script(rootId);
+  expect(code).toContain('broadcast(${s:message})');
+  expect(code).not.toContain('${msg:');
+});
+
+test('legacy ${msg} broadcast sigils still emit shadows', () => {
+  const scripts = compile(['@when_flag_clicked', 'def main():', '    broadcast(${msg:"win"})', ''].join('\n'));
+  const { xml } = buildScriptsXml(scripts, makeCtx());
+  expect(xml).toContain('<shadow type="event_broadcast_menu">');
+  expect(xml).not.toContain('<block type="event_broadcast_menu">');
+  expect(xml).toContain('<field name="BROADCAST_OPTION" id="id-win" variabletype="broadcast_msg">win</field>');
+});
+
+test('broadcast hats accept ${s} and resolve the broadcast id', () => {
+  const scripts = compile(['@when_broadcast(${s:"start"})', 'def on_start():', '    hide()', ''].join('\n'));
+  const { xml } = buildScriptsXml(scripts, makeCtx());
+  expect(xml).toContain('type="event_whenbroadcastreceived"');
+  expect(xml).toContain('<field name="BROADCAST_OPTION" id="id-start" variabletype="broadcast_msg">start</field>');
+
+  const target = makeTarget(scripts);
+  const rootId = Object.keys(target.blocks._blocks)[0];
+  const { code } = createDecompiler(null, target).script(rootId);
+  expect(code).toContain('@when_broadcast(${s:"start"})');
+});
+
+test('variable scope prefixes select local or global creation', () => {
+  const scripts = compile(
+    [
+      '@when_flag_clicked',
+      'def main():',
+      '    set_var(${v:local:"hp"}, ${n:1})',
+      '    set_var(${v:"score"}, ${n:0})',
+      ''
+    ].join('\n')
+  );
+  const first = scripts[0].blocks[0].next[0];
+  const second = scripts[0].blocks[0].next[1];
+  expect(first.fields.VARIABLE).toEqual({ __name: 'hp', __scope: 'local' });
+  expect(second.fields.VARIABLE).toBe('score');
+
+  const ctx = makeCtx();
+  const { xml, declarations } = buildScriptsXml(scripts, ctx);
+  expect(xml).toContain('<field name="VARIABLE" id="id-hp" variabletype="">hp</field>');
+  expect(xml).toContain('<field name="VARIABLE" id="id-score" variabletype="">score</field>');
+  expect(declarations).toEqual([
+    { name: 'hp', type: '', id: 'id-hp', isLocal: true },
+    { name: 'score', type: '', id: 'id-score', isLocal: false }
+  ]);
+});
+
+test('list scope prefixes select local or global creation', () => {
+  const scripts = compile(
+    [
+      '@when_flag_clicked',
+      'def main():',
+      '    list_add(${l:local:"backpack"}, ${s:"Potion"})',
+      '    list_add(${l:"inventory"}, ${s:"Sword"})',
+      ''
+    ].join('\n')
+  );
+  const first = scripts[0].blocks[0].next[0];
+  const second = scripts[0].blocks[0].next[1];
+  expect(first.fields.LIST).toEqual({ __name: 'backpack', __scope: 'local' });
+  expect(second.fields.LIST).toBe('inventory');
+});
+
+test('supports full-word variable and list sigils', () => {
+  const scripts = compile(
+    [
+      '@when_flag_clicked',
+      'def main():',
+      '    set_var(${variable:"score"}, ${n:0})',
+      '    list_add(${list:"inventory"}, ${s:"Sword"})',
+      '    list_add(${list:local:"backpack"}, ${s:"Potion"})',
+      '    set_var(${variable:local:"hp"}, ${n:100})',
+      ''
+    ].join('\n')
+  );
+  const first = scripts[0].blocks[0].next[0];
+  const second = scripts[0].blocks[0].next[1];
+  const third = scripts[0].blocks[0].next[2];
+  const fourth = scripts[0].blocks[0].next[3];
+  expect(first.fields.VARIABLE).toBe('score');
+  expect(second.fields.LIST).toBe('inventory');
+  expect(third.fields.LIST).toEqual({ __name: 'backpack', __scope: 'local' });
+  expect(fourth.fields.VARIABLE).toEqual({ __name: 'hp', __scope: 'local' });
+});
+
+test('rejects n:list and points to the explicit list sigil', () => {
+  const error = compileError('list_add(${n:list"列表名"}, ${s:"x"})');
+  expect(error.type).toBe('SyntaxError');
+  expect(error.message).toContain('is the number tag');
+  expect(error.message).toContain('${list:"name"}');
+});
+
+test('list type mismatches suggest both short and full-word sigils', () => {
+  const error = compileError('list_add(${v:"inventory"}, ${s:"Sword"})');
+  expect(error.type).toBe('TypeMismatchError');
+  expect(error.message).toContain('${l:...} or ${list:...}');
+  expect(error.message).toContain('${v:...} or ${variable:...}');
+});
+
+test('scope prefixes are rejected on non-variable sigils', () => {
+  const error = compileError('say(${n:local:"hp"})');
+  expect(error.type).toBe('SyntaxError');
+  expect(error.message).toContain('only valid for variable and list sigils');
+});
+
+test('makeVarContext creates local variables on sprites and globals on the stage', () => {
+  const stage = makeScratchTarget('Stage', true, () => stage);
+  const sprite = makeScratchTarget('Sprite1', false, () => stage);
+  const ctx = makeVarContext({ runtime: { getTargetForStage: () => stage } }, sprite);
+  const local = ctx.resolveField('VARIABLE', 'hp', 'local');
+  const global = ctx.resolveField('VARIABLE', 'score');
+  expect(local.isLocal).toBe(true);
+  expect(global.isLocal).toBe(false);
+  expect(ctx.drainDeclarations()).toEqual([
+    { id: expect.any(String), name: 'hp', type: '', isLocal: true },
+    { id: expect.any(String), name: 'score', type: '', isLocal: false }
+  ]);
+});
+
+test('local scope is rejected on the stage', () => {
+  const stage = makeScratchTarget('Stage', true, () => stage);
+  const ctx = makeVarContext({ runtime: { getTargetForStage: () => stage } }, stage);
+  expect(() => ctx.resolveField('VARIABLE', 'hp', 'local')).toThrow(/on the stage/);
+});
+
+test('decompiler emits local scope for local variables and leaves globals unprefixed', () => {
+  const scripts = compile(
+    [
+      '@when_flag_clicked',
+      'def main():',
+      '    set_var(${v:local:"hp"}, ${n:1})',
+      '    set_var(${v:"score"}, ${n:0})',
+      '    say(${s:${v:local:"hp"}})',
+      ''
+    ].join('\n')
+  );
+  const target = makeTarget(scripts);
+  const localVar = { id: 'var-local-hp', name: 'hp', type: '' };
+  const globalVar = { id: 'var-global-score', name: 'score', type: '' };
+  target.isStage = false;
+  target.variables = { [localVar.id]: localVar };
+  target.runtime = {
+    getTargetForStage: () => ({ isStage: true, variables: { [globalVar.id]: globalVar } })
+  };
+  for (const block of Object.values(target.blocks._blocks)) {
+    if (!block.fields || !block.fields.VARIABLE) continue;
+    block.fields.VARIABLE.id = block.fields.VARIABLE.value === 'hp' ? localVar.id : globalVar.id;
+  }
+  const rootId = Object.values(target.blocks._blocks).find((block) => block.topLevel).id;
+  const { code } = createDecompiler(null, target).script(rootId);
+  expect(code).toContain('set_var(${v:local:"hp"}, ${n:1})');
+  expect(code).toContain('set_var(${v:"score"}, ${n:0})');
+  expect(code).toContain('say(${s:${v:local:"hp"}})');
+
+  // The emitted local-scope syntax parses back into the same scoped descriptor.
+  const recompiled = compile(code);
+  expect(recompiled[0].blocks[0].next[0].fields.VARIABLE).toEqual({ __name: 'hp', __scope: 'local' });
+});
+
+test('procedure call XML applies the mutation before values and next', () => {
+  const scripts = compile(
+    [
+      '@custom_block(warp=True)',
+      'def draw(${n:size}, ${n:depth}):',
+      '    move(${n:size})',
+      '',
+      '@when_flag_clicked',
+      'def main():',
+      '    draw(${n:400}, ${n:6})',
+      '    hide()',
+      ''
+    ].join('\n')
+  );
+  const { xml } = buildScriptsXml(scripts, makeCtx());
+  const callStart = xml.indexOf('<block type="procedures_call"');
+  expect(callStart).toBeGreaterThanOrEqual(0);
+  const callOpenEnd = xml.indexOf('>', callStart) + 1;
+  expect(xml.slice(callOpenEnd, callOpenEnd + '<mutation'.length)).toBe('<mutation');
+  const mutationEnd = xml.indexOf('/>', callOpenEnd);
+  const valueIndex = xml.indexOf('<value name="draw-arg-0-size"', mutationEnd);
+  const nextIndex = xml.indexOf('<next>', mutationEnd);
+  expect(valueIndex).toBeGreaterThan(mutationEnd);
+  expect(nextIndex).toBeGreaterThan(valueIndex);
 });
 
 test('decompiles a custom block definition and call', () => {
@@ -531,6 +882,34 @@ test('compile user extension snippet', () => {
   expect(fileResult.code).toContain('pen.changePenColorParamBy(${m:"color"}, ${n:12})');
   expect(fileResult.code).toContain('music.playNoteForBeats(${n:60}, ${n:0.25})');
   expect(fileResult.code).not.toContain('unsupported');
+});
+
+test('music note inputs compile into note shadows and round-trip', () => {
+  const source = [
+    'import music',
+    '@when_flag_clicked',
+    'def main():',
+    '    music.playNoteForBeats(${n:60}, ${n:0.25})',
+    ''
+  ].join('\n');
+
+  const compiled = compileFile(parse(source));
+  const playNote = compiled.scripts[0].blocks[0].next[0];
+  expect(playNote.opcode).toBe('music_playNoteForBeats');
+  expect(playNote.inputs.NOTE).toEqual({ __shadow: 'note', value: 60 });
+
+  const xmlResult = buildScriptsXml(compiled.scripts, makeCtx());
+  expect(xmlResult.xml).toContain('<shadow type="note">');
+  expect(xmlResult.xml).toContain('<field name="NOTE">60</field>');
+  expect(xmlResult.xml).not.toContain('<field name="TEXT">60</field>');
+
+  // Decompiling the generated blocks yields the numeric note sigil again.
+  const decompiled = createDecompiler(null, makeTarget(compiled.scripts)).file();
+  expect(decompiled.code).toContain('music.playNoteForBeats(${n:60}, ${n:0.25})');
+
+  // Recompiling keeps the note shadow (and therefore the piano-keyboard field).
+  const recompiled = compileFile(parse(decompiled.code));
+  expect(recompiled.scripts[0].blocks[0].next[0].inputs.NOTE).toEqual({ __shadow: 'note', value: 60 });
 });
 
 test('all FUNCTIONS round-trip cleanly through compiler and decompiler', () => {

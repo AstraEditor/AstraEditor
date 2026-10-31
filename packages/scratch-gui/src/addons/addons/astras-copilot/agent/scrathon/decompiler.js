@@ -96,6 +96,27 @@ const getBlock = (target, blockId) => {
 };
 
 /**
+ * Determine whether a variable field is owned by the target (local) or the
+ * stage (global). Returns null when the owner cannot be determined, in which
+ * case the decompiler keeps the legacy unprefixed form.
+ * @param {object} target Scratch target.
+ * @param {object} field VM field descriptor.
+ * @returns {string|null} 'local', 'global', or null.
+ */
+const getVariableScope = (target, field) => {
+  if (!field || !field.id) return null;
+  if (target && target.isStage) return 'global';
+  const localVariables = target && target.variables;
+  if (localVariables && Object.prototype.hasOwnProperty.call(localVariables, field.id)) return 'local';
+  const stage =
+    target && target.runtime && typeof target.runtime.getTargetForStage === 'function'
+      ? target.runtime.getTargetForStage()
+      : null;
+  if (stage && stage.variables && Object.prototype.hasOwnProperty.call(stage.variables, field.id)) return 'global';
+  return null;
+};
+
+/**
  * Escape a string for a double-quoted Scrathon literal.
  * @param {*} value Value.
  * @returns {string} Escaped text.
@@ -354,7 +375,7 @@ export const createDecompiler = (vm, target) => {
 
     if (opcode === 'event_broadcast_menu' || expectedTag === 'msg') {
       const val = fieldValue('BROADCAST_OPTION') || fieldValue(Object.keys(fields)[0]);
-      return `\${msg:"${escapeString(val)}"}`;
+      return `\${s:"${escapeString(val)}"}`;
     }
     if (expectedTag === 'c' || opcode === 'colour_picker') {
       const val = fieldValue('COLOUR') || fieldValue('TEXT') || fieldValue(Object.keys(fields)[0]);
@@ -366,7 +387,10 @@ export const createDecompiler = (vm, target) => {
       return `\${m:"${escapeString(value)}"}`;
     }
     if (NUMBER_SHADOWS.has(opcode)) return `\${n:${fieldValue('NUM') === '' ? '0' : fieldValue('NUM')}}`;
-    if (opcode === 'note') return `\${n:${fieldValue('NOTE') === '' ? '60' : fieldValue('NOTE')}}`;
+    if (opcode === 'note') {
+      const val = fieldValue('NOTE') || fieldValue(Object.keys(fields)[0]);
+      return `\${n:${val === '' ? '60' : val}}`;
+    }
     if (expectedTag === 'n') {
       const val = fieldValue('NUM') || fieldValue('TEXT') || fieldValue(Object.keys(fields)[0]);
       return `\${n:${val === '' ? '0' : val}}`;
@@ -410,8 +434,16 @@ export const createDecompiler = (vm, target) => {
     const fields = block.fields || {};
     const input = (name) => block.inputs && block.inputs[name];
 
-    if (opcode === 'data_variable') return String(fields.VARIABLE ? fields.VARIABLE.value : 'variable');
-    if (opcode === 'data_listcontents') return String(fields.LIST ? fields.LIST.value : 'list');
+    if (opcode === 'data_variable') {
+      const field = fields.VARIABLE;
+      const name = String(field ? field.value : 'variable');
+      return getVariableScope(target, field) === 'local' ? `\${v:local:"${escapeString(name)}"}` : name;
+    }
+    if (opcode === 'data_listcontents') {
+      const field = fields.LIST;
+      const name = String(field ? field.value : 'list');
+      return getVariableScope(target, field) === 'local' ? `\${l:local:"${escapeString(name)}"}` : name;
+    }
     if (opcode === 'argument_reporter_string_number' || opcode === 'argument_reporter_boolean') {
       return String(fields.VALUE ? fields.VALUE.value : 'argument');
     }
@@ -460,14 +492,17 @@ export const createDecompiler = (vm, target) => {
    * @returns {string} Sigil.
    */
   const renderInputSigil = (input, tag, depth) => {
-    if (!input || !input.block) return `\${${tag}:${tag === 'n' ? '0' : '""'}}`;
+    // Broadcast inputs accept any reporter, but the legacy `msg` sigil only
+    // accepts a bare name. Render them with `s` so reporters round-trip.
+    const sigilTag = tag === 'msg' ? 's' : tag;
+    if (!input || !input.block) return `\${${sigilTag}:${sigilTag === 'n' ? '0' : '""'}}`;
     const child = getBlock(target, input.block);
-    if (!child) return `\${${tag}:${tag === 'n' ? '0' : '""'}}`;
+    if (!child) return `\${${sigilTag}:${sigilTag === 'n' ? '0' : '""'}}`;
     if (child.shadow) {
       const rendered = renderShadow(child, tag);
       return rendered;
     }
-    return `\${${tag}:${renderExpression(child, depth + 1)}}`;
+    return `\${${sigilTag}:${renderExpression(child, depth + 1)}}`;
   };
 
   /**
@@ -479,9 +514,11 @@ export const createDecompiler = (vm, target) => {
   const renderFieldSigil = (block, descriptor) => {
     const field = block.fields && block.fields[descriptor.name];
     const value = field ? field.value : '';
-    if (descriptor.t === 'v') return `\${v:"${escapeString(value)}"}`;
-    if (descriptor.t === 'l') return `\${l:"${escapeString(value)}"}`;
-    if (descriptor.t === 'msg') return `\${msg:"${escapeString(value)}"}`;
+    if (descriptor.t === 'v' || descriptor.t === 'l') {
+      const prefix = getVariableScope(target, field) === 'local' ? 'local:' : '';
+      return `\${${descriptor.t}:${prefix}"${escapeString(value)}"}`;
+    }
+    if (descriptor.t === 'msg') return `\${s:"${escapeString(value)}"}`;
     if (descriptor.t === 'm') return `\${m:"${escapeString(value)}"}`;
     if (descriptor.t === 'n') return `\${n:${value === '' ? '0' : value}}`;
     return `\${s:"${escapeString(value)}"}`;
@@ -530,6 +567,33 @@ export const createDecompiler = (vm, target) => {
   };
 
   /**
+   * Emit an `if` branch, flattening a lone nested `if` in the else branch into
+   * `elif`. A trailing `next` block prevents flattening because `elif` has
+   * different scoping from `else: if ...` followed by more statements.
+   * @param {object} block control_if / control_if_else block.
+   * @param {number} indent Indent level.
+   * @param {number} depth Current depth.
+   * @param {string} keyword "if" or "elif".
+   */
+  const emitIfBranch = (block, indent, depth, keyword) => {
+    push(indent, `${keyword} ${renderInputSigil(block.inputs && block.inputs.CONDITION, 'b', depth)}:`);
+    const body = block.inputs && block.inputs.SUBSTACK;
+    if (body && body.block) emitStack(body.block, indent + 1, depth + 1);
+
+    const elseInput = block.inputs && block.inputs.SUBSTACK2;
+    if (!elseInput || !elseInput.block) return;
+    const elseBlock = getBlock(target, elseInput.block);
+    const canElif =
+      elseBlock && !elseBlock.next && (elseBlock.opcode === 'control_if' || elseBlock.opcode === 'control_if_else');
+    if (canElif) {
+      emitIfBranch(elseBlock, indent, depth + 1, 'elif');
+      return;
+    }
+    push(indent, 'else:');
+    emitStack(elseInput.block, indent + 1, depth + 1);
+  };
+
+  /**
    * Emit a statement, including its body and any chained next blocks.
    * @param {string} blockId Block id.
    * @param {number} indent Indent level.
@@ -557,8 +621,7 @@ export const createDecompiler = (vm, target) => {
     }
 
     if (opcode === 'control_if' || opcode === 'control_if_else') {
-      push(indent, `if ${renderInputSigil(block.inputs && block.inputs.CONDITION, 'b', depth)}:`);
-      emitSubstacks(block, indent, depth);
+      emitIfBranch(block, indent, depth, 'if');
       if (block.next) emitStack(block.next, indent, depth);
       return;
     }

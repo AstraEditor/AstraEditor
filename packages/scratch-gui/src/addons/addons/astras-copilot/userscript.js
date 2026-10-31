@@ -750,13 +750,21 @@ export default async ({ addon, msg }) => {
   const getToolLabel = (name) => TOOL_LABELS[name] || name;
 
   /**
+   * Whether a scrollable element is scrolled near its bottom.
+   * @param {?HTMLElement} element Scrollable element.
+   * @param {number} [threshold] Distance in pixels.
+   * @returns {boolean} Near bottom.
+   */
+  const isElementNearBottom = (element, threshold = 40) => {
+    if (!element) return true;
+    return element.scrollHeight - element.scrollTop - element.clientHeight < threshold;
+  };
+
+  /**
    * Whether the message list is scrolled near the bottom.
    * @returns {boolean} Near bottom.
    */
-  const isNearBottom = () => {
-    if (!messagesElement) return true;
-    return messagesElement.scrollHeight - messagesElement.scrollTop - messagesElement.clientHeight < 40;
-  };
+  const isNearBottom = () => isElementNearBottom(messagesElement);
 
   /**
    * Scroll the message list to the bottom when auto-scroll is enabled.
@@ -1110,8 +1118,14 @@ export default async ({ addon, msg }) => {
         streamingReasoningBody = streamingReasoningElement.querySelector('.sa-agent-reasoning-body');
         streamingRow.insertBefore(streamingReasoningElement, streamingBubble);
       }
+      // Follow the newest reasoning tokens, but stop if the user scrolled up
+      // inside the reasoning box to read earlier text.
+      const followReasoning = isElementNearBottom(streamingReasoningBody);
       streamingReasoningBody.textContent = '';
       streamingReasoningBody.appendChild(renderMarkdown(streamingReasoning));
+      if (followReasoning) {
+        streamingReasoningBody.scrollTop = streamingReasoningBody.scrollHeight;
+      }
       streamingReasoningElement.querySelector('summary').textContent = msg(
         streamingText ? 'reasoning-title' : 'reasoning-active'
       );

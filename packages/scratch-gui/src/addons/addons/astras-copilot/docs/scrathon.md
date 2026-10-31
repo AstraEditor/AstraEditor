@@ -64,17 +64,28 @@ Scratch 底层的插槽具备严格的物理形态区分（圆角数值插槽、
 | 标签 | 类型全称 | Scratch 底层对应 | 阴影生成规则 | 语法示例 |
 | :---: | :--- | :--- | :--- | :--- |
 | **`n`** | **Number** (数值) | `math_number` / `math_integer` | 生成数值型阴影积木 | `${n:10}`, `${n:-3.14}`, `${n:hp + 5}` |
-| **`s`** | **String** (字符串) | `text` 阴影积木 | 生成单/双引号文本阴影积木 | `${s:"Game Over"}`, `${s:username}` |
+| **`s`** | **String** (字符串) / **Broadcast** (广播名) | `text` 阴影 / `event_broadcast_menu` 阴影 | 生成文本阴影；广播插槽自动映射到广播消息 ID | `${s:"Game Over"}`, `${s:"game_start"}` |
 | **`b`** | **Boolean** (布尔) | 六角菱形插槽 | 无阴影，插槽必须填入布尔求值积木 | `${b:True}`, `${b:hp > 0}`, `${b:touching(${m:"edge"})}` |
 | **`c`** | **Color** (颜色) | `colour_picker` 拾色块 | 生成十六进制色块阴影 | `${c:"#FF5722"}`, `${c:"#00FF00"}` |
 | **`m`** | **Menu** (下拉菜单) | 字段专属下拉项 | 生成目标积木绑定的 Field / Menu | `${m:"mouse-pointer"}`, `${m:"mysound"}` |
-| **`v`** | **Variable** (变量名) | 变量引用字段 | 自动映射到变量 ID | `${v:"score"}`, `${v:"level"}` |
-| **`l`** | **List** (列表名) | 列表引用字段 | 自动映射到列表 ID | `${l:"inventory"}`, `${l:"rankings"}` |
-| **`msg`**| **Broadcast** (广播名) | 广播事件名 | 自动映射到广播消息 ID | `${msg:"game_start"}`, `${msg:"round_clear"}` |
+| **`v`** | **Variable** (变量名) | 变量引用字段 | 自动映射到变量 ID；无前缀=全局，`local:`=角色私有 | `${v:"score"}` / `${variable:"score"}`, `${v:local:"hp"}` |
+| **`l`** | **List** (列表名) | 列表引用字段 | 自动映射到列表 ID；无前缀=全局，`local:`=角色私有 | `${l:"inventory"}` / `${list:"inventory"}`, `${l:local:"backpack"}` |
+
+> 变量与列表必须显式区分：`${v:"..."}` / `${variable:"..."}` 是变量，`${l:"..."}` / `${list:"..."}` 是列表。`${n:...}` 始终是数值标签，不能用于名字；`${n:list"..."}` 会直接报错并提示正确写法。
+
+> 广播名统一使用 `${s:"..."}`；编译器会根据目标插槽自动生成 `event_broadcast_menu` 阴影并绑定广播 ID。旧的 `${msg:"..."}` 写法仍然兼容，但反编译输出始终为 `${s}`。
 
 ### 3.2 强校验规则
 - 若积木插槽期望类型为 `${c:...}`（颜色），传入 `${n:...}` 或 `${s:...}` 均属于编译期类型冲突错误。
 - `${b:...}` 内部必须是布尔字面量（`True`/`False`）、比较表达式或布尔 Reporter 积木，不得将数值作为布尔隐式转换。
+
+### 3.3 特殊插槽（音符 / 矩阵 / 扩展菜单）
+
+部分扩展积木的参数不是普通数值插槽，而是 Scratch 的特殊输入控件。Scrathon 会根据扩展元数据自动选择正确的阴影类型：
+
+- **音符**：音乐扩展的 `music.playNoteForBeats` 等音符输入使用 `${n:60}`，会生成 `<shadow type="note"><field name="NOTE">60</field></shadow>`，保留点击弹出钢琴键盘与手动输入数值的能力。
+- **矩阵**：micro:bit 的矩阵输入使用 `${s:"..."}`，会生成 `matrix` 阴影并写入 `MATRIX` 字段。
+- **扩展下拉菜单**：乐器、鼓、语音等菜单使用 `${m:"..."}`，会自动生成对应的 `<扩展>_menu_<菜单名>` 阴影并写入正确的字段。
 
 ---
 
@@ -124,8 +135,8 @@ def on_jump():
 def on_click():
     ...
 
-# 4. 接收到广播事件（参数必须为广播消息 ${msg:...}）
-@when_broadcast(${msg:"game_over"})
+# 4. 接收到广播事件（参数使用字符串广播名 ${s:...}）
+@when_broadcast(${s:"game_over"})
 def on_game_over():
     ...
 
@@ -211,18 +222,28 @@ if ${b:hp < 20}:
 
 # 5. 双分支条件 (control_if_else)
 if ${b:score >= 100}:
-    broadcast(${msg:"stage_clear"})
+    broadcast(${s:"stage_clear"})
     stop(${m:"all"})
 else:
     change_var(${v:"score"}, ${n:10})
 
-# 6. 等待特定时长 (control_wait)
+# 6. 多分支条件（elif 编译为 else 分支里的嵌套 if/else）
+if ${b:score >= 100}:
+    broadcast(${s:"stage_clear"})
+elif ${b:score >= 50}:
+    say(${s:"Good!"})
+elif ${b:score >= 10}:
+    say(${s:"Keep going"})
+else:
+    say(${s:"Try again"})
+
+# 7. 等待特定时长 (control_wait)
 wait(${n:0.5})
 
-# 7. 等待条件成立 (control_wait_until)
+# 8. 等待条件成立 (control_wait_until)
 wait_until(${b:key_pressed(${m:"any"})})
 
-# 8. 终止脚本 (control_stop)
+# 9. 终止脚本 (control_stop)
 stop(${m:"this script"})  # 可选: "all", "this script", "other scripts in sprite"
 ```
 
@@ -232,10 +253,26 @@ stop(${m:"this script"})  # 可选: "all", "this script", "other scripts in spri
 
 Scrathon 提供对 Scratch 全局/局部变量与列表的精确操作。
 
-### 8.1 变量操作
+### 8.1 变量作用域（全局 / 私有）
+
+- `${v:"name"}`：**全局变量**（舞台所有角色共享）。不存在时自动在舞台上创建。
+- `${v:local:"name"}`：**当前角色的私有变量**。不存在时自动在当前角色上创建。
+- `${v:global:"name"}`：显式指定全局，等价于不写前缀。
+- 列表同理：`${l:"name"}` / `${l:local:"name"}` / `${l:global:"name"}`。
+- 完整单词别名：`${variable:"name"}` = `${v:"name"}`，`${list:"name"}` = `${l:"name"}`；作用域前缀同样可用，例如 `${list:local:"backpack"}`。
+- `local:` 只能用于 `${v:...}` / `${l:...}` / `${variable:...}` / `${list:...}`；`${n:...}` 是数值标签，不能用于变量名或列表名。
+- 在舞台上使用 `local:` 会报错；舞台没有私有作用域。
+- 反编译时，角色私有变量输出为 `${v:local:"..."}`，全局变量输出为 `${v:"..."}`。
+
+> 注意：不带前缀现在明确表示**全局变量**。若要引用当前角色已有的同名私有变量，必须写 `${v:local:"..."}`。
+
+### 8.2 变量操作
 ```python
-# 变量设值 (data_setvariableto)
+# 全局变量设值 (data_setvariableto)
 set_var(${v:"score"}, ${n:0})
+
+# 当前角色私有变量设值
+set_var(${v:local:"hp"}, ${n:100})
 
 # 变量累加 (data_changevariableby)
 change_var(${v:"score"}, ${n:1})
@@ -245,10 +282,13 @@ show_variable(${v:"score"})
 hide_variable(${v:"score"})
 ```
 
-### 8.2 列表操作
+### 8.3 列表操作
 ```python
-# 添加项到列表末尾 (data_addtolist)
+# 添加项到全局列表末尾 (data_addtolist)
 list_add(${l:"inventory"}, ${s:"Iron Sword"})
+
+# 当前角色的私有列表
+list_add(${l:local:"backpack"}, ${s:"Potion"})
 
 # 删除列表指定项或清空 (data_deleteoflist / data_deletealloflist)
 list_delete(${l:"inventory"}, ${n:1})
@@ -495,12 +535,12 @@ def on_jump():
         
     # 分数过关校验
     if ${b:${v:"score"} >= 10}:
-        broadcast(${msg:"stage_clear"})
+        broadcast(${s:"stage_clear"})
 
 # -------------------------------------------------------------
 # 4. 广播事件监听
 # -------------------------------------------------------------
-@when_broadcast(${msg:"stage_clear"})
+@when_broadcast(${s:"stage_clear"})
 def on_clear():
     say(${s:"恭喜通关！"})
     music.playNoteForBeats(${n:72}, ${n:0.5})

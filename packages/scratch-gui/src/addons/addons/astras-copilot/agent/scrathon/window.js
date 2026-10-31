@@ -40,7 +40,28 @@ export const createScrathonWindow = ({ vm, msg }) => {
 
   const t = (key, fallback) => {
     const value = msg(key);
-    return value === key ? fallback : value;
+    if (!value || value === key || value.endsWith(`/${key}`)) return fallback;
+    return value;
+  };
+
+  /**
+   * Localize a message with `{placeholder}` substitution, falling back to the
+   * English template when the active locale has no translation.
+   * @param {string} key Message key.
+   * @param {string} fallback English template.
+   * @param {object} vars Placeholder values.
+   * @returns {string} Localized message.
+   */
+  const tf = (key, fallback, vars) => {
+    // Pass `vars` straight to `msg`: when the key is untranslated `msg` returns
+    // the namespaced key without formatting, so no required-argument error is
+    // thrown. Calling `msg(key)` first would throw for translated templates.
+    const value = msg(key, vars);
+    const missing = !value || value === key || value.endsWith(`/${key}`);
+    if (!missing) return value;
+    return String(fallback).replace(/\{(\w+)\}/g, (match, name) => {
+      return vars && Object.prototype.hasOwnProperty.call(vars, name) ? String(vars[name]) : match;
+    });
   };
 
   /** Report a message in the window's status strip. */
@@ -80,7 +101,10 @@ export const createScrathonWindow = ({ vm, msg }) => {
     try {
       const result = await applyScrathonSource(vm, { code, target: selectedTarget() });
       setStatus(
-        `${t('scrathon-applied', 'Applied to')} ${result.target.name}: ${result.applied} ${t('scrathon-blocks', 'block(s)')}.`,
+        tf('scrathon-applied-status', 'Applied to {target}: {count} block(s).', {
+          target: result.target.name,
+          count: result.applied
+        }),
         false,
         true
       );
@@ -104,7 +128,10 @@ export const createScrathonWindow = ({ vm, msg }) => {
       const code = `${importLines}${scriptCode}`;
       if (codeArea) codeArea.value = code;
       setStatus(
-        `${t('scrathon-exported', 'Exported')} ${scripts.length} ${t('scrathon-scripts', 'script(s)')} ${t('scrathon-from', 'from')} ${target.name}.`,
+        tf('scrathon-exported-status', 'Exported {count} script(s) from {target}.', {
+          count: scripts.length,
+          target: target.name
+        }),
         false,
         true
       );
@@ -232,7 +259,7 @@ export const createScrathonWindow = ({ vm, msg }) => {
         true
       );
     } catch (err) {
-      setStatus(`[Round-Trip Error] ${errorText(err)}`, true);
+      setStatus(tf('scrathon-roundtrip-error', 'Round-trip failed: {message}', { message: errorText(err) }), true);
     }
   };
 
@@ -299,7 +326,7 @@ export const createScrathonWindow = ({ vm, msg }) => {
 
     const title = document.createElement('span');
     title.className = 'sa-agent-scrathon-title';
-    title.textContent = t('scrathon-window-title', 'Scrathon Converter');
+    title.textContent = t('scrathon-window-title', 'Scrathon Debugger & Converter');
     header.appendChild(title);
 
     const closeButton = document.createElement('button');
@@ -350,21 +377,21 @@ export const createScrathonWindow = ({ vm, msg }) => {
     importButton.type = 'button';
     importButton.className = 'sa-agent-button sa-agent-button-primary';
     importButton.textContent = t('scrathon-import', 'Code \u2192 Blocks');
-    importButton.title = 'Compile Scrathon code and apply to target';
+    importButton.title = t('scrathon-import-tooltip', 'Compile Scrathon code and apply to target');
     importButton.addEventListener('click', importCode);
 
     const exportButton = document.createElement('button');
     exportButton.type = 'button';
     exportButton.className = 'sa-agent-button sa-agent-button-secondary';
     exportButton.textContent = t('scrathon-export', 'Blocks \u2192 Code');
-    exportButton.title = 'Decompile target scripts into code';
+    exportButton.title = t('scrathon-export-tooltip', 'Decompile target scripts into code');
     exportButton.addEventListener('click', exportCode);
 
     const roundTripButton = document.createElement('button');
     roundTripButton.type = 'button';
     roundTripButton.className = 'sa-agent-button sa-agent-button-secondary';
     roundTripButton.textContent = t('scrathon-roundtrip', 'Round-Trip Test');
-    roundTripButton.title = 'Test bidirectional conversion fidelity';
+    roundTripButton.title = t('scrathon-roundtrip-tooltip', 'Test bidirectional conversion fidelity');
     roundTripButton.addEventListener('click', roundTripTest);
 
     buttons.appendChild(importButton);
@@ -427,7 +454,7 @@ export const createScrathonWindow = ({ vm, msg }) => {
     // Status strip
     statusElement = document.createElement('pre');
     statusElement.className = 'sa-agent-scrathon-status';
-    statusElement.textContent = 'Ready.';
+    statusElement.textContent = t('scrathon-ready', 'Ready.');
     body.appendChild(statusElement);
 
     windowElement.appendChild(body);
