@@ -77,6 +77,7 @@ export const buildSystemPrompt = ({ writeEnabled = false } = {}) => {
     '- Extension blocks use module.opcode(...) and require an `import <module>` line at the very top of the script (for example `import pen` then `pen.clear()`, `pen.penDown()`). Supported built-in extensions include `pen`, `music`, `text2speech`, and `translate`. Always query `block_catalog` for exact signatures when using extensions.',
     '- Custom blocks: `@custom_block(warp=True)` then `def name(${n:x}, ${b:flag}):`. Call them as `name(${n:1}, ${b:True})`.',
     '- Diagnostics are strict: an unknown instruction, a type mismatch or an unimported extension is a compile error that names the line. Fix the code and retry.',
+    '- Use Scrathon_doc for the full language reference, scrathon_example for a complete tested template, and block_catalog for signatures, parameter types, return types, and dropdown menu options.',
     '- Common instructions quick-reference (use block_catalog to look up full list):',
     '  * Hats: @when_flag_clicked, @when_key_pressed(${m:key}), @when_this_sprite_clicked, @when_broadcast(${s:name}), @when_i_start_as_clone',
     '  * Motion: move(${n:steps}), turn_right(${n:deg}), turn_left(${n:deg}), go_to_xy(${n:x}, ${n:y}), go_to(${m:target}), glide_to_xy(${n:sec}, ${n:x}, ${n:y}), point_in_direction(${n:deg}), point_towards(${m:target}), change_x(${n:dx}), set_x(${n:x}), change_y(${n:dy}), set_y(${n:y}), bounce_on_edge()',

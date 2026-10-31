@@ -540,6 +540,14 @@ export const BUILTIN_EXTENSION_CATALOG = [
     signature: 'import music\nmusic.changeTempo(${n:delta})',
     opcode: 'music_changeTempo'
   },
+  {
+    name: 'music.getTempo',
+    category: 'music',
+    kind: 'extension',
+    signature: 'import music\nmusic.getTempo()',
+    opcode: 'music_getTempo',
+    returns: 'number'
+  },
 
   // Text to Speech
   {
@@ -570,16 +578,42 @@ export const BUILTIN_EXTENSION_CATALOG = [
     category: 'translate',
     kind: 'extension',
     signature: 'import translate\ntranslate.getTranslate(${s:text}, ${m:language})',
-    opcode: 'translate_getTranslate'
+    opcode: 'translate_getTranslate',
+    returns: 'string'
   },
   {
     name: 'translate.getViewerLanguage',
     category: 'translate',
     kind: 'extension',
     signature: 'import translate\ntranslate.getViewerLanguage()',
-    opcode: 'translate_getViewerLanguage'
+    opcode: 'translate_getViewerLanguage',
+    returns: 'string'
   }
 ];
+
+/** Precise return descriptions for common reporter functions. */
+const FUNCTION_RETURNS = {
+  answer: 'string',
+  username: 'string',
+  days_since_2000: 'number',
+  current: 'number',
+  timer: 'number',
+  loudness: 'number',
+  mouse_x: 'number',
+  mouse_y: 'number',
+  distance_to: 'number',
+  x_position: 'number',
+  y_position: 'number',
+  direction: 'number',
+  size: 'number',
+  volume: 'number',
+  list_length: 'number',
+  list_item_num: 'number',
+  list_item: 'number|string',
+  costume_number_name: 'number|string',
+  backdrop_number_name: 'number|string',
+  of: 'number|string'
+};
 
 /**
  * Build the full Scrathon DSL catalog for model lookup.
@@ -592,7 +626,7 @@ export const describeScrathonCatalog = (query = '') => {
     .toLowerCase();
   const results = [];
 
-  const add = (name, category, kind, signature, opcode) => {
+  const add = (name, category, kind, signature, opcode, extra = {}) => {
     if (
       !needle ||
       name.toLowerCase().includes(needle) ||
@@ -601,8 +635,18 @@ export const describeScrathonCatalog = (query = '') => {
       signature.toLowerCase().includes(needle) ||
       (opcode && opcode.toLowerCase().includes(needle))
     ) {
-      results.push({ name, category, kind, signature });
+      results.push({ name, category, kind, signature, opcode, ...extra });
     }
+  };
+
+  const expressionReturns = {
+    random: 'number',
+    join: 'string',
+    letter_of: 'string',
+    length_of: 'number',
+    contains: 'boolean',
+    round: 'number',
+    math: 'number'
   };
 
   const getCategory = (opcode) => {
@@ -617,45 +661,73 @@ export const describeScrathonCatalog = (query = '') => {
     return 'other';
   };
 
+  // Broadcast slots accept the short string sigil `${s:...}`.
+  const formatArg = (a) => `\${${a.t === 'msg' ? 's' : a.t}:${a.name.toLowerCase()}}`;
+
   // 1. Hat decorators
   for (const [name, descriptor] of Object.entries(HAT_DECORATORS)) {
-    const args = (descriptor.args || []).map((a) => `\${${a.t}:${a.name.toLowerCase()}}`).join(', ');
+    const args = (descriptor.args || []).map(formatArg).join(', ');
     const signature = `@${name}${args ? `(${args})` : ''}\ndef on_${name}():`;
-    add(`@${name}`, 'events', 'hat', signature, descriptor.opcode);
+    add(`@${name}`, 'events', 'hat', signature, descriptor.opcode, {
+      args: descriptor.args || [],
+      returns: 'void'
+    });
   }
 
   // 2. Control flow blocks (blocks with colons)
   for (const [name, descriptor] of Object.entries(CONTROL_FUNCTIONS)) {
-    const args = (descriptor.args || []).map((a) => `\${${a.t}:${a.name.toLowerCase()}}`).join(', ');
+    const args = (descriptor.args || []).map(formatArg).join(', ');
     const signature = `${name}(${args}):`;
-    add(name, 'control', 'control', signature, descriptor.opcode);
+    add(name, 'control', 'control', signature, descriptor.opcode, {
+      args: descriptor.args || [],
+      returns: 'void'
+    });
   }
 
   // If / elif / else
-  add('if', 'control', 'control', 'if ${b:condition}:', 'control_if');
-  add('elif', 'control', 'control', 'elif ${b:condition}:', 'control_if_else');
-  add('else', 'control', 'control', 'else:', 'control_if_else');
+  add('if', 'control', 'control', 'if ${b:condition}:', 'control_if', {
+    args: [{ t: 'b', k: 'input', name: 'CONDITION' }],
+    returns: 'void'
+  });
+  add('elif', 'control', 'control', 'elif ${b:condition}:', 'control_if_else', {
+    args: [{ t: 'b', k: 'input', name: 'CONDITION' }],
+    returns: 'void'
+  });
+  add('else', 'control', 'control', 'else:', 'control_if_else', { args: [], returns: 'void' });
 
   // 3. Statement / reporter functions
   for (const [name, descriptor] of Object.entries(FUNCTIONS)) {
-    const args = (descriptor.args || []).map((a) => `\${${a.t}:${a.name.toLowerCase()}}`).join(', ');
+    const args = (descriptor.args || []).map(formatArg).join(', ');
     const signature = `${name}(${args})`;
     const kind = descriptor.shape || (descriptor.reporter ? 'reporter' : 'statement');
     const category = getCategory(descriptor.opcode);
-    add(name, category, kind, signature, descriptor.opcode);
+    const returns =
+      descriptor.shape === 'boolean'
+        ? 'boolean'
+        : FUNCTION_RETURNS[name] || (descriptor.reporter ? 'number|string' : 'void');
+    add(name, category, kind, signature, descriptor.opcode, {
+      args: descriptor.args || [],
+      returns
+    });
   }
 
   // 4. Expression functions
   for (const [name, opcode] of Object.entries(EXPRESSION_FUNCTIONS)) {
     const argList = EXPRESSION_FUNCTION_ARGS[name] || [];
-    const args = argList.map((a) => `\${${a.t}:${a.name.toLowerCase()}}`).join(', ');
+    const args = argList.map(formatArg).join(', ');
     const signature = `${name}(${args})`;
-    add(name, 'operators', 'reporter', signature, opcode);
+    add(name, 'operators', 'reporter', signature, opcode, {
+      args: argList,
+      returns: expressionReturns[name] || 'number|string'
+    });
   }
 
   // 5. Built-in extension functions
   for (const item of BUILTIN_EXTENSION_CATALOG) {
-    add(item.name, item.category, item.kind, item.signature, item.opcode);
+    add(item.name, item.category, item.kind, item.signature, item.opcode, {
+      args: null,
+      returns: item.returns || 'void'
+    });
   }
 
   return results;

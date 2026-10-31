@@ -3,10 +3,13 @@ import dispatch from 'scratch-vm/src/dispatch/central-dispatch';
 import { getBlockLabel, scriptToDSL, previewScriptDSL } from './dsl.js';
 import { buildScriptsXml, generateId } from './block-xml.js';
 import { applyXml, hasApplier } from './writer.js';
+import scrathonDoc from '../docs/scrathon.md';
 import { parse as parseScrathon } from './scrathon/parser.js';
-import { compileFile as compileScrathon } from './scrathon/compiler.js';
+import { collectExtensionBlocks, compileFile as compileScrathon } from './scrathon/compiler.js';
 import { createDecompiler } from './scrathon/decompiler.js';
+import { resolveMenuOptions } from './scrathon/catalog.js';
 import { toScrathonError } from './scrathon/error.js';
+import { SCRATHON_EXAMPLE } from './scrathon/example.js';
 import { describeScrathonCatalog } from './scrathon/mappings.js';
 
 const MAX_FIELD_LENGTH = 500;
@@ -1051,17 +1054,151 @@ const renameTarget = async (vm, args) => {
   return { ok: true, before, after };
 };
 
+/** Human-readable label for a Scrathon sigil in catalog output. */
+const CATALOG_TAG_LABEL = {
+  n: 'number',
+  s: 'string',
+  b: 'boolean',
+  c: 'color',
+  m: 'menu',
+  v: 'variable',
+  l: 'list',
+  msg: 'broadcast'
+};
+
+/** Map an extension argument type to the Scrathon sigil used to write it. */
+const extensionSigil = (type) => {
+  if (type === 'boolean') return 'b';
+  if (type === 'color') return 'c';
+  if (type === 'menu') return 'm';
+  if (type === 'note') return 'n';
+  if (type === 'string' || type === 'matrix' || type === 'image') return 's';
+  if (['number', 'angle', 'integer', 'positiveInteger', 'positiveNumber', 'wholeNumber'].includes(type)) {
+    return 'n';
+  }
+  return 's';
+};
+
+/** Map an extension block type to a return description. */
+const extensionReturns = (blockType) => {
+  if (blockType === 'Boolean') return 'boolean';
+  if (blockType === 'reporter') return 'number|string';
+  return 'void';
+};
+
 /**
- * List core Scrathon DSL functions and signatures an agent may use, optionally filtered.
+ * Add type and menu information to a core catalog argument.
+ * @param {object} entry Catalog entry.
+ * @param {object} arg Raw argument descriptor.
+ * @param {object} vm Scratch VM.
+ * @param {object} target Current editing target.
+ * @returns {object} Public argument descriptor.
+ */
+const enrichCoreArg = (entry, arg, vm, target) => {
+  const result = {
+    name: arg.name,
+    type: CATALOG_TAG_LABEL[arg.t] || arg.t,
+    sigil: arg.t,
+    kind: arg.k
+  };
+  if (arg.t === 'msg') {
+    result.sigil = 's';
+    result.legacySigil = 'msg';
+  }
+  if (arg.t === 'm' || arg.t === 'v' || arg.t === 'l' || arg.t === 'msg') {
+    const menu = resolveMenuOptions({ opcode: entry.opcode, argName: arg.name, vm, target });
+    if (menu.options && menu.options.length > 0) result.options = menu.options;
+    if (menu.dynamic) result.dynamic = true;
+    if (menu.note) result.note = menu.note;
+  }
+  return result;
+};
+
+/**
+ * Add type and menu information to an extension catalog argument.
+ * @param {object} entry Catalog entry.
+ * @param {string} name Argument name.
+ * @param {object} info Extension argument metadata.
+ * @param {object} meta Extension block metadata.
+ * @param {object} vm Scratch VM.
+ * @param {object} target Current editing target.
+ * @returns {object} Public argument descriptor.
+ */
+const enrichExtensionArg = (entry, name, info, meta, vm, target) => {
+  const type = info.type || 'string';
+  const isMenu = type === 'menu' || Boolean(info.menu);
+  const menuName = info.menu || name;
+  const menuInfo = meta.menus ? meta.menus[menuName] : null;
+  const result = {
+    name,
+    type: isMenu ? 'menu' : type,
+    sigil: isMenu ? 'm' : extensionSigil(type),
+    kind: isMenu && menuInfo && !menuInfo.acceptReporters ? 'field' : 'input'
+  };
+  if (isMenu) {
+    const menu = resolveMenuOptions({ opcode: entry.opcode, argName: menuName, menuInfo, vm, target });
+    if (menu.options && menu.options.length > 0) result.options = menu.options;
+    if (menu.dynamic) result.dynamic = true;
+    if (menu.note) result.note = menu.note;
+    if (!result.options || result.options.length === 0) {
+      result.note = result.note || 'Menu options are populated by the extension at runtime.';
+    }
+  }
+  return result;
+};
+
+/**
+ * Enrich one catalog entry with argument types, return type and menu options.
+ * @param {object} entry Catalog entry.
+ * @param {object} vm Scratch VM.
+ * @param {object} target Current editing target.
+ * @param {Map<string, object>} extensionBlocks Extension metadata.
+ * @returns {object} Enriched entry.
+ */
+const enrichCatalogEntry = (entry, vm, target, extensionBlocks) => {
+  let args = entry.args;
+  let returns = entry.returns || 'void';
+  if (entry.kind === 'extension') {
+    const meta = extensionBlocks.get(entry.opcode);
+    if (meta) {
+      args = Object.entries(meta.arguments || {}).map(([name, info]) =>
+        enrichExtensionArg(entry, name, info || {}, meta, vm, target)
+      );
+      returns = entry.returns && entry.returns !== 'void' ? entry.returns : extensionReturns(meta.blockType);
+    } else {
+      args = [];
+    }
+  } else {
+    args = (args || []).map((arg) => enrichCoreArg(entry, arg, vm, target));
+  }
+  return {
+    name: entry.name,
+    category: entry.category,
+    kind: entry.kind,
+    signature: entry.signature,
+    returns,
+    arguments: args
+  };
+};
+
+/**
+ * List core Scrathon DSL functions with argument types, return types and menu
+ * options, optionally filtered.
+ * @param {object} vm Scratch VM.
  * @param {object} args Tool arguments.
  * @returns {object} Catalog.
  */
-const blockCatalog = (args) => {
+const blockCatalog = (vm, args) => {
   const filter = String(args.query || '').trim();
   const blocks = describeScrathonCatalog(filter);
+  const stage =
+    vm && vm.runtime && typeof vm.runtime.getTargetForStage === 'function' ? vm.runtime.getTargetForStage() : null;
+  const target = getEditingTarget(vm) || stage;
+  const extensionBlocks = collectExtensionBlocks(vm);
+  const enriched = blocks.map((entry) => enrichCatalogEntry(entry, vm, target, extensionBlocks));
   return {
-    count: blocks.length,
-    blocks: blocks.slice(0, 100)
+    count: enriched.length,
+    blocks: enriched.slice(0, 100)
   };
 };
 
@@ -1344,7 +1481,7 @@ export const TOOL_DEFINITIONS = [
     function: {
       name: 'block_catalog',
       description:
-        'List core Scrathon DSL functions, hat decorators, and expression signatures with typed sigils (${n:...}, ${s:...}, ${b:...}, etc.), optionally filtered. ALWAYS use this to look up valid Scrathon DSL function names and argument signatures before writing code for apply_scripts.',
+        'List core Scrathon DSL functions, hat decorators, and expression signatures with typed sigils (${n:...}, ${s:...}, ${b:...}, etc.), optionally filtered. Each entry includes argument types, return type, and dropdown options when the argument is a menu. ALWAYS use this to look up valid Scrathon DSL names, argument types, and menu options before writing code for apply_scripts.',
       parameters: {
         type: 'object',
         properties: {
@@ -1354,6 +1491,32 @@ export const TOOL_DEFINITIONS = [
               'Optional name, category, or keyword to filter by (e.g. "motion", "sound", "control", "var", "looks", "hat").'
           }
         },
+        additionalProperties: false
+      }
+    }
+  },
+  {
+    type: 'function',
+    function: {
+      name: 'Scrathon_doc',
+      description:
+        'Return the complete Scrathon DSL reference markdown (docs/scrathon.md), including syntax, type sigils, variables/lists/scopes, control flow, custom blocks, and extension notes. Use this when you need the full language details rather than a catalog lookup.',
+      parameters: {
+        type: 'object',
+        properties: {},
+        additionalProperties: false
+      }
+    }
+  },
+  {
+    type: 'function',
+    function: {
+      name: 'scrathon_example',
+      description:
+        'Return a complete, tested Scrathon feature-tour example covering events, motion, looks, sound, control/elif, sensing reporters (answer, days_since_2000, current, timer, username), operators, variables/lists with scopes, custom blocks, pen, and music. Use it as a template instead of guessing syntax.',
+      parameters: {
+        type: 'object',
+        properties: {},
         additionalProperties: false
       }
     }
@@ -1377,7 +1540,9 @@ export const createScratchTools = (vm) => ({
   search_blocks: (args) => searchBlocks(vm, args || {}),
   get_extension_source: (args) => getExtensionSource(vm, args || {}),
   get_runtime_state: () => getRuntimeState(vm),
-  block_catalog: (args) => blockCatalog(args || {}),
+  block_catalog: (args) => blockCatalog(vm, args || {}),
+  Scrathon_doc: () => ({ content: scrathonDoc }),
+  scrathon_example: () => ({ code: SCRATHON_EXAMPLE }),
   get_write_status: () => getWriteReady(),
   apply_scripts: (args) => applyScripts(vm, args || {}),
   delete_scripts: (args) => deleteScripts(vm, args || {}),

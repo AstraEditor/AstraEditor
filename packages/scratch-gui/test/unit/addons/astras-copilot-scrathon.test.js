@@ -7,11 +7,14 @@ import { parse } from '../../../src/addons/addons/astras-copilot/agent/scrathon/
 import { compileFile } from '../../../src/addons/addons/astras-copilot/agent/scrathon/compiler';
 import { createDecompiler } from '../../../src/addons/addons/astras-copilot/agent/scrathon/decompiler';
 import { describeScrathonCatalog, FUNCTIONS } from '../../../src/addons/addons/astras-copilot/agent/scrathon/mappings';
+import { SCRATHON_EXAMPLE } from '../../../src/addons/addons/astras-copilot/agent/scrathon/example';
 import { buildScriptsXml } from '../../../src/addons/addons/astras-copilot/agent/block-xml';
 import { ScrathonError } from '../../../src/addons/addons/astras-copilot/agent/scrathon/error';
 import {
+  createScratchTools,
   makeVarContext,
-  prepareScrathonCodeAndExtensions
+  prepareScrathonCodeAndExtensions,
+  TOOL_DEFINITIONS
 } from '../../../src/addons/addons/astras-copilot/agent/tools';
 
 /**
@@ -60,6 +63,9 @@ const makeScratchTarget = (name, isStage, getStage) => ({
   isStage,
   variables: {},
   runtime: { getTargetForStage: getStage },
+  getName() {
+    return this.name;
+  },
   lookupVariableByNameAndType(varName, varType, skipStage) {
     for (const variable of Object.values(this.variables)) {
       if (variable.name === varName && variable.type === varType) return variable;
@@ -765,10 +771,10 @@ test('round-trips a compiled program through the decompiler', () => {
   expect(opcodes(again[0].blocks)).toEqual(opcodes(scripts[0].blocks));
 });
 
-test('describeScrathonCatalog returns DSL signatures and categories without opcodes', () => {
+test('describeScrathonCatalog returns DSL signatures and categories', () => {
   const full = describeScrathonCatalog();
   expect(full.length).toBeGreaterThan(40);
-  expect(full.every((b) => b.name && b.signature && b.category && b.kind && b.opcode === undefined)).toBe(true);
+  expect(full.every((b) => b.name && b.signature && b.category && b.kind)).toBe(true);
 
   const motion = describeScrathonCatalog('motion');
   expect(motion.some((b) => b.name === 'move' && b.signature.includes('move(${n:steps})'))).toBe(true);
@@ -1055,4 +1061,164 @@ test('standalone expressions and reporters compile into isolated top-level block
   expect(xmlResult.xml).toContain('operator_random');
   expect(xmlResult.xml).toContain('operator_add');
   expect(xmlResult.xml).toContain('motion_xposition');
+});
+
+test('feature tour example compiles, emits XML, and round-trips', () => {
+  const scripts = compile(SCRATHON_EXAMPLE);
+  expect(scripts.length).toBe(8);
+
+  const ctx = makeCtx();
+  const xmlResult = buildScriptsXml(scripts, ctx);
+  expect(xmlResult.xml).toContain('<shadow type="note">');
+  expect(xmlResult.xml).toContain('<shadow type="event_broadcast_menu">');
+  expect(xmlResult.xml).toContain('<shadow type="colour_picker">');
+  expect(xmlResult.xml).toContain('<shadow type="sensing_of_object_menu">');
+  expect(xmlResult.xml).toContain('<shadow type="music_menu_INSTRUMENT">');
+  expect(xmlResult.xml).toContain('procedures_definition');
+  expect(xmlResult.xml).toContain('procedures_call');
+
+  const target = makeTarget(scripts);
+  const { code } = createDecompiler(null, target).file();
+  expect(code).toContain('import pen');
+  expect(code).toContain('import music');
+  expect(code).toContain('answer()');
+  expect(code).toContain('days_since_2000()');
+  expect(code).toContain('elif ');
+  expect(code).toContain('@custom_block(warp=True)');
+  expect(code).toContain('music.getTempo()');
+
+  const recompiled = compile(code);
+  expect(recompiled.length).toBe(scripts.length);
+});
+
+test('Scrathon_doc and scrathon_example are exposed to the model', () => {
+  const names = TOOL_DEFINITIONS.map((definition) => definition.function.name);
+  expect(names).toContain('Scrathon_doc');
+  expect(names).toContain('scrathon_example');
+  expect(names).toContain('block_catalog');
+});
+
+test('Scrathon_doc returns the markdown reference', () => {
+  const tools = createScratchTools({});
+  const result = tools.Scrathon_doc();
+  expect(typeof result.content).toBe('string');
+  expect(result.content).toContain('# Scrathon');
+  expect(result.content).toContain('${v:');
+});
+
+test('scrathon_example returns the shared compilable example', () => {
+  const tools = createScratchTools({});
+  const result = tools.scrathon_example();
+  expect(result.code).toBe(SCRATHON_EXAMPLE);
+  expect(compile(result.code).length).toBe(8);
+});
+
+test('block_catalog returns argument types, return types, and dropdown options', () => {
+  const stage = makeScratchTarget('Stage', true, () => stage);
+  const sprite = makeScratchTarget('Sprite1', false, () => stage);
+  sprite.variables = {
+    localHp: { id: 'localHp', name: 'hp', type: '' },
+    localItems: { id: 'localItems', name: 'backpack', type: 'list' }
+  };
+  stage.variables = {
+    globalScore: { id: 'globalScore', name: 'score', type: '' },
+    globalList: { id: 'globalList', name: 'inventory', type: 'list' },
+    broadcast: { id: 'broadcast', name: 'update', type: 'broadcast_msg' }
+  };
+  sprite.getCostumes = () => [{ name: 'costume1' }, { name: 'costume2' }];
+  stage.getCostumes = () => [{ name: 'backdrop1' }];
+  sprite.getSounds = () => [{ name: 'pop' }];
+  stage.getSounds = () => [];
+  const vm = {
+    runtime: {
+      getTargetForStage: () => stage,
+      getEditingTarget: () => sprite,
+      targets: [stage, sprite],
+      _blockInfo: [
+        {
+          id: 'music',
+          blocks: [
+            {
+              info: {
+                opcode: 'setInstrument',
+                blockType: 'command',
+                arguments: { INSTRUMENT: { type: 'menu' } }
+              }
+            },
+            { info: { opcode: 'getTempo', blockType: 'reporter', arguments: {} } }
+          ],
+          menuInfo: {
+            INSTRUMENT: {
+              acceptReporters: true,
+              items: [
+                ['Piano', '1'],
+                ['Guitar', '2']
+              ]
+            }
+          }
+        }
+      ]
+    }
+  };
+  const tools = createScratchTools(vm);
+
+  const keyEntry = tools.block_catalog({ query: 'key_pressed' }).blocks.find((b) => b.name === 'key_pressed');
+  expect(keyEntry.returns).toBe('boolean');
+  expect(keyEntry.arguments[0].type).toBe('menu');
+  expect(keyEntry.arguments[0].sigil).toBe('m');
+  expect(keyEntry.arguments[0].options).toEqual(expect.arrayContaining([{ label: 'space', value: 'space' }]));
+
+  const setVar = tools.block_catalog({ query: 'set_var' }).blocks.find((b) => b.name === 'set_var');
+  const variableArg = setVar.arguments.find((arg) => arg.name === 'VARIABLE');
+  expect(variableArg.type).toBe('variable');
+  expect(variableArg.sigil).toBe('v');
+  expect(variableArg.options).toEqual(
+    expect.arrayContaining([
+      { label: 'hp (local)', value: 'hp', scope: 'local' },
+      { label: 'score (global)', value: 'score', scope: 'global' }
+    ])
+  );
+
+  const listArg = tools
+    .block_catalog({ query: 'list_add' })
+    .blocks.find((b) => b.name === 'list_add')
+    .arguments.find((arg) => arg.name === 'LIST');
+  expect(listArg.type).toBe('list');
+  expect(listArg.sigil).toBe('l');
+  expect(listArg.options).toEqual(
+    expect.arrayContaining([
+      { label: 'backpack (local)', value: 'backpack', scope: 'local' },
+      { label: 'inventory (global)', value: 'inventory', scope: 'global' }
+    ])
+  );
+
+  const costumeArg = tools.block_catalog({ query: 'switch_costume' }).blocks.find((b) => b.name === 'switch_costume')
+    .arguments[0];
+  expect(costumeArg.type).toBe('menu');
+  expect(costumeArg.options).toEqual([
+    { label: 'costume1', value: 'costume1' },
+    { label: 'costume2', value: 'costume2' }
+  ]);
+
+  const answer = tools.block_catalog({ query: 'answer' }).blocks.find((b) => b.name === 'answer');
+  expect(answer.returns).toBe('string');
+
+  const broadcast = tools.block_catalog({ query: 'broadcast' }).blocks.find((b) => b.name === 'broadcast');
+  expect(broadcast.arguments[0].sigil).toBe('s');
+  expect(broadcast.arguments[0].legacySigil).toBe('msg');
+  expect(broadcast.arguments[0].options).toEqual(
+    expect.arrayContaining([{ label: 'update', value: 'update', scope: 'global' }])
+  );
+
+  const instrument = tools
+    .block_catalog({ query: 'music.setInstrument' })
+    .blocks.find((b) => b.name === 'music.setInstrument');
+  expect(instrument.arguments[0].type).toBe('menu');
+  expect(instrument.arguments[0].options).toEqual([
+    { label: 'Piano', value: '1' },
+    { label: 'Guitar', value: '2' }
+  ]);
+
+  const tempo = tools.block_catalog({ query: 'music.getTempo' }).blocks.find((b) => b.name === 'music.getTempo');
+  expect(tempo.returns).toBe('number');
 });

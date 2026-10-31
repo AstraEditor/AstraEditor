@@ -919,7 +919,7 @@ export const STATIC_EXTENSION_BLOCKS = {
   music_setInstrument: { categoryId: 'music', arguments: { INSTRUMENT: { type: 'menu' } }, menus: {} },
   music_setTempo: { categoryId: 'music', arguments: { TEMPO: { type: 'number' } }, menus: {} },
   music_changeTempo: { categoryId: 'music', arguments: { TEMPO: { type: 'number' } }, menus: {} },
-  music_getTempo: { categoryId: 'music', arguments: {}, menus: {} },
+  music_getTempo: { categoryId: 'music', blockType: 'reporter', arguments: {}, menus: {} },
 
   // Text2speech extension
   text2speech_speakAndWait: { categoryId: 'text2speech', arguments: { WORDS: { type: 'string' } }, menus: {} },
@@ -929,10 +929,16 @@ export const STATIC_EXTENSION_BLOCKS = {
   // Translate extension
   translate_getTranslate: {
     categoryId: 'translate',
+    blockType: 'reporter',
     arguments: { WORDS: { type: 'string' }, LANGUAGE: { type: 'menu' } },
     menus: {}
   },
-  translate_getViewerLanguage: { categoryId: 'translate', arguments: {}, menus: {} }
+  translate_getViewerLanguage: {
+    categoryId: 'translate',
+    blockType: 'reporter',
+    arguments: {},
+    menus: {}
+  }
 };
 
 /**
@@ -954,6 +960,7 @@ export const collectExtensionBlocks = (vm) => {
       if (!info || typeof info.opcode !== 'string') continue;
       map.set(`${category.id}_${info.opcode}`, {
         categoryId: category.id,
+        blockType: info.blockType || null,
         arguments: info.arguments || {},
         menus: category.menuInfo || {}
       });
