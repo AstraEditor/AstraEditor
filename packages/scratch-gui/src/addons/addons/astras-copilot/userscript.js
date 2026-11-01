@@ -15,6 +15,7 @@ import iconRetry from '!../../../lib/tw-recolor/build!./icon-retry.svg';
 import iconBranch from '!../../../lib/tw-recolor/build!./icon-branch.svg';
 import iconDiffText from '!../../../lib/tw-recolor/build!./icon-diff-text.svg';
 import iconDiffBlocks from '!../../../lib/tw-recolor/build!./icon-diff-blocks.svg';
+import iconExchange from '!../../../lib/tw-recolor/build!./icon-exchange.svg';
 import SideBar from '../../ui/side-bar/side-bar.js';
 import BottomPanel from '../../ui/bottom-panel/bottom-panel.js';
 import { callChatCompletion } from './agent/client.js';
@@ -3551,7 +3552,7 @@ export default async ({ addon, msg }) => {
     scrathonButton.className = 'sa-agent-icon-button sa-agent-scrathon-button';
     scrathonButton.title = msg('scrathon');
     scrathonButton.setAttribute('aria-label', msg('scrathon'));
-    scrathonButton.appendChild(createIcon(iconBuild, 'sa-agent-scrathon-icon'));
+    scrathonButton.appendChild(createIcon(iconExchange, 'sa-agent-scrathon-icon'));
     scrathonButton.addEventListener('click', () => {
       if (!scrathonWindow) {
         scrathonWindow = createScrathonWindow({ vm, msg });
