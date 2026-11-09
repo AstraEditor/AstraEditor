@@ -667,6 +667,9 @@ Blockly.WorkspaceSvg.prototype.updateScreenCalculations_ = function () {
  * @package
  */
 Blockly.WorkspaceSvg.prototype.resizeContents = function () {
+  // Contents changed, so any cached bounding box is stale regardless of whether
+  // we are currently allowed to resize.
+  this.cachedBlockBoundingBox_ = null;
   if (!this.resizesEnabled_ || !this.rendered) {
     return;
   }
@@ -1460,12 +1463,24 @@ Blockly.WorkspaceSvg.prototype.onMouseWheel_ = function (e) {
  *   containing the blocks on the workspace.
  */
 Blockly.WorkspaceSvg.prototype.getBlocksBoundingBox = function () {
+  // A single scroll step asks for this twice: once when the wheel handler builds its
+  // drag metrics, and again from Scrollbar#set -> setTopLevelWorkspaceMetrics_. Each
+  // call walks every top level block and recurses down each stack via getHeightWidth(),
+  // so reuse the result for the rest of the frame. Anything older than a frame is
+  // always recomputed, and resizeContents() drops the cache outright.
+  var now = Date.now();
+  if (this.cachedBlockBoundingBox_ && now - this.cachedBlockBoundingBoxTime_ < 16) {
+    return this.copyBlockBoundingBox_(this.cachedBlockBoundingBox_);
+  }
+
   var topBlocks = this.getTopBlocks(false);
   var topComments = this.getTopComments(false);
   var topElements = topBlocks.concat(topComments);
   // There are no blocks, return empty rectangle.
   if (!topElements.length) {
-    return { x: 0, y: 0, width: 0, height: 0 };
+    this.cachedBlockBoundingBox_ = { x: 0, y: 0, width: 0, height: 0 };
+    this.cachedBlockBoundingBoxTime_ = now;
+    return this.copyBlockBoundingBox_(this.cachedBlockBoundingBox_);
   }
 
   // Initialize boundary using the first block.
@@ -1487,12 +1502,25 @@ Blockly.WorkspaceSvg.prototype.getBlocksBoundingBox = function () {
       boundary.bottomRight.y = blockBoundary.bottomRight.y;
     }
   }
-  return {
+
+  this.cachedBlockBoundingBox_ = {
     x: boundary.topLeft.x,
     y: boundary.topLeft.y,
     width: boundary.bottomRight.x - boundary.topLeft.x,
     height: boundary.bottomRight.y - boundary.topLeft.y
   };
+  this.cachedBlockBoundingBoxTime_ = now;
+  return this.copyBlockBoundingBox_(this.cachedBlockBoundingBox_);
+};
+
+/**
+ * Return a copy of a cached bounding box so callers can never mutate the cache.
+ * @param {!Object} box The cached box.
+ * @return {!Object} A fresh copy.
+ * @private
+ */
+Blockly.WorkspaceSvg.prototype.copyBlockBoundingBox_ = function (box) {
+  return { x: box.x, y: box.y, width: box.width, height: box.height };
 };
 
 /**

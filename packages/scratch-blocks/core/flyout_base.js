@@ -668,6 +668,11 @@ Blockly.Flyout.prototype.show = function (xmlList) {
   var contents = [];
   var gaps = [];
   this.permanentlyDisabled_.length = 0;
+  // Share one field width cache across every block built for this flyout. Each
+  // domToBlock/render pair otherwise clears the cache on exit, so every block
+  // re-measures its own text with getComputedTextLength() -- a synchronous text
+  // layout -- even when the exact same label was already measured for another block.
+  Blockly.Field.startCache();
   for (var i = 0, xml; (xml = xmlList[i]); i++) {
     // Handle dynamic categories, represented by a name instead of a list of XML.
     // Look up the correct category generation function and call that to get a
@@ -740,6 +745,8 @@ Blockly.Flyout.prototype.show = function (xmlList) {
       }
     }
   }
+
+  Blockly.Field.stopCache();
 
   this.emptyRecycleBlocks_();
 

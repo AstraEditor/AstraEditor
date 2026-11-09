@@ -342,11 +342,21 @@ class Gen_compressed(threading.Thread):
           f.write(" ".join(args[1:]).replace("\\", "\\\\"))
         args = [CLOSURE_COMPILER_NPM, "--flagfile", flagfile_name]
 
-      proc = subprocess.Popen(args, stdin=subprocess.PIPE, stdout=subprocess.PIPE)
+      proc = subprocess.Popen(args, stdin=subprocess.PIPE, stdout=subprocess.PIPE,
+                              stderr=subprocess.PIPE)
       (stdout, stderr) = proc.communicate()
 
       if use_flagfile:
         os.remove(flagfile_name)
+
+      if proc.returncode != 0 or not stdout:
+        # Without this the failure is silent: empty stdout just looks like a
+        # zero-byte compile and the target file is quietly left stale.
+        sys.stderr.write(
+            "Closure compiler failed for %s (exit %s)\n%s\n" %
+            (target_filename, proc.returncode,
+             stderr.decode("utf-8", "replace") if stderr else ""))
+        raise RuntimeError("closure compiler failed: " + target_filename)
 
       # Build the JSON response.
       filesizes = [os.path.getsize(value) for (arg, value) in params if arg == "js_file"]
@@ -591,7 +601,15 @@ if __name__ == "__main__":
     test_args = [closure_compiler, os.path.join("build", "test_input.js")]
     test_proc = subprocess.Popen(test_args, stdin=subprocess.PIPE, stdout=subprocess.PIPE)
     (stdout, _) = test_proc.communicate()
-    assert stdout.decode("utf-8") == read(os.path.join("build", "test_expect.js"))
+
+    # Different Closure Compiler builds may emit different amounts of whitespace
+    # (e.g. "var Blockly = { Blocks: {} };" vs "var Blockly={Blocks:{}};"), so
+    # compare the token content rather than the exact bytes.
+    def normalize_js(text):
+      return re.sub(r"\s+", "", text)
+
+    assert normalize_js(stdout.decode("utf-8")) == normalize_js(
+        read(os.path.join("build", "test_expect.js")))
 
     print("Using local compiler: %s ...\n" % CLOSURE_COMPILER_NPM)
   except (ImportError, AssertionError):

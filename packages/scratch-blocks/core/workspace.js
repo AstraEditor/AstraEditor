@@ -56,6 +56,14 @@ Blockly.Workspace = function (opt_options) {
    */
   this.topBlocks_ = [];
   /**
+   * Bumped every time a block finishes rendering. Used to invalidate cached stack
+   * sizes: a stack's total height only changes when one of its blocks re-renders,
+   * and re-rendering is exactly what bumps this counter.
+   * @type {number}
+   * @package
+   */
+  this.stackSizeVersion_ = 0;
+  /**
    * @type {!Array.<!Blockly.WorkspaceComment>}
    * @private
    */

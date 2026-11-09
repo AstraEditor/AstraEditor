@@ -607,12 +607,10 @@ Blockly.BlockSvg.prototype.updateColour = function () {
     icons[i].updateColour();
   }
 
-  // Bump every dropdown to change its colour.
-  for (var x = 0, input; (input = this.inputList[x]); x++) {
-    for (var y = 0, field; (field = input.fieldRow[y]); y++) {
-      field.setText(null);
-    }
-  }
+  // Note: this function used to walk every field and call setText(null) to "bump"
+  // dropdown colours. Field#setText returns immediately for null, so that loop only
+  // burned O(fields) time on every colour change, glow and SVG init. Field text
+  // colour is driven by CSS classes, so the loop is removed instead of revived.
 };
 
 /**
@@ -661,15 +659,34 @@ Blockly.BlockSvg.prototype.highlightShapeForInput = function (conn, add) {
  * @return {!{height: number, width: number}} Object with height and width properties.
  */
 Blockly.BlockSvg.prototype.getHeightWidth = function () {
+  // A stack only changes size when one of its members re-renders, so cache the walk
+  // against the workspace render version. This is the hot path for long scripts: a
+  // 400 block stack used to cost 400 steps on every visibility check, every bounding
+  // box calculation and every flyout layout, i.e. on every single scroll frame.
+  var workspace = this.workspace;
+  var version = workspace ? workspace.stackSizeVersion_ : 0;
+  var cached = this.cachedStackSize_;
+  if (cached && cached.version === version) {
+    // Callers are allowed to mutate the returned object -- the intersection observer
+    // scales width and height in place -- so hand out a copy, never the cached instance.
+    return { height: cached.height, width: cached.width };
+  }
+
   var height = this.height;
   var width = this.width;
-  // Recursively add size of subsequent blocks.
   var nextBlock = this.getNextBlock();
-  if (nextBlock) {
-    var nextHeightWidth = nextBlock.getHeightWidth();
-    height += nextHeightWidth.height;
-    height -= Blockly.BlockSvg.NOTCH_HEIGHT; // Exclude height of connected notch.
-    width = Math.max(width, nextHeightWidth.width);
+  while (nextBlock) {
+    height += nextBlock.height - Blockly.BlockSvg.NOTCH_HEIGHT;
+    if (nextBlock.width > width) {
+      width = nextBlock.width;
+    }
+    nextBlock = nextBlock.getNextBlock();
+  }
+
+  // Only memoize real numbers. A block that has not been rendered yet has no height and
+  // memoizing undefined would poison every later bounding box with NaN.
+  if (isFinite(height) && isFinite(width)) {
+    this.cachedStackSize_ = { version: version, height: height, width: width };
   }
   return { height: height, width: width };
 };
@@ -683,6 +700,11 @@ Blockly.BlockSvg.prototype.getHeightWidth = function () {
 Blockly.BlockSvg.prototype.render = function (opt_bubble) {
   Blockly.Field.startCache();
   this.rendered = true;
+
+  // This block's size is about to change, so any cached stack size is stale. Bumping a
+  // single counter is cheaper than tracking which stacks are affected, and scroll-only
+  // frames never render, so the caches still hold where it matters.
+  this.workspace.stackSizeVersion_ = (this.workspace.stackSizeVersion_ || 0) + 1;
 
   var cursorX = Blockly.BlockSvg.SEP_SPACE_X;
   if (this.RTL) {

@@ -218,7 +218,9 @@ Blockly.Css.CONTENT = [
   'left: 0;',
   'right: 0;',
   'bottom: 0;',
-  'overflow: visible !important;',
+  /* Kept overridable in script: a tall stack is clipped for cost reasons, see
+     BlockDragSurfaceSvg.setOverflowClipped. */
+  'overflow: visible;',
   'z-index: 50;' /* Display above the toolbox */,
   '}',
 
@@ -427,6 +429,19 @@ Blockly.Css.CONTENT = [
   'cursor: grabbing;',
   'cursor: -webkit-grabbing;',
   'cursor: -moz-grabbing;',
+  '}',
+
+  /* Lean paint mode, switched on for the duration of a drag on tall stacks.
+     Moving the surface itself is pure compositing, so what a drag actually costs is
+     the paint that follows the reparent: the browser walks every block in the stack
+     and rasterises every path. Dropping the highlight path halves the path count per
+     block, and optimizeSpeed skips anti-aliasing on paths that are moving too fast to
+     inspect. Both are dropped again on mouse up. */
+  '.blocklyDragSurfaceLean {',
+  'shape-rendering: optimizeSpeed;',
+  '}',
+  '.blocklyDragSurfaceLean .blocklyPathLight {',
+  'display: none;',
   '}',
 
   '.blocklyDragging.blocklyDraggingDelete {',

@@ -105,12 +105,53 @@ Blockly.BlockDragSurfaceSvg.prototype.dragShadowFilterId_ = '';
 Blockly.BlockDragSurfaceSvg.SHADOW_STD_DEVIATION = 6;
 
 /**
+ * Height, in workspace units, above which the drag shadow is skipped.
+ *
+ * The shadow is a real SVG filter, and the filter is attached to the group that moves
+ * with the pointer, so every pointer move re-runs a gaussian blur plus a composite over
+ * the whole dragged stack. A tall stack therefore re-blurs millions of pixels per frame,
+ * which is what makes dragging feel sticky in large projects.
+ *
+ * Below this height the shadow is kept (a single block, a couple of blocks). Above it the
+ * filter is dropped for the duration of the drag. Set to 0 to always keep the shadow.
+ * @const {number}
+ */
+Blockly.BlockDragSurfaceSvg.SHADOW_HEIGHT_LIMIT = 600;
+
+/**
+ * Height, in workspace units, above which the dragged stack drops its per-block highlight
+ * path and anti-aliasing for the duration of the drag.
+ *
+ * Higher than SHADOW_HEIGHT_LIMIT on purpose: losing the shadow blur is invisible, losing
+ * the highlight is not, and a stack of a dozen blocks does not need the saving. Around
+ * 30 blocks.
+ * @const {number}
+ */
+Blockly.BlockDragSurfaceSvg.LEAN_PAINT_HEIGHT_LIMIT = 1200;
+
+/**
+ * Whether the drag surface is promoted to its own compositing layer while dragging.
+ *
+ * The surface is a transparent, absolutely positioned SVG stacked above the workspace,
+ * and its transform changes on every pointer move. Without a compositing hint the
+ * browser cannot just slide the layer: it has to repaint the moved surface *and* every
+ * block underneath it in the affected region, every frame. With tens of thousands of
+ * SVG nodes in the workspace that is what turns a drag into a slideshow.
+ *
+ * Promoting it lets the compositor scroll the existing raster instead, so the cost of a
+ * move no longer scales with what is visible underneath.
+ * @const {boolean}
+ */
+Blockly.BlockDragSurfaceSvg.COMPOSITE_MOVE = true;
+
+/**
  * Create the drag surface and inject it into the container.
  */
 Blockly.BlockDragSurfaceSvg.prototype.createDom = function () {
   if (this.SVG_) {
     return; // Already created.
   }
+  this.composited_ = Blockly.BlockDragSurfaceSvg.COMPOSITE_MOVE;
   this.SVG_ = Blockly.utils.createSvgElement(
     'svg',
     {
@@ -126,7 +167,81 @@ Blockly.BlockDragSurfaceSvg.prototype.createDom = function () {
   // Belongs in Scratch Blocks, but not Blockly.
   var defs = Blockly.utils.createSvgElement('defs', {}, this.SVG_);
   this.dragShadowFilterId_ = this.createDropShadowDom_(defs);
-  this.dragGroup_.setAttribute('filter', 'url(#' + this.dragShadowFilterId_ + ')');
+  this.dragShadowFilterUrl_ = 'url(#' + this.dragShadowFilterId_ + ')';
+  this.dragGroup_.setAttribute('filter', this.dragShadowFilterUrl_);
+  this.applyCompositing_();
+  this.releaseInjectionOverflow_();
+};
+
+/**
+ * Let the drag surface paint outside the injection container, once.
+ *
+ * A stack has to be carriable over the palette and off the edge of the editor, and the
+ * injection div clips its children, so its overflow has to be visible. The old code
+ * toggled that per drag (visible when the drag started, hidden when it ended). Each
+ * toggle invalidates layout for the *entire* editor -- palette, flyout, stage, all of
+ * it -- which cost ~350ms on mouseup and a similar stall when the drag began, on stacks
+ * of every size. Setting it once at creation keeps the visual behaviour and drops both
+ * stalls.
+ *
+ * Nothing else in the editor relies on that clipping: the workspace <svg> carries its own
+ * overflow:hidden, so blocks inside the canvas still stop at its edges.
+ * @private
+ */
+Blockly.BlockDragSurfaceSvg.prototype.releaseInjectionOverflow_ = function () {
+  var node = this.container_;
+  while (node && node.nodeType === 1) {
+    var cls = node.getAttribute && node.getAttribute('class');
+    if (cls && (' ' + cls + ' ').indexOf(' injectionDiv ') !== -1) {
+      node.style.overflow = 'visible';
+      return;
+    }
+    node = node.parentNode;
+  }
+};
+
+/**
+ * Apply (or remove) the compositing hint on the drag surface.
+ * @private
+ */
+Blockly.BlockDragSurfaceSvg.prototype.applyCompositing_ = function () {
+  if (!this.SVG_) {
+    return;
+  }
+  this.SVG_.style.willChange = this.composited_ ? 'transform' : 'auto';
+};
+
+/**
+ * Turn composited dragging on or off at runtime, so the trade-off can be measured in the
+ * browser without a rebuild. Safe to call at any time.
+ * @param {boolean} enabled Whether the drag surface should get its own layer.
+ */
+Blockly.BlockDragSurfaceSvg.prototype.setCompositing = function (enabled) {
+  this.composited_ = !!enabled;
+  this.applyCompositing_();
+  if (this.SVG_ && this.SVG_.style.display !== 'none') {
+    this.translateSurfaceInternal_();
+  }
+};
+
+/**
+ * Turn the drag shadow filter on or off.
+ *
+ * Kept as a method rather than a direct attribute write so the filter URL is set and
+ * removed consistently, and so callers never have to know the generated filter id.
+ * @param {boolean} enabled Whether the shadow should be drawn while dragging.
+ */
+Blockly.BlockDragSurfaceSvg.prototype.setShadowEnabled = function (enabled) {
+  if (!this.dragGroup_ || !this.dragShadowFilterUrl_) {
+    return;
+  }
+  if (enabled) {
+    if (this.dragGroup_.getAttribute('filter') !== this.dragShadowFilterUrl_) {
+      this.dragGroup_.setAttribute('filter', this.dragShadowFilterUrl_);
+    }
+  } else if (this.dragGroup_.hasAttribute('filter')) {
+    this.dragGroup_.removeAttribute('filter');
+  }
 };
 
 /**
@@ -185,6 +300,57 @@ Blockly.BlockDragSurfaceSvg.prototype.createDropShadowDom_ = function (defs) {
 };
 
 /**
+ * Turn the drag surface's own clipping on or off.
+ *
+ * The surface is exactly as large as the editor, so with clipping on a stack is still
+ * fully visible anywhere inside the editor -- over the palette, over the sprite pane --
+ * but the rasterised area stops at the editor bounds instead of growing with the stack.
+ * That matters because the browser has to rasterise everything the surface paints: a
+ * 24000px stack that is clipped to a 900px surface only costs 900px of raster, while the
+ * unclipped version costs the full stack height on every move.
+ *
+ * Off by default so short stacks keep the original behaviour of staying visible even when
+ * dragged outside the editor window.
+ * @param {boolean} clipped Whether to clip to the surface bounds.
+ */
+Blockly.BlockDragSurfaceSvg.prototype.setOverflowClipped = function (clipped) {
+  if (!this.SVG_) {
+    return;
+  }
+  var value = clipped ? 'hidden' : 'visible';
+  if (this.SVG_.style.overflow !== value) {
+    this.SVG_.style.overflow = value;
+  }
+};
+
+/**
+ * Switch the surface into a cheaper paint mode.
+ *
+ * Moving the surface is already pure compositing -- it is a translate3d on a layer that
+ * carries will-change, so a pointer move repaints nothing. What a drag actually costs is
+ * the paint that follows the reparent: the browser walks every block in the stack and
+ * rasterises every path in it, and that cost is what grows with stack length.
+ *
+ * Lean mode attacks the per-path cost instead of the node count: dropping the highlight
+ * path removes one of the two filled paths every block carries, and optimizeSpeed skips
+ * anti-aliasing on geometry that is moving. A block loses its top highlight while it is
+ * in the air and gets it back on mouse up.
+ *
+ * Intended for tall stacks only -- a single block looks better with its highlight.
+ * @param {boolean} enabled Whether lean painting is on.
+ */
+Blockly.BlockDragSurfaceSvg.prototype.setLeanPaint = function (enabled) {
+  if (!this.SVG_) {
+    return;
+  }
+  if (enabled) {
+    Blockly.utils.addClass(this.SVG_, 'blocklyDragSurfaceLean');
+  } else {
+    Blockly.utils.removeClass(this.SVG_, 'blocklyDragSurfaceLean');
+  }
+};
+
+/**
  * Set the SVG blocks on the drag surface's group and show the surface.
  * Only one block group should be on the drag surface at a time.
  * @param {!Element} blocks Block or group of blocks to place on the drag
@@ -196,12 +362,6 @@ Blockly.BlockDragSurfaceSvg.prototype.setBlocksAndShow = function (blocks) {
   this.dragGroup_.appendChild(blocks);
   this.SVG_.style.display = 'block';
   this.surfaceXY_ = new goog.math.Coordinate(0, 0);
-  // This allows blocks to be dragged outside of the blockly svg space.
-  // This should be reset to hidden at the end of the block drag.
-  // Note that this behavior is different from blockly where block disappear
-  // "under" the blockly area.
-  var injectionDiv = document.getElementsByClassName('injectionDiv')[0];
-  injectionDiv.style.overflow = 'visible';
 };
 
 /**
@@ -231,9 +391,17 @@ Blockly.BlockDragSurfaceSvg.prototype.translateSurfaceInternal_ = function () {
   // fuzzy while they are being dragged on the drag surface.
   x = x.toFixed(0);
   y = y.toFixed(0);
-  this.SVG_.style.display = 'block';
+  if (this.SVG_.style.display !== 'block') {
+    this.SVG_.style.display = 'block';
+  }
 
-  Blockly.utils.setCssTransform(this.SVG_, 'translate(' + x + 'px, ' + y + 'px)');
+  // A 3d transform is what actually gets the surface onto the compositor; a 2d one only
+  // does so when a will-change/transform hint is present. Both are kept so that the
+  // behavior does not depend on the hint surviving downstream stylesheets.
+  var transform = this.composited_ ?
+    'translate3d(' + x + 'px, ' + y + 'px, 0)' :
+    'translate(' + x + 'px, ' + y + 'px)';
+  Blockly.utils.setCssTransform(this.SVG_, transform);
 };
 
 /**
@@ -297,11 +465,7 @@ Blockly.BlockDragSurfaceSvg.prototype.clearAndHide = function (opt_newSurface) {
   this.SVG_.style.display = 'none';
   goog.asserts.assert(this.dragGroup_.childNodes.length == 0, 'Drag group was not cleared.');
   this.surfaceXY_ = null;
-
-  // Reset the overflow property back to hidden so that nothing appears outside
-  // of the blockly area.
-  // Note that this behavior is different from blockly. See note in
-  // setBlocksAndShow.
-  var injectionDiv = document.getElementsByClassName('injectionDiv')[0];
-  injectionDiv.style.overflow = 'hidden';
+  // The blocks are back on the canvas now, where they should keep their highlights, so
+  // lean paint must not outlive the drag.
+  this.setLeanPaint(false);
 };

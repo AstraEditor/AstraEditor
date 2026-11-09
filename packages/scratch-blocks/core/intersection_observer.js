@@ -26,6 +26,11 @@ Blockly.IntersectionObserver.prototype.unobserve = function (block) {
 };
 
 Blockly.IntersectionObserver.prototype.dispose = function () {
+  if (this.frameRequest_ && window.cancelAnimationFrame) {
+    window.cancelAnimationFrame(this.frameRequest_);
+  }
+  this.frameRequest_ = null;
+  this.intersectionCheckQueued = false;
   this.observing = [];
   this.workspace = null;
 };
@@ -35,9 +40,13 @@ Blockly.IntersectionObserver.prototype.queueIntersectionCheck = function () {
     return;
   }
   this.intersectionCheckQueued = true;
-  // Check for intersections on the next microtick
-  // Prefer to use the native method when available, otherwise fallback to a Promise-based polyfill
-  if (window.queueMicrotask) {
+  // Coalesce to at most one check per animation frame. Every translate() call
+  // (wheel, scrollbar drag, zoom) queues a check; on high refresh rate trackpads
+  // that can be several times per frame, and a microtask would run the full O(n)
+  // scan for each one. A frame callback runs it once, right before paint.
+  if (window.requestAnimationFrame) {
+    this.frameRequest_ = window.requestAnimationFrame(this.checkForIntersections);
+  } else if (window.queueMicrotask) {
     window.queueMicrotask(this.checkForIntersections);
   } else {
     // eslint-disable-next-line no-undef
@@ -47,6 +56,7 @@ Blockly.IntersectionObserver.prototype.queueIntersectionCheck = function () {
 
 Blockly.IntersectionObserver.prototype.checkForIntersections = function () {
   this.intersectionCheckQueued = false;
+  this.frameRequest_ = null;
 
   if (!this.workspace) {
     return;
@@ -100,3 +110,4 @@ Blockly.IntersectionObserver.prototype.checkForIntersections = function () {
     block.setIntersects(visible);
   }
 };
+

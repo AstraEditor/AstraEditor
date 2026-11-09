@@ -4,6 +4,8 @@
 .backpack-container {
   flex-shrink: 1;
   position: relative;
+  background: $ui-white;
+  border-bottom: 1px solid $ui-black-transparent;
 }
 
 .backpack-header {

@@ -331,6 +331,10 @@ Blockly.BlockSvg.prototype.setParent = function (newParent) {
     return;
   }
 
+  // Joining or leaving a stack changes the stack size, so drop every cached stack size
+  // in this workspace. One counter bump, see BlockSvg#getHeightWidth.
+  this.workspace.stackSizeVersion_ = (this.workspace.stackSizeVersion_ || 0) + 1;
+
   this.updateIntersectionObserver();
 
   var oldXY = this.getRelativeToSurfaceXY();
@@ -423,6 +427,37 @@ Blockly.BlockSvg.prototype.moveBy = function (dx, dy) {
  */
 Blockly.BlockSvg.prototype.translate = function (x, y) {
   this.getSvgRoot().setAttribute('transform', 'translate(' + x + ',' + y + ')');
+};
+
+/**
+ * Offset shadow that stands in for the drag surface's blurred shadow on tall stacks.
+ *
+ * Above BlockDragSurfaceSvg.SHADOW_HEIGHT_LIMIT the surface drops its own feGaussianBlur,
+ * because a blur over a 20000px stack is re-rasterised continuously while the stack moves.
+ * Dropping the blur must not drop the lift, so the block itself carries this offset-only
+ * shadow instead: it reads as floating without the per-frame blur cost.
+ * @const {string}
+ */
+Blockly.BlockSvg.DRAG_SHADOW_FILTER = 'drop-shadow(0 2px 0 rgba(0, 0, 0, 0.28))';
+
+/**
+ * Apply or remove the offset shadow on this block's SVG group.
+ *
+ * Only the top block of a dragged stack gets it -- the filter covers the whole subtree,
+ * so applying it per child would stack dozens of shadows on the same pixels.
+ * @param {boolean} enabled Whether the shadow should be shown.
+ * @private
+ */
+Blockly.BlockSvg.prototype.setDragShadow_ = function (enabled) {
+  var svgRoot = this.getSvgRoot();
+  if (!svgRoot) {
+    return;
+  }
+  if (enabled) {
+    svgRoot.style.filter = Blockly.BlockSvg.DRAG_SHADOW_FILTER;
+  } else if (svgRoot.style.filter) {
+    svgRoot.style.filter = '';
+  }
 };
 
 /**
@@ -769,6 +804,11 @@ Blockly.BlockSvg.prototype.setDragging = function (adding) {
   } else {
     Blockly.draggingConnections_ = [];
     Blockly.utils.removeClass(/** @type {!Element} */ (this.svgGroup_), 'blocklyDragging');
+    // Only the top block of a dragged stack carries the offset shadow, so only the top
+    // block ever has something to clear -- children just fall through.
+    if (this.svgGroup_.style.filter) {
+      this.svgGroup_.style.filter = '';
+    }
   }
   // Recurse through all blocks attached under this one.
   for (var i = 0; i < this.childBlocks_.length; i++) {

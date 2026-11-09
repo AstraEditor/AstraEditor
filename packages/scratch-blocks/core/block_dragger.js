@@ -49,7 +49,6 @@ Blockly.BlockDragger = function (block, workspace) {
    * @private
    */
   this.draggingBlock_ = block;
-
   /**
    * The workspace on which the block is being dragged.
    * @type {!Blockly.WorkspaceSvg}
@@ -107,6 +106,25 @@ Blockly.BlockDragger = function (block, workspace) {
 };
 
 /**
+ * Diagnostic switch: collect per-drag timing and print a summary when the drag ends.
+ *
+ * Logs one small object per drag; set to false to silence it. Kept in the shipped build
+ * because the interesting number is impossible to get from a long-task observer -- when a
+ * drag feels slow but reports no long tasks, that gap *is* the answer (script time is
+ * small, the frame is lost in style / layout / paint), and it can only be confirmed by
+ * timing both sides during a real drag.
+ * @type {boolean}
+ */
+Blockly.BlockDragger.PERF = true;
+
+/**
+ * Timing being collected for the drag in progress, or null.
+ * @type {?Object}
+ * @private
+ */
+Blockly.BlockDragger.perf_ = null;
+
+/**
  * Sever all links from this object.
  * @package
  */
@@ -115,6 +133,11 @@ Blockly.BlockDragger.prototype.dispose = function () {
   this.workspace_ = null;
   this.startWorkspace_ = null;
   this.dragIconData_.length = 0;
+
+  if (Blockly.BlockDragger.perf_) {
+    window.cancelAnimationFrame(Blockly.BlockDragger.perf_.raf);
+    Blockly.BlockDragger.perf_ = null;
+  }
 
   if (this.draggedConnectionManager_) {
     this.draggedConnectionManager_.dispose();
@@ -172,15 +195,125 @@ Blockly.BlockDragger.prototype.startBlockDrag = function (currentDragDeltaXY) {
     Blockly.BlockAnimations.disconnectUiEffect(this.draggingBlock_);
   }
   this.draggingBlock_.setDragging(true);
+
+  // Configure the surface *before* the stack is reparented into it. That reparent is
+  // what paints the surface for the first time, so clipping and the shadow have to be in
+  // place already -- otherwise the first frame rasterises the full stack height with a
+  // blur on top, which is where the 300ms+ stall at the start of a tall drag came from.
+  var dragSurface = this.workspace_.blockDragSurface_;
+  var tooTall = false;
+  if (dragSurface && dragSurface.setShadowEnabled && Blockly.BlockDragSurfaceSvg) {
+    var height = this.draggingBlock_.getHeightWidth().height;
+    var shadowLimit = Blockly.BlockDragSurfaceSvg.SHADOW_HEIGHT_LIMIT;
+    tooTall = shadowLimit > 0 && height > shadowLimit;
+    // The shadow is an SVG filter on the group that follows the pointer, so it is
+    // re-blurred on every move. Skip it for tall stacks. See SHADOW_HEIGHT_LIMIT.
+    dragSurface.setShadowEnabled(!tooTall);
+    // Clipping is what keeps a tall stack affordable: the surface is editor-sized, so the
+    // stack stays visible anywhere in the editor, but the browser no longer has to
+    // rasterise 24000px of it on every move. See setOverflowClipped.
+    if (dragSurface.setOverflowClipped) {
+      dragSurface.setOverflowClipped(tooTall);
+    }
+    // Lean paint: drop the per-block highlight path and anti-aliasing while the stack is
+    // in the air. Both come back on mouse up. A separate, higher threshold than the
+    // shadow's, because losing the highlight is a visible change and a handful of blocks
+    // is not worth making it. See setLeanPaint.
+    if (dragSurface.setLeanPaint) {
+      var leanLimit = Blockly.BlockDragSurfaceSvg.LEAN_PAINT_HEIGHT_LIMIT;
+      dragSurface.setLeanPaint(leanLimit > 0 && height > leanLimit);
+    }
+  }
+
   // For future consideration: we may be able to put moveToDragSurface inside
   // the block dragger, which would also let the block not track the block drag
   // surface.
   this.draggingBlock_.moveToDragSurface_();
 
+  if (dragSurface && dragSurface.setShadowEnabled) {
+    // Dropping the blur must not drop the lift: above the limit a cheap offset shadow on
+    // the block itself takes over, so the stack still reads as floating.
+    this.draggingBlock_.setDragShadow_(tooTall);
+  }
+
   var toolbox = this.workspace_.getToolbox();
   if (toolbox) {
     var style = this.draggingBlock_.isDeletable() ? 'blocklyToolboxDelete' : 'blocklyToolboxGrab';
     toolbox.addStyle(style);
+  }
+
+  this.startPerfProbe_();
+};
+
+/**
+ * Begin collecting timing for the drag that just started.
+ * @private
+ */
+Blockly.BlockDragger.prototype.startPerfProbe_ = function () {
+  if (!Blockly.BlockDragger.PERF) {
+    Blockly.BlockDragger.perf_ = null;
+    return;
+  }
+  var size = this.draggingBlock_.getHeightWidth();
+  var now = performance.now();
+  var probe = {
+    start: now,
+    lastFrame: now,
+    gaps: [],
+    calls: 0,
+    scriptMs: 0,
+    worstScriptMs: 0,
+    moveMs: 0,
+    blocks: 0,
+    height: Math.round(size.height),
+    raf: 0
+  };
+  // Walk the stack once so the report can say what was actually being carried.
+  for (var b = this.draggingBlock_; b; b = b.getNextBlock()) {
+    probe.blocks++;
+  }
+  var tick = function () {
+    var t = performance.now();
+    probe.gaps.push(t - probe.lastFrame);
+    probe.lastFrame = t;
+    probe.raf = window.requestAnimationFrame(tick);
+  };
+  probe.raf = window.requestAnimationFrame(tick);
+  Blockly.BlockDragger.perf_ = probe;
+};
+
+/**
+ * Stop the probe and print what it measured.
+ * @private
+ */
+Blockly.BlockDragger.prototype.reportPerf_ = function () {
+  var probe = Blockly.BlockDragger.perf_;
+  Blockly.BlockDragger.perf_ = null;
+  if (!probe) {
+    return;
+  }
+  window.cancelAnimationFrame(probe.raf);
+  var wall = performance.now() - probe.start;
+  var gaps = probe.gaps.slice().sort(function (a, b) { return a - b; });
+  var median = gaps.length ? gaps[Math.floor(gaps.length / 2)] : 0;
+  var worstFrame = gaps.length ? gaps[gaps.length - 1] : 0;
+  var avgScript = probe.calls ? probe.scriptMs / probe.calls : 0;
+  console.log(
+    '[drag] blocks=' + probe.blocks +
+    ' stackHeight=' + probe.height +
+    ' wall=' + wall.toFixed(0) + 'ms' +
+    ' frames=' + gaps.length +
+    ' medianFrame=' + median.toFixed(1) + 'ms' +
+    ' worstFrame=' + worstFrame.toFixed(0) + 'ms' +
+    ' | moveCalls=' + probe.calls +
+    ' avgScript=' + avgScript.toFixed(2) + 'ms' +
+    ' worstScript=' + probe.worstScriptMs.toFixed(1) + 'ms' +
+    ' scriptTotal=' + probe.scriptMs.toFixed(0) + 'ms' +
+    ' (' + (wall > 0 ? (100 * probe.scriptMs / wall).toFixed(1) : '0') + '% of wall)' +
+    ' | moveDuringDrag=' + (probe.calls ? (probe.moveMs / probe.calls).toFixed(2) : '0') + 'ms avg');
+  if (wall > 0 && median > 20 && avgScript < 4) {
+    console.log('[drag] script time is small but frames are long: the cost is in ' +
+        'style / layout / paint, not in the drag logic.');
   }
 };
 
@@ -194,11 +327,17 @@ Blockly.BlockDragger.prototype.startBlockDrag = function (currentDragDeltaXY) {
  * @return {boolean} True if the event should be propagated, false if not.
  */
 Blockly.BlockDragger.prototype.dragBlock = function (e, currentDragDeltaXY) {
+  var probe = Blockly.BlockDragger.perf_;
+  var t0 = probe ? performance.now() : 0;
   var delta = this.pixelsToWorkspaceUnits_(currentDragDeltaXY);
   var newLoc = goog.math.Coordinate.sum(this.startXY_, delta);
 
+  var tMove = probe ? performance.now() : 0;
   this.draggingBlock_.moveDuringDrag(newLoc);
   this.dragIcons_(delta);
+  if (probe) {
+    probe.moveMs += performance.now() - tMove;
+  }
 
   this.deleteArea_ = this.workspace_.isDeleteArea(e);
   var isOutside = !this.workspace_.isInsideBlocksArea(e);
@@ -209,6 +348,14 @@ Blockly.BlockDragger.prototype.dragBlock = function (e, currentDragDeltaXY) {
   }
 
   this.updateCursorDuringBlockDrag_(isOutside);
+  if (probe) {
+    var spent = performance.now() - t0;
+    probe.calls++;
+    probe.scriptMs += spent;
+    if (spent > probe.worstScriptMs) {
+      probe.worstScriptMs = spent;
+    }
+  }
   return isOutside;
 };
 
@@ -294,6 +441,8 @@ Blockly.BlockDragger.prototype.endBlockDrag = function (e, currentDragDeltaXY) {
       ws.refreshToolboxSelection_();
     });
   }
+
+  this.reportPerf_();
 };
 
 /**

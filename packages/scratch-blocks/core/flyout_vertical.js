@@ -292,7 +292,6 @@ Blockly.VerticalFlyout.prototype.getMetrics_ = function () {
   // Add padding to the bottom of the flyout, so we can scroll to the top of
   // the last category.
   var contentHeight = optionBox.height * this.workspace_.scale;
-  this.recordCategoryScrollPositions_();
   var bottomPadding = this.MARGIN;
   if (this.categoryScrollPositions.length > 0) {
     var lastLabel = this.categoryScrollPositions[this.categoryScrollPositions.length - 1];
@@ -632,6 +631,11 @@ Blockly.VerticalFlyout.prototype.layout_ = function (contents, gaps) {
       cursorY += button.height + gaps[i];
     }
   }
+
+  // Remember where each category label ended up, once the layout is final. This used
+  // to run from getMetrics_(), which is called on every scroll frame and allocated a
+  // brand new position array each time.
+  this.recordCategoryScrollPositions_();
 };
 
 /**
