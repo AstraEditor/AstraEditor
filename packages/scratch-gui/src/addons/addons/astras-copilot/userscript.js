@@ -26,6 +26,7 @@ import { buildSystemPrompt } from './agent/prompt.js';
 import { createScrathonWindow } from './agent/scrathon/window.js';
 import { renderBlockPreview } from './agent/block-preview.js';
 import { setApplier } from './agent/writer.js';
+import { patchScript } from './agent/script-patcher.js';
 import {
   buildApiEndpoint,
   clampNumber,
@@ -2394,7 +2395,7 @@ export default async ({ addon, msg }) => {
       const workspace = getMainWorkspace(Blockly);
       if (!workspace) throw new Error('The block workspace is not ready.');
 
-      const result = { blockIds: [], deleted: 0, id: undefined };
+      const result = { blockIds: [], deleted: 0, id: undefined, patched: [] };
 
       // The tool call was prepared against a specific project and target. If the
       // user loaded another project while the model was thinking, the ids in the
@@ -2419,8 +2420,9 @@ export default async ({ addon, msg }) => {
 
       const hasBlocks = Boolean(xml && xml.trim());
       const hasDeletes = Array.isArray(meta.deleteScriptIds) && meta.deleteScriptIds.length > 0;
+      const hasReplacements = Array.isArray(meta.replaceScripts) && meta.replaceScripts.length > 0;
       const hasLocalDecl = Array.isArray(meta.declarations) && meta.declarations.some((decl) => decl && decl.isLocal);
-      const needEditingTarget = hasBlocks || hasDeletes || hasLocalDecl;
+      const needEditingTarget = hasBlocks || hasDeletes || hasReplacements || hasLocalDecl;
 
       const requestedTargetId = meta.targetId || (vm.editingTarget ? vm.editingTarget.id : null);
       if (needEditingTarget && requestedTargetId && vm.editingTarget && requestedTargetId !== vm.editingTarget.id) {
@@ -2459,23 +2461,36 @@ export default async ({ addon, msg }) => {
           if (targetId) vm.renameSprite(targetId, String(meta.renameTarget));
         }
 
-        // 3. Delete requested scripts first (so replacing a script is safe).
+        // 3. Delete scripts requested by delete_scripts.
         if (Array.isArray(meta.deleteScriptIds)) {
           for (const scriptId of meta.deleteScriptIds) {
             if (disposeScript(Blockly, targetWorkspace, scriptId)) result.deleted++;
           }
-          // Replacing a script means deleting it first. If the editor workspace
-          // does not know the id (wrong sprite, stale payload), inserting the new
-          // blocks would duplicate code, so stop with an explicit error instead.
           if (result.deleted < meta.deleteScriptIds.length) {
             throw new Error(
-              `Could not replace ${meta.deleteScriptIds.length - result.deleted} script(s): they are not in the ` +
-                'editor workspace for this sprite. Nothing else was applied. Re-read the project and try again.'
+              `Could not delete ${meta.deleteScriptIds.length - result.deleted} script(s): they are not in the ` +
+                'editor workspace for this sprite. Re-read the project and try again.'
             );
           }
         }
 
-        // 4. Load new blocks from XML.
+        // 4. Patch existing scripts in place (apply_scrathon_edits). The hat and
+        //    every unchanged block keep their identity, position and comments, so
+        //    the user sees a minimal diff instead of a regenerated script.
+        if (Array.isArray(meta.replaceScripts)) {
+          for (const item of meta.replaceScripts) {
+            if (!item || !item.scriptId) continue;
+            const stats = patchScript({
+              Blockly,
+              workspace: targetWorkspace,
+              scriptId: item.scriptId,
+              xml: item.xml
+            });
+            result.patched.push({ scriptId: item.scriptId, ...stats });
+          }
+        }
+
+        // 5. Load brand new blocks from XML (apply_scripts).
         if (xml && xml.trim()) {
           const dom = Blockly.Xml.textToDom(xml);
           const ids = Blockly.Xml.domToWorkspace(dom.documentElement || dom, targetWorkspace);

@@ -19,7 +19,8 @@ const HEADER = [
   '# Each "### <scriptId> · <hat>" heading starts one script of the target above it.',
   '# Patch scripts in place with apply_scrathon_edits:',
   '#   target: "<target name>", edits: [{ scriptId: "<scriptId>", code: "<Scrathon source>" }]',
-  '# Scripts you do not list stay untouched; a listed script is fully replaced by your code.',
+  '# Scripts you do not list stay untouched. A listed script is patched in place:',
+  '# the hat and unchanged blocks keep their identity, only the changed part is rebuilt.',
   '# Keep the `import <extension>` lines shown for the target at the top of any replacement code.'
 ];
 

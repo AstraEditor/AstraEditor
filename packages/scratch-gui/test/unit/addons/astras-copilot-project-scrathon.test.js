@@ -155,10 +155,15 @@ describe('incremental script edits', () => {
     expect(result.ok).toBe(true);
     expect(result.replaced).toBe(1);
     expect(result.target).toEqual({ name: 'Sprite1', isStage: false });
-    expect(captured.meta.deleteScriptIds).toEqual(['s1']);
+    // In-place patching: the applier receives replacement documents instead of a
+    // delete-then-append instruction.
+    expect(captured.meta.deleteScriptIds).toBeUndefined();
+    expect(captured.meta.replaceScripts).toHaveLength(1);
+    expect(captured.meta.replaceScripts[0].scriptId).toBe('s1');
+    expect(captured.meta.replaceScripts[0].xml).toContain('event_whenflagclicked');
     expect(captured.meta.targetId).toBe('sprite-1');
     expect(captured.meta.projectId).toBe('project-abc');
-    expect(captured.xml).toContain('event_whenflagclicked');
+    expect(captured.xml).toBe('');
   });
 
   test('rejects unknown, duplicated and empty edits', async () => {

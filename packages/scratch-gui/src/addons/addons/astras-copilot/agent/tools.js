@@ -1056,12 +1056,25 @@ export const applyScrathonEdits = async (vm, args = {}) => {
   }
 
   const ctx = makeVarContext(vm, target);
-  const descriptors = preparedEdits.flatMap((entry) => entry.compiled.scripts);
-  const compiledXml = buildScriptsXml(descriptors, ctx);
-  const result = await applyXml(compiledXml.xml, {
+  const replaceScripts = [];
+  const declarations = [];
+  const warnings = [];
+  let scriptCount = 0;
+
+  // Compile each edit into its own document so the patch can be applied to the
+  // existing script in place (the workspace keeps the hat and unchanged blocks).
+  for (const entry of preparedEdits) {
+    const compiledXml = buildScriptsXml(entry.compiled.scripts, ctx);
+    declarations.push(...compiledXml.declarations);
+    warnings.push(...compiledXml.warnings);
+    replaceScripts.push({ scriptId: entry.scriptId, xml: compiledXml.xml });
+    scriptCount += compiledXml.scripts;
+  }
+
+  const result = await applyXml('', {
     targetId: target.id,
-    deleteScriptIds: preparedEdits.map((entry) => entry.scriptId),
-    declarations: compiledXml.declarations,
+    replaceScripts,
+    declarations,
     projectId: getProjectId(vm)
   });
 
@@ -1069,9 +1082,10 @@ export const applyScrathonEdits = async (vm, args = {}) => {
     ok: true,
     target: getTargetIdentity(target),
     replaced: preparedEdits.length,
-    scripts: compiledXml.scripts,
-    applied: result && result.blockIds ? result.blockIds.length : compiledXml.scripts,
-    warnings: compiledXml.warnings
+    scripts: scriptCount,
+    applied: Array.isArray(result && result.patched) ? result.patched.length : preparedEdits.length,
+    patches: result && result.patched ? result.patched : undefined,
+    warnings
   };
 };
 
@@ -1531,7 +1545,7 @@ export const TOOL_DEFINITIONS = [
     function: {
       name: 'apply_scrathon_edits',
       description:
-        'EDIT existing scripts in place, one script at a time. Pass the script ids from get_project_scrathon / list_scripts and the full new Scrathon body for each. The listed scripts are replaced and every other script is left untouched; the whole batch is one undo step. Prefer this over apply_scripts when modifying code that already exists. To remove a script use delete_scripts.',
+        'EDIT existing scripts in place, one script at a time. Pass the script ids from get_project_scrathon / list_scripts and the full new Scrathon body for each. The listed scripts are patched block by block: the hat and every unchanged block keep their identity, position and comments, only the changed part is rebuilt, and the whole batch is one undo step. Prefer this over apply_scripts when modifying code that already exists. To remove a script use delete_scripts.',
       parameters: {
         type: 'object',
         properties: {
