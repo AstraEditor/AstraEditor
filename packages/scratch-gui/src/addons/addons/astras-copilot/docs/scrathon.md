@@ -47,7 +47,8 @@ Scrathon 是一门以 Python 语法形态为载体、直接面向 Scratch 运行
 
 ### 2.2 注释
 - 使用 `#` 进行注释，支持整行独立注释与语句行尾注释。
-- 编译器会保留有意义的行注释，并可选择将其转换为 Scratch 工作区中的积木附着注释（Block Comments）。
+- 引号内的 `#` 不会被当作注释起点。
+- **当前实现**：注释在词法阶段被剥离，不参与编译，也不会写回 Blockly；注释仅用于给人阅读。若需要积木附着注释，需在 Blockly 中手动添加。
 
 ### 2.3 标识符与命名
 - 变量名、列表名、广播名允许中英文字符、数字与下划线。
@@ -576,4 +577,5 @@ def on_clear():
 3. **XML 发射阶段 (Scratch-Blocks XML Emitter)**：
    - 将 AST 映射为符合 `scratch-blocks` 规范的原生 XML；
    - 自动装配对应插槽的阴影积木（`<shadow type="math_number">` 等）；
-   - 最终提交至 `Blockly.Xml.domToWorkspace`，原子化完成工作区渲染并保留 Ctrl+Z 撤销能力。
+   - 新脚本提交至 `Blockly.Xml.domToWorkspace`，原子化完成工作区渲染并保留 Ctrl+Z 撤销能力；
+   - 已有脚本的修改走 `agent/script-patcher.js` 的块级原位 patch，避免整段重建（详见 `ARCHITECTURE.md`）。
