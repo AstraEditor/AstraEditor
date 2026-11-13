@@ -2,7 +2,7 @@ import dispatch from 'scratch-vm/src/dispatch/central-dispatch';
 
 import { getBlockLabel, scriptToDSL, previewScriptDSL } from './dsl.js';
 import { buildScriptsXml, generateId } from './block-xml.js';
-import { applyXml, hasApplier } from './writer.js';
+import { applyXml } from './writer.js';
 import { SCRATHON_DOC } from '../docs/scrathon-doc.js';
 import { parse as parseScrathon } from './scrathon/parser.js';
 import { collectExtensionBlocks, compileFile as compileScrathon } from './scrathon/compiler.js';
@@ -11,6 +11,7 @@ import { resolveMenuOptions } from './scrathon/catalog.js';
 import { toScrathonError } from './scrathon/error.js';
 import { SCRATHON_EXAMPLE } from './scrathon/example.js';
 import { describeScrathonCatalog } from './scrathon/mappings.js';
+import { collectProjectScrathon } from './project-scrathon.js';
 
 const MAX_FIELD_LENGTH = 500;
 const MAX_LIST_ITEMS = 30;
@@ -63,6 +64,22 @@ const getBlock = (target, blockId) => {
  * @returns {Array<object>} Targets.
  */
 const getTargets = (vm) => (vm && vm.runtime && Array.isArray(vm.runtime.targets) ? vm.runtime.targets : []);
+
+/**
+ * Read the stable project id (`Runtime#getProjectId`). It is persisted inside
+ * the .sb3 metadata, so it also identifies the project across reloads.
+ * @param {object} vm Scratch VM.
+ * @returns {string} Project id, or an empty string when unavailable.
+ */
+export const getProjectId = (vm) => {
+  const runtime = vm && vm.runtime;
+  if (!runtime || typeof runtime.getProjectId !== 'function') return '';
+  try {
+    return String(runtime.getProjectId() || '');
+  } catch (error) {
+    return '';
+  }
+};
 
 /**
  * Get the current editing target, falling back to the stage.
@@ -787,19 +804,16 @@ export const makeVarContext = (vm, target) => {
 };
 
 /**
- * Report whether the write bridge is ready.
- * @returns {object} Status.
- */
-const getWriteReady = () => ({
-  ready: hasApplier(),
-  canApply: hasApplier()
-});
-
-/**
  * Tool names that change the project. The agent loop only exposes these to the
  * model when write mode is enabled for the conversation.
  */
-export const WRITE_TOOL_NAMES = ['apply_scripts', 'delete_scripts', 'create_variable', 'rename_target'];
+export const WRITE_TOOL_NAMES = [
+  'apply_scripts',
+  'apply_scrathon_edits',
+  'delete_scripts',
+  'create_variable',
+  'rename_target'
+];
 
 // --- Write tools -----------------------------------------------------------
 
@@ -850,7 +864,8 @@ export const applyScriptDescriptors = async (vm, targetSelector, scripts) => {
   const compiled = buildScriptsXml(scripts, ctx);
   const result = await applyXml(compiled.xml, {
     targetId: target.id,
-    declarations: compiled.declarations
+    declarations: compiled.declarations,
+    projectId: getProjectId(vm)
   });
   return {
     ok: true,
@@ -983,6 +998,84 @@ const applyScripts = async (vm, args) => {
 };
 
 /**
+ * Read the whole project as one Scrathon document (every script of every
+ * target, with the script ids the edit tool needs).
+ * @param {object} vm Scratch VM.
+ * @param {object} args Tool arguments.
+ * @param {string} [args.target] Only include this sprite/stage.
+ * @param {number} [args.maxChars] Character budget.
+ * @returns {object} Document and stats.
+ */
+export const getProjectScrathon = (vm, args = {}) =>
+  collectProjectScrathon(vm, {
+    target: args.target,
+    maxChars: Number.isFinite(Number(args.maxChars)) ? Number(args.maxChars) : undefined
+  });
+
+/**
+ * Replace existing scripts in place, script by script.
+ *
+ * Each edit is compiled independently and then applied together with the ids it
+ * replaces, so untouched scripts keep their position, comments and identity and
+ * the whole batch is a single undo step. This is the incremental counterpart of
+ * `apply_scripts`, which can only append.
+ * @param {object} vm Scratch VM.
+ * @param {object} args Tool arguments.
+ * @param {string} [args.target] Sprite name or ID.
+ * @param {Array<object>} args.edits Edits `{scriptId, code}`.
+ * @returns {Promise<object>} Result.
+ */
+export const applyScrathonEdits = async (vm, args = {}) => {
+  const edits = Array.isArray(args.edits) ? args.edits : [];
+  if (edits.length === 0) {
+    throw new Error('edits is required: pass [{ scriptId, code }] using ids from get_project_scrathon.');
+  }
+  const target = requireTarget(vm, args.target);
+  const blocks = getBlockMap(target);
+  const targetName = typeof target.getName === 'function' ? target.getName() : String(target.name || '');
+  const seen = new Set();
+  const preparedEdits = [];
+
+  for (const edit of edits) {
+    const scriptId = String((edit && edit.scriptId) || '').trim();
+    const code = typeof (edit && edit.code) === 'string' ? edit.code : '';
+    if (!scriptId) throw new Error('Every edit needs a scriptId from get_project_scrathon.');
+    if (seen.has(scriptId)) throw new Error(`Script ${scriptId} is listed more than once.`);
+    if (!blocks[scriptId] || !blocks[scriptId].topLevel) {
+      throw new Error(`Script ${scriptId} is not a top-level script of "${targetName}". Re-read get_project_scrathon.`);
+    }
+    if (!code.trim()) {
+      throw new Error(
+        `Edit for script ${scriptId} has no code. Use delete_scripts to remove a script, or pass the full new body.`
+      );
+    }
+    seen.add(scriptId);
+    const preparedCode = await prepareScrathonCodeAndExtensions(vm, code);
+    const compiled = compileScrathonCode(vm, preparedCode, { target: target.id });
+    preparedEdits.push({ scriptId, compiled });
+  }
+
+  const ctx = makeVarContext(vm, target);
+  const descriptors = preparedEdits.flatMap((entry) => entry.compiled.scripts);
+  const compiledXml = buildScriptsXml(descriptors, ctx);
+  const result = await applyXml(compiledXml.xml, {
+    targetId: target.id,
+    deleteScriptIds: preparedEdits.map((entry) => entry.scriptId),
+    declarations: compiledXml.declarations,
+    projectId: getProjectId(vm)
+  });
+
+  return {
+    ok: true,
+    target: getTargetIdentity(target),
+    replaced: preparedEdits.length,
+    scripts: compiledXml.scripts,
+    applied: result && result.blockIds ? result.blockIds.length : compiledXml.scripts,
+    warnings: compiledXml.warnings
+  };
+};
+
+/**
  * Delete top-level scripts from a target.
  * @param {object} vm Scratch VM.
  * @param {object} args Tool arguments.
@@ -1001,7 +1094,7 @@ const deleteScripts = async (vm, args) => {
   const blocks = getBlockMap(target);
   const existing = ids.filter((id) => blocks[id] && blocks[id].topLevel);
   if (existing.length === 0) throw new Error('None of the given script IDs are top-level scripts of this target.');
-  const result = await applyXml('', { targetId: target.id, deleteScriptIds: existing });
+  const result = await applyXml('', { targetId: target.id, deleteScriptIds: existing, projectId: getProjectId(vm) });
   return {
     ok: true,
     target: getTargetIdentity(target),
@@ -1034,7 +1127,8 @@ const createVariable = async (vm, args) => {
   const id = generateId();
   const result = await applyXml('', {
     targetId: holder.id,
-    declarations: [{ id, name, type, isLocal, isCloud: Boolean(args.cloud) && !isLocal }]
+    declarations: [{ id, name, type, isLocal, isCloud: Boolean(args.cloud) && !isLocal }],
+    projectId: getProjectId(vm)
   });
   return { ok: true, created: true, name, kind, applied: 1, id: result && result.id ? result.id : id };
 };
@@ -1053,7 +1147,7 @@ const renameTarget = async (vm, args) => {
   if (!target || typeof target.setName !== 'function') throw new Error('Target cannot be renamed.');
   if (target.isStage) throw new Error('The stage cannot be renamed.');
   const before = target.getName();
-  await applyXml('', { targetId: target.id, renameTarget: newName });
+  await applyXml('', { targetId: target.id, renameTarget: newName, projectId: getProjectId(vm) });
   const after = target.getName();
   return { ok: true, before, after };
 };
@@ -1359,6 +1453,28 @@ export const TOOL_DEFINITIONS = [
   {
     type: 'function',
     function: {
+      name: 'get_project_scrathon',
+      description:
+        'Read the WHOLE project as one Scrathon document: every script of every sprite (stage first), each under a "### <scriptId> · <hat block>" heading. Use this instead of reading scripts one by one when you need the full picture, and use the script ids in the headings with apply_scrathon_edits to change code in place.',
+      parameters: {
+        type: 'object',
+        properties: {
+          target: {
+            type: 'string',
+            description: 'Optional sprite name or ID. Omit to read the entire project.'
+          },
+          maxChars: {
+            type: 'number',
+            description: 'Character budget for the document (default 40000). The reply is marked [truncated] when exceeded.'
+          }
+        },
+        additionalProperties: false
+      }
+    }
+  },
+  {
+    type: 'function',
+    function: {
       name: 'get_runtime_state',
       description:
         'Get read-only runtime information: whether threads are running, thread count, target count, and the current editing target.',
@@ -1406,6 +1522,40 @@ export const TOOL_DEFINITIONS = [
             }
           }
         },
+        additionalProperties: false
+      }
+    }
+  },
+  {
+    type: 'function',
+    function: {
+      name: 'apply_scrathon_edits',
+      description:
+        'EDIT existing scripts in place, one script at a time. Pass the script ids from get_project_scrathon / list_scripts and the full new Scrathon body for each. The listed scripts are replaced and every other script is left untouched; the whole batch is one undo step. Prefer this over apply_scripts when modifying code that already exists. To remove a script use delete_scripts.',
+      parameters: {
+        type: 'object',
+        properties: {
+          target: {
+            type: 'string',
+            description: 'Sprite name or ID. Omit to use the current editing target.'
+          },
+          edits: {
+            type: 'array',
+            description: 'Scripts to replace. Each entry replaces exactly one top-level script.',
+            items: {
+              type: 'object',
+              properties: {
+                scriptId: { type: 'string', description: 'Top-level script id from get_project_scrathon.' },
+                code: {
+                  type: 'string',
+                  description: 'Complete new Scrathon body for this script, including its hat decorator.'
+                }
+              },
+              required: ['scriptId', 'code']
+            }
+          }
+        },
+        required: ['edits'],
         additionalProperties: false
       }
     }
@@ -1544,11 +1694,12 @@ export const createScratchTools = (vm) => ({
   search_blocks: (args) => searchBlocks(vm, args || {}),
   get_extension_source: (args) => getExtensionSource(vm, args || {}),
   get_runtime_state: () => getRuntimeState(vm),
+  get_project_scrathon: (args) => getProjectScrathon(vm, args || {}),
   block_catalog: (args) => blockCatalog(vm, args || {}),
   Scrathon_doc: () => ({ content: SCRATHON_DOC }),
   scrathon_example: () => ({ code: SCRATHON_EXAMPLE }),
-  get_write_status: () => getWriteReady(),
   apply_scripts: (args) => applyScripts(vm, args || {}),
+  apply_scrathon_edits: (args) => applyScrathonEdits(vm, args || {}),
   delete_scripts: (args) => deleteScripts(vm, args || {}),
   create_variable: (args) => createVariable(vm, args || {}),
   rename_target: (args) => renameTarget(vm, args || {})

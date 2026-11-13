@@ -20,6 +20,7 @@ export const buildSystemPrompt = ({ writeEnabled = false } = {}) => {
     '  * Use get_project_summary when the user asks for high-level structure, sprite counts, global variables, or loaded extensions.',
     '  * Use list_targets to list all sprites and identify the currently selected sprite.',
     '  * Use get_target to view details of a specific sprite (costumes, sounds, local variables).',
+    '  * Use get_project_scrathon to read the WHOLE project as one Scrathon document (every script of every sprite, each under a "### <scriptId> · <hat>" heading). This is the cheapest way to understand or review a project and it gives you the script ids needed for in-place edits.',
     '  * Use list_scripts to inspect the list of scripts and their hat blocks in a sprite.',
     '  * Use get_script to retrieve the complete code of a specific script, in both plain-English DSL and Scrathon.',
     '  * Use search_blocks to locate specific blocks by opcode, text, or variable.',
@@ -44,13 +45,14 @@ export const buildSystemPrompt = ({ writeEnabled = false } = {}) => {
   if (writeEnabled) {
     lines.push(
       'Editing the project (Build Mode is ACTIVE):',
-      '- You may modify the project with apply_scripts, delete_scripts, create_variable and rename_target. These are real edits: the user sees them in the editor and can undo them with Ctrl+Z.',
-      '- Before editing, inspect first: use list_scripts/get_script or get_target so you know the real sprite, script and block names. Never invent them.',
-      '- Prefer writing code with apply_scripts\' `code` parameter using Scrathon (see "Scrathon syntax" below). It is strict and compiled 1:1 to blocks.',
-      '- Work in small, verifiable steps. Apply one clear change at a time, then briefly say what you changed.',
+      '- You may modify the project with apply_scrathon_edits, apply_scripts, delete_scripts, create_variable and rename_target. These are real edits: the user sees them in the editor and can undo them with Ctrl+Z.',
+      '- Before editing, inspect first: call get_project_scrathon (whole project) or list_scripts/get_script/get_target so you know the real sprite, script and block names. Never invent them.',
+      '- MODIFYING existing code: read the project first, then call apply_scrathon_edits with {target, edits:[{scriptId, code}]}. It replaces only the scripts you list and leaves every other script untouched, so it is the safe, incremental way to edit. Reuse the exact scriptId from the get_project_scrathon heading.',
+      '- ADDING brand new code: use apply_scripts with the `code` parameter (Scrathon source, see "Scrathon syntax" below). It only appends; it never deletes.',
+      '- Work in small, verifiable steps. Edit one or two scripts per call, then briefly say what you changed.',
       '- Use block_catalog when unsure about an exact Scrathon instruction name or signature.',
       '- apply_scripts only ADDS the blocks you provide; it never deletes existing scripts. To remove code, use delete_scripts with IDs from list_scripts.',
-      '- To change existing code, prefer adding a corrected script (and deleting the old one if asked) over guessing how to patch deeply nested blocks.',
+      '- Do not duplicate a script to "fix" it: patch the existing script with apply_scrathon_edits instead.',
       '- After editing, state which sprite changed and what the new behaviour is. Do not claim a change succeeded if a tool returned an error.',
       '- Still respect every approval prompt; the user can reject an edit and you must not retry it.',
       ''
@@ -59,7 +61,8 @@ export const buildSystemPrompt = ({ writeEnabled = false } = {}) => {
     lines.push(
       'Plan Mode (Read-only mode is ACTIVE):',
       '- You are currently in Plan Mode. You cannot apply changes to the project directly. When suggesting a fix, review, or architecture, describe the exact sprite, script, and blocks the user should change, and do not claim that you changed anything.',
-      '- When proposing code, write it in Scrathon (see "Scrathon syntax" below) so the user can paste it into apply_scripts.',
+      '- Use get_project_scrathon to review the whole project at once when the user asks for a review or a refactor plan.',
+      '- When proposing code, write it in Scrathon (see "Scrathon syntax" below) so the user can paste it into apply_scrathon_edits or apply_scripts.',
       '- If the user asks you to directly create, edit, or delete blocks/scripts in the project, explain that you are in Plan Mode and remind them to switch to "Build Mode" (构建模式) via the mode button at the bottom of the input card.',
       ''
     );

@@ -21,81 +21,50 @@ import BottomPanel from '../../ui/bottom-panel/bottom-panel.js';
 import { callChatCompletion } from './agent/client.js';
 import { getBlockLabel, replaceInternalIds } from './agent/dsl.js';
 import { renderMarkdown } from './agent/markdown.js';
-import { buildRequestPreview, MAX_CONTEXT_MESSAGES, runAgent } from './agent/loop.js';
+import { buildRequestPreview, getActiveTools, MAX_CONTEXT_MESSAGES, runAgent } from './agent/loop.js';
 import { buildSystemPrompt } from './agent/prompt.js';
-import { TOOL_DEFINITIONS } from './agent/tools.js';
 import { createScrathonWindow } from './agent/scrathon/window.js';
-import { buildSideBySideRows } from './agent/scrathon/diff.js';
 import { renderBlockPreview } from './agent/block-preview.js';
 import { setApplier } from './agent/writer.js';
+import {
+  buildApiEndpoint,
+  clampNumber,
+  DEFAULT_CONFIG,
+  DEFAULT_MODELS,
+  getApiBaseUrl,
+  loadConfig,
+  MAX_ALLOWED_STEPS,
+  REASONING_EFFORTS,
+  saveConfig
+} from './agent/config.js';
+import {
+  createConversation,
+  getConversationTitle as getStoredConversationTitle,
+  getProjectConversations,
+  listAllConversations,
+  loadStore,
+  makeConversationTitle,
+  MAX_HISTORY_MESSAGES,
+  removeConversation,
+  saveStore,
+  setProjectConversations,
+  trimConversations,
+  UNKNOWN_PROJECT_ID
+} from './agent/conversations.js';
+import { createDiffCardRenderer } from './ui/diff-card.js';
+import { createTraceRenderer } from './ui/tool-trace.js';
 
 const PLUGIN_ID = 'astras-copilot';
-const CONFIG_KEY = 'astras-agent-config-v2';
-const HISTORY_KEY = 'astras-agent-history-v2';
-const CONVERSATIONS_KEY = 'astras-agent-conversations-v1';
 const POSITION_KEY = 'AEAstrasCopilotPosition';
 const WRITE_ENABLED_KEY = 'astras-agent-write-enabled-v1';
 const DIFF_VIEW_KEY = 'astras-agent-diff-view-v1';
 const DIFF_VIEW_TEXT = 'text';
 const DIFF_VIEW_BLOCKS = 'blocks';
-const MAX_HISTORY_MESSAGES = 40;
-const MAX_CONVERSATIONS = 30;
 const WIDE_LAYOUT_MIN_WIDTH = 560;
 
 const POSITION_TYPES = {
   SIDEBAR: 'sidebar',
   BOTTOM: 'bottom'
-};
-
-const DEFAULT_MODELS = [
-  'gpt-4o-mini',
-  'gpt-4o',
-  'claude-3-7-sonnet',
-  'claude-3-5-sonnet',
-  'deepseek-chat',
-  'deepseek-reasoner'
-];
-
-const REASONING_EFFORTS = ['default', 'low', 'high', 'max'];
-
-const DEFAULT_CONFIG = {
-  apiUrl: 'https://api.openai.com/v1/chat/completions',
-  apiKey: '',
-  model: 'gpt-4o-mini',
-  models: DEFAULT_MODELS.join('\n'),
-  headers: {},
-  stream: true,
-  temperature: 0.2,
-  maxTokens: 3000,
-  retries: 2,
-  reasoningEffort: 'default',
-  streamIdleTimeoutMs: 30000
-};
-
-/**
- * Convert a full API URL to the base URL shown in the settings field.
- * @param {string} apiUrl API URL.
- * @returns {string} Base URL.
- */
-const getApiBaseUrl = (apiUrl) =>
-  String(apiUrl || '')
-    .trim()
-    .replace(/\/+$/, '')
-    .replace(/\/chat\/completions$/i, '');
-
-/**
- * Convert the base URL entered by the user to a full chat-completions URL.
- * @param {string} baseUrl Base URL, for example https://api.example.com/v1.
- * @returns {string} Full endpoint.
- */
-const buildApiEndpoint = (baseUrl) => {
-  const value = String(baseUrl || '')
-    .trim()
-    .replace(/\/+$/, '');
-  if (!value) return DEFAULT_CONFIG.apiUrl;
-  if (/\/chat\/completions$/i.test(value)) return value;
-  if (/\/v\d+[a-z0-9.]*$/i.test(value)) return `${value}/chat/completions`;
-  return `${value}/v1/chat/completions`;
 };
 
 /**
@@ -212,178 +181,6 @@ const saveDiffViewMode = (mode) => {
 };
 
 /**
- * Load the agent configuration, migrating the API fields from the old AC format.
- * @returns {object} Agent configuration.
- */
-const loadConfig = () => {
-  let stored = null;
-  try {
-    stored = JSON.parse(localStorage.getItem(CONFIG_KEY) || 'null');
-  } catch (error) {
-    stored = null;
-  }
-
-  if (!stored || typeof stored !== 'object') {
-    try {
-      stored = {
-        apiUrl: localStorage.getItem('astras_apiUrl') || DEFAULT_CONFIG.apiUrl,
-        apiKey: localStorage.getItem('astras_apiKey') || '',
-        model: localStorage.getItem('astras_model') || DEFAULT_CONFIG.model,
-        headers: {}
-      };
-    } catch (error) {
-      stored = {};
-    }
-  }
-
-  return {
-    apiUrl: typeof stored.apiUrl === 'string' && stored.apiUrl ? stored.apiUrl : DEFAULT_CONFIG.apiUrl,
-    apiKey: typeof stored.apiKey === 'string' ? stored.apiKey : DEFAULT_CONFIG.apiKey,
-    model: typeof stored.model === 'string' && stored.model ? stored.model : DEFAULT_CONFIG.model,
-    models: typeof stored.models === 'string' && stored.models ? stored.models : DEFAULT_CONFIG.models,
-    headers:
-      stored.headers && typeof stored.headers === 'object' && !Array.isArray(stored.headers) ? stored.headers : {},
-    stream: stored.stream !== false,
-    temperature: Number.isFinite(Number(stored.temperature)) ? Number(stored.temperature) : DEFAULT_CONFIG.temperature,
-    maxTokens: Number.isFinite(Number(stored.maxTokens)) ? Number(stored.maxTokens) : DEFAULT_CONFIG.maxTokens,
-    retries: Number.isFinite(Number(stored.retries)) ? Number(stored.retries) : DEFAULT_CONFIG.retries,
-    reasoningEffort: REASONING_EFFORTS.includes(stored.reasoningEffort) ? stored.reasoningEffort : 'default',
-    streamIdleTimeoutMs: Number.isFinite(Number(stored.streamIdleTimeoutMs))
-      ? Number(stored.streamIdleTimeoutMs)
-      : DEFAULT_CONFIG.streamIdleTimeoutMs
-  };
-};
-
-/**
- * Save the agent configuration.
- * @param {object} config Agent configuration.
- */
-const saveConfig = (config) => {
-  try {
-    localStorage.setItem(CONFIG_KEY, JSON.stringify(config));
-  } catch (error) {
-    // Ignore storage failures.
-  }
-};
-
-/**
- * Normalize stored chat messages.
- * @param {Array<object>} messages Messages.
- * @returns {Array<object>} Filtered messages.
- */
-const normalizeMessages = (messages) => {
-  if (!Array.isArray(messages)) return [];
-  return messages
-    .filter(
-      (message) =>
-        message && (message.role === 'user' || message.role === 'assistant') && typeof message.content === 'string'
-    )
-    .slice(-MAX_HISTORY_MESSAGES);
-};
-
-/**
- * Create a conversation id.
- * @returns {string} Conversation id.
- */
-const createConversationId = () => `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
-
-/**
- * Create a conversation.
- * @param {Array<object>} [messages] Messages.
- * @returns {object} Conversation.
- */
-const createConversation = (messages = []) => {
-  const now = Date.now();
-  return {
-    id: createConversationId(),
-    title: '',
-    createdAt: now,
-    updatedAt: now,
-    lastUsage: null,
-    messages: normalizeMessages(messages)
-  };
-};
-
-/**
- * Keep the active conversation and the most recent others.
- * @param {Array<object>} conversations Conversations.
- * @param {string} activeId Active conversation id.
- * @returns {Array<object>} Trimmed conversations.
- */
-const trimConversations = (conversations, activeId) => {
-  if (conversations.length <= MAX_CONVERSATIONS) return conversations;
-  const active = conversations.find((conversation) => conversation.id === activeId);
-  const others = conversations
-    .filter((conversation) => conversation !== active)
-    .sort((a, b) => b.updatedAt - a.updatedAt)
-    .slice(0, MAX_CONVERSATIONS - 1);
-  return active ? [active, ...others] : others;
-};
-
-/**
- * Load conversations, migrating the old single-history format when needed.
- * @returns {object} Conversation state.
- */
-const loadConversations = () => {
-  try {
-    const stored = JSON.parse(localStorage.getItem(CONVERSATIONS_KEY) || 'null');
-    if (stored && Array.isArray(stored.conversations)) {
-      const conversations = stored.conversations
-        .filter((conversation) => conversation && typeof conversation.id === 'string')
-        .map((conversation) => ({
-          id: conversation.id,
-          title: typeof conversation.title === 'string' ? conversation.title : '',
-          createdAt: Number(conversation.createdAt) || Date.now(),
-          updatedAt: Number(conversation.updatedAt) || Number(conversation.createdAt) || Date.now(),
-          lastUsage:
-            conversation.lastUsage && typeof conversation.lastUsage === 'object' ? conversation.lastUsage : null,
-          messages: normalizeMessages(conversation.messages)
-        }));
-      if (conversations.length > 0) {
-        const activeId = conversations.some((conversation) => conversation.id === stored.activeId)
-          ? stored.activeId
-          : conversations[0].id;
-        return { conversations: trimConversations(conversations, activeId), activeId };
-      }
-    }
-  } catch (error) {
-    // Fall through to migration or a fresh conversation.
-  }
-
-  let legacyMessages = [];
-  try {
-    const legacy = JSON.parse(localStorage.getItem(HISTORY_KEY) || '[]');
-    if (Array.isArray(legacy)) legacyMessages = normalizeMessages(legacy);
-  } catch (error) {
-    legacyMessages = [];
-  }
-
-  const conversation = createConversation(legacyMessages);
-  const migrated = { conversations: [conversation], activeId: conversation.id };
-  if (legacyMessages.length > 0) {
-    try {
-      localStorage.setItem(CONVERSATIONS_KEY, JSON.stringify(migrated));
-      localStorage.removeItem(HISTORY_KEY);
-    } catch (error) {
-      // Keep the legacy history if the migrated state could not be saved.
-    }
-  }
-  return migrated;
-};
-
-/**
- * Persist conversation state.
- * @param {object} state Conversation state.
- */
-const saveConversations = (state) => {
-  try {
-    localStorage.setItem(CONVERSATIONS_KEY, JSON.stringify(state));
-  } catch (error) {
-    // Ignore storage failures.
-  }
-};
-
-/**
  * Render Markdown safely into a message bubble.
  * @param {HTMLElement} container Message container.
  * @param {string} content Message content.
@@ -420,10 +217,26 @@ export default async ({ addon, msg }) => {
     vm.runtime.once('PROJECT_LOADED', resolve);
   });
 
+  /**
+   * Read the stable project id that scopes conversations and write validation.
+   * @returns {string} Project id.
+   */
+  const resolveProjectId = () => {
+    try {
+      if (vm && vm.runtime && typeof vm.runtime.getProjectId === 'function') {
+        return String(vm.runtime.getProjectId() || UNKNOWN_PROJECT_ID);
+      }
+    } catch (error) {
+      // Fall back to the shared bucket below.
+    }
+    return UNKNOWN_PROJECT_ID;
+  };
+
   let config = loadConfig();
-  const storedConversations = loadConversations();
-  let conversations = storedConversations.conversations;
-  let activeConversationId = storedConversations.activeId;
+  let projectId = resolveProjectId();
+  let store = loadStore(projectId);
+  let conversations = getProjectConversations(store, projectId);
+  let activeConversationId = store.activeByProject[projectId] || conversations[0].id;
   const initialConversation =
     conversations.find((conversation) => conversation.id === activeConversationId) || conversations[0];
   activeConversationId = initialConversation.id;
@@ -444,6 +257,7 @@ export default async ({ addon, msg }) => {
   let messagesElement = null;
   let headingTextElement = null;
   let conversationListElement = null;
+  let allConversationsElement = null;
   let conversationListButton = null;
   let conversationListIcon = null;
   let newConversationButton = null;
@@ -488,6 +302,7 @@ export default async ({ addon, msg }) => {
   let temperatureInput = null;
   let maxTokensInput = null;
   let retriesInput = null;
+  let maxStepsInput = null;
   let contextElement = null;
   let compressButton = null;
   let compressController = null;
@@ -516,21 +331,13 @@ export default async ({ addon, msg }) => {
   const findConversation = (id) => conversations.find((conversation) => conversation.id === id);
 
   /**
-   * Build a short conversation title from a user message.
-   * @param {string} text Message text.
-   * @returns {string} Title.
-   */
-  const makeConversationTitle = (text) =>
-    String(text || '')
-      .replace(/\s+/g, ' ')
-      .trim()
-      .slice(0, 40);
-
-  /**
-   * Persist conversations, keeping the active one and the most recent others.
+   * Persist conversations for the current project.
    */
   const persistConversations = () => {
-    saveConversations({ activeId: activeConversationId, conversations });
+    setProjectConversations(store, projectId, conversations, activeConversationId);
+    // Trimming may create a new array; keep the local alias pointing at the store.
+    if (store.projects[projectId]) conversations = store.projects[projectId];
+    saveStore(store);
   };
 
   /**
@@ -586,7 +393,7 @@ export default async ({ addon, msg }) => {
       list.unshift(config.model);
     }
     if (!list.length) {
-      list.push('gpt-4o-mini');
+      list.push(DEFAULT_MODELS[0]);
     }
     return [...new Set(list)];
   };
@@ -650,7 +457,10 @@ export default async ({ addon, msg }) => {
           message.content.trim()
       )
       .slice(-MAX_CONTEXT_MESSAGES);
-    let tokens = estimateTextTokens(buildSystemPrompt()) + estimateTextTokens(JSON.stringify(TOOL_DEFINITIONS));
+    // Mirror the real request: the prompt and the tool schemas both depend on the mode.
+    let tokens =
+      estimateTextTokens(buildSystemPrompt({ writeEnabled })) +
+      estimateTextTokens(JSON.stringify(getActiveTools(writeEnabled)));
     for (const message of history) {
       tokens += estimateTextTokens(message.content) + 4;
     }
@@ -796,17 +606,23 @@ export default async ({ addon, msg }) => {
     search_blocks: msg('tool-search-blocks'),
     get_extension_source: msg('tool-get-extension-source'),
     get_runtime_state: msg('tool-get-runtime-state'),
-    search_web: msg('tool-search-web'),
-    fetch_url: msg('tool-fetch-url'),
+    get_project_scrathon: msg('tool-get-project-scrathon'),
     block_catalog: msg('tool-block-catalog'),
     apply_scripts: msg('tool-apply-scripts'),
+    apply_scrathon_edits: msg('tool-apply-scrathon-edits'),
     delete_scripts: msg('tool-delete-scripts'),
     create_variable: msg('tool-create-variable'),
     rename_target: msg('tool-rename-target')
   };
 
   /** Tools that modify the project (approval prompt wording differs). */
-  const WRITE_TOOL_SET = new Set(['apply_scripts', 'delete_scripts', 'create_variable', 'rename_target']);
+  const WRITE_TOOL_SET = new Set([
+    'apply_scripts',
+    'apply_scrathon_edits',
+    'delete_scripts',
+    'create_variable',
+    'rename_target'
+  ]);
 
   /**
    * Get a localized tool name.
@@ -855,14 +671,8 @@ export default async ({ addon, msg }) => {
    * @param {object} conversation Conversation.
    * @returns {string} Display title.
    */
-  const getConversationTitle = (conversation) => {
-    if (!conversation) return msg('conversation-untitled');
-    if (conversation.title) return conversation.title;
-    const firstUser = conversation.messages.find(
-      (message) => message.role === 'user' && typeof message.content === 'string' && message.content.trim()
-    );
-    return firstUser ? makeConversationTitle(firstUser.content) : msg('conversation-untitled');
-  };
+  const getConversationTitle = (conversation) =>
+    getStoredConversationTitle(conversation, msg('conversation-untitled'));
 
   /**
    * Show the active conversation title in the panel header.
@@ -1155,6 +965,114 @@ export default async ({ addon, msg }) => {
   };
 
   /**
+   * Shorten a project id for display.
+   * @param {string} id Project id.
+   * @returns {string} Display id.
+   */
+  const formatProjectId = (id) => {
+    const value = String(id || '');
+    if (!value) return msg('settings-project-unknown');
+    return value.length > 12 ? `${value.slice(0, 8)}…` : value;
+  };
+
+  /**
+   * Format a conversation timestamp.
+   * @param {number} timestamp Updated-at timestamp.
+   * @returns {string} Display date.
+   */
+  const formatConversationDate = (timestamp) => {
+    const value = Number(timestamp);
+    if (!Number.isFinite(value) || value <= 0) return '';
+    try {
+      return new Date(value).toLocaleString();
+    } catch (error) {
+      return '';
+    }
+  };
+
+  /**
+   * Delete a stored conversation, refreshing the chat when it belongs to the
+   * current project.
+   * @param {string} targetProjectId Project id.
+   * @param {string} conversationId Conversation id.
+   */
+  const deleteStoredConversation = (targetProjectId, conversationId) => {
+    if (!removeConversation(store, targetProjectId, conversationId)) return;
+    approvedConversations.delete(conversationId);
+
+    if (targetProjectId === projectId) {
+      if (busy) stopRequest();
+      conversations = getProjectConversations(store, projectId);
+      const next =
+        conversations.find((conversation) => conversation.id === store.activeByProject[projectId]) || conversations[0];
+      activeConversationId = next.id;
+      chatMessages = next.messages;
+      lastUsage = next.lastUsage || null;
+      liveTrace = [];
+      liveParts = [];
+      liveTraceElement = null;
+      clearStreaming();
+      renderMessages();
+      updateContextUsage();
+      setStatus('');
+      renderConversationList();
+    }
+
+    saveStore(store);
+    renderAllConversations();
+  };
+
+  /**
+   * Render the "all conversations (every project)" list in the settings panel.
+   */
+  const renderAllConversations = () => {
+    if (!allConversationsElement) return;
+    allConversationsElement.textContent = '';
+    const entries = listAllConversations(store);
+    if (entries.length === 0) {
+      const empty = document.createElement('div');
+      empty.className = 'sa-agent-settings-hint';
+      empty.textContent = msg('settings-all-conversations-empty');
+      allConversationsElement.appendChild(empty);
+      return;
+    }
+
+    for (const entry of entries) {
+      const conversation = entry.conversation;
+      const row = document.createElement('div');
+      row.className = 'sa-agent-all-conversation';
+      if (entry.projectId === projectId) row.classList.add('sa-agent-all-conversation-current');
+
+      const main = document.createElement('div');
+      main.className = 'sa-agent-all-conversation-main';
+      const title = document.createElement('div');
+      title.className = 'sa-agent-all-conversation-title';
+      title.textContent = getStoredConversationTitle(conversation, msg('conversation-untitled'));
+      const meta = document.createElement('div');
+      meta.className = 'sa-agent-all-conversation-meta';
+      meta.textContent = msg('settings-all-conversations-meta', {
+        project: formatProjectId(entry.projectId),
+        count: String(conversation.messages.length),
+        date: formatConversationDate(conversation.updatedAt)
+      });
+      main.appendChild(title);
+      main.appendChild(meta);
+
+      const remove = document.createElement('button');
+      remove.type = 'button';
+      remove.className = 'sa-agent-icon-button sa-agent-all-conversation-delete';
+      remove.title = msg('conversation-delete');
+      remove.setAttribute('aria-label', msg('conversation-delete'));
+      remove.appendChild(createIcon(iconTrash, 'sa-agent-all-conversation-icon'));
+      remove.addEventListener('click', () => deleteStoredConversation(entry.projectId, conversation.id));
+
+      row.appendChild(main);
+      row.appendChild(remove);
+      allConversationsElement.appendChild(row);
+    }
+  };
+
+  /**
    * Remove the in-flight streaming bubble.
    */
   const clearStreaming = () => {
@@ -1226,171 +1144,6 @@ export default async ({ addon, msg }) => {
       autoScrollEnabled = true;
       scrollToBottom();
     }
-  };
-
-  /**
-   * Format a structured tool-result descriptor.
-   * @param {object} summary Descriptor.
-   * @returns {string} Localized text.
-   */
-  const formatTraceSummary = (summary) => {
-    switch (summary && summary.kind) {
-      case 'project-summary':
-        return msg('trace-project-summary', { sprites: summary.sprites });
-      case 'target-list':
-        return msg('trace-target-list', { count: summary.count });
-      case 'target':
-        return msg('trace-target', { name: summary.name, scripts: summary.scripts, blocks: summary.blocks });
-      case 'script-list':
-        return msg('trace-script-list', { name: summary.name, count: summary.count });
-      case 'script':
-        return msg('trace-script', { name: summary.name, script: summary.script, blocks: summary.blocks });
-      case 'search':
-        return msg('trace-search', { query: summary.query, count: summary.count });
-      case 'extension':
-        return msg('trace-extension', {
-          name: summary.name,
-          blocks: summary.blocks,
-          source: msg(summary.hasSource ? 'trace-extension-source-yes' : 'trace-extension-source-no')
-        });
-      case 'runtime':
-        return msg('trace-runtime', {
-          state: msg(summary.running ? 'trace-running' : 'trace-stopped'),
-          threads: summary.threads
-        });
-      case 'web-search':
-        return msg('trace-web-search', {
-          query: String(summary.query || '').slice(0, 120),
-          count: summary.count
-        });
-      case 'page':
-        return msg('trace-page', {
-          url: String(summary.url || '').slice(0, 80),
-          chars: summary.chars
-        });
-      case 'apply-scripts':
-        return msg('trace-apply-scripts', { name: summary.name, scripts: summary.scripts });
-      case 'delete-scripts':
-        return msg('trace-delete-scripts', { name: summary.name, count: summary.count });
-      case 'create-variable':
-        return msg(summary.created ? 'trace-create-variable' : 'trace-create-variable-exists', {
-          name: summary.name
-        });
-      case 'rename-target':
-        return msg('trace-rename-target', { before: summary.before, after: summary.after });
-      case 'block-catalog':
-        return msg('trace-block-catalog', { count: summary.count });
-      case 'denied':
-        return msg('trace-denied-summary');
-      case 'error':
-        return msg('trace-error', { message: String(summary.message || '').slice(0, 200) });
-      default:
-        return '';
-    }
-  };
-
-  /**
-   * Resolve a target argument for display without exposing raw IDs.
-   * @param {string} value Target name or ID.
-   * @returns {string} Display name.
-   */
-  const describeTraceTarget = (value) => {
-    if (!value || typeof value !== 'string') return '';
-    const runtime = vm && vm.runtime;
-    if (runtime && typeof runtime.getTargetById === 'function') {
-      const found = runtime.getTargetById(value);
-      if (found) return typeof found.getName === 'function' ? found.getName() : found.name || value;
-    }
-    if (runtime && Array.isArray(runtime.targets)) {
-      const lower = value.toLowerCase();
-      const found = runtime.targets.find(
-        (target) => typeof target.getName === 'function' && target.getName().toLowerCase() === lower
-      );
-      if (found) return found.getName();
-    }
-    return /^[A-Za-z0-9]{12,}$/.test(value) ? '?' : value;
-  };
-
-  /**
-   * Resolve a script root argument for display without exposing raw IDs.
-   * @param {string} value Script root or block ID.
-   * @returns {string} Human-readable script label.
-   */
-  const describeTraceScript = (value) => {
-    if (!value || typeof value !== 'string') return '';
-    const runtime = vm && vm.runtime;
-    const targets = runtime && Array.isArray(runtime.targets) ? runtime.targets : [];
-    for (const target of targets) {
-      const blocks = target && target.blocks && target.blocks._blocks ? target.blocks._blocks : null;
-      const block = blocks ? blocks[value] : null;
-      if (block) {
-        let rootId = value;
-        if (target.blocks && typeof target.blocks.getTopLevelScript === 'function') {
-          const topLevel = target.blocks.getTopLevelScript(value);
-          if (topLevel) rootId = topLevel;
-        }
-        const rootBlock = (blocks && blocks[rootId]) || block;
-        try {
-          return getBlockLabel(vm, rootBlock.opcode, rootBlock.mutation);
-        } catch (error) {
-          return '';
-        }
-      }
-    }
-    return '';
-  };
-
-  /**
-   * Format the status label for a tool row.
-   * @param {string} status Trace status.
-   * @returns {string} Localized status.
-   */
-  const formatTraceStatus = (status) => {
-    switch (status) {
-      case 'awaiting':
-        return msg('trace-status-awaiting');
-      case 'pending':
-        return msg('trace-status-pending');
-      case 'error':
-        return msg('trace-status-error');
-      case 'denied':
-        return msg('trace-status-denied');
-      default:
-        return msg('trace-status-ok');
-    }
-  };
-
-  /**
-   * Format tool arguments without exposing internal IDs.
-   * @param {object} entry Trace entry.
-   * @returns {string} Human-readable arguments.
-   */
-  const formatTraceArgs = (entry) => {
-    const args = entry && entry.args ? entry.args : {};
-    const parts = [];
-    if (args.target) {
-      parts.push(msg('trace-args-target', { name: describeTraceTarget(String(args.target)) }));
-    }
-    if (args.query) {
-      parts.push(msg('trace-args-query', { query: String(args.query).slice(0, 120) }));
-    }
-    if (args.extensionId) {
-      parts.push(msg('trace-args-extension', { extension: String(args.extensionId).slice(0, 80) }));
-    }
-    if (args.blockId) {
-      const script = describeTraceScript(String(args.blockId));
-      if (script) parts.push(msg('trace-args-script', { script }));
-    }
-    if (args.url) {
-      parts.push(msg('trace-args-url', { url: String(args.url).slice(0, 160) }));
-    }
-    if (args.limit) {
-      parts.push(msg('trace-args-limit', { limit: args.limit }));
-    }
-    if (args.maxBlocks) {
-      parts.push(msg('trace-args-max-blocks', { count: args.maxBlocks }));
-    }
-    return parts.length > 0 ? parts.join(' · ') : msg('trace-args-none');
   };
 
   /**
@@ -1522,47 +1275,6 @@ export default async ({ addon, msg }) => {
   };
 
   /**
-   * Build the Scrathon/Blocks segmented control.
-   * @returns {{element: HTMLElement, update: Function, onSelect: (Function|null)}} Toggle control.
-   */
-  const buildDiffViewToggle = () => {
-    const group = document.createElement('div');
-    group.className = 'sa-agent-diff-view-toggle';
-    group.setAttribute('role', 'group');
-    const buttons = new Map();
-    const options = [
-      [DIFF_VIEW_TEXT, msg('diff-view-text'), iconDiffText],
-      [DIFF_VIEW_BLOCKS, msg('diff-view-blocks'), iconDiffBlocks]
-    ];
-    const control = {
-      element: group,
-      onSelect: null,
-      update: (mode) => {
-        for (const [key, button] of buttons) {
-          const active = key === mode;
-          button.classList.toggle('is-active', active);
-          button.setAttribute('aria-pressed', active ? 'true' : 'false');
-        }
-      }
-    };
-    for (const [mode, label, iconSource] of options) {
-      const button = document.createElement('button');
-      button.type = 'button';
-      button.className = 'sa-agent-diff-view-button';
-      button.title = label;
-      button.setAttribute('aria-label', label);
-      button.appendChild(createIcon(iconSource, 'sa-agent-diff-view-icon'));
-      button.addEventListener('click', () => {
-        if (typeof control.onSelect === 'function') control.onSelect(mode);
-      });
-      buttons.set(mode, button);
-      group.appendChild(button);
-    }
-    control.update(diffViewMode);
-    return control;
-  };
-
-  /**
    * Remember the preferred diff view for newly rendered cards.
    * @param {string} mode 'text' or 'blocks'.
    */
@@ -1572,782 +1284,68 @@ export default async ({ addon, msg }) => {
     saveDiffViewMode(mode);
   };
 
+  /** Lazily built renderers: they depend on helpers declared further down. */
+  let diffCardRenderer = null;
+  let traceRenderer = null;
+
   /**
-   * Render a script as ScratchBlocks SVG.
-   * @param {HTMLElement} container Target container.
-   * @param {Array<object>} pairs Script pairs `{label, code, kind}`.
+   * Get the diff-card renderer.
+   * @returns {object} Renderer.
    */
-  const renderScratchBlocksView = async (container, pairs) => {
-    container.textContent = '';
-    const grid = document.createElement('div');
-    grid.className = 'sa-agent-blocks-grid';
-    container.appendChild(grid);
-    let blockly;
-    try {
-      blockly = await ensureBlockly();
-    } catch (error) {
-      const note = document.createElement('div');
-      note.className = 'sa-agent-blocks-error';
-      note.textContent = msg('blocks-preview-error', {
-        message: error && error.message ? error.message : String(error)
+  const getDiffCardRenderer = () => {
+    if (!diffCardRenderer) {
+      diffCardRenderer = createDiffCardRenderer({
+        msg,
+        vm,
+        ensureBlockly,
+        getDiffViewMode: () => diffViewMode,
+        setDiffViewMode: rememberDiffViewMode,
+        icons: { text: iconDiffText, blocks: iconDiffBlocks },
+        renderBlockPreview
       });
-      grid.appendChild(note);
-      return;
     }
-    for (const pair of pairs) {
-      if (!pair || typeof pair.code !== 'string' || !pair.code.trim()) continue;
-      const section = document.createElement('div');
-      section.className = 'sa-agent-blocks-section';
-      if (pair.kind) section.classList.add(`is-${pair.kind}`);
-      const label = document.createElement('div');
-      label.className = 'sa-agent-blocks-label';
-      label.textContent = pair.label || '';
-      section.appendChild(label);
-      try {
-        const svg = await renderBlockPreview({
-          blockly,
-          vm,
-          targetName: pair.target,
-          code: pair.code
-        });
-        if (!svg) throw new Error('The preview returned no SVG.');
-        section.appendChild(svg);
-      } catch (error) {
-        if (typeof console !== 'undefined' && typeof console.warn === 'function') {
-          console.warn('[Astra Copilot] Failed to render block preview:', pair.label, error);
-        }
-        const reason = error && error.message ? error.message : String(error);
-        const note = document.createElement('div');
-        note.className = 'sa-agent-blocks-error';
-        note.textContent = msg('blocks-preview-error', { message: reason });
-        note.title = reason;
-        const code = document.createElement('pre');
-        code.className = 'sa-agent-blocks-fallback';
-        code.textContent = pair.code;
-        section.appendChild(note);
-        section.appendChild(code);
-      }
-      grid.appendChild(section);
-    }
-    if (grid.children.length === 0) {
-      const empty = document.createElement('div');
-      empty.className = 'sa-agent-blocks-empty';
-      empty.textContent = msg('blocks-preview-empty');
-      grid.appendChild(empty);
-    }
+    return diffCardRenderer;
   };
 
   /**
-   * Attach a text/blocks view switch to a diff card.
-   * @param {object} options Options.
-   * @param {HTMLElement} options.textView Text view container.
-   * @param {HTMLElement} options.blocksView Blocks view container.
-   * @param {Array<object>} options.pairs Script pairs.
-   * @param {object} options.toggle Toggle control.
+   * Get the tool-trace renderer.
+   * @returns {object} Renderer.
    */
-  const attachDiffView = ({ textView, blocksView, pairs, toggle }) => {
-    let rendered = false;
-    let rendering = false;
-    const renderBlocks = async () => {
-      if (rendered || rendering) return;
-      rendering = true;
-      try {
-        await renderScratchBlocksView(blocksView, pairs);
-        // eslint-disable-next-line require-atomic-updates
-        rendered = true;
-      } finally {
-        // eslint-disable-next-line require-atomic-updates
-        rendering = false;
-      }
-    };
-    const apply = (mode) => {
-      const showBlocks = mode === DIFF_VIEW_BLOCKS;
-      textView.style.display = showBlocks ? 'none' : '';
-      blocksView.style.display = showBlocks ? 'block' : 'none';
-      toggle.update(mode);
-      if (showBlocks) renderBlocks().catch(() => {});
-    };
-    toggle.onSelect = (mode) => {
-      rememberDiffViewMode(mode);
-      apply(mode);
-    };
-    apply(diffViewMode);
-  };
-
-  /**
-   * Build an in-chat visual code diff card.
-   * @param {object} diff Diff data produced by computeToolDiff/computeScopeDiff.
-   * @returns {HTMLElement} Diff card element.
-   */
-  const buildDiffCard = (diff) => {
-    const card = document.createElement('div');
-    card.className = 'sa-agent-diff-card';
-
-    if (!diff || !diff.hasChanges || !Array.isArray(diff.scripts) || diff.scripts.length === 0) {
-      const empty = document.createElement('div');
-      empty.className = 'sa-agent-diff-empty';
-      empty.textContent = msg('diff-no-changes');
-      card.appendChild(empty);
-      return card;
-    }
-
-    const header = document.createElement('div');
-    header.className = 'sa-agent-diff-header';
-
-    const titleGroup = document.createElement('div');
-    titleGroup.className = 'sa-agent-diff-title';
-    if (diff.target) {
-      const targetBadge = document.createElement('span');
-      targetBadge.className = 'sa-agent-diff-target-badge';
-      targetBadge.textContent = diff.target;
-      titleGroup.appendChild(targetBadge);
-    }
-    const headerText = document.createElement('span');
-    headerText.className = 'sa-agent-diff-header-text';
-    headerText.textContent = msg('diff-title');
-    titleGroup.appendChild(headerText);
-
-    const stats = document.createElement('div');
-    stats.className = 'sa-agent-diff-stats';
-    if (diff.totalAdd > 0) {
-      const statAdd = document.createElement('span');
-      statAdd.className = 'sa-agent-diff-stat-add';
-      statAdd.textContent = `+${diff.totalAdd}`;
-      stats.appendChild(statAdd);
-    }
-    if (diff.totalDel > 0) {
-      const statDel = document.createElement('span');
-      statDel.className = 'sa-agent-diff-stat-del';
-      statDel.textContent = `-${diff.totalDel}`;
-      stats.appendChild(statDel);
-    }
-
-    const toggle = buildDiffViewToggle();
-    header.appendChild(titleGroup);
-    header.appendChild(stats);
-    header.appendChild(toggle.element);
-    card.appendChild(header);
-
-    const body = document.createElement('div');
-    body.className = 'sa-agent-diff-body';
-
-    for (const script of diff.scripts) {
-      const scriptSection = document.createElement('div');
-      scriptSection.className = 'sa-agent-diff-script';
-
-      const scriptHeader = document.createElement('div');
-      scriptHeader.className = 'sa-agent-diff-script-header';
-
-      const scriptTitle = document.createElement('span');
-      scriptTitle.className = 'sa-agent-diff-script-title';
-      scriptTitle.textContent = script.title || 'Script';
-
-      const badge = document.createElement('span');
-      badge.className = `sa-agent-diff-script-badge ${
-        script.isNew ? 'is-new' : script.isDelete ? 'is-delete' : 'is-modified'
-      }`;
-      badge.textContent = script.isNew
-        ? msg('diff-badge-new')
-        : script.isDelete
-          ? msg('diff-badge-del')
-          : msg('diff-badge-mod');
-
-      scriptHeader.appendChild(scriptTitle);
-      scriptHeader.appendChild(badge);
-      scriptSection.appendChild(scriptHeader);
-
-      const linesContainer = document.createElement('div');
-      linesContainer.className = 'sa-agent-diff-lines';
-
-      const renderLine = (entry) => {
-        const lineRow = document.createElement('div');
-        lineRow.className = `sa-agent-diff-line sa-agent-diff-line-${entry.type}`;
-
-        const oldNo = document.createElement('span');
-        oldNo.className = 'sa-agent-diff-lineno sa-agent-diff-lineno-old';
-        oldNo.textContent = entry.oldLineNo !== null ? String(entry.oldLineNo) : '';
-
-        const newNo = document.createElement('span');
-        newNo.className = 'sa-agent-diff-lineno sa-agent-diff-lineno-new';
-        newNo.textContent = entry.newLineNo !== null ? String(entry.newLineNo) : '';
-
-        const prefix = document.createElement('span');
-        prefix.className = 'sa-agent-diff-prefix';
-        prefix.textContent = entry.type === 'add' ? '+' : entry.type === 'del' ? '-' : ' ';
-
-        const text = document.createElement('span');
-        text.className = 'sa-agent-diff-text';
-        text.textContent = entry.line;
-
-        lineRow.appendChild(oldNo);
-        lineRow.appendChild(newNo);
-        lineRow.appendChild(prefix);
-        lineRow.appendChild(text);
-        return lineRow;
-      };
-
-      const hunks = Array.isArray(script.hunks) && script.hunks.length > 0 ? script.hunks : null;
-      if (hunks) {
-        for (const hunk of hunks) {
-          const hunkHeader = document.createElement('div');
-          hunkHeader.className = 'sa-agent-diff-hunk-header';
-          hunkHeader.textContent = hunk.header;
-          linesContainer.appendChild(hunkHeader);
-
-          for (const lineEntry of hunk.lines) {
-            linesContainer.appendChild(renderLine(lineEntry));
-          }
-        }
-      } else if (Array.isArray(script.diff)) {
-        for (const lineEntry of script.diff) {
-          linesContainer.appendChild(renderLine(lineEntry));
-        }
-      }
-
-      scriptSection.appendChild(linesContainer);
-      body.appendChild(scriptSection);
-    }
-
-    card.appendChild(body);
-
-    const blocksView = document.createElement('div');
-    blocksView.className = 'sa-agent-blocks-view';
-    card.appendChild(blocksView);
-
-    const pairs = [];
-    for (const script of diff.scripts) {
-      const title = script.title || 'Script';
-      if (script.oldCode && script.oldCode.trim()) {
-        pairs.push({
-          label: `${title} · ${msg('diff-before')}`,
-          code: script.oldCode,
-          kind: 'before',
-          target: diff.target
-        });
-      }
-      if (script.newCode && script.newCode.trim()) {
-        pairs.push({
-          label: `${title} · ${msg('diff-after')}`,
-          code: script.newCode,
-          kind: 'after',
-          target: diff.target
-        });
-      }
-    }
-    attachDiffView({ textView: body, blocksView, pairs, toggle });
-    return card;
-  };
-
-  /**
-   * Build a single tool-call row.
-   * @param {object} entry Trace entry.
-   * @param {boolean} interactive Whether approval controls are available.
-   * @returns {HTMLElement} Tool row.
-   */
-  const buildToolRow = (entry, interactive) => {
-    const status = entry.status || (entry.ok === false ? 'error' : 'ok');
-    const row = document.createElement('div');
-    row.className = `sa-agent-tool-row sa-agent-trace-${status}`;
-
-    const details = document.createElement('details');
-    details.className = 'sa-agent-tool';
-    rememberDisclosure(details, entry, false);
-
-    const summary = document.createElement('summary');
-    summary.className = 'sa-agent-tool-summary';
-
-    const dot = document.createElement('span');
-    dot.className = 'sa-agent-trace-dot';
-
-    const name = document.createElement('span');
-    name.className = 'sa-agent-tool-name';
-    name.textContent = getToolLabel(entry.name);
-
-    const state = document.createElement('span');
-    state.className = 'sa-agent-tool-status';
-    state.textContent = formatTraceStatus(status);
-
-    const expand = document.createElement('span');
-    expand.className = 'sa-agent-tool-expand';
-    expand.textContent = msg('trace-expand');
-
-    const collapse = document.createElement('span');
-    collapse.className = 'sa-agent-tool-collapse';
-    collapse.textContent = msg('trace-collapse');
-
-    summary.appendChild(dot);
-    summary.appendChild(name);
-    summary.appendChild(state);
-    summary.appendChild(expand);
-    summary.appendChild(collapse);
-    details.appendChild(summary);
-
-    const body = document.createElement('div');
-    body.className = 'sa-agent-tool-body';
-
-    const argsLine = document.createElement('div');
-    argsLine.className = 'sa-agent-tool-line';
-    const argsLabel = document.createElement('span');
-    argsLabel.className = 'sa-agent-tool-line-label';
-    argsLabel.textContent = msg('trace-args-label');
-    argsLine.appendChild(argsLabel);
-    argsLine.appendChild(document.createTextNode(formatTraceArgs(entry)));
-    body.appendChild(argsLine);
-
-    const resultText = entry.summary ? formatTraceSummary(entry.summary) : '';
-    if (resultText) {
-      const resultLine = document.createElement('div');
-      resultLine.className = 'sa-agent-tool-line';
-      const resultLabel = document.createElement('span');
-      resultLabel.className = 'sa-agent-tool-line-label';
-      resultLabel.textContent = msg('trace-result-label');
-      resultLine.appendChild(resultLabel);
-      resultLine.appendChild(document.createTextNode(resultText));
-      body.appendChild(resultLine);
-    }
-
-    if (entry.preview) {
-      const rawLabel = document.createElement('div');
-      rawLabel.className = 'sa-agent-tool-line-label';
-      rawLabel.textContent = msg('trace-raw-label');
-      body.appendChild(rawLabel);
-      const pre = document.createElement('pre');
-      pre.className = 'sa-agent-trace-pre';
-      pre.textContent = entry.preview;
-      body.appendChild(pre);
-    }
-
-    if (entry.diff && entry.diff.hasChanges && status !== 'awaiting') {
-      const diffTitle = document.createElement('div');
-      diffTitle.className = 'sa-agent-tool-line-label';
-      diffTitle.textContent = msg('diff-title');
-      body.appendChild(diffTitle);
-      body.appendChild(buildDiffCard(entry.diff));
-    }
-
-    details.appendChild(body);
-    row.appendChild(details);
-
-    if (interactive && status === 'awaiting' && entry.id) {
-      const approval = document.createElement('div');
-      approval.className = 'sa-agent-tool-approval';
-      const isWrite = WRITE_TOOL_SET.has(entry.name);
-      if (isWrite) row.classList.add('sa-agent-tool-write');
-
-      if (entry.diff && entry.diff.hasChanges) {
-        approval.appendChild(buildDiffCard(entry.diff));
-      }
-
-      const controls = document.createElement('div');
-      controls.className = 'sa-agent-tool-approval-controls';
-
-      const hint = document.createElement('span');
-      hint.className = 'sa-agent-tool-approval-hint';
-      hint.textContent = msg(isWrite ? 'trace-write-approval-hint' : 'trace-approval-hint');
-
-      const allow = document.createElement('button');
-      allow.type = 'button';
-      allow.className = 'sa-agent-tool-approval-button sa-agent-tool-allow';
-      allow.textContent = msg('trace-allow');
-      allow.addEventListener('click', () => resolveToolApproval(entry.id, true));
-
-      const deny = document.createElement('button');
-      deny.type = 'button';
-      deny.className = 'sa-agent-tool-approval-button sa-agent-tool-deny';
-      deny.textContent = msg('trace-deny');
-      deny.addEventListener('click', () => resolveToolApproval(entry.id, false));
-
-      const allowAll = document.createElement('button');
-      allowAll.type = 'button';
-      allowAll.className = 'sa-agent-tool-approval-button sa-agent-tool-allow-all';
-      allowAll.textContent = msg('trace-allow-all');
-      allowAll.addEventListener('click', () => {
-        setAutoApproveTools(true);
+  const getTraceRenderer = () => {
+    if (!traceRenderer) {
+      const diffCards = getDiffCardRenderer();
+      traceRenderer = createTraceRenderer({
+        msg,
+        vm,
+        getBlockLabel,
+        getToolLabel,
+        writeToolSet: WRITE_TOOL_SET,
+        buildDiffCard: diffCards.buildDiffCard,
+        buildDiffViewToggle: diffCards.buildDiffViewToggle,
+        attachDiffView: diffCards.attachDiffView,
+        resolveToolApproval,
+        setAutoApproveTools,
+        rememberDisclosure
       });
-
-      controls.appendChild(hint);
-      controls.appendChild(allow);
-      controls.appendChild(deny);
-      controls.appendChild(allowAll);
-      approval.appendChild(controls);
-      row.appendChild(approval);
     }
-
-    return row;
+    return traceRenderer;
   };
 
   /**
-   * Build the tool activity panel.
+   * Build a diff card.
+   * @param {object} diff Diff payload.
+   * @returns {HTMLElement} Card element.
+   */
+  const buildDiffCard = (diff) => getDiffCardRenderer().buildDiffCard(diff);
+
+  /**
+   * Append tool trace entries to a message row.
+   * @param {HTMLElement} container Message row.
    * @param {Array<object>} trace Trace entries.
-   * @param {boolean} [interactive] Whether approval controls are available.
-   * @returns {HTMLElement} Trace element.
+   * @param {boolean} [interactive] Whether approval controls are active.
    */
-  const buildTraceElement = (trace, interactive = false) => {
-    const wrapper = document.createElement('div');
-    wrapper.className = 'sa-agent-trace';
-    const awaiting = interactive ? trace.filter((entry) => entry.status === 'awaiting') : [];
-    const stacked = trace.filter((entry) => !awaiting.includes(entry));
-    if (stacked.length) {
-      const stack = document.createElement('details');
-      stack.className = 'sa-agent-tool-stack';
-      stack.classList.toggle('sa-agent-tool-stack-multiple', stacked.length > 1);
-      rememberDisclosure(stack, trace);
-      const summary = document.createElement('summary');
-      summary.className = 'sa-agent-tool-stack-summary';
-      const title = document.createElement('span');
-      title.textContent = msg('trace-stack-title', { count: stacked.length });
-      const state = document.createElement('span');
-      state.className = 'sa-agent-tool-stack-state';
-      const latest = stacked[stacked.length - 1];
-      const failures = stacked.filter((entry) => entry.status === 'error' || entry.status === 'denied').length;
-      state.textContent = failures
-        ? msg('trace-stack-errors', { count: failures })
-        : `${getToolLabel(latest.name)} · ${formatTraceStatus(latest.status)}`;
-      summary.appendChild(title);
-      summary.appendChild(state);
-      const body = document.createElement('div');
-      body.className = 'sa-agent-tool-stack-body';
-      for (const entry of stacked) body.appendChild(buildToolRow(entry, false));
-      stack.appendChild(summary);
-      stack.appendChild(body);
-      wrapper.appendChild(stack);
-    }
-    // Keep pending approval actions reachable even when the completed stack is collapsed.
-    for (const entry of awaiting) wrapper.appendChild(buildToolRow(entry, true));
-    return wrapper;
-  };
-
-  /**
-   * Determine whether a tool call represents a code modification (e.g. apply_scripts, delete_scripts).
-   * @param {object} entry Tool trace entry.
-   * @returns {boolean} True if code write tool.
-   */
-  const isCodeWriteTool = (entry) =>
-    Boolean(entry && (entry.name === 'apply_scripts' || entry.name === 'delete_scripts'));
-
-  /**
-   * Build a standalone in-chat code edit element with side-by-side split diff.
-   * Does not use a collapsible details card or bubble borders; renders directly on the background.
-   *
-   * Format:
-   * EDIT -> Target
-   * 10 xxx.xxx()      |  10 xxx.xxx()
-   *                   |+ 11 xxxx.xxxx(abc)
-   *                   |+ 12 xxx.xxxxxx()
-   * 11 xxxx.xx()      |~ 13 xxxx.xx()
-   *
-   * @param {object} entry Tool trace entry.
-   * @param {boolean} interactive Whether approval controls are available.
-   * @returns {HTMLElement} Code edit element.
-   */
-  const buildCodeEditElement = (entry, interactive = false) => {
-    const status = entry.status || (entry.ok === false ? 'error' : 'ok');
-    const container = document.createElement('div');
-    container.className = `sa-agent-code-edit sa-agent-status-${status}`;
-
-    const diff = entry.diff;
-    const targetName = (diff && diff.target) || (entry.args && entry.args.target) || '';
-
-    // Header: EDIT -> Target
-    const header = document.createElement('div');
-    header.className = 'sa-agent-code-edit-header';
-
-    const titleGroup = document.createElement('div');
-    titleGroup.className = 'sa-agent-code-edit-title';
-
-    const label = document.createElement('span');
-    label.className = 'sa-agent-code-edit-label';
-    label.textContent = 'EDIT';
-
-    const arrow = document.createElement('span');
-    arrow.className = 'sa-agent-code-edit-arrow';
-    arrow.textContent = '->';
-
-    titleGroup.appendChild(label);
-    titleGroup.appendChild(arrow);
-
-    if (targetName) {
-      const targetSpan = document.createElement('span');
-      targetSpan.className = 'sa-agent-code-edit-target';
-      targetSpan.textContent = targetName;
-      titleGroup.appendChild(targetSpan);
-    }
-
-    header.appendChild(titleGroup);
-
-    const meta = document.createElement('div');
-    meta.className = 'sa-agent-code-edit-meta';
-
-    if (diff) {
-      const stats = document.createElement('span');
-      stats.className = 'sa-agent-code-edit-stats';
-      if (diff.totalAdd > 0) {
-        const statAdd = document.createElement('span');
-        statAdd.className = 'sa-agent-diff-stat-add';
-        statAdd.textContent = `+${diff.totalAdd}`;
-        stats.appendChild(statAdd);
-      }
-      if (diff.totalDel > 0) {
-        const statDel = document.createElement('span');
-        statDel.className = 'sa-agent-diff-stat-del';
-        statDel.textContent = `-${diff.totalDel}`;
-        stats.appendChild(statDel);
-      }
-      meta.appendChild(stats);
-    }
-
-    const toggle = buildDiffViewToggle();
-    meta.appendChild(toggle.element);
-
-    const badge = document.createElement('span');
-    badge.className = `sa-agent-code-edit-status sa-agent-status-${status}`;
-    badge.textContent = formatTraceStatus(status);
-    meta.appendChild(badge);
-
-    header.appendChild(meta);
-    container.appendChild(header);
-
-    // Body: side-by-side split diff
-    const content = document.createElement('div');
-    content.className = 'sa-agent-code-edit-content';
-
-    const scripts = diff && Array.isArray(diff.scripts) && diff.scripts.length > 0 ? diff.scripts : null;
-
-    if (scripts) {
-      for (const script of scripts) {
-        if (scripts.length > 1 && script.title) {
-          const scriptHeader = document.createElement('div');
-          scriptHeader.className = 'sa-agent-code-edit-script-title';
-          scriptHeader.textContent = script.title;
-          content.appendChild(scriptHeader);
-        }
-
-        const table = document.createElement('div');
-        table.className = 'sa-agent-split-table';
-
-        const hunks = Array.isArray(script.hunks) && script.hunks.length > 0 ? script.hunks : null;
-        const hunkList = hunks || [{ header: null, lines: script.diff || [] }];
-
-        for (const hunk of hunkList) {
-          if (hunk.header) {
-            const hunkHeader = document.createElement('div');
-            hunkHeader.className = 'sa-agent-split-hunk-header';
-            hunkHeader.textContent = hunk.header;
-            table.appendChild(hunkHeader);
-          }
-
-          const splitRows = buildSideBySideRows(hunk.lines || []);
-          for (const rowData of splitRows) {
-            const row = document.createElement('div');
-            row.className = 'sa-agent-split-row';
-
-            // Left column (old code)
-            const leftCol = document.createElement('div');
-            leftCol.className = `sa-agent-split-col sa-agent-split-left is-${rowData.left.type}`;
-            const leftNo = document.createElement('span');
-            leftNo.className = 'sa-agent-split-lineno';
-            leftNo.textContent = rowData.left.lineNo !== null ? String(rowData.left.lineNo) : '';
-            const leftText = document.createElement('span');
-            leftText.className = 'sa-agent-split-text';
-            leftText.textContent = rowData.left.text;
-            leftCol.appendChild(leftNo);
-            leftCol.appendChild(leftText);
-
-            // Divider: |
-            const divider = document.createElement('div');
-            divider.className = 'sa-agent-split-divider';
-            divider.textContent = '|';
-
-            // Right column (new code)
-            const rightCol = document.createElement('div');
-            rightCol.className = `sa-agent-split-col sa-agent-split-right is-${rowData.right.type}`;
-            const rightMark = document.createElement('span');
-            rightMark.className = `sa-agent-split-mark is-${rowData.right.type}`;
-            rightMark.textContent = rowData.right.mark;
-            const rightNo = document.createElement('span');
-            rightNo.className = 'sa-agent-split-lineno';
-            rightNo.textContent = rowData.right.lineNo !== null ? String(rowData.right.lineNo) : '';
-            const rightText = document.createElement('span');
-            rightText.className = 'sa-agent-split-text';
-            rightText.textContent = rowData.right.text;
-            rightCol.appendChild(rightMark);
-            rightCol.appendChild(rightNo);
-            rightCol.appendChild(rightText);
-
-            row.appendChild(leftCol);
-            row.appendChild(divider);
-            row.appendChild(rightCol);
-            table.appendChild(row);
-          }
-        }
-
-        content.appendChild(table);
-      }
-    } else if (entry.args && typeof entry.args.code === 'string' && entry.args.code.trim()) {
-      // Fallback synthetic diff for plain code string
-      const lines = entry.args.code.trim().split('\n');
-      const table = document.createElement('div');
-      table.className = 'sa-agent-split-table';
-      lines.forEach((lineText, idx) => {
-        const row = document.createElement('div');
-        row.className = 'sa-agent-split-row';
-
-        const leftCol = document.createElement('div');
-        leftCol.className = 'sa-agent-split-col sa-agent-split-left is-empty';
-        const leftNo = document.createElement('span');
-        leftNo.className = 'sa-agent-split-lineno';
-        const leftText = document.createElement('span');
-        leftText.className = 'sa-agent-split-text';
-        leftCol.appendChild(leftNo);
-        leftCol.appendChild(leftText);
-
-        const divider = document.createElement('div');
-        divider.className = 'sa-agent-split-divider';
-        divider.textContent = '|';
-
-        const rightCol = document.createElement('div');
-        rightCol.className = 'sa-agent-split-col sa-agent-split-right is-add';
-        const rightMark = document.createElement('span');
-        rightMark.className = 'sa-agent-split-mark is-add';
-        rightMark.textContent = '+';
-        const rightNo = document.createElement('span');
-        rightNo.className = 'sa-agent-split-lineno';
-        rightNo.textContent = String(idx + 1);
-        const rightText = document.createElement('span');
-        rightText.className = 'sa-agent-split-text';
-        rightText.textContent = lineText;
-        rightCol.appendChild(rightMark);
-        rightCol.appendChild(rightNo);
-        rightCol.appendChild(rightText);
-
-        row.appendChild(leftCol);
-        row.appendChild(divider);
-        row.appendChild(rightCol);
-        table.appendChild(row);
-      });
-      content.appendChild(table);
-    } else {
-      const empty = document.createElement('div');
-      empty.className = 'sa-agent-code-edit-empty';
-      empty.textContent = msg('diff-no-changes');
-      content.appendChild(empty);
-    }
-
-    container.appendChild(content);
-
-    const blocksView = document.createElement('div');
-    blocksView.className = 'sa-agent-blocks-view';
-    container.appendChild(blocksView);
-
-    const pairs = [];
-    if (scripts) {
-      for (const script of scripts) {
-        const title = script.title || 'Script';
-        if (script.oldCode && script.oldCode.trim()) {
-          pairs.push({
-            label: `${title} · ${msg('diff-before')}`,
-            code: script.oldCode,
-            kind: 'before',
-            target: targetName
-          });
-        }
-        if (script.newCode && script.newCode.trim()) {
-          pairs.push({
-            label: `${title} · ${msg('diff-after')}`,
-            code: script.newCode,
-            kind: 'after',
-            target: targetName
-          });
-        }
-      }
-    } else if (entry.args && typeof entry.args.code === 'string' && entry.args.code.trim()) {
-      pairs.push({
-        label: msg('diff-after'),
-        code: entry.args.code,
-        kind: 'after',
-        target: targetName
-      });
-    }
-    attachDiffView({ textView: content, blocksView, pairs, toggle });
-
-    // Approval controls when awaiting approval
-    if (interactive && status === 'awaiting' && entry.id) {
-      const approval = document.createElement('div');
-      approval.className = 'sa-agent-code-edit-approval';
-
-      const controls = document.createElement('div');
-      controls.className = 'sa-agent-tool-approval-controls';
-
-      const hint = document.createElement('span');
-      hint.className = 'sa-agent-tool-approval-hint';
-      hint.textContent = msg('trace-write-approval-hint');
-
-      const allow = document.createElement('button');
-      allow.type = 'button';
-      allow.className = 'sa-agent-tool-approval-button sa-agent-tool-allow';
-      allow.textContent = msg('trace-allow');
-      allow.addEventListener('click', () => resolveToolApproval(entry.id, true));
-
-      const deny = document.createElement('button');
-      deny.type = 'button';
-      deny.className = 'sa-agent-tool-approval-button sa-agent-tool-deny';
-      deny.textContent = msg('trace-deny');
-      deny.addEventListener('click', () => resolveToolApproval(entry.id, false));
-
-      const allowAll = document.createElement('button');
-      allowAll.type = 'button';
-      allowAll.className = 'sa-agent-tool-approval-button sa-agent-tool-allow-all';
-      allowAll.textContent = msg('trace-allow-all');
-      allowAll.addEventListener('click', () => {
-        setAutoApproveTools(true);
-        resolveToolApproval(entry.id, true);
-      });
-
-      controls.appendChild(hint);
-      controls.appendChild(allow);
-      controls.appendChild(deny);
-      controls.appendChild(allowAll);
-      approval.appendChild(controls);
-      container.appendChild(approval);
-    }
-
-    // Error message display if failed
-    if ((status === 'error' || entry.ok === false) && entry.summary && (entry.summary.error || entry.summary.message)) {
-      const errorNotice = document.createElement('div');
-      errorNotice.className = 'sa-agent-code-edit-error';
-      errorNotice.textContent = entry.summary.error || entry.summary.message;
-      container.appendChild(errorNotice);
-    }
-
-    return container;
-  };
-
-  /**
-   * Append trace entries into a message row.
-   * Separates normal tool calls (placed into collapsible stack) from code-write tool calls
-   * (placed directly as standalone EDIT side-by-side elements without collapsible cards).
-   *
-   * @param {HTMLElement} container Message row element.
-   * @param {Array<object>} trace Tool entries.
-   * @param {boolean} interactive Whether approval controls are interactive.
-   */
-  const appendTraceElements = (container, trace, interactive = false) => {
-    let currentNormalGroup = [];
-    for (const entry of trace) {
-      if (isCodeWriteTool(entry)) {
-        if (currentNormalGroup.length > 0) {
-          container.appendChild(buildTraceElement(currentNormalGroup, interactive));
-          currentNormalGroup = [];
-        }
-        container.appendChild(buildCodeEditElement(entry, interactive));
-      } else {
-        currentNormalGroup.push(entry);
-      }
-    }
-    if (currentNormalGroup.length > 0) {
-      container.appendChild(buildTraceElement(currentNormalGroup, interactive));
-    }
-  };
+  const appendTraceElements = (container, trace, interactive = false) =>
+    getTraceRenderer().appendTraceElements(container, trace, interactive);
 
   /**
    * Render the in-flight tool activity panel.
@@ -2828,6 +1826,7 @@ export default async ({ addon, msg }) => {
         signal: controller.signal,
         requestApproval: requestToolApproval,
         writeEnabled,
+        maxSteps: config.maxSteps,
         onEvent: (event) => {
           if (!busy || generation !== requestGeneration || conversationId !== activeConversationId) return;
           if (event.type === 'thinking') {
@@ -2993,8 +1992,8 @@ export default async ({ addon, msg }) => {
       apiUrl: buildApiEndpoint(apiUrlInput ? apiUrlInput.value : config.apiUrl),
       model,
       stream: streamInput ? Boolean(streamInput.checked) : config.stream !== false,
-      temperature: Math.max(0, Math.min(2, Number(temperatureInput.value))),
-      maxTokens: Math.max(1, Math.min(32000, Number(maxTokensInput.value) || DEFAULT_CONFIG.maxTokens)),
+      temperature: clampNumber(temperatureInput.value, 0, 2, config.temperature),
+      maxTokens: clampNumber(maxTokensInput.value, 1, 32000, config.maxTokens),
       reasoningEffort: capabilitySelect ? capabilitySelect.value : config.reasoningEffort
     };
   };
@@ -3051,9 +2050,11 @@ export default async ({ addon, msg }) => {
     if (temperatureInput) temperatureInput.value = String(config.temperature);
     if (maxTokensInput) maxTokensInput.value = String(config.maxTokens);
     if (retriesInput) retriesInput.value = String(config.retries);
+    if (maxStepsInput) maxStepsInput.value = String(config.maxSteps);
     if (capabilitySelect) capabilitySelect.value = config.reasoningEffort || 'default';
     updateEndpointHint();
     updateRequestPreview();
+    renderAllConversations();
     settingsErrorElement.textContent = '';
     settingsErrorElement.style.display = 'none';
   };
@@ -3117,9 +2118,10 @@ export default async ({ addon, msg }) => {
       models: rawModels,
       headers,
       stream: streamInput ? Boolean(streamInput.checked) : config.stream !== false,
-      temperature: Math.max(0, Math.min(2, Number(temperatureInput.value))),
-      maxTokens: Math.max(1, Math.min(32000, Number(maxTokensInput.value) || DEFAULT_CONFIG.maxTokens)),
-      retries: Math.max(0, Math.min(5, Number(retriesInput.value))),
+      temperature: clampNumber(temperatureInput.value, 0, 2, config.temperature),
+      maxTokens: clampNumber(maxTokensInput.value, 1, 32000, config.maxTokens),
+      retries: clampNumber(retriesInput.value, 0, 5, config.retries),
+      maxSteps: clampNumber(maxStepsInput && maxStepsInput.value, 1, MAX_ALLOWED_STEPS, config.maxSteps),
       reasoningEffort: capabilitySelect ? capabilitySelect.value : config.reasoningEffort,
       streamIdleTimeoutMs:
         typeof config.streamIdleTimeoutMs === 'number' ? config.streamIdleTimeoutMs : DEFAULT_CONFIG.streamIdleTimeoutMs
@@ -3225,6 +2227,18 @@ export default async ({ addon, msg }) => {
     retriesInput.step = '1';
     addField(msg('settings-retries'), retriesInput);
 
+    maxStepsInput = document.createElement('input');
+    maxStepsInput.className = 'sa-agent-settings-input';
+    maxStepsInput.type = 'number';
+    maxStepsInput.min = '1';
+    maxStepsInput.max = String(MAX_ALLOWED_STEPS);
+    maxStepsInput.step = '1';
+    const maxStepsField = addField(msg('settings-max-steps'), maxStepsInput);
+    const maxStepsHint = document.createElement('div');
+    maxStepsHint.className = 'sa-agent-settings-hint';
+    maxStepsHint.textContent = msg('settings-max-steps-hint');
+    maxStepsField.appendChild(maxStepsHint);
+
     capabilitySelect = document.createElement('select');
     capabilitySelect.className = 'sa-agent-settings-input sa-agent-settings-select';
     for (const effort of REASONING_EFFORTS) {
@@ -3262,6 +2276,20 @@ export default async ({ addon, msg }) => {
     previewHint.className = 'sa-agent-settings-hint';
     previewHint.textContent = msg('settings-request-preview-hint');
     form.appendChild(previewHint);
+
+    const allConversationsLabel = document.createElement('div');
+    allConversationsLabel.className = 'sa-agent-settings-label sa-agent-settings-conversations-label';
+    allConversationsLabel.textContent = msg('settings-all-conversations');
+    form.appendChild(allConversationsLabel);
+
+    const allConversationsHint = document.createElement('div');
+    allConversationsHint.className = 'sa-agent-settings-hint';
+    allConversationsHint.textContent = msg('settings-all-conversations-hint');
+    form.appendChild(allConversationsHint);
+
+    allConversationsElement = document.createElement('div');
+    allConversationsElement.className = 'sa-agent-all-conversations';
+    form.appendChild(allConversationsElement);
 
     form.addEventListener('input', () => {
       updateEndpointHint();
@@ -3368,6 +2396,27 @@ export default async ({ addon, msg }) => {
 
       const result = { blockIds: [], deleted: 0, id: undefined };
 
+      // The tool call was prepared against a specific project and target. If the
+      // user loaded another project while the model was thinking, the ids in the
+      // payload no longer exist: refuse instead of writing into an unrelated
+      // project. The model can re-read and retry.
+      const currentProjectId = resolveProjectId();
+      if (meta.projectId && currentProjectId && meta.projectId !== currentProjectId) {
+        throw new Error(
+          'The project changed since this edit was prepared, so nothing was applied. Re-read the project and try again.'
+        );
+      }
+      if (
+        meta.targetId &&
+        vm.runtime &&
+        typeof vm.runtime.getTargetById === 'function' &&
+        !vm.runtime.getTargetById(meta.targetId)
+      ) {
+        throw new Error(
+          `The target this edit belongs to no longer exists in the project (${meta.targetId}). Re-read the project and try again.`
+        );
+      }
+
       const hasBlocks = Boolean(xml && xml.trim());
       const hasDeletes = Array.isArray(meta.deleteScriptIds) && meta.deleteScriptIds.length > 0;
       const hasLocalDecl = Array.isArray(meta.declarations) && meta.declarations.some((decl) => decl && decl.isLocal);
@@ -3379,6 +2428,10 @@ export default async ({ addon, msg }) => {
         // Let the GUI reload the workspace for the new editing target.
         await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
       }
+
+      // The workspace may have been rebuilt for the new editing target; always
+      // operate on the current one so script ids resolve against the right DOM.
+      let targetWorkspace = getMainWorkspace(Blockly) || workspace;
 
       Blockly.Events.setGroup(true);
       try {
@@ -3392,8 +2445,8 @@ export default async ({ addon, msg }) => {
             const type = decl.type || '';
             const isLocal = Boolean(decl.isLocal);
             const isCloud = Boolean(decl.isCloud);
-            workspace.createVariable(decl.name, type, decl.id, isLocal, isCloud);
-            const model = workspace.getVariableById ? workspace.getVariableById(decl.id) : null;
+            targetWorkspace.createVariable(decl.name, type, decl.id, isLocal, isCloud);
+            const model = targetWorkspace.getVariableById ? targetWorkspace.getVariableById(decl.id) : null;
             if (model && typeof Blockly.Events.fire === 'function') {
               Blockly.Events.fire(new Blockly.Events.VarCreate(model));
             }
@@ -3409,14 +2462,23 @@ export default async ({ addon, msg }) => {
         // 3. Delete requested scripts first (so replacing a script is safe).
         if (Array.isArray(meta.deleteScriptIds)) {
           for (const scriptId of meta.deleteScriptIds) {
-            if (disposeScript(Blockly, workspace, scriptId)) result.deleted++;
+            if (disposeScript(Blockly, targetWorkspace, scriptId)) result.deleted++;
+          }
+          // Replacing a script means deleting it first. If the editor workspace
+          // does not know the id (wrong sprite, stale payload), inserting the new
+          // blocks would duplicate code, so stop with an explicit error instead.
+          if (result.deleted < meta.deleteScriptIds.length) {
+            throw new Error(
+              `Could not replace ${meta.deleteScriptIds.length - result.deleted} script(s): they are not in the ` +
+                'editor workspace for this sprite. Nothing else was applied. Re-read the project and try again.'
+            );
           }
         }
 
         // 4. Load new blocks from XML.
         if (xml && xml.trim()) {
           const dom = Blockly.Xml.textToDom(xml);
-          const ids = Blockly.Xml.domToWorkspace(dom.documentElement || dom, workspace);
+          const ids = Blockly.Xml.domToWorkspace(dom.documentElement || dom, targetWorkspace);
           if (Array.isArray(ids)) result.blockIds = ids;
         }
       } finally {
@@ -3640,9 +2702,6 @@ export default async ({ addon, msg }) => {
         sessionSummary.focus();
       }
     });
-    document.addEventListener('pointerdown', (event) => {
-      if (sessionMenu.open && !sessionMenu.contains(event.target)) sessionMenu.open = false;
-    });
 
     const composer = document.createElement('div');
     composer.className = 'sa-agent-composer';
@@ -3765,10 +2824,6 @@ export default async ({ addon, msg }) => {
       conversationLayoutObserver = new ResizeObserver(updateConversationLayout);
       conversationLayoutObserver.observe(chatContainer);
     }
-    window.addEventListener('resize', () => {
-      updateConversationLayout();
-      resizeInput();
-    });
     requestAnimationFrame(updateConversationLayout);
     renderConversationList();
     renderMessages();
@@ -4076,6 +3131,107 @@ export default async ({ addon, msg }) => {
     updateToggleButtonPlacement();
   };
 
+  /** Window/document listeners that must not outlive a disabled addon. */
+  const uiListeners = [];
+  let runtimeProjectListenerAttached = false;
+
+  /**
+   * Register a listener and remember it for {@link detachUiListeners}.
+   * @param {object} target Event target.
+   * @param {string} type Event type.
+   * @param {Function} handler Handler.
+   */
+  const listen = (target, type, handler) => {
+    if (!target || typeof target.addEventListener !== 'function') return;
+    target.addEventListener(type, handler, { passive: type === 'pointerdown' });
+    uiListeners.push({ target, type, handler });
+  };
+
+  /** Close the session menu when clicking outside it. */
+  const handleDocumentPointerDown = (event) => {
+    if (sessionMenu && sessionMenu.open && !sessionMenu.contains(event.target)) sessionMenu.open = false;
+  };
+
+  /** Keep the composer and conversation pane sized to the panel. */
+  const handleWindowResize = () => {
+    updateConversationLayout();
+    resizeInput();
+  };
+
+  /** React to layout changes made in the editor settings. */
+  const handleStorageChange = (event) => {
+    if (event.key !== 'AESettings') return;
+    handleLayoutChange().catch(() => {});
+  };
+
+  /**
+   * Switch the conversation context when another project is loaded.
+   */
+  const handleProjectLoaded = () => {
+    const nextProjectId = resolveProjectId();
+    if (nextProjectId === projectId) return;
+
+    cancelCompression();
+    if (busy) stopRequest();
+    saveCurrentHistory();
+    projectId = nextProjectId;
+    store = loadStore(projectId);
+    conversations = getProjectConversations(store, projectId);
+    activeConversationId = store.activeByProject[projectId] || conversations[0].id;
+    const conversation = findConversation(activeConversationId) || conversations[0];
+    activeConversationId = conversation.id;
+    chatMessages = conversation.messages;
+    lastUsage = conversation.lastUsage || null;
+    pendingDeleteId = null;
+    liveTrace = [];
+    liveParts = [];
+    liveTraceElement = null;
+    clearStreaming();
+    persistConversations();
+    renderConversationList();
+    renderMessages();
+    updateContextUsage();
+    setStatus('');
+  };
+
+  /**
+   * Attach the UI-level listeners (idempotent).
+   */
+  const attachUiListeners = () => {
+    if (uiListeners.length > 0) return;
+    listen(document, 'pointerdown', handleDocumentPointerDown);
+    listen(window, 'resize', handleWindowResize);
+    listen(window, 'storage', handleStorageChange);
+    listen(window, 'bottomPanelOpened', updateToggleButtonState);
+    listen(window, 'bottomPanelClosed', updateToggleButtonState);
+
+    const runtime = vm && vm.runtime;
+    if (!runtimeProjectListenerAttached && runtime && typeof runtime.on === 'function') {
+      runtime.on('PROJECT_LOADED', handleProjectLoaded);
+      runtimeProjectListenerAttached = true;
+    }
+  };
+
+  /**
+   * Detach every listener added by {@link attachUiListeners}.
+   */
+  const detachUiListeners = () => {
+    while (uiListeners.length > 0) {
+      const { target, type, handler } = uiListeners.pop();
+      try {
+        target.removeEventListener(type, handler);
+      } catch (error) {
+        // The target may already be gone.
+      }
+    }
+    const runtime = vm && vm.runtime;
+    if (runtimeProjectListenerAttached && runtime && typeof runtime.off === 'function') {
+      runtime.off('PROJECT_LOADED', handleProjectLoaded);
+      runtimeProjectListenerAttached = false;
+    }
+    if (conversationLayoutObserver) conversationLayoutObserver.disconnect();
+  };
+
   buildChatUI();
   SideBar.register(PLUGIN_ID, chatContainer, {
     onActivate: () => {
@@ -4160,6 +3316,7 @@ export default async ({ addon, msg }) => {
    */
   const handleDisabled = () => {
     tabBarWatcherActive = false;
+    detachUiListeners();
     requestGeneration++;
     if (focusFrame) {
       cancelAnimationFrame(focusFrame);
@@ -4190,18 +3347,16 @@ export default async ({ addon, msg }) => {
    */
   const handleReenabled = () => {
     tabBarWatcherActive = true;
+    attachUiListeners();
+    if (conversationLayoutObserver && chatContainer) conversationLayoutObserver.observe(chatContainer);
     updatePositionControls();
     updateToggleButtonPlacement();
     if (isVSCodeLayoutEnabled()) watchTabBar().catch(() => {});
   };
 
+
   addon.self.addEventListener('disabled', handleDisabled);
   addon.self.addEventListener('reenabled', handleReenabled);
-  window.addEventListener('bottomPanelOpened', updateToggleButtonState);
-  window.addEventListener('bottomPanelClosed', updateToggleButtonState);
 
-  window.addEventListener('storage', (event) => {
-    if (event.key !== 'AESettings') return;
-    handleLayoutChange().catch(() => {});
-  });
+  attachUiListeners();
 };

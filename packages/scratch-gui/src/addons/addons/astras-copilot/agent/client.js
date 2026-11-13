@@ -324,21 +324,27 @@ const readStreamingResponse = async (response, onDelta, onReasoning, idleTimeout
   }
 };
 
+/** HTTP statuses that describe a transient server/proxy condition. */
+const RETRYABLE_STATUSES = new Set([408, 425, 429, 500, 502, 503, 504, 522, 524]);
+
 /**
  * Whether an error should be retried.
- * API request errors (such as HTTP 404, 502, or application errors with status code) must NOT be retried.
- * User aborts must NOT be retried.
- * Other errors (empty response, network timeout, stream drops, parse error, etc.) must be retried.
+ * Transient failures (network drops, stream interruptions, timeouts, HTTP 408/429/5xx)
+ * are retried. Application errors (bad key, invalid request, 4xx) and user aborts are not.
  * @param {Error} error Error to inspect.
  * @returns {boolean} Whether the request should be retried.
  */
-const isRetryableError = (error) => {
+export const isRetryableError = (error) => {
   if (!error) return false;
   // User explicitly aborted the request
   if (error.name === 'AbortError') return false;
-  // API request errors: HTTP status codes (e.g. 404, 502, 500) or application errors (status 0)
-  if (Number.isInteger(error.status)) return false;
-  // All other errors (empty response, network timeout, stream failures, etc.) must be retried
+  if (Number.isInteger(error.status)) {
+    // HTTP status: only transient conditions are retried.
+    if (error.status >= 400) return RETRYABLE_STATUSES.has(error.status);
+    // Status 0 marks an application-level error reported by the API payload.
+    return false;
+  }
+  // No status: empty response, network timeout, stream drop, parse error.
   return true;
 };
 

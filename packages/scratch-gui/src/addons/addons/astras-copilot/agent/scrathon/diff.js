@@ -466,6 +466,55 @@ export const computeToolDiff = (vm, toolName, args) => {
     };
   }
 
+  if (toolName === 'apply_scrathon_edits') {
+    const edits = Array.isArray(args.edits) ? args.edits : [];
+    if (edits.length === 0) return null;
+
+    let totalAdd = 0;
+    let totalDel = 0;
+    const scriptDiffs = [];
+
+    for (const edit of edits) {
+      const scriptId = String((edit && edit.scriptId) || '');
+      const newCode = typeof (edit && edit.code) === 'string' ? edit.code.trim() : '';
+      if (!scriptId || !newCode) continue;
+      const existing = existingScripts.find((script) => script.id === scriptId);
+      const oldCode = existing ? existing.code.trim() : '';
+      if (oldCode === newCode) continue;
+
+      const diff = diffLines(oldCode, newCode);
+      const hunks = groupHunks(diff, 3);
+      const additions = diff.filter((entry) => entry.type === 'add').length;
+      const deletions = diff.filter((entry) => entry.type === 'del').length;
+      totalAdd += additions;
+      totalDel += deletions;
+
+      scriptDiffs.push({
+        id: scriptId,
+        title: `[Edit] ${existing ? existing.opcode || scriptId : scriptId}`,
+        isNew: !existing,
+        isDelete: false,
+        oldCode,
+        newCode,
+        diff,
+        hunks,
+        additions,
+        deletions,
+        hasChanges: additions + deletions > 0
+      });
+    }
+
+    if (scriptDiffs.length === 0) return null;
+    return {
+      tool: toolName,
+      target: targetName,
+      hasChanges: true,
+      totalAdd,
+      totalDel,
+      scripts: scriptDiffs
+    };
+  }
+
   if (toolName === 'delete_scripts') {
     const ids = Array.isArray(args.scriptIds)
       ? args.scriptIds.filter((id) => typeof id === 'string' && id)

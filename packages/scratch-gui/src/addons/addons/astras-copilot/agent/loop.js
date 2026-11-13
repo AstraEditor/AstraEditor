@@ -7,6 +7,21 @@ import { computeToolDiff } from './scrathon/diff.js';
 
 export const MAX_CONTEXT_MESSAGES = 24;
 const MAX_TOOL_RESULT_CHARS = 12000;
+/** The whole-project document is intentionally large; keep it readable. */
+const MAX_PROJECT_SOURCE_CHARS = 60000;
+/** Hard safety bound for tool round trips; the UI can request anything below it. */
+const MAX_STEP_LIMIT = 200;
+
+/**
+ * Resolve the tool-step budget.
+ * @param {*} maxSteps Requested steps.
+ * @returns {number} Step budget.
+ */
+const resolveStepLimit = (maxSteps) => {
+  const value = Number(maxSteps);
+  if (!Number.isFinite(value) || value <= 0) return 16;
+  return Math.max(1, Math.min(MAX_STEP_LIMIT, Math.floor(value)));
+};
 
 const ID_PATTERN = /\bids?\b|identifier|编号|标识/i;
 const ID_NEGATIVE_PATTERN =
@@ -152,13 +167,13 @@ export const runAgent = async ({
   onEvent,
   requestApproval,
   writeEnabled = false,
-  maxSteps = 8
+  maxSteps = 16
 }) => {
   const tools = createScratchTools(vm);
   const activeTools = getActiveTools(writeEnabled);
   const apiMessages = buildApiMessages({ messages, writeEnabled });
 
-  const stepLimit = Math.max(1, Math.min(25, Number(maxSteps) || 16));
+  const stepLimit = resolveStepLimit(maxSteps);
   const trace = [];
   const lastUserMessage = [...messages].reverse().find((message) => message && message.role === 'user');
   const wantsIds = Boolean(lastUserMessage && asksForIds(lastUserMessage.content));
@@ -222,7 +237,10 @@ export const runAgent = async ({
         args,
         status: canRun ? 'awaiting' : 'pending'
       };
-      if (canRun && (toolName === 'apply_scripts' || toolName === 'delete_scripts')) {
+      if (
+        canRun &&
+        (toolName === 'apply_scripts' || toolName === 'apply_scrathon_edits' || toolName === 'delete_scripts')
+      ) {
         try {
           const diff = computeToolDiff(vm, toolName, args);
           if (diff) entry.diff = diff;
@@ -327,13 +345,14 @@ export const runAgent = async ({
         traceIndex
       });
       const serializedResult = JSON.stringify(result === undefined ? null : result);
+      const resultLimit = toolName === 'get_project_scrathon' ? MAX_PROJECT_SOURCE_CHARS : MAX_TOOL_RESULT_CHARS;
       apiMessages.push({
         role: 'tool',
         tool_call_id: toolCall.id,
         name: toolName,
         content:
-          serializedResult.length > MAX_TOOL_RESULT_CHARS
-            ? `${serializedResult.slice(0, MAX_TOOL_RESULT_CHARS)}...[truncated]`
+          serializedResult.length > resultLimit
+            ? `${serializedResult.slice(0, resultLimit)}...[truncated]`
             : serializedResult
       });
     }

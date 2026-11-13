@@ -14,10 +14,10 @@ export const previewToolResult = (result, name) => {
       source: `[${result.source.length} characters of source code]`
     };
   }
-  if (name === 'fetch_url' && result && typeof result === 'object' && typeof result.text === 'string') {
+  if (name === 'get_project_scrathon' && result && typeof result === 'object' && typeof result.document === 'string') {
     value = {
       ...result,
-      text: `[${result.text.length} characters of text]`
+      document: `[${result.document.length} characters of Scrathon]`
     };
   }
 
@@ -98,17 +98,18 @@ export const describeToolResult = (name, args, result, ok) => {
         running: Boolean(result.isRunning),
         threads: result.threadCount || 0
       };
-    case 'search_web':
+    case 'get_project_scrathon':
       return {
-        kind: 'web-search',
-        query: String(result.query || ''),
-        count: Array.isArray(result.results) ? result.results.length : 0
+        kind: 'project-scrathon',
+        targets: Number(result.targets) || 0,
+        scripts: Number(result.scripts) || 0,
+        truncated: Boolean(result.truncated)
       };
-    case 'fetch_url':
+    case 'apply_scrathon_edits':
       return {
-        kind: 'page',
-        url: String(result.url || ''),
-        chars: Number(result.chars) || 0
+        kind: 'apply-scrathon-edits',
+        name: (result.target && result.target.name) || '',
+        replaced: Number(result.replaced) || 0
       };
     case 'apply_scripts':
       return {
