@@ -17,7 +17,10 @@
 - [x] 块级原位修补 `agent/script-patcher.js`（见阶段二 2.3）。
 - [x] `maxSteps` 可配置（默认 24，上限 200），token 估算按实际模式与工具集计算。
 - [x] UI 拆分 `ui/diff-card.js`、`ui/tool-trace.js`；全局监听走 `listen()` 注册表，禁用时解绑。
-- [x] 新增 retry / config / conversations / project-scrathon / script-patcher 测试套件。
+- [x] 发送按钮左侧新增上下文圆盘 `ui/context-dial.js`：纯圆环无文字，点开弹层显示用量分段图与思考力度滑块（Default/Low/High/Max）。
+- [x] 设置面板按「连接 / 模型 / 请求 / 对话 / 调试」分组，请求 JSON 预览收进折叠区；思考力度从设置中移除。
+- [x] 新增 `contextWindow` 配置（默认 128000，上限 2000000），作为圆盘百分比分母。
+- [x] 新增 retry / config / conversations / project-scrathon / script-patcher / context-dial 测试套件。
 
 ---
 

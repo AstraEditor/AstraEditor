@@ -34,8 +34,8 @@ import {
   DEFAULT_MODELS,
   getApiBaseUrl,
   loadConfig,
+  MAX_ALLOWED_CONTEXT_WINDOW,
   MAX_ALLOWED_STEPS,
-  REASONING_EFFORTS,
   saveConfig
 } from './agent/config.js';
 import {
@@ -54,6 +54,7 @@ import {
 } from './agent/conversations.js';
 import { createDiffCardRenderer } from './ui/diff-card.js';
 import { createTraceRenderer } from './ui/tool-trace.js';
+import { createContextDial } from './ui/context-dial.js';
 
 const PLUGIN_ID = 'astras-copilot';
 const POSITION_KEY = 'AEAstrasCopilotPosition';
@@ -290,7 +291,6 @@ export default async ({ addon, msg }) => {
   let headersInput = null;
   let streamInput = null;
   let autoApproveInput = null;
-  let capabilitySelect = null;
   let requestPreviewElement = null;
   let requestPreviewTimer = 0;
   let autoApproveTools = false;
@@ -304,7 +304,8 @@ export default async ({ addon, msg }) => {
   let maxTokensInput = null;
   let retriesInput = null;
   let maxStepsInput = null;
-  let contextElement = null;
+  let contextWindowInput = null;
+  let contextDial = null;
   let compressButton = null;
   let compressController = null;
   let compressRequestId = 0;
@@ -445,8 +446,8 @@ export default async ({ addon, msg }) => {
   };
 
   /**
-   * Estimate the tokens currently sent to the model.
-   * @returns {object} Estimated token count and message count.
+   * Estimate the tokens currently sent to the model, split by origin.
+   * @returns {object} Total, per-part token counts and the message count.
    */
   const estimateContextUsage = () => {
     const history = chatMessages
@@ -459,30 +460,36 @@ export default async ({ addon, msg }) => {
       )
       .slice(-MAX_CONTEXT_MESSAGES);
     // Mirror the real request: the prompt and the tool schemas both depend on the mode.
-    let tokens =
-      estimateTextTokens(buildSystemPrompt({ writeEnabled })) +
-      estimateTextTokens(JSON.stringify(getActiveTools(writeEnabled)));
+    const system = estimateTextTokens(buildSystemPrompt({ writeEnabled }));
+    const tools = estimateTextTokens(JSON.stringify(getActiveTools(writeEnabled)));
+    let messages = 0;
     for (const message of history) {
-      tokens += estimateTextTokens(message.content) + 4;
+      messages += estimateTextTokens(message.content) + 4;
     }
-    return { tokens, messages: history.length };
+    return { tokens: system + tools + messages, system, tools, messages, messageCount: history.length };
   };
 
   /**
    * Update the context usage indicator.
    */
   const updateContextUsage = () => {
-    if (!contextElement) return;
     const estimate = estimateContextUsage();
     const actualTokens =
       lastUsage && Number.isFinite(Number(lastUsage.prompt_tokens)) ? Number(lastUsage.prompt_tokens) : null;
     const tokens = actualTokens === null ? estimate.tokens : actualTokens;
-    contextElement.textContent = msg(actualTokens === null ? 'context-usage-estimate' : 'context-usage-actual', {
-      tokens: formatTokenCount(tokens),
-      messages: String(estimate.messages)
-    });
+    if (contextDial) {
+      contextDial.update({
+        tokens,
+        contextWindow: config.contextWindow,
+        system: estimate.system,
+        tools: estimate.tools,
+        messages: estimate.messages,
+        messageCount: estimate.messageCount,
+        actual: actualTokens !== null
+      });
+    }
     if (compressButton) {
-      compressButton.style.display = estimate.messages >= 4 ? '' : 'none';
+      compressButton.style.display = estimate.messageCount >= 4 ? '' : 'none';
       compressButton.disabled = busy || compressing;
     }
   };
@@ -1995,7 +2002,7 @@ export default async ({ addon, msg }) => {
       stream: streamInput ? Boolean(streamInput.checked) : config.stream !== false,
       temperature: clampNumber(temperatureInput.value, 0, 2, config.temperature),
       maxTokens: clampNumber(maxTokensInput.value, 1, 32000, config.maxTokens),
-      reasoningEffort: capabilitySelect ? capabilitySelect.value : config.reasoningEffort
+      reasoningEffort: config.reasoningEffort
     };
   };
 
@@ -2052,7 +2059,7 @@ export default async ({ addon, msg }) => {
     if (maxTokensInput) maxTokensInput.value = String(config.maxTokens);
     if (retriesInput) retriesInput.value = String(config.retries);
     if (maxStepsInput) maxStepsInput.value = String(config.maxSteps);
-    if (capabilitySelect) capabilitySelect.value = config.reasoningEffort || 'default';
+    if (contextWindowInput) contextWindowInput.value = String(config.contextWindow);
     updateEndpointHint();
     updateRequestPreview();
     renderAllConversations();
@@ -2123,12 +2130,19 @@ export default async ({ addon, msg }) => {
       maxTokens: clampNumber(maxTokensInput.value, 1, 32000, config.maxTokens),
       retries: clampNumber(retriesInput.value, 0, 5, config.retries),
       maxSteps: clampNumber(maxStepsInput && maxStepsInput.value, 1, MAX_ALLOWED_STEPS, config.maxSteps),
-      reasoningEffort: capabilitySelect ? capabilitySelect.value : config.reasoningEffort,
+      contextWindow: clampNumber(
+        contextWindowInput && contextWindowInput.value,
+        1000,
+        MAX_ALLOWED_CONTEXT_WINDOW,
+        config.contextWindow
+      ),
+      reasoningEffort: config.reasoningEffort,
       streamIdleTimeoutMs:
         typeof config.streamIdleTimeoutMs === 'number' ? config.streamIdleTimeoutMs : DEFAULT_CONFIG.streamIdleTimeoutMs
     };
     saveConfig(config);
     updateModelSelector();
+    updateContextUsage();
     closeSettingsPanel();
     setStatus(msg('settings-saved'));
   };
@@ -2164,12 +2178,48 @@ export default async ({ addon, msg }) => {
     form.className = 'sa-agent-settings';
 
     /**
-     * Add a labeled field to the settings form.
+     * Add a titled section to the settings form.
+     * @param {string} titleText Section title.
+     * @param {string} [hintText] Optional section description.
+     * @returns {HTMLElement} Section element.
+     */
+    const addSection = (titleText, hintText) => {
+      const section = document.createElement('section');
+      section.className = 'sa-agent-settings-section';
+      const title = document.createElement('div');
+      title.className = 'sa-agent-settings-section-title';
+      title.textContent = titleText;
+      section.appendChild(title);
+      if (hintText) {
+        const hint = document.createElement('div');
+        hint.className = 'sa-agent-settings-hint';
+        hint.textContent = hintText;
+        section.appendChild(hint);
+      }
+      form.appendChild(section);
+      return section;
+    };
+
+    /**
+     * Add a two-column grid for short numeric fields.
+     * @param {HTMLElement} container Parent section.
+     * @returns {HTMLElement} Grid element.
+     */
+    const addGrid = (container) => {
+      const grid = document.createElement('div');
+      grid.className = 'sa-agent-settings-grid';
+      container.appendChild(grid);
+      return grid;
+    };
+
+    /**
+     * Add a labeled field to a container.
+     * @param {HTMLElement} container Parent element.
      * @param {string} labelText Field label.
      * @param {HTMLElement} field Field element.
      * @returns {HTMLLabelElement} Field wrapper.
      */
-    const addField = (labelText, field) => {
+    const addField = (container, labelText, field) => {
       const label = document.createElement('label');
       label.className = 'sa-agent-settings-field';
       if (field.type === 'checkbox') label.classList.add('sa-agent-settings-field-toggle');
@@ -2178,15 +2228,30 @@ export default async ({ addon, msg }) => {
       labelSpan.textContent = labelText;
       label.appendChild(labelSpan);
       label.appendChild(field);
-      form.appendChild(label);
+      container.appendChild(label);
       return label;
     };
+
+    /** Field factory shared by the numeric inputs. */
+    const numberInput = (min, max, step) => {
+      const input = document.createElement('input');
+      input.className = 'sa-agent-settings-input';
+      input.type = 'number';
+      input.min = String(min);
+      input.max = String(max);
+      input.step = String(step);
+      return input;
+    };
+
+    // --- Connection -------------------------------------------------------
+    const connectionSection = addSection(msg('settings-section-connection'));
 
     apiUrlInput = document.createElement('input');
     apiUrlInput.className = 'sa-agent-settings-input';
     apiUrlInput.type = 'url';
     apiUrlInput.spellcheck = false;
-    const apiUrlField = addField(msg('api-url'), apiUrlInput);
+    apiUrlInput.placeholder = 'https://api.openai.com/v1';
+    const apiUrlField = addField(connectionSection, msg('api-url'), apiUrlInput);
     apiUrlHint = document.createElement('div');
     apiUrlHint.className = 'sa-agent-settings-hint';
     apiUrlField.appendChild(apiUrlHint);
@@ -2195,102 +2260,88 @@ export default async ({ addon, msg }) => {
     apiKeyInput.className = 'sa-agent-settings-input';
     apiKeyInput.type = 'password';
     apiKeyInput.autocomplete = 'off';
-    addField(msg('api-key'), apiKeyInput);
+    addField(connectionSection, msg('api-key'), apiKeyInput);
+
+    // --- Model ------------------------------------------------------------
+    const modelSection = addSection(msg('settings-section-model'));
 
     modelsInput = document.createElement('textarea');
     modelsInput.className = 'sa-agent-settings-input sa-agent-settings-textarea';
     modelsInput.style.minHeight = '70px';
     modelsInput.spellcheck = false;
     modelsInput.placeholder = 'gpt-4o-mini\ngpt-4o\nclaude-3-7-sonnet';
-    addField(msg('settings-models'), modelsInput);
+    addField(modelSection, msg('settings-models'), modelsInput);
 
-    temperatureInput = document.createElement('input');
-    temperatureInput.className = 'sa-agent-settings-input';
-    temperatureInput.type = 'number';
-    temperatureInput.min = '0';
-    temperatureInput.max = '2';
-    temperatureInput.step = '0.1';
-    addField(msg('settings-temperature'), temperatureInput);
+    const samplingGrid = addGrid(modelSection);
+    temperatureInput = numberInput(0, 2, 0.1);
+    addField(samplingGrid, msg('settings-temperature'), temperatureInput);
+    maxTokensInput = numberInput(1, 32000, 100);
+    addField(samplingGrid, msg('settings-max-tokens'), maxTokensInput);
 
-    maxTokensInput = document.createElement('input');
-    maxTokensInput.className = 'sa-agent-settings-input';
-    maxTokensInput.type = 'number';
-    maxTokensInput.min = '1';
-    maxTokensInput.max = '32000';
-    maxTokensInput.step = '100';
-    addField(msg('settings-max-tokens'), maxTokensInput);
+    const effortHint = document.createElement('div');
+    effortHint.className = 'sa-agent-settings-hint';
+    effortHint.textContent = msg('settings-effort-moved');
+    modelSection.appendChild(effortHint);
 
-    retriesInput = document.createElement('input');
-    retriesInput.className = 'sa-agent-settings-input';
-    retriesInput.type = 'number';
-    retriesInput.min = '0';
-    retriesInput.max = '5';
-    retriesInput.step = '1';
-    addField(msg('settings-retries'), retriesInput);
+    // --- Request ----------------------------------------------------------
+    const requestSection = addSection(msg('settings-section-request'));
 
-    maxStepsInput = document.createElement('input');
-    maxStepsInput.className = 'sa-agent-settings-input';
-    maxStepsInput.type = 'number';
-    maxStepsInput.min = '1';
-    maxStepsInput.max = String(MAX_ALLOWED_STEPS);
-    maxStepsInput.step = '1';
-    const maxStepsField = addField(msg('settings-max-steps'), maxStepsInput);
+    const behaviourGrid = addGrid(requestSection);
+    retriesInput = numberInput(0, 5, 1);
+    addField(behaviourGrid, msg('settings-retries'), retriesInput);
+    maxStepsInput = numberInput(1, MAX_ALLOWED_STEPS, 1);
+    addField(behaviourGrid, msg('settings-max-steps'), maxStepsInput);
+
     const maxStepsHint = document.createElement('div');
     maxStepsHint.className = 'sa-agent-settings-hint';
     maxStepsHint.textContent = msg('settings-max-steps-hint');
-    maxStepsField.appendChild(maxStepsHint);
+    requestSection.appendChild(maxStepsHint);
 
-    capabilitySelect = document.createElement('select');
-    capabilitySelect.className = 'sa-agent-settings-input sa-agent-settings-select';
-    for (const effort of REASONING_EFFORTS) {
-      const option = document.createElement('option');
-      option.value = effort;
-      option.textContent = effort;
-      capabilitySelect.appendChild(option);
-    }
-    const capabilityField = addField(msg('settings-capability'), capabilitySelect);
-    const capabilityHint = document.createElement('div');
-    capabilityHint.className = 'sa-agent-settings-hint';
-    capabilityHint.textContent = msg('settings-capability-hint');
-    capabilityField.appendChild(capabilityHint);
+    contextWindowInput = numberInput(1000, MAX_ALLOWED_CONTEXT_WINDOW, 1000);
+    const contextWindowField = addField(requestSection, msg('settings-context-window'), contextWindowInput);
+    const contextWindowHint = document.createElement('div');
+    contextWindowHint.className = 'sa-agent-settings-hint';
+    contextWindowHint.textContent = msg('settings-context-window-hint');
+    contextWindowField.appendChild(contextWindowHint);
 
     streamInput = document.createElement('input');
     streamInput.className = 'sa-agent-settings-checkbox';
     streamInput.type = 'checkbox';
-    addField(msg('settings-stream'), streamInput);
+    addField(requestSection, msg('settings-stream'), streamInput);
 
     headersInput = document.createElement('textarea');
     headersInput.className = 'sa-agent-settings-input sa-agent-settings-textarea';
     headersInput.spellcheck = false;
-    addField(msg('extra-headers'), headersInput);
+    addField(requestSection, msg('extra-headers'), headersInput);
 
-    const previewLabel = document.createElement('div');
-    previewLabel.className = 'sa-agent-settings-label';
-    previewLabel.textContent = msg('settings-request-preview');
-    form.appendChild(previewLabel);
+    // --- Conversations ----------------------------------------------------
+    const conversationSection = addSection(
+      msg('settings-section-conversations'),
+      msg('settings-all-conversations-hint')
+    );
+    allConversationsElement = document.createElement('div');
+    allConversationsElement.className = 'sa-agent-all-conversations';
+    conversationSection.appendChild(allConversationsElement);
 
-    requestPreviewElement = document.createElement('pre');
-    requestPreviewElement.className = 'sa-agent-settings-request-json';
-    form.appendChild(requestPreviewElement);
+    // --- Debug ------------------------------------------------------------
+    const debugSection = addSection(msg('settings-section-debug'));
+    const previewDetails = document.createElement('details');
+    previewDetails.className = 'sa-agent-settings-details';
+
+    const previewSummary = document.createElement('summary');
+    previewSummary.className = 'sa-agent-settings-details-summary';
+    previewSummary.textContent = msg('settings-request-preview');
+    previewDetails.appendChild(previewSummary);
 
     const previewHint = document.createElement('div');
     previewHint.className = 'sa-agent-settings-hint';
     previewHint.textContent = msg('settings-request-preview-hint');
-    form.appendChild(previewHint);
+    previewDetails.appendChild(previewHint);
 
-    const allConversationsLabel = document.createElement('div');
-    allConversationsLabel.className = 'sa-agent-settings-label sa-agent-settings-conversations-label';
-    allConversationsLabel.textContent = msg('settings-all-conversations');
-    form.appendChild(allConversationsLabel);
-
-    const allConversationsHint = document.createElement('div');
-    allConversationsHint.className = 'sa-agent-settings-hint';
-    allConversationsHint.textContent = msg('settings-all-conversations-hint');
-    form.appendChild(allConversationsHint);
-
-    allConversationsElement = document.createElement('div');
-    allConversationsElement.className = 'sa-agent-all-conversations';
-    form.appendChild(allConversationsElement);
+    requestPreviewElement = document.createElement('pre');
+    requestPreviewElement.className = 'sa-agent-settings-request-json';
+    previewDetails.appendChild(requestPreviewElement);
+    debugSection.appendChild(previewDetails);
 
     form.addEventListener('input', () => {
       updateEndpointHint();
@@ -2329,9 +2380,11 @@ export default async ({ addon, msg }) => {
     buttons.appendChild(cancelButton);
     buttons.appendChild(saveButton);
     form.appendChild(buttons);
+
     settingsPanel.appendChild(form);
     chatContainer.appendChild(settingsPanel);
   };
+
 
   // --- Editor write bridge -------------------------------------------------
 
@@ -2680,8 +2733,6 @@ export default async ({ addon, msg }) => {
 
     const contextBar = document.createElement('div');
     contextBar.className = 'sa-agent-context-bar';
-    contextElement = document.createElement('span');
-    contextElement.className = 'sa-agent-context-text';
     compressButton = document.createElement('button');
     compressButton.type = 'button';
     compressButton.className = 'sa-agent-button sa-agent-button-secondary sa-agent-compress-button';
@@ -2690,7 +2741,6 @@ export default async ({ addon, msg }) => {
       sessionMenu.open = false;
       compressContext().catch(() => {});
     });
-    contextBar.appendChild(contextElement);
     contextBar.appendChild(compressButton);
     sessionPanel.appendChild(contextBar);
 
@@ -2790,6 +2840,20 @@ export default async ({ addon, msg }) => {
       sendMessage(inputElement.value).catch(() => {});
     });
 
+    // Context dial: a ring-only button sitting next to Send. Clicking it opens
+    // the usage breakdown and the reasoning-effort slider.
+    contextDial = createContextDial({
+      msg,
+      formatTokens: formatTokenCount,
+      getEffort: () => config.reasoningEffort || 'default',
+      onEffortChange: (level) => {
+        config.reasoningEffort = level;
+        saveConfig(config);
+        updateRequestPreview();
+      }
+    });
+
+    toolbarRight.appendChild(contextDial.element);
     toolbarRight.appendChild(stopButton);
     toolbarRight.appendChild(sendButton);
 
@@ -2832,6 +2896,7 @@ export default async ({ addon, msg }) => {
     buildSettingsPanel();
 
     updateComposer();
+    updateContextUsage();
     resizeInput();
     updatePositionControls();
     updateConversationLayout();
@@ -3165,12 +3230,14 @@ export default async ({ addon, msg }) => {
   /** Close the session menu when clicking outside it. */
   const handleDocumentPointerDown = (event) => {
     if (sessionMenu && sessionMenu.open && !sessionMenu.contains(event.target)) sessionMenu.open = false;
+    if (contextDial) contextDial.closeIfOutside(event.target);
   };
 
   /** Keep the composer and conversation pane sized to the panel. */
   const handleWindowResize = () => {
     updateConversationLayout();
     resizeInput();
+    if (contextDial) contextDial.reposition();
   };
 
   /** React to layout changes made in the editor settings. */

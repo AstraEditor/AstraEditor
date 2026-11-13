@@ -26,6 +26,10 @@ export const REASONING_EFFORTS = ['default', 'low', 'high', 'max'];
 export const DEFAULT_MAX_STEPS = 24;
 export const MAX_ALLOWED_STEPS = 200;
 
+/** Assumed context window, used by the usage dial. Editable in settings. */
+export const DEFAULT_CONTEXT_WINDOW = 128000;
+export const MAX_ALLOWED_CONTEXT_WINDOW = 2000000;
+
 export const DEFAULT_CONFIG = {
   apiUrl: 'https://api.openai.com/v1/chat/completions',
   apiKey: '',
@@ -37,6 +41,7 @@ export const DEFAULT_CONFIG = {
   maxTokens: 3000,
   retries: 2,
   maxSteps: DEFAULT_MAX_STEPS,
+  contextWindow: DEFAULT_CONTEXT_WINDOW,
   reasoningEffort: 'default',
   streamIdleTimeoutMs: 30000
 };
@@ -102,6 +107,12 @@ export const normalizeConfig = (stored) => {
     maxTokens: clampNumber(source.maxTokens, 1, 32000, DEFAULT_CONFIG.maxTokens),
     retries: clampNumber(source.retries, 0, 5, DEFAULT_CONFIG.retries),
     maxSteps: clampNumber(source.maxSteps, 1, MAX_ALLOWED_STEPS, DEFAULT_CONFIG.maxSteps),
+    contextWindow: clampNumber(
+      source.contextWindow,
+      1000,
+      MAX_ALLOWED_CONTEXT_WINDOW,
+      DEFAULT_CONFIG.contextWindow
+    ),
     reasoningEffort: REASONING_EFFORTS.includes(source.reasoningEffort) ? source.reasoningEffort : 'default',
     streamIdleTimeoutMs: clampNumber(
       source.streamIdleTimeoutMs,

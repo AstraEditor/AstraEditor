@@ -71,9 +71,25 @@
 | --- | --- |
 | `ui/diff-card.js` | Diff 卡片、文本/积木视图切换、ScratchBlocks 预览（工厂函数，依赖注入） |
 | `ui/tool-trace.js` | 工具行、折叠栈、EDIT 卡片、审批按钮 |
+| `ui/context-dial.js` | 对话框下方的上下文圆盘、用量弹层、思考力度滑块 |
 
 `agent/markdown.js` 是自研安全渲染器，全程不触碰 `innerHTML`。
 `agent/block-preview.js` 负责把 XML 渲染成只读积木预览。
+
+### 对话框下方：上下文圆盘
+
+`ui/context-dial.js` 是纯 UI 组件（接收 `msg` / `formatTokens` / 回调），不读全局状态：
+
+- 入口是工具栏右侧、**发送按钮左边的 24px 圆形按钮**，只有一个圆环，不显示任何文字；百分比与思考力度放在 tooltip 与 `aria-label` 里。
+- 圆盘用 `pathLength="100"` 让 `stroke-dashoffset` 直接等于百分比，无需三角函数。
+- 颜色阈值：<60% 绿、60–85% 琥珀、>85% 红。
+- 弹层内容：总量百分比、`已使用 / 窗口`、按来源分段的条形图（系统提示词 / 工具定义 / 对话消息）、思考力度滑块。- 弹层用 `position: fixed` + 打开时按 `getBoundingClientRect()` 翻转定位，因为底部面板的内容盒设了 `overflow: hidden`，绝对定位会被裁掉。
+- 思考力度滑块 4 档（Default/Low/High/Max），改完立即写回 `config.reasoningEffort` 并持久化；**设置面板不再提供该项**。
+- 滑块视觉：外层 `.sa-agent-dial-slider-track` 自绘 20px 胶囊轨道与填充（原生 range 的滑块会顶到两端，且无法做左右内缩），原生 input 透明叠在上层只负责滑块与拖拽，`left: 4px; width: calc(100% - 8px)` 让滑块在两端也留 4px；填充宽度 = `calc(20px + (100% - 20px) * --sa-agent-slider-value)` 且自身 `border-radius: 999px`：右端覆盖滑块（4px 内缩 + 12px 滑块）后再多出 4px，滑块被包裹在色条内，不会露出灰色底或矩形直角。
+- 拖动连续性：input 内部 `step=0.01`，填充随连续位置走，档位取 `Math.round(value)`，因此拖动是平滑的而不是 4 段跳；同一档位内滑动不会重复触发 `onEffortChange`。
+- 填充色随档位递进（灰 `#adb5bd` → 蓝 `#4dabf7` → 青 `#12b886` → 紫 `#845ef7`），Max 档滑块带同色光晕，当前档位刻度同步高亮。颜色通过 `--sa-agent-slider-color` 变量从 `.sa-agent-dial-effort-block` 继承给轨道与刻度。
+- 百分比分母来自 `config.contextWindow`（默认 128000，可在设置里改成模型真实窗口）。
+- 用量估算按当前模式实际会发送的内容计算：`buildSystemPrompt({writeEnabled})` + `getActiveTools(writeEnabled)` + 裁剪后的消息。
 
 ---
 
@@ -145,7 +161,7 @@
 
 | 键 | 内容 | 迁移说明 |
 | --- | --- | --- |
-| `astras-agent-config-v2` | 模型配置（含 API key 明文） | 从 `astras_apiUrl/apiKey/model` 迁移后**删除旧键** |
+| `astras-agent-config-v2` | 模型配置（含 API key 明文）、`maxSteps`、`contextWindow`、`reasoningEffort` | 从 `astras_apiUrl/apiKey/model` 迁移后**删除旧键** |
 | `astras-agent-conversations-v2` | `{ activeByProject, projects }` | 从 v1 平铺列表、v0 单历史数组迁入当前项目 |
 | `astras-agent-write-enabled-v1` | 每个会话的 Build 模式开关 | 不持久化审批决策 |
 | `AEAstrasCopilotPosition` | 停靠位置（侧栏/底部） | — |
@@ -159,7 +175,7 @@
 
 - 端点：设置面板填 base URL，`buildApiEndpoint()` 补 `/chat/completions`。
 - 重试：`isRetryableError` 判定 —— 408/425/429/500/502/503/504/522/524 退避重试；其余 4xx 与 status 0 不重试；用户主动中止不重试。
-- `retries`、`maxSteps`（默认 24，上限 200）、`temperature`、`maxTokens` 全部走 `clampNumber`，空输入回退原值而非变 0。
+- `retries`、`maxSteps`（默认 24，上限 200）、`temperature`、`maxTokens`、`contextWindow` 全部走 `clampNumber`，空输入回退原值而非变 0。
 - 上下文：`MAX_CONTEXT_MESSAGES` 条消息裁剪；`get_project_scrathon` 单次结果放宽到 60k 字符，其余工具 12k。
 
 ---
@@ -171,6 +187,6 @@ cd packages/scratch-gui
 ./node_modules/.bin/jest test/unit/addons/astras-copilot
 ```
 
-覆盖：`retry`、`config`、`conversations`、`project-scrathon`、`script-patcher`、`scrathon`、`request`。
+覆盖：`retry`、`config`、`conversations`、`project-scrathon`、`script-patcher`、`context-dial`、`scrathon`、`request`。
 
 注意 `settings.test.js` 在 node 环境下会因缺少 `CustomEvent` 失败，属既有问题，与本插件无关。ESLint 在本仓库忽略 addon 目录，静态检查以 Babel 解析 + `webpack --bail` 为准。
