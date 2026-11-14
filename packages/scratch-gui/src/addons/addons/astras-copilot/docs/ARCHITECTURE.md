@@ -83,9 +83,13 @@
 - 入口是工具栏右侧、**发送按钮左边的 24px 圆形按钮**，只有一个圆环，不显示任何文字；百分比与思考力度放在 tooltip 与 `aria-label` 里。
 - 圆盘用 `pathLength="100"` 让 `stroke-dashoffset` 直接等于百分比，无需三角函数。
 - 颜色阈值：<60% 绿、60–85% 琥珀、>85% 红。
-- 弹层内容：总量百分比、`已使用 / 窗口`、按来源分段的条形图（系统提示词 / 工具定义 / 对话消息）、思考力度滑块。- 弹层用 `position: fixed` + 打开时按 `getBoundingClientRect()` 翻转定位，因为底部面板的内容盒设了 `overflow: hidden`，绝对定位会被裁掉。
+- 弹层内容：总量百分比、`已使用 / 窗口`、按来源分段的条形图（系统提示词 / 工具定义 / 对话消息）、思考力度滑块。
+- 分段比例的分母是**上下文窗口**而不是已用量：条形图整体只填到当前占用比例，剩余部分留空，图例里的百分比同样按窗口计算（与圆环读数一致）。段宽用显式百分比而不是 flex-grow，避免 flex 归一化把条撑满。- 弹层用 `position: fixed` + 打开时按 `getBoundingClientRect()` 翻转定位，因为底部面板的内容盒设了 `overflow: hidden`，绝对定位会被裁掉。
 - 思考力度滑块 4 档（Default/Low/High/Max），改完立即写回 `config.reasoningEffort` 并持久化；**设置面板不再提供该项**。
 - 滑块视觉：外层 `.sa-agent-dial-slider-track` 自绘 20px 胶囊轨道与填充（原生 range 的滑块会顶到两端，且无法做左右内缩），原生 input 透明叠在上层只负责滑块与拖拽，`left: 4px; width: calc(100% - 8px)` 让滑块在两端也留 4px；填充宽度 = `calc(20px + (100% - 20px) * --sa-agent-slider-value)` 且自身 `border-radius: 999px`：右端覆盖滑块（4px 内缩 + 12px 滑块）后再多出 4px，滑块被包裹在色条内，不会露出灰色底或矩形直角。
+- 松手吸附：`change` 事件把位置取整到最近的档位，并临时加 `is-snapping` 让填充在 160ms 内收敛；拖动过程本身不加过渡，避免拖影。
+- 轨道定位点：4 个 3px 浅色圆点，外层的 `.sa-agent-dial-slider-markers` 左右各缩进 10px（4px 内缩 + 6px 半个滑块），点的 `left` 用 0/33.3/66.7/100% 百分比，正好落在滑块圆心的行程上。
+- 键盘：内部 `step=0.01` 会让原生方向键一次只走 0.01，因此拦截方向键改为一次一档，Home/End 直达两端。
 - 拖动连续性：input 内部 `step=0.01`，填充随连续位置走，档位取 `Math.round(value)`，因此拖动是平滑的而不是 4 段跳；同一档位内滑动不会重复触发 `onEffortChange`。
 - 填充色随档位递进（灰 `#adb5bd` → 蓝 `#4dabf7` → 青 `#12b886` → 紫 `#845ef7`），Max 档滑块带同色光晕，当前档位刻度同步高亮。颜色通过 `--sa-agent-slider-color` 变量从 `.sa-agent-dial-effort-block` 继承给轨道与刻度。
 - 百分比分母来自 `config.contextWindow`（默认 128000，可在设置里改成模型真实窗口）。

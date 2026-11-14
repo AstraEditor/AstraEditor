@@ -2819,9 +2819,9 @@ button:hover .sa-agent-scrathon-icon {
 }
 
 .sa-agent-dial-bar-segment {
-  flex-basis: 0;
+  flex: 0 0 auto;
   height: 100%;
-  transition: flex-grow 0.35s ease;
+  transition: width 0.35s ease;
 }
 
 .sa-agent-dial-bar-system {
@@ -2895,10 +2895,39 @@ button:hover .sa-agent-scrathon-icon {
   top: 0;
   bottom: 0;
   left: 0;
+  z-index: 1;
   width: calc(20px + (100% - 20px) * var(--sa-agent-slider-value, 0));
   border-radius: 999px;
   background: var(--sa-agent-slider-color, #12b886);
   pointer-events: none;
+}
+
+/* Only the snap-to-stop animation, never the drag itself. */
+.sa-agent-dial-slider-track.is-snapping .sa-agent-dial-slider-fill {
+  transition: width 0.16s ease;
+}
+
+/* Light dots marking the four stops. */
+.sa-agent-dial-slider-markers {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  /* Aligned with the thumb centre travel: 4px inset + half thumb on each side. */
+  left: 10px;
+  right: 10px;
+  z-index: 2;
+  pointer-events: none;
+}
+
+.sa-agent-dial-marker {
+  position: absolute;
+  top: 50%;
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.85);
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.08);
+  transform: translate(-50%, -50%);
 }
 
 .sa-agent-dial-slider {
@@ -2909,6 +2938,7 @@ button:hover .sa-agent-scrathon-icon {
   /* Horizontal inset so the thumb never touches the rounded ends. Inset via
      the box model because range inputs handle padding inconsistently. */
   left: 4px;
+  z-index: 3;
   box-sizing: border-box;
   width: calc(100% - 8px);
   height: 20px;

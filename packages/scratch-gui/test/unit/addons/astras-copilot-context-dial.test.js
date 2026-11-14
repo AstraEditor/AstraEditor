@@ -127,8 +127,14 @@ describe('context dial component', () => {
     expect(Number(ring.getAttribute('stroke-dashoffset'))).toBeCloseTo(100 - 17.8, 1);
     expect(ring.parentNode.getAttribute('class')).toContain('sa-agent-dial-is-ok');
 
+    // Shares of the context window, not of the used tokens: the bar keeps the
+    // unused remainder visible. 1500/100000 = 1.5% and so on.
     const values = [...dial.element.querySelectorAll('.sa-agent-dial-legend-value')].map((node) => node.textContent);
-    expect(values).toEqual(['8.4%', '28.7%', '59.6%']);
+    expect(values).toEqual(['1.5%', '5.1%', '10.6%']);
+
+    const widths = [...dial.element.querySelectorAll('.sa-agent-dial-bar-segment')].map((node) => node.style.width);
+    expect(widths).toEqual(['1.500%', '5.100%', '10.600%']);
+    expect(widths.reduce((sum, width) => sum + parseFloat(width), 0)).toBeCloseTo(17.2, 1);
 
     expect(dial.element.querySelector('.sa-agent-dial-source').textContent).toBe('≈ 18k tokens · 12 messages');
   });
@@ -156,6 +162,53 @@ describe('context dial component', () => {
     slider.value = '2.4';
     slider.dispatchEvent(new dom.window.Event('input', { bubbles: true }));
     expect(changes).toEqual(['high']);
+  });
+
+  test('four light markers sit on the four stops', () => {
+    const markers = [...dial.element.querySelectorAll('.sa-agent-dial-marker')];
+    expect(markers).toHaveLength(4);
+    markers.forEach((marker, index) => {
+      expect(parseFloat(marker.style.left)).toBeCloseTo((index / 3) * 100, 5);
+    });
+  });
+
+  test('releasing the thumb snaps to the nearest stop', () => {
+    const slider = dial.element.querySelector('.sa-agent-dial-slider');
+    const trackNode = dial.element.querySelector('.sa-agent-dial-slider-track');
+    changes.length = 0;
+
+    slider.value = '1.4';
+    slider.dispatchEvent(new dom.window.Event('input', { bubbles: true }));
+    slider.dispatchEvent(new dom.window.Event('change', { bubbles: true }));
+
+    expect(slider.value).toBe('1');
+    expect(Number(trackNode.style.getPropertyValue('--sa-agent-slider-value'))).toBeCloseTo(1 / 3, 5);
+    expect(dial.getEffort()).toBe('low');
+    expect(trackNode.classList.contains('is-snapping')).toBe(true);
+
+    // 2.6 rounds up to Max and reports it once.
+    slider.value = '2.6';
+    slider.dispatchEvent(new dom.window.Event('input', { bubbles: true }));
+    slider.dispatchEvent(new dom.window.Event('change', { bubbles: true }));
+    expect(slider.value).toBe('3');
+    expect(dial.getEffort()).toBe('max');
+    expect(changes).toEqual(['max']);
+  });
+
+  test('arrow keys move one stop and Home/End jump to the ends', () => {
+    const slider = dial.element.querySelector('.sa-agent-dial-slider');
+    changes.length = 0;
+    const press = (key) => slider.dispatchEvent(new dom.window.KeyboardEvent('keydown', { key, bubbles: true }));
+
+    press('ArrowRight');
+    expect(dial.getEffort()).toBe('high');
+    press('End');
+    expect(dial.getEffort()).toBe('max');
+    press('ArrowRight');
+    expect(dial.getEffort()).toBe('max');
+    press('Home');
+    expect(dial.getEffort()).toBe('default');
+    expect(changes).toEqual(['high', 'max', 'default']);
   });
 
   test('track colour escalates with effort', () => {

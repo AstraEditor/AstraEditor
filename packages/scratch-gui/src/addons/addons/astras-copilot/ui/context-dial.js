@@ -185,7 +185,7 @@ export const createContextDial = ({ msg, formatTokens, onEffortChange, getEffort
   };
   for (const [key, segment] of Object.entries(barSegments)) {
     segment.className = `sa-agent-dial-bar-segment sa-agent-dial-bar-${key}`;
-    segment.style.flexGrow = '0';
+    segment.style.width = '0%';
     bar.appendChild(segment);
   }
   popover.appendChild(bar);
@@ -227,6 +227,18 @@ export const createContextDial = ({ msg, formatTokens, onEffortChange, getEffort
   const sliderFill = document.createElement('div');
   sliderFill.className = 'sa-agent-dial-slider-fill';
   sliderTrack.appendChild(sliderFill);
+
+  // Light dots mark the four stops so the snap targets are visible.
+  const markerLayer = document.createElement('div');
+  markerLayer.className = 'sa-agent-dial-slider-markers';
+  const lastStop = EFFORT_LEVELS.length - 1;
+  EFFORT_LEVELS.forEach((level, index) => {
+    const marker = document.createElement('span');
+    marker.className = 'sa-agent-dial-marker';
+    marker.style.left = `${(index / lastStop) * 100}%`;
+    markerLayer.appendChild(marker);
+  });
+  sliderTrack.appendChild(markerLayer);
 
   const slider = document.createElement('input');
   slider.type = 'range';
@@ -302,10 +314,12 @@ export const createContextDial = ({ msg, formatTokens, onEffortChange, getEffort
       messages: String(lastState.messageCount || 0)
     });
 
-    const segments = usageSegments(lastState, lastState.tokens);
+    // Segments are shares of the whole window, not of what is already used:
+    // the bar then shows the free space as an empty remainder.
+    const segments = usageSegments(lastState, lastState.contextWindow);
     for (const segment of segments) {
       const node = barSegments[segment.key];
-      node.style.flexGrow = String(segment.ratio);
+      node.style.width = `${(segment.ratio * 100).toFixed(3)}%`;
       node.style.display = segment.ratio > 0 ? '' : 'none';
       legendValues[segment.key].textContent = formatPercent(segment.ratio);
     }
@@ -406,6 +420,44 @@ export const createContextDial = ({ msg, formatTokens, onEffortChange, getEffort
       syncTriggerLabel();
       if (typeof onEffortChange === 'function') onEffortChange(level);
     }
+  });
+
+  // On release, settle on the nearest stop instead of leaving the thumb between
+  // two of them.
+  slider.addEventListener('change', () => {
+    const raw = Number(slider.value);
+    const maxIndex = EFFORT_LEVELS.length - 1;
+    const index = Math.max(0, Math.min(maxIndex, Math.round(Number.isFinite(raw) ? raw : 0)));
+    const level = EFFORT_LEVELS[index];
+    effort = level;
+    sliderTrack.classList.add('is-snapping');
+    paintEffort(level);
+    syncTriggerLabel();
+    window.setTimeout(() => sliderTrack.classList.remove('is-snapping'), 200);
+    if (lastNotified !== level) {
+      lastNotified = level;
+      if (typeof onEffortChange === 'function') onEffortChange(level);
+    }
+  });
+
+  // The input is continuous, so the arrow keys would crawl by 0.01. Move one
+  // stop at a time instead.
+  slider.addEventListener('keydown', (event) => {
+    const forward = event.key === 'ArrowRight' || event.key === 'ArrowUp' || event.key === 'PageUp';
+    const backward = event.key === 'ArrowLeft' || event.key === 'ArrowDown' || event.key === 'PageDown';
+    const isHome = event.key === 'Home';
+    const isEnd = event.key === 'End';
+    if (!forward && !backward && !isHome && !isEnd) return;
+    event.preventDefault();
+    const maxIndex = EFFORT_LEVELS.length - 1;
+    let index = effortIndex(effort);
+    if (isHome) index = 0;
+    else if (isEnd) index = maxIndex;
+    else index = Math.max(0, Math.min(maxIndex, index + (forward ? 1 : -1)));
+    const level = EFFORT_LEVELS[index];
+    if (level === effort) return;
+    setEffort(level);
+    if (typeof onEffortChange === 'function') onEffortChange(level);
   });
   popover.addEventListener('keydown', (event) => {
     if (event.key === 'Escape') {
