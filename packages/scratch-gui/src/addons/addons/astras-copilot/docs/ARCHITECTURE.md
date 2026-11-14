@@ -49,6 +49,7 @@
 | --- | --- |
 | `agent/block-xml.js` | Scrathon 编译产物 → Blockly XML，变量/列表/广播声明收集 |
 | `agent/script-patcher.js` | **块级原位修补**：旧块树与新 XML 对齐，命中即复用 |
+| `agent/layout.js` | 新增脚本的落位：把刚插入的顶层块排到已有脚本右侧的空白列，避免叠在原点 |
 | `agent/writer.js` | `setApplier` / `applyXml` 桥接（把写入请求交给 userscript） |
 | `agent/project-scrathon.js` | 整项目反编译为单个 Scrathon 文档（带 scriptId 分节、字符预算） |
 
@@ -166,7 +167,8 @@
 4. `applyWrite` 三道校验：项目 id 未变、`targetId` 仍在 runtime 中、删除数量与请求一致。
 5. `Blockly.Events.setGroup(true)` 内依次执行：声明变量 → `renameTarget` → 删除 → **原位 patch** → 新增块 → 造型编辑 → 角色创建/删除 → `setGroup(false)`。
 6. 造型与角色操作不经过 Blockly：造型改名走 `target.renameCostume`（会同步积木里的造型名），删除走 `target.deleteCostume`；角色创建走 `vm.duplicateSprite`（复制造型/声音/变量/脚本），删除走 `vm.deleteSprite`。这两类操作不在积木撤销栈里，因此排在所有 Blockly 操作之后执行。
-7. 任一步抛错都会中止并回滚事件组，整批只占一个 Ctrl+Z 步（造型/角色操作除外）。
+7. 新脚本插入后由 `packNewBlocks` 重新落位：右边界 = 已有顶层块的最大 `x + width`，新块从 `右边界 + 80px` 起、纵向按 `高度 + 60px` 依次排列；空工作区从 `(40, 40)` 开始。
+8. 任一步抛错都会中止并回滚事件组，整批只占一个 Ctrl+Z 步（造型/角色操作除外）。
 
 ### 原位 patch 规则（`script-patcher.js`）
 

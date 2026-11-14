@@ -1,6 +1,19 @@
 import SettingStore from '../../../src/addons/settings-store';
 import upstreamMeta from '../../../src/addons/generated/upstream-meta.json';
 
+// Jest's node environment does not expose CustomEvent, which SettingsStore uses
+// to broadcast changes.
+/* eslint-disable no-undef */
+if (typeof globalThis.CustomEvent === 'undefined') {
+  globalThis.CustomEvent = class CustomEvent extends Event {
+    constructor(type, params = {}) {
+      super(type);
+      this.detail = params.detail;
+    }
+  };
+}
+/* eslint-enable no-undef */
+
 class LocalStorageShim {
   constructor() {
     this.storage = Object.create(null);

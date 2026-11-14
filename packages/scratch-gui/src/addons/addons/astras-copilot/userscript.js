@@ -27,6 +27,7 @@ import { createScrathonWindow } from './agent/scrathon/window.js';
 import { renderBlockPreview } from './agent/block-preview.js';
 import { setApplier } from './agent/writer.js';
 import { patchScript } from './agent/script-patcher.js';
+import { packNewBlocks } from './agent/layout.js';
 import {
   buildApiEndpoint,
   clampNumber,
@@ -2610,11 +2611,15 @@ export default async ({ addon, msg }) => {
           }
         }
 
-        // 5. Load brand new blocks from XML (apply_scripts).
+        // 5. Load brand new blocks from XML (apply_scripts). Blockly drops them
+        //    at the origin, so move them into a free column afterwards.
         if (xml && xml.trim()) {
           const dom = Blockly.Xml.textToDom(xml);
           const ids = Blockly.Xml.domToWorkspace(dom.documentElement || dom, targetWorkspace);
-          if (Array.isArray(ids)) result.blockIds = ids;
+          if (Array.isArray(ids)) {
+            result.blockIds = ids;
+            result.layout = packNewBlocks(targetWorkspace, ids);
+          }
         }
 
         // 6. Costume edits. These live on the VM only, so they run after the
@@ -3542,6 +3547,16 @@ export default async ({ addon, msg }) => {
   const handleDisabled = () => {
     tabBarWatcherActive = false;
     detachUiListeners();
+    // The VM/runtime listeners live outside the DOM registry, so drop them here
+    // and let attachUiListeners() re-add them when the addon is re-enabled.
+    if (targetsListenerAttached && vm && typeof vm.off === 'function') {
+      vm.off('targetsUpdate', updateCurrentTargetChip);
+      targetsListenerAttached = false;
+    }
+    if (runtimeProjectListenerAttached && vm && vm.runtime && typeof vm.runtime.off === 'function') {
+      vm.runtime.off('PROJECT_LOADED', handleProjectLoaded);
+      runtimeProjectListenerAttached = false;
+    }
     requestGeneration++;
     if (focusFrame) {
       cancelAnimationFrame(focusFrame);
