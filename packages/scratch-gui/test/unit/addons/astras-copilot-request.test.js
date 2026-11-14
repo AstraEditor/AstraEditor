@@ -107,3 +107,20 @@ describe('Astra Copilot request body', () => {
     expect(buildPreview.reasoning_effort).toBe('high');
   });
 });
+
+describe('currentTarget in the system prompt', () => {
+  test('names the sprite the user is looking at', () => {
+    const messages = buildApiMessages({
+      messages: [{ role: 'user', content: 'hi' }],
+      writeEnabled: false,
+      currentTarget: { name: 'Cat', isStage: false }
+    });
+    expect(messages[0].content).toContain('looking at sprite "Cat"');
+    expect(messages[0].content).toContain('这个角色');
+  });
+
+  test('omits the line when no target is known', () => {
+    const messages = buildApiMessages({ messages: [{ role: 'user', content: 'hi' }] });
+    expect(messages[0].content).not.toContain('currently looking at');
+  });
+});

@@ -1,3 +1,12 @@
-- [ ] 让 Agent 知道当前用户查看的是哪一个角色
-- [ ] 让 Agent 查看角色的造型素材、并支持编辑
-- [ ] 允许 Agent 创建/删除角色、修改角色名
+- [x] 让 Agent 知道当前用户查看的是哪一个角色
+  - 每次请求读取 `vm.editingTarget`，注入系统提示词（`buildSystemPrompt({ currentTarget })`）；请求预览与 token 估算用同一份快照。
+- [x] 让 Agent 查看角色的造型素材、并支持编辑
+  - `list_costumes`：索引、名称、assetId、格式、旋转中心、像素尺寸（读 `renderer.getSkinSize`）、当前造型。
+  - `update_costume`：重命名（走 `target.renameCostume`，会同步积木里的造型名）、切换为当前造型。
+  - `delete_costume`：删除单个造型，至少保留一个。
+  - 限制：只能改造型列表条目，不能编辑像素或替换图片；旋转中心目前只读。
+- [x] 允许 Agent 创建/删除角色、修改角色名
+  - `create_sprite`：用 `vm.duplicateSprite` 复制造型/声音/变量/脚本，可同时改名。
+  - `delete_sprite`：`vm.deleteSprite`，舞台不可删。
+  - `rename_target` 已有。
+  - 限制：不能从图片导入新造型；造型/角色操作不在 Blockly 撤销栈内。

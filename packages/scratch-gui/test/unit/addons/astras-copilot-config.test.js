@@ -4,11 +4,13 @@
 /* eslint-env jest */
 import {
   clampNumber,
+  DEFAULT_CONTEXT_WINDOW,
   DEFAULT_CONFIG,
   loadConfig,
   MAX_ALLOWED_STEPS,
   normalizeConfig,
-  saveConfig
+  saveConfig,
+  suggestContextWindow
 } from '../../../src/addons/addons/astras-copilot/agent/config';
 
 /**
@@ -83,5 +85,23 @@ describe('Astra Copilot config', () => {
     const config = loadConfig(null);
     expect(config.model).toBe(DEFAULT_CONFIG.model);
     expect(() => saveConfig(config, null)).not.toThrow();
+  });
+});
+
+describe('suggestContextWindow', () => {
+  test('maps known model families', () => {
+    expect(suggestContextWindow('gpt-4o')).toBe(128000);
+    expect(suggestContextWindow('gpt-4o-mini')).toBe(128000);
+    expect(suggestContextWindow('gpt-3.5-turbo')).toBe(16385);
+    expect(suggestContextWindow('claude-3-7-sonnet')).toBe(200000);
+    expect(suggestContextWindow('gemini-1.5-pro')).toBe(1000000);
+    expect(suggestContextWindow('deepseek-reasoner')).toBe(128000);
+    expect(suggestContextWindow('qwen-max')).toBe(131072);
+  });
+
+  test('falls back to the default for unknown models', () => {
+    expect(suggestContextWindow('some-local-model')).toBe(DEFAULT_CONTEXT_WINDOW);
+    expect(suggestContextWindow('')).toBe(DEFAULT_CONTEXT_WINDOW);
+    expect(suggestContextWindow(undefined)).toBe(DEFAULT_CONTEXT_WINDOW);
   });
 });

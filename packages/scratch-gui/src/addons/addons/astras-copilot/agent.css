@@ -3078,3 +3078,35 @@ button:hover .sa-agent-scrathon-icon {
   max-height: 220px;
   margin-top: 8px;
 }
+
+/* --- Current target chip ------------------------------------------------ */
+.sa-agent-target-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  max-width: 110px;
+  min-width: 0;
+  height: 20px;
+  padding: 0 6px;
+  border-radius: 999px;
+  color: var(--text-primary);
+  background: var(--ui-primary-transparent);
+  font-size: 10px;
+  line-height: 1;
+}
+
+.sa-agent-target-chip-dot {
+  width: 5px;
+  height: 5px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background: var(--looks-secondary, #4c97ff);
+}
+
+.sa-agent-target-chip-name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  opacity: 0.85;
+}

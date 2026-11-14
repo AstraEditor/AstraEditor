@@ -90,9 +90,11 @@ export const effortIndex = (level) => {
  * @param {Function} options.formatTokens Token count formatter.
  * @param {Function} options.onEffortChange Called with the new effort level.
  * @param {Function} [options.getEffort] Current effort level resolver.
+ * @param {Function} [options.onClose] Called when the popover closes while the
+ *        focus was inside it, so the caller can restore the composer focus.
  * @returns {object} Dial controller.
  */
-export const createContextDial = ({ msg, formatTokens, onEffortChange, getEffort }) => {
+export const createContextDial = ({ msg, formatTokens, onEffortChange, getEffort, onClose }) => {
   const format = typeof formatTokens === 'function' ? formatTokens : (value) => String(value);
   let effort = typeof getEffort === 'function' ? getEffort() : 'default';
   /** Last level reported to the caller, so a drag only notifies on changes. */
@@ -384,9 +386,14 @@ export const createContextDial = ({ msg, formatTokens, onEffortChange, getEffort
 
   const close = () => {
     if (popover.hidden) return;
+    // Hiding a focused element drops focus to <body>; remember whether the
+    // focus was inside so the caller can hand it back to the composer.
+    const active = typeof document !== 'undefined' ? document.activeElement : null;
+    const hadFocus = Boolean(active && root.contains(active));
     popover.hidden = true;
     trigger.setAttribute('aria-expanded', 'false');
     root.classList.remove('sa-agent-dial-open');
+    if (hadFocus && typeof onClose === 'function') onClose();
   };
 
   const toggle = () => {

@@ -804,6 +804,178 @@ export const makeVarContext = (vm, target) => {
 };
 
 /**
+ * Read a costume's pixel size from the renderer.
+ * @param {object} vm Scratch VM.
+ * @param {object} costume Costume.
+ * @returns {?object} Size in pixels, or null.
+ */
+const getCostumeSize = (vm, costume) => {
+  const renderer = vm && vm.renderer;
+  if (!renderer || typeof renderer.getSkinSize !== 'function' || !costume) return null;
+  const skinId = costume.skinId;
+  if (skinId === undefined || skinId === null) return null;
+  try {
+    const size = renderer.getSkinSize(skinId);
+    if (!Array.isArray(size)) return null;
+    return { width: size[0], height: size[1] };
+  } catch (error) {
+    return null;
+  }
+};
+
+/**
+ * Describe one costume for the model.
+ * @param {object} vm Scratch VM.
+ * @param {object} costume Costume.
+ * @param {number} index Index.
+ * @param {number} currentIndex Index of the visible costume.
+ * @returns {object} Description.
+ */
+const describeCostume = (vm, costume, index, currentIndex) => ({
+  index,
+  name: serializeValue(costume && costume.name),
+  assetId: costume && costume.assetId ? costume.assetId : null,
+  dataFormat: costume && costume.dataFormat ? costume.dataFormat : null,
+  rotationCenterX: costume && Number.isFinite(costume.rotationCenterX) ? costume.rotationCenterX : null,
+  rotationCenterY: costume && Number.isFinite(costume.rotationCenterY) ? costume.rotationCenterY : null,
+  bitmapResolution: costume && costume.bitmapResolution ? costume.bitmapResolution : 1,
+  size: getCostumeSize(vm, costume),
+  current: index === currentIndex
+});
+
+/**
+ * Get a target's costume array.
+ * @param {object} target Scratch target.
+ * @returns {Array<object>} Costumes.
+ */
+const getCostumes = (target) => (target && typeof target.getCostumes === 'function' ? target.getCostumes() : []);
+
+/**
+ * Resolve a costume index from an index or a name.
+ * @param {Array<object>} costumes Costumes.
+ * @param {object} args Tool arguments.
+ * @returns {number} Index.
+ */
+const resolveCostumeIndex = (costumes, args) => {
+  if (Number.isInteger(args.index)) {
+    if (args.index < 0 || args.index >= costumes.length) throw new Error(`No costume at index ${args.index}.`);
+    return args.index;
+  }
+  const wanted = String(args.name || '').trim();
+  if (!wanted) throw new Error('Pass either index or the costume name.');
+  const index = costumes.findIndex((costume) => String(costume.name).toLowerCase() === wanted.toLowerCase());
+  if (index < 0) throw new Error(`No costume named "${wanted}".`);
+  return index;
+};
+
+/**
+ * List the costumes of a target.
+ * @param {object} vm Scratch VM.
+ * @param {object} args Tool arguments.
+ * @returns {object} Costume list.
+ */
+const listCostumes = (vm, args) => {
+  const target = requireTarget(vm, args.target);
+  const costumes = getCostumes(target);
+  const currentIndex = Number(target.currentCostume) || 0;
+  return {
+    target: { name: serializeValue(target.getName()), isStage: Boolean(target.isStage) },
+    currentIndex,
+    costumes: costumes.map((costume, index) => describeCostume(vm, costume, index, currentIndex))
+  };
+};
+
+/**
+ * Rename a costume and/or make it the current one.
+ * @param {object} vm Scratch VM.
+ * @param {object} args Tool arguments.
+ * @returns {Promise<object>} Result.
+ */
+const updateCostume = async (vm, args) => {
+  const target = requireTarget(vm, args.target);
+  const costumes = getCostumes(target);
+  const index = resolveCostumeIndex(costumes, args);
+  const newName = args.newName === undefined ? '' : String(args.newName).trim();
+  if (!newName && !args.setCurrent) throw new Error('Nothing to change: pass newName and/or setCurrent.');
+  await applyXml('', {
+    targetId: target.id,
+    updateCostume: { index, newName, setCurrent: Boolean(args.setCurrent) },
+    projectId: getProjectId(vm)
+  });
+  const updated = getCostumes(target);
+  return {
+    ok: true,
+    target: { name: serializeValue(target.getName()), isStage: Boolean(target.isStage) },
+    costume: describeCostume(vm, updated[index], index, Number(target.currentCostume) || 0)
+  };
+};
+
+/**
+ * Delete one costume.
+ * @param {object} vm Scratch VM.
+ * @param {object} args Tool arguments.
+ * @returns {Promise<object>} Result.
+ */
+const removeCostume = async (vm, args) => {
+  const target = requireTarget(vm, args.target);
+  const costumes = getCostumes(target);
+  if (costumes.length <= 1) throw new Error('A target must keep at least one costume.');
+  const index = resolveCostumeIndex(costumes, args);
+  const name = costumes[index].name;
+  await applyXml('', { targetId: target.id, deleteCostume: { index }, projectId: getProjectId(vm) });
+  return {
+    ok: true,
+    target: { name: serializeValue(target.getName()), isStage: Boolean(target.isStage) },
+    deleted: serializeValue(name),
+    remaining: getCostumes(target).length
+  };
+};
+
+/**
+ * Create a sprite by duplicating an existing one.
+ * @param {object} vm Scratch VM.
+ * @param {object} args Tool arguments.
+ * @returns {Promise<object>} Result.
+ */
+const createSprite = async (vm, args) => {
+  const from = String(args.from || '').trim();
+  const source = from ? requireTarget(vm, from) : getEditingTarget(vm);
+  if (!source) throw new Error('Pass the sprite to duplicate in "from".');
+  if (source.isStage) throw new Error('The stage cannot be duplicated into a sprite.');
+  const name = String(args.name || '').trim();
+  await applyXml('', {
+    targetId: source.id,
+    createSprite: { fromTargetId: source.id, name },
+    projectId: getProjectId(vm)
+  });
+  // duplicateSprite makes the copy the editing target.
+  const created = getEditingTarget(vm);
+  return {
+    ok: true,
+    from: serializeValue(source.getName()),
+    sprite: created ? { name: serializeValue(created.getName()), isStage: false } : null
+  };
+};
+
+/**
+ * Delete a sprite.
+ * @param {object} vm Scratch VM.
+ * @param {object} args Tool arguments.
+ * @returns {Promise<object>} Result.
+ */
+const deleteSprite = async (vm, args) => {
+  const target = requireTarget(vm, args.target);
+  if (target.isStage) throw new Error('The stage cannot be deleted.');
+  const name = serializeValue(target.getName());
+  await applyXml('', {
+    targetId: target.id,
+    deleteSprite: { targetId: target.id },
+    projectId: getProjectId(vm)
+  });
+  return { ok: true, deleted: name };
+};
+
+/**
  * Tool names that change the project. The agent loop only exposes these to the
  * model when write mode is enabled for the conversation.
  */
@@ -812,7 +984,11 @@ export const WRITE_TOOL_NAMES = [
   'apply_scrathon_edits',
   'delete_scripts',
   'create_variable',
-  'rename_target'
+  'rename_target',
+  'update_costume',
+  'delete_costume',
+  'create_sprite',
+  'delete_sprite'
 ];
 
 // --- Write tools -----------------------------------------------------------
@@ -1688,6 +1864,88 @@ export const TOOL_DEFINITIONS = [
         additionalProperties: false
       }
     }
+  },
+  {
+    type: 'function',
+    function: {
+      name: 'list_costumes',
+      description:
+        'List the costumes of a sprite (backdrops for the stage): index, name, asset id, format, rotation centre, pixel size and which one is showing. Use it before changing costumes.',
+      parameters: {
+        type: 'object',
+        properties: {
+          target: { type: 'string', description: 'Sprite or stage name or ID. Defaults to the sprite being edited.' }
+        },
+        additionalProperties: false
+      }
+    }
+  },
+  {
+    type: 'function',
+    function: {
+      name: 'update_costume',
+      description:
+        'Rename a costume/backdrop and/or switch the target to it. Pass index or name to pick the costume. Pixels cannot be edited; this changes the costume list entry only.',
+      parameters: {
+        type: 'object',
+        properties: {
+          target: { type: 'string', description: 'Sprite or stage name or ID.' },
+          index: { type: 'integer', description: 'Costume index from list_costumes.' },
+          name: { type: 'string', description: 'Costume name, used when index is omitted.' },
+          newName: { type: 'string', description: 'New costume name.' },
+          setCurrent: { type: 'boolean', description: 'Show this costume on the target.' }
+        },
+        additionalProperties: false
+      }
+    }
+  },
+  {
+    type: 'function',
+    function: {
+      name: 'delete_costume',
+      description: 'Delete a costume/backdrop by index or name. The target keeps at least one costume.',
+      parameters: {
+        type: 'object',
+        properties: {
+          target: { type: 'string', description: 'Sprite or stage name or ID.' },
+          index: { type: 'integer', description: 'Costume index from list_costumes.' },
+          name: { type: 'string', description: 'Costume name, used when index is omitted.' }
+        },
+        additionalProperties: false
+      }
+    }
+  },
+  {
+    type: 'function',
+    function: {
+      name: 'create_sprite',
+      description:
+        'Create a new sprite by duplicating an existing one, including its costumes, sounds, variables and scripts. New artwork cannot be imported; adjust the copy afterwards with update_costume/delete_costume/rename_target.',
+      parameters: {
+        type: 'object',
+        properties: {
+          from: { type: 'string', description: 'Sprite to duplicate (name or ID).' },
+          name: { type: 'string', description: 'Name for the new sprite. Defaults to a copy name.' }
+        },
+        required: ['from'],
+        additionalProperties: false
+      }
+    }
+  },
+  {
+    type: 'function',
+    function: {
+      name: 'delete_sprite',
+      description: 'Delete a sprite and all of its clones. The stage cannot be deleted.',
+      parameters: {
+        type: 'object',
+        properties: {
+          target: { type: 'string', description: 'Sprite name or ID to delete.' }
+        },
+        required: ['target'],
+        additionalProperties: false
+      }
+    }
   }
 ];
 
@@ -1716,5 +1974,10 @@ export const createScratchTools = (vm) => ({
   apply_scrathon_edits: (args) => applyScrathonEdits(vm, args || {}),
   delete_scripts: (args) => deleteScripts(vm, args || {}),
   create_variable: (args) => createVariable(vm, args || {}),
-  rename_target: (args) => renameTarget(vm, args || {})
+  rename_target: (args) => renameTarget(vm, args || {}),
+  list_costumes: (args) => listCostumes(vm, args || {}),
+  update_costume: (args) => updateCostume(vm, args || {}),
+  delete_costume: (args) => removeCostume(vm, args || {}),
+  create_sprite: (args) => createSprite(vm, args || {}),
+  delete_sprite: (args) => deleteSprite(vm, args || {})
 });

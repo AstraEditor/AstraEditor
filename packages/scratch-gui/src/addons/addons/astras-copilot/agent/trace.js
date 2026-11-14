@@ -136,6 +136,36 @@ export const describeToolResult = (name, args, result, ok) => {
         before: result.before || '',
         after: result.after || ''
       };
+    case 'list_costumes':
+      return {
+        kind: 'costume-list',
+        name: (result.target && result.target.name) || '',
+        count: Array.isArray(result.costumes) ? result.costumes.length : 0
+      };
+    case 'update_costume':
+      return {
+        kind: 'update-costume',
+        name: (result.target && result.target.name) || '',
+        costume: (result.costume && result.costume.name) || ''
+      };
+    case 'delete_costume':
+      return {
+        kind: 'delete-costume',
+        name: (result.target && result.target.name) || '',
+        costume: result.deleted || '',
+        remaining: Number(result.remaining) || 0
+      };
+    case 'create_sprite':
+      return {
+        kind: 'create-sprite',
+        name: (result.sprite && result.sprite.name) || '',
+        from: result.from || ''
+      };
+    case 'delete_sprite':
+      return {
+        kind: 'delete-sprite',
+        name: result.deleted || ''
+      };
     case 'block_catalog':
       return {
         kind: 'block-catalog',

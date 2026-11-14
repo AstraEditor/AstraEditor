@@ -84,7 +84,10 @@
 - 圆盘用 `pathLength="100"` 让 `stroke-dashoffset` 直接等于百分比，无需三角函数。
 - 颜色阈值：<60% 绿、60–85% 琥珀、>85% 红。
 - 弹层内容：总量百分比、`已使用 / 窗口`、按来源分段的条形图（系统提示词 / 工具定义 / 对话消息）、思考力度滑块。
-- 分段比例的分母是**上下文窗口**而不是已用量：条形图整体只填到当前占用比例，剩余部分留空，图例里的百分比同样按窗口计算（与圆环读数一致）。段宽用显式百分比而不是 flex-grow，避免 flex 归一化把条撑满。- 弹层用 `position: fixed` + 打开时按 `getBoundingClientRect()` 翻转定位，因为底部面板的内容盒设了 `overflow: hidden`，绝对定位会被裁掉。
+- 分段比例的分母是**上下文窗口**而不是已用量：条形图整体只填到当前占用比例，剩余部分留空，图例里的百分比同样按窗口计算（与圆环读数一致）。段宽用显式百分比而不是 flex-grow，避免 flex 归一化把条撑满。
+- 弹层用 `position: fixed` + 打开时按 `getBoundingClientRect()` 翻转定位，因为底部面板的内容盒设了 `overflow: hidden`，绝对定位会被裁掉。
+- 工具栏顺序：`[当前角色 chip] [圆盘] [停止] [发送]`。chip 显示正在编辑的角色名（舞台显示「舞台」），数据来自 `vm.editingTarget`，由 `vm.on('targetsUpdate')` 驱动刷新（选中/增删精灵都会触发），名字过长时省略号截断，完整名称在 title 里。
+- 关闭行为：切换侧栏/底部面板、关闭面板、布局变化时都会 `close()`，避免弹层悬空；关闭时若焦点原本在弹层内，通过 `onClose` 把焦点交还输入框（外部点击不抢焦点）。
 - 思考力度滑块 4 档（Default/Low/High/Max），改完立即写回 `config.reasoningEffort` 并持久化；**设置面板不再提供该项**。
 - 滑块视觉：外层 `.sa-agent-dial-slider-track` 自绘 20px 胶囊轨道与填充（原生 range 的滑块会顶到两端，且无法做左右内缩），原生 input 透明叠在上层只负责滑块与拖拽，`left: 4px; width: calc(100% - 8px)` 让滑块在两端也留 4px；填充宽度 = `calc(20px + (100% - 20px) * --sa-agent-slider-value)` 且自身 `border-radius: 999px`：右端覆盖滑块（4px 内缩 + 12px 滑块）后再多出 4px，滑块被包裹在色条内，不会露出灰色底或矩形直角。
 - 松手吸附：`change` 事件把位置取整到最近的档位，并临时加 `is-snapping` 让填充在 160ms 内收敛；拖动过程本身不加过渡，避免拖影。
@@ -97,7 +100,7 @@
 
 ---
 
-## 3. 工具目录（17 个）
+## 3. 工具目录（22 个）
 
 读工具（Plan/Build 均可用）：
 
@@ -113,6 +116,7 @@
 | `get_extension_source` | 扩展源码（用于理解第三方积木） |
 | `get_runtime_state` | 运行状态（是否运行、当前编辑目标） |
 | `block_catalog` | 积木目录 |
+| `list_costumes` | 造型列表：索引、名称、assetId、格式、旋转中心、像素尺寸、当前造型 |
 | `Scrathon_doc` | 语言规范全文 |
 | `scrathon_example` | 示例工程 |
 
@@ -125,8 +129,16 @@
 | `delete_scripts` | 删除顶层脚本 |
 | `create_variable` | 新建变量/列表/广播（全局或局部） |
 | `rename_target` | 重命名角色 |
+| `update_costume` | 造型重命名 / 切换为当前造型 |
+| `delete_costume` | 删除造型（至少保留一个） |
+| `create_sprite` | 复制已有角色来创建新角色 |
+| `delete_sprite` | 删除角色（舞台不可删） |
 
 `WRITE_TOOL_NAMES` 是唯一写入白名单来源，Plan 模式下这些定义根本不发给模型。
+
+### 当前编辑角色
+
+每次构建请求时读取 `vm.editingTarget`（`getCurrentTargetInfo()`），把角色名注入系统提示词：`buildSystemPrompt({ writeEnabled, currentTarget })`。因此「这个角色 / this sprite」指的就是用户正在看的那个，模型不必先调 `list_targets` 去猜；请求预览与 token 估算走同一个快照，读数一致。
 
 ---
 
@@ -143,13 +155,18 @@
      declarations,           // 变量/列表/广播
      replaceScripts,         // [{ scriptId, xml }]  ← 原位 patch
      deleteScriptIds,        // 仅 delete_scripts 使用
-     renameTarget
+     renameTarget,
+     updateCostume,          // { index, newName, setCurrent }
+     deleteCostume,          // { index }
+     createSprite,           // { fromTargetId, name }
+     deleteSprite            // { targetId }
    }
    ```
 
 4. `applyWrite` 三道校验：项目 id 未变、`targetId` 仍在 runtime 中、删除数量与请求一致。
-5. `Blockly.Events.setGroup(true)` 内依次执行：声明变量 → `renameTarget` → 删除 → **原位 patch** → 新增块 → `setGroup(false)`。
-6. 任一步抛错都会中止并回滚事件组，整批只占一个 Ctrl+Z 步。
+5. `Blockly.Events.setGroup(true)` 内依次执行：声明变量 → `renameTarget` → 删除 → **原位 patch** → 新增块 → 造型编辑 → 角色创建/删除 → `setGroup(false)`。
+6. 造型与角色操作不经过 Blockly：造型改名走 `target.renameCostume`（会同步积木里的造型名），删除走 `target.deleteCostume`；角色创建走 `vm.duplicateSprite`（复制造型/声音/变量/脚本），删除走 `vm.deleteSprite`。这两类操作不在积木撤销栈里，因此排在所有 Blockly 操作之后执行。
+7. 任一步抛错都会中止并回滚事件组，整批只占一个 Ctrl+Z 步（造型/角色操作除外）。
 
 ### 原位 patch 规则（`script-patcher.js`）
 
@@ -180,6 +197,7 @@
 - 端点：设置面板填 base URL，`buildApiEndpoint()` 补 `/chat/completions`。
 - 重试：`isRetryableError` 判定 —— 408/425/429/500/502/503/504/522/524 退避重试；其余 4xx 与 status 0 不重试；用户主动中止不重试。
 - `retries`、`maxSteps`（默认 24，上限 200）、`temperature`、`maxTokens`、`contextWindow` 全部走 `clampNumber`，空输入回退原值而非变 0。
+- 上下文窗口建议：`suggestContextWindow(model)` 按模型族给默认值（claude 200k、gemini 1M、gpt-3.5 16k、gpt-4o/o 系 128k 等）。切换模型时，只有当当前值仍等于旧模型的建议值才自动跟随；用户手改过的数值不会被覆盖。
 - 上下文：`MAX_CONTEXT_MESSAGES` 条消息裁剪；`get_project_scrathon` 单次结果放宽到 60k 字符，其余工具 12k。
 
 ---

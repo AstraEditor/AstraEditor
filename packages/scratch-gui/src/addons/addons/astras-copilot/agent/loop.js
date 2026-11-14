@@ -100,10 +100,10 @@ const throwIfAborted = (signal) => {
  * @param {boolean} [options.writeEnabled] Whether edit tools are available.
  * @returns {Array<object>} API messages.
  */
-export const buildApiMessages = ({ messages, writeEnabled = false }) => [
+export const buildApiMessages = ({ messages, writeEnabled = false, currentTarget = null }) => [
   {
     role: 'system',
-    content: buildSystemPrompt({ writeEnabled })
+    content: buildSystemPrompt({ writeEnabled, currentTarget })
   },
   ...messages
     .filter(
@@ -139,10 +139,10 @@ export const getActiveTools = (writeEnabled = false) => {
  * @param {boolean} [options.writeEnabled] Whether edit tools are available.
  * @returns {object} Request body.
  */
-export const buildRequestPreview = ({ config, messages, writeEnabled = false }) =>
+export const buildRequestPreview = ({ config, messages, writeEnabled = false, currentTarget = null }) =>
   buildRequestBody({
     config,
-    messages: buildApiMessages({ messages, writeEnabled }),
+    messages: buildApiMessages({ messages, writeEnabled, currentTarget }),
     tools: getActiveTools(writeEnabled)
   });
 
@@ -157,6 +157,7 @@ export const buildRequestPreview = ({ config, messages, writeEnabled = false }) 
  * @param {Function} [options.requestApproval] Async approval callback.
  * @param {boolean} [options.writeEnabled] Whether edit tools are exposed.
  * @param {number} [options.maxSteps] Maximum tool steps.
+ * @param {?object} [options.currentTarget] Sprite the user is currently editing.
  * @returns {Promise<object>} Final result.
  */
 export const runAgent = async ({
@@ -167,11 +168,12 @@ export const runAgent = async ({
   onEvent,
   requestApproval,
   writeEnabled = false,
-  maxSteps = 16
+  maxSteps = 16,
+  currentTarget = null
 }) => {
   const tools = createScratchTools(vm);
   const activeTools = getActiveTools(writeEnabled);
-  const apiMessages = buildApiMessages({ messages, writeEnabled });
+  const apiMessages = buildApiMessages({ messages, writeEnabled, currentTarget });
 
   const stepLimit = resolveStepLimit(maxSteps);
   const trace = [];

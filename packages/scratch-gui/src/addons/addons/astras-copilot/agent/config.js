@@ -90,6 +90,24 @@ export const buildApiEndpoint = (baseUrl) => {
 };
 
 /**
+ * Guess the context window of a model family. Only used as a starting point:
+ * the user can always override it in the settings.
+ * @param {string} model Model name.
+ * @returns {number} Suggested context window in tokens.
+ */
+export const suggestContextWindow = (model) => {
+  const name = String(model || '').trim();
+  if (!name) return DEFAULT_CONTEXT_WINDOW;
+  if (/^claude/i.test(name)) return 200000;
+  if (/^gemini/i.test(name)) return 1000000;
+  if (/^gpt-3\.5/i.test(name)) return 16385;
+  if (/^(gpt-4o|gpt-4\.1|gpt-4-turbo|o[134])/i.test(name)) return 128000;
+  if (/^deepseek/i.test(name)) return 128000;
+  if (/^(qwen|glm|kimi|moonshot|yi-)/i.test(name)) return 131072;
+  return DEFAULT_CONTEXT_WINDOW;
+};
+
+/**
  * Normalize a raw stored object into a complete config.
  * @param {object|null} [stored] Parsed storage value.
  * @returns {object} Config.

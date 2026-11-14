@@ -277,6 +277,31 @@ describe('context dial component', () => {
     expect(popover.hidden).toBe(true);
   });
 
+  test('onClose hands focus back only when the focus was inside', () => {
+    const onClose = jest.fn();
+    const other = createContextDial({
+      msg,
+      formatTokens: (value) => String(value),
+      getEffort: () => 'default',
+      onEffortChange: () => {},
+      onClose
+    });
+    document.body.appendChild(other.element);
+
+    other.open();
+    other.element.querySelector('.sa-agent-dial-slider').focus();
+    other.close();
+    expect(onClose).toHaveBeenCalledTimes(1);
+
+    // Closed without focus inside (e.g. an outside click): do not steal focus.
+    other.open();
+    other.element.querySelector('.sa-agent-dial-slider').blur();
+    other.close();
+    expect(onClose).toHaveBeenCalledTimes(1);
+
+    other.element.remove();
+  });
+
   test('Escape closes the popover', () => {
     const popover = dial.element.querySelector('.sa-agent-dial-popover');
     dial.open();

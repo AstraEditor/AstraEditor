@@ -36,7 +36,8 @@ import {
   loadConfig,
   MAX_ALLOWED_CONTEXT_WINDOW,
   MAX_ALLOWED_STEPS,
-  saveConfig
+  saveConfig,
+  suggestContextWindow
 } from './agent/config.js';
 import {
   createConversation,
@@ -305,7 +306,11 @@ export default async ({ addon, msg }) => {
   let retriesInput = null;
   let maxStepsInput = null;
   let contextWindowInput = null;
+  let contextWindowHintElement = null;
   let contextDial = null;
+  let currentTargetChip = null;
+  let currentTargetNameElement = null;
+  let targetsListenerAttached = false;
   let compressButton = null;
   let compressController = null;
   let compressRequestId = 0;
@@ -446,6 +451,35 @@ export default async ({ addon, msg }) => {
   };
 
   /**
+   * Snapshot of the sprite the user is currently editing.
+   * @returns {?object} Sprite name and stage flag, or null.
+   */
+  const getCurrentTargetInfo = () => {
+    const target = vm && vm.editingTarget;
+    if (!target) return null;
+    const name = typeof target.getName === 'function' ? target.getName() : target.name;
+    if (!name) return null;
+    return { name, isStage: Boolean(target.isStage) };
+  };
+
+  /**
+   * Show the sprite the user is editing next to the context dial.
+   */
+  const updateCurrentTargetChip = () => {
+    if (!currentTargetChip) return;
+    const info = getCurrentTargetInfo();
+    if (!info) {
+      currentTargetChip.style.display = 'none';
+      return;
+    }
+    currentTargetChip.style.display = '';
+    if (currentTargetNameElement) currentTargetNameElement.textContent = info.name;
+    const label = msg(info.isStage ? 'current-target-stage' : 'current-target-sprite', { name: info.name });
+    currentTargetChip.title = label;
+    currentTargetChip.setAttribute('aria-label', label);
+  };
+
+  /**
    * Estimate the tokens currently sent to the model, split by origin.
    * @returns {object} Total, per-part token counts and the message count.
    */
@@ -460,7 +494,7 @@ export default async ({ addon, msg }) => {
       )
       .slice(-MAX_CONTEXT_MESSAGES);
     // Mirror the real request: the prompt and the tool schemas both depend on the mode.
-    const system = estimateTextTokens(buildSystemPrompt({ writeEnabled }));
+    const system = estimateTextTokens(buildSystemPrompt({ writeEnabled, currentTarget: getCurrentTargetInfo() }));
     const tools = estimateTextTokens(JSON.stringify(getActiveTools(writeEnabled)));
     let messages = 0;
     for (const message of history) {
@@ -620,7 +654,12 @@ export default async ({ addon, msg }) => {
     apply_scrathon_edits: msg('tool-apply-scrathon-edits'),
     delete_scripts: msg('tool-delete-scripts'),
     create_variable: msg('tool-create-variable'),
-    rename_target: msg('tool-rename-target')
+    rename_target: msg('tool-rename-target'),
+    list_costumes: msg('tool-list-costumes'),
+    update_costume: msg('tool-update-costume'),
+    delete_costume: msg('tool-delete-costume'),
+    create_sprite: msg('tool-create-sprite'),
+    delete_sprite: msg('tool-delete-sprite')
   };
 
   /** Tools that modify the project (approval prompt wording differs). */
@@ -629,7 +668,11 @@ export default async ({ addon, msg }) => {
     'apply_scrathon_edits',
     'delete_scripts',
     'create_variable',
-    'rename_target'
+    'rename_target',
+    'update_costume',
+    'delete_costume',
+    'create_sprite',
+    'delete_sprite'
   ]);
 
   /**
@@ -1835,6 +1878,7 @@ export default async ({ addon, msg }) => {
         requestApproval: requestToolApproval,
         writeEnabled,
         maxSteps: config.maxSteps,
+        currentTarget: getCurrentTargetInfo(),
         onEvent: (event) => {
           if (!busy || generation !== requestGeneration || conversationId !== activeConversationId) return;
           if (event.type === 'thinking') {
@@ -2017,6 +2061,17 @@ export default async ({ addon, msg }) => {
   };
 
   /**
+   * Update the context-window hint with the suggestion for the active model.
+   */
+  const updateContextWindowHint = () => {
+    if (!contextWindowHintElement) return;
+    contextWindowHintElement.textContent = msg('settings-context-window-hint', {
+      model: config.model,
+      suggested: formatTokenCount(suggestContextWindow(config.model))
+    });
+  };
+
+  /**
    * Render the complete request JSON that the next send would use.
    */
   const updateRequestPreview = () => {
@@ -2025,7 +2080,8 @@ export default async ({ addon, msg }) => {
       const body = buildRequestPreview({
         config: buildPreviewConfig(),
         messages: chatMessages,
-        writeEnabled
+        writeEnabled,
+        currentTarget: getCurrentTargetInfo()
       });
       requestPreviewElement.textContent = JSON.stringify(body, null, 2);
     } catch (error) {
@@ -2061,6 +2117,7 @@ export default async ({ addon, msg }) => {
     if (maxStepsInput) maxStepsInput.value = String(config.maxSteps);
     if (contextWindowInput) contextWindowInput.value = String(config.contextWindow);
     updateEndpointHint();
+    updateContextWindowHint();
     updateRequestPreview();
     renderAllConversations();
     settingsErrorElement.textContent = '';
@@ -2112,12 +2169,27 @@ export default async ({ addon, msg }) => {
     }
 
     const rawModels = modelsInput ? modelsInput.value.trim() : config.models || '';
+    const previousModel = config.model;
+    const previousWindow = config.contextWindow;
     config.models = rawModels;
     const modelList = getConfiguredModels();
     let activeModel = config.model;
     if (!modelList.includes(activeModel)) {
       activeModel = modelList[0] || DEFAULT_CONFIG.model;
     }
+    const typedWindow = clampNumber(
+      contextWindowInput && contextWindowInput.value,
+      1000,
+      MAX_ALLOWED_CONTEXT_WINDOW,
+      previousWindow
+    );
+    // Follow the new model's window only while the value is still the previous
+    // model's suggestion; a hand-typed value always wins.
+    const windowUntouched = typedWindow === previousWindow;
+    const contextWindow =
+      windowUntouched && previousWindow === suggestContextWindow(previousModel)
+        ? suggestContextWindow(activeModel)
+        : typedWindow;
 
     config = {
       apiUrl: buildApiEndpoint(apiUrlInput.value),
@@ -2130,12 +2202,7 @@ export default async ({ addon, msg }) => {
       maxTokens: clampNumber(maxTokensInput.value, 1, 32000, config.maxTokens),
       retries: clampNumber(retriesInput.value, 0, 5, config.retries),
       maxSteps: clampNumber(maxStepsInput && maxStepsInput.value, 1, MAX_ALLOWED_STEPS, config.maxSteps),
-      contextWindow: clampNumber(
-        contextWindowInput && contextWindowInput.value,
-        1000,
-        MAX_ALLOWED_CONTEXT_WINDOW,
-        config.contextWindow
-      ),
+      contextWindow,
       reasoningEffort: config.reasoningEffort,
       streamIdleTimeoutMs:
         typeof config.streamIdleTimeoutMs === 'number' ? config.streamIdleTimeoutMs : DEFAULT_CONFIG.streamIdleTimeoutMs
@@ -2143,6 +2210,7 @@ export default async ({ addon, msg }) => {
     saveConfig(config);
     updateModelSelector();
     updateContextUsage();
+    updateContextWindowHint();
     closeSettingsPanel();
     setStatus(msg('settings-saved'));
   };
@@ -2299,10 +2367,9 @@ export default async ({ addon, msg }) => {
 
     contextWindowInput = numberInput(1000, MAX_ALLOWED_CONTEXT_WINDOW, 1000);
     const contextWindowField = addField(requestSection, msg('settings-context-window'), contextWindowInput);
-    const contextWindowHint = document.createElement('div');
-    contextWindowHint.className = 'sa-agent-settings-hint';
-    contextWindowHint.textContent = msg('settings-context-window-hint');
-    contextWindowField.appendChild(contextWindowHint);
+    contextWindowHintElement = document.createElement('div');
+    contextWindowHintElement.className = 'sa-agent-settings-hint';
+    contextWindowField.appendChild(contextWindowHintElement);
 
     streamInput = document.createElement('input');
     streamInput.className = 'sa-agent-settings-checkbox';
@@ -2548,6 +2615,50 @@ export default async ({ addon, msg }) => {
           const dom = Blockly.Xml.textToDom(xml);
           const ids = Blockly.Xml.domToWorkspace(dom.documentElement || dom, targetWorkspace);
           if (Array.isArray(ids)) result.blockIds = ids;
+        }
+
+        // 6. Costume edits. These live on the VM only, so they run after the
+        //    Blockly work and outside its undo stack.
+        const costumeTarget = () => {
+          const target = meta.targetId && vm.runtime && vm.runtime.getTargetById(meta.targetId);
+          if (!target) throw new Error('The target for this costume edit no longer exists.');
+          return target;
+        };
+        if (meta.updateCostume) {
+          const target = costumeTarget();
+          const costumes = typeof target.getCostumes === 'function' ? target.getCostumes() : [];
+          const index = Number(meta.updateCostume.index);
+          if (!Number.isInteger(index) || index < 0 || index >= costumes.length) {
+            throw new Error(`No costume at index ${index}.`);
+          }
+          if (meta.updateCostume.newName) target.renameCostume(index, String(meta.updateCostume.newName));
+          if (meta.updateCostume.setCurrent) target.setCostume(index);
+          result.costume = { index, name: costumes[index] ? costumes[index].name : '' };
+        }
+        if (meta.deleteCostume) {
+          const target = costumeTarget();
+          const removed = target.deleteCostume(Number(meta.deleteCostume.index));
+          if (!removed) throw new Error('Could not delete that costume: at least one costume must remain.');
+          result.deletedCostume = removed.name;
+        }
+
+        // 7. Sprite creation/removal. Kept last because both change the editing
+        //    target, which invalidates the workspace used above.
+        if (meta.createSprite) {
+          const source = vm.runtime && vm.runtime.getTargetById(meta.createSprite.fromTargetId);
+          if (!source || source.isStage) throw new Error('The sprite to duplicate no longer exists.');
+          if (typeof vm.duplicateSprite !== 'function') throw new Error('This editor cannot duplicate sprites.');
+          await vm.duplicateSprite(source.id);
+          const created = vm.editingTarget;
+          if (created && meta.createSprite.name) vm.renameSprite(created.id, String(meta.createSprite.name));
+          result.createdSprite = created ? { id: created.id, name: created.getName() } : null;
+        }
+        if (meta.deleteSprite) {
+          const victim = vm.runtime && vm.runtime.getTargetById(meta.deleteSprite.targetId);
+          if (!victim) throw new Error('That sprite no longer exists.');
+          if (victim.isStage) throw new Error('The stage cannot be deleted.');
+          vm.deleteSprite(victim.id);
+          result.deletedSprite = meta.deleteSprite.targetId;
         }
       } finally {
         Blockly.Events.setGroup(false);
@@ -2813,8 +2924,16 @@ export default async ({ addon, msg }) => {
     modelSelectElement.title = msg('model-switch');
     modelSelectElement.setAttribute('aria-label', msg('model-switch'));
     modelSelectElement.addEventListener('change', () => {
-      config.model = modelSelectElement.value;
+      const previousModel = config.model;
+      const nextModel = modelSelectElement.value;
+      // Keep the context window in sync while it is still the old suggestion.
+      if (config.contextWindow === suggestContextWindow(previousModel)) {
+        config.contextWindow = suggestContextWindow(nextModel);
+      }
+      config.model = nextModel;
       saveConfig(config);
+      updateContextUsage();
+      updateContextWindowHint();
     });
     modelSelectWrapper.appendChild(modelSelectElement);
     toolbarLeft.appendChild(modelSelectWrapper);
@@ -2824,6 +2943,17 @@ export default async ({ addon, msg }) => {
 
     const toolbarRight = document.createElement('div');
     toolbarRight.className = 'sa-agent-composer-toolbar-right';
+
+    // Which sprite the user is editing, right next to the context dial.
+    currentTargetChip = document.createElement('span');
+    currentTargetChip.className = 'sa-agent-target-chip';
+    const targetDot = document.createElement('span');
+    targetDot.className = 'sa-agent-target-chip-dot';
+    currentTargetNameElement = document.createElement('span');
+    currentTargetNameElement.className = 'sa-agent-target-chip-name';
+    currentTargetChip.appendChild(targetDot);
+    currentTargetChip.appendChild(currentTargetNameElement);
+    toolbarRight.appendChild(currentTargetChip);
 
     stopButton = document.createElement('button');
     stopButton.type = 'button';
@@ -2850,6 +2980,9 @@ export default async ({ addon, msg }) => {
         config.reasoningEffort = level;
         saveConfig(config);
         updateRequestPreview();
+      },
+      onClose: () => {
+        if (inputElement) inputElement.focus();
       }
     });
 
@@ -2897,6 +3030,7 @@ export default async ({ addon, msg }) => {
 
     updateComposer();
     updateContextUsage();
+    updateCurrentTargetChip();
     resizeInput();
     updatePositionControls();
     updateConversationLayout();
@@ -2931,6 +3065,7 @@ export default async ({ addon, msg }) => {
       BottomPanel.switchTo(PLUGIN_ID);
     }
     updateToggleButtonState();
+    if (contextDial) contextDial.close();
     requestAnimationFrame(() => {
       resizeInput();
       scrollToBottom(true);
@@ -2942,6 +3077,7 @@ export default async ({ addon, msg }) => {
    * @param {string} position Position.
    */
   const closeChatAt = (position) => {
+    if (contextDial) contextDial.close();
     if (position === POSITION_TYPES.SIDEBAR) {
       if (SideBar.getActivePlugin() === PLUGIN_ID) SideBar.close();
     } else if (BottomPanel.getActivePlugin() === PLUGIN_ID) {
@@ -3199,6 +3335,7 @@ export default async ({ addon, msg }) => {
    * Apply layout changes made in the settings.
    */
   const handleLayoutChange = async () => {
+    if (contextDial) contextDial.close();
     if (currentPosition === POSITION_TYPES.SIDEBAR && !isVSCodeLayoutEnabled()) {
       await switchPosition(POSITION_TYPES.BOTTOM);
       return;
@@ -3273,6 +3410,7 @@ export default async ({ addon, msg }) => {
     renderConversationList();
     renderMessages();
     updateContextUsage();
+    updateCurrentTargetChip();
     setStatus('');
   };
 
@@ -3291,6 +3429,11 @@ export default async ({ addon, msg }) => {
     if (!runtimeProjectListenerAttached && runtime && typeof runtime.on === 'function') {
       runtime.on('PROJECT_LOADED', handleProjectLoaded);
       runtimeProjectListenerAttached = true;
+    }
+    // Sprite selection/add/delete all emit targetsUpdate.
+    if (!targetsListenerAttached && vm && typeof vm.on === 'function') {
+      vm.on('targetsUpdate', updateCurrentTargetChip);
+      targetsListenerAttached = true;
     }
   };
 

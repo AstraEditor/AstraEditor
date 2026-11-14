@@ -78,6 +78,20 @@ export const createTraceRenderer = ({
         });
       case 'rename-target':
         return msg('trace-rename-target', { before: summary.before, after: summary.after });
+      case 'costume-list':
+        return msg('trace-costume-list', { name: summary.name, count: summary.count });
+      case 'update-costume':
+        return msg('trace-update-costume', { name: summary.name, costume: summary.costume });
+      case 'delete-costume':
+        return msg('trace-delete-costume', {
+          name: summary.name,
+          costume: summary.costume,
+          remaining: summary.remaining
+        });
+      case 'create-sprite':
+        return msg('trace-create-sprite', { name: summary.name, from: summary.from });
+      case 'delete-sprite':
+        return msg('trace-delete-sprite', { name: summary.name });
       case 'block-catalog':
         return msg('trace-block-catalog', { count: summary.count });
       case 'denied':
