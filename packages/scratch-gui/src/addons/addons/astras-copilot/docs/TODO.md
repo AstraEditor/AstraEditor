@@ -22,6 +22,10 @@
 - [x] 新增 `contextWindow` 配置（默认 128000，上限 2000000），作为圆盘百分比分母；`suggestContextWindow(model)` 按模型族给建议值并在切换模型时自动跟随（手改过的值不覆盖）。
 - [x] 系统提示词注入当前编辑角色，`buildSystemPrompt({ currentTarget })`，请求预览与 token 估算共用同一快照。
 - [x] 新增造型/角色工具：`list_costumes`、`update_costume`、`delete_costume`、`create_sprite`、`delete_sprite`（造型改名、切换、删除；角色复制创建与删除）。
+- [x] 修正输入影子块类型：`control_wait` 的 DURATION 用 `math_positive_number`（原先误用 `math_number`，会让影子脱离输入变成孤儿块）；反编译器遇到孤儿 shadow 直接跳过，不再输出 `# unsupported block`。
+- [ ] 【搁置】影子块类型目前是手写映射（`INPUT_SHADOW`），后续可从 block 定义里自动读，避免再出现同类错配。
+- [x] 类型校验改为单向宽松：数值槽接受数字与布尔（拒绝字符串），文本槽接受文本、数字与布尔；自定义积木调用处同表；颜色槽仍拒布尔与数字。
+- [x] 造型/角色操作的审批卡新增变更预览（ → `entry.change`），积木之外的写操作也有一行 before → after。
 - [x] 输入框下方工具栏新增当前角色 chip（`[角色] [圆盘] [停止] [发送]`），由 `targetsUpdate` 驱动。
 - [x] 圆盘弹层关闭行为：切换停靠位置/关闭面板时收起，焦点在弹层内时关闭后交还输入框。
 - [x] 新增 retry / config / conversations / project-scrathon / script-patcher / context-dial 测试套件。
@@ -90,10 +94,20 @@
 ## 阶段三：动态 Schema 驱动与扩展兼容 (Schema-Driven Registry)
 > 摆脱硬编码映射表，任何官方或第三方扩展一加载即可无缝支持。
 
-- [ ] **3.1 动态 `SchemaRegistry` 架构**
-  - [ ] 监听 Scratch VM 的扩展注册事件（`runtime._blockInfo`）。
-  - [ ] 运行时自动将扩展的 `arguments`、`menus`、`opcode` 转换为 Scrathon 规范的 `BlockSchema`。
+- [x] **3.1 动态 `SchemaRegistry` 架构（主体已完成）**
+  - [x] 运行时读取 `runtime._blockInfo`，把扩展的 `opcode`、`arguments`、`menus` 转成编译用的 schema（`collectExtensionBlocks`），编译与反编译共用同一份。
+  - [ ] 改为按扩展注册事件增量更新，而不是每次调用现扫一遍。
+  - [ ] 菜单项解析对没有 `menuInfo` 的扩展做兜底。
 
+- [x] 成本与稳定性修复（空回复 / 重试 / 缓存）：
+  - [x] 捕获 `finish_reason`；`length` 截断与真空回复不再重试（原来会白跑 2 次、每次全价）。
+  - [x] 流式请求加 `stream_options.include_usage`，能拿到真实用量。
+  - [x] `streamIdleTimeoutMs` 默认 30s → 90s，避免思考型模型首字超时被重试。
+  - [x] 不再回传 `reasoning_content`（DeepSeek 不收，且白吃 token）。
+  - [x] 历史不再按条数硬切 24 条，改为超预算才按「整轮 + user 边界」裁剪，保留前缀缓存。
+  - [x] 当前角色提示从 system prompt 移到最新一条 user 消息，system 前缀保持字节一致。
+  - [ ] 跨轮工具调用摘要：历史里只有 user/assistant 文本，模型看不到上一轮用过什么工具，容易重复读项目（待设计）。
+  - [ ] MAX_TOKENS 错误文案本地化 + 设置页引导。
 - [ ] **3.2 逃逸通用调用语法 (`ext(...)`)**
   - [ ] 支持语法：`ext("ext_opcode", arg1=${t:v}, field2=${m:opt})`。
   - [ ] 保证无论遇到何种未注册的奇异积木，语法都不会崩溃，双向无损。

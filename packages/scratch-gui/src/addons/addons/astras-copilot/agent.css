@@ -3110,3 +3110,15 @@ button:hover .sa-agent-scrathon-icon {
   white-space: nowrap;
   opacity: 0.85;
 }
+
+/* Pending change summary for non-code writes (costumes, sprites). */
+.sa-agent-tool-change {
+  padding: 6px 8px;
+  margin-bottom: 6px;
+  border-left: 3px solid var(--looks-secondary, #4c97ff);
+  border-radius: 4px;
+  background: rgba(128, 128, 128, 0.1);
+  font-size: 11px;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}

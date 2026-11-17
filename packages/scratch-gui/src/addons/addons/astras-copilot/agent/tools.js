@@ -976,6 +976,76 @@ const deleteSprite = async (vm, args) => {
 };
 
 /**
+ * Describe what a write tool is about to change, for the approval card.
+ *
+ * These tools never touch scripts, so there is no text diff to show; a one-line
+ * before/after summary is the honest equivalent. Best effort: any lookup failure
+ * just means no preview.
+ *
+ * @param {object} vm Scratch VM.
+ * @param {string} name Tool name.
+ * @param {object} args Tool arguments.
+ * @returns {?object} Change descriptor.
+ */
+export const describePendingChange = (vm, name, args) => {
+  const input = args || {};
+  try {
+    switch (name) {
+      case 'rename_target': {
+        const target = resolveTarget(vm, input.target);
+        if (!target || target.isStage) return null;
+        return { kind: 'rename-target', before: target.getName(), after: String(input.newName || '') };
+      }
+      case 'update_costume': {
+        const target = requireTarget(vm, input.target);
+        const costumes = getCostumes(target);
+        const index = resolveCostumeIndex(costumes, input);
+        const costume = costumes[index];
+        const newName = String(input.newName || '').trim();
+        return {
+          kind: 'update-costume',
+          target: target.getName(),
+          before: costume ? costume.name : '',
+          after: newName || (costume ? costume.name : ''),
+          renamed: Boolean(newName),
+          setCurrent: Boolean(input.setCurrent)
+        };
+      }
+      case 'delete_costume': {
+        const target = requireTarget(vm, input.target);
+        const costumes = getCostumes(target);
+        const index = resolveCostumeIndex(costumes, input);
+        return {
+          kind: 'delete-costume',
+          target: target.getName(),
+          costume: costumes[index] ? costumes[index].name : '',
+          remaining: Math.max(0, costumes.length - 1)
+        };
+      }
+      case 'create_sprite': {
+        const source = input.from ? requireTarget(vm, input.from) : getEditingTarget(vm);
+        if (!source || source.isStage) return null;
+        return {
+          kind: 'create-sprite',
+          from: source.getName(),
+          after: String(input.name || ''),
+          costumes: getCostumes(source).length
+        };
+      }
+      case 'delete_sprite': {
+        const target = requireTarget(vm, input.target);
+        if (target.isStage) return null;
+        return { kind: 'delete-sprite', name: target.getName(), costumes: getCostumes(target).length };
+      }
+      default:
+        return null;
+    }
+  } catch (error) {
+    return null;
+  }
+};
+
+/**
  * Tool names that change the project. The agent loop only exposes these to the
  * model when write mode is enabled for the conversation.
  */

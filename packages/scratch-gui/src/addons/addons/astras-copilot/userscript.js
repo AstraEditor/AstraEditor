@@ -21,7 +21,7 @@ import BottomPanel from '../../ui/bottom-panel/bottom-panel.js';
 import { callChatCompletion } from './agent/client.js';
 import { getBlockLabel, replaceInternalIds } from './agent/dsl.js';
 import { renderMarkdown } from './agent/markdown.js';
-import { buildRequestPreview, getActiveTools, MAX_CONTEXT_MESSAGES, runAgent } from './agent/loop.js';
+import { buildRequestPreview, getActiveTools, runAgent, trimConversation } from './agent/loop.js';
 import { buildSystemPrompt } from './agent/prompt.js';
 import { createScrathonWindow } from './agent/scrathon/window.js';
 import { renderBlockPreview } from './agent/block-preview.js';
@@ -485,15 +485,19 @@ export default async ({ addon, msg }) => {
    * @returns {object} Total, per-part token counts and the message count.
    */
   const estimateContextUsage = () => {
-    const history = chatMessages
-      .filter(
-        (message) =>
-          message &&
-          (message.role === 'user' || message.role === 'assistant') &&
-          typeof message.content === 'string' &&
-          message.content.trim()
-      )
-      .slice(-MAX_CONTEXT_MESSAGES);
+    // Mirror the request path exactly: same filter, same budget-based trim.
+    const history = trimConversation(
+      chatMessages
+        .filter(
+          (message) =>
+            message &&
+            (message.role === 'user' || message.role === 'assistant') &&
+            typeof message.content === 'string' &&
+            message.content.trim()
+        )
+        .map((message) => ({ role: message.role, content: message.content })),
+      { contextWindow: config.contextWindow }
+    );
     // Mirror the real request: the prompt and the tool schemas both depend on the mode.
     const system = estimateTextTokens(buildSystemPrompt({ writeEnabled, currentTarget: getCurrentTargetInfo() }));
     const tools = estimateTextTokens(JSON.stringify(getActiveTools(writeEnabled)));
@@ -1918,6 +1922,7 @@ export default async ({ addon, msg }) => {
               name: event.name,
               args: event.args || {},
               diff: event.diff || null,
+              change: event.change || null,
               status: autoApproved ? 'pending' : 'awaiting'
             });
             setStatus('');

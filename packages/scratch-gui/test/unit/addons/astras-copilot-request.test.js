@@ -76,14 +76,26 @@ describe('Astra Copilot request body', () => {
     expect(apiMessages[2]).toEqual({ role: 'assistant', content: 'answer' });
   });
 
-  test('keeps only the latest context window', () => {
+  test('short histories are sent whole so the prefix cache keeps hitting', () => {
     const messages = Array.from({ length: MAX_CONTEXT_MESSAGES + 5 }, (_, index) => ({
       role: 'user',
       content: `message ${index}`
     }));
     const apiMessages = buildApiMessages({ messages, writeEnabled: false });
-    expect(apiMessages).toHaveLength(MAX_CONTEXT_MESSAGES + 1);
-    expect(apiMessages[1].content).toBe('message 5');
+    // No count-based slicing any more: a small conversation is not trimmed.
+    expect(apiMessages).toHaveLength(messages.length + 1);
+    expect(apiMessages[1].content).toBe('message 0');
+  });
+
+  test('oversized histories are trimmed to the context budget', () => {
+    const messages = Array.from({ length: 40 }, (_, index) => ({
+      role: index % 2 === 0 ? 'user' : 'assistant',
+      content: `message ${index}`.padEnd(4000, 'x')
+    }));
+    const apiMessages = buildApiMessages({ messages, writeEnabled: false, contextWindow: 20000 });
+    expect(apiMessages.length).toBeLessThan(messages.length);
+    expect(apiMessages[1].role).toBe('user');
+    expect(apiMessages[apiMessages.length - 1].content).toContain('message 39');
   });
 
   test('preview filters write tools in plan mode and includes them in build mode', () => {
@@ -108,19 +120,33 @@ describe('Astra Copilot request body', () => {
   });
 });
 
-describe('currentTarget in the system prompt', () => {
-  test('names the sprite the user is looking at', () => {
+describe('currentTarget travels with the newest message', () => {
+  test('the sprite is appended to the last user message', () => {
     const messages = buildApiMessages({
       messages: [{ role: 'user', content: 'hi' }],
       writeEnabled: false,
       currentTarget: { name: 'Cat', isStage: false }
     });
-    expect(messages[0].content).toContain('looking at sprite "Cat"');
-    expect(messages[0].content).toContain('这个角色');
+    const last = messages[messages.length - 1];
+    expect(last.role).toBe('user');
+    expect(last.content).toContain('hi');
+    expect(last.content).toContain('looking at sprite "Cat"');
   });
 
-  test('omits the line when no target is known', () => {
+  test('the system prompt stays byte-identical when the sprite changes', () => {
+    const build = (name) =>
+      buildApiMessages({
+        messages: [{ role: 'user', content: 'hi' }],
+        currentTarget: { name, isStage: false }
+      })[0].content;
+
+    // A stable system prompt is what keeps the provider's prefix cache warm.
+    expect(build('Cat')).toBe(build('Dog'));
+    expect(build('Cat')).not.toContain('currently looking at');
+  });
+
+  test('omits the hint when no target is known', () => {
     const messages = buildApiMessages({ messages: [{ role: 'user', content: 'hi' }] });
-    expect(messages[0].content).not.toContain('currently looking at');
+    expect(messages[messages.length - 1].content).toBe('hi');
   });
 });

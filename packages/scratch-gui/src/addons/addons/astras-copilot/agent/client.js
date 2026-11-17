@@ -116,11 +116,12 @@ const applyToolCallDelta = (calls, toolCall) => {
  * @param {object} usage Token usage.
  * @returns {object} Normalized message.
  */
-const normalizeAssistantMessage = (message, usage) => ({
+const normalizeAssistantMessage = (message, usage, finishReason) => ({
   content: normalizeContent(message && message.content),
   reasoning: normalizeContent(message && (message.reasoning_content || message.reasoning)),
   toolCalls: normalizeToolCalls(message && message.tool_calls),
-  usage: usage || null
+  usage: usage || null,
+  finishReason: finishReason || null
 });
 
 /**
@@ -183,7 +184,7 @@ const readStreamingResponse = async (response, onDelta, onReasoning, idleTimeout
     }
     const choice = data && Array.isArray(data.choices) ? data.choices[0] : null;
     if (!choice || !choice.message) throw new Error('The API returned no assistant message.');
-    return normalizeAssistantMessage(choice.message, data.usage);
+    return normalizeAssistantMessage(choice.message, data.usage, choice.finish_reason);
   }
 
   const reader = response.body.getReader();
@@ -192,7 +193,8 @@ const readStreamingResponse = async (response, onDelta, onReasoning, idleTimeout
     content: '',
     reasoning: '',
     toolCalls: [],
-    usage: null
+    usage: null,
+    finishReason: null
   };
   let buffer = '';
   let raw = '';
@@ -246,6 +248,7 @@ const readStreamingResponse = async (response, onDelta, onReasoning, idleTimeout
     if (data && data.usage) state.usage = data.usage;
 
     const choice = data && Array.isArray(data.choices) ? data.choices[0] : null;
+    if (choice && choice.finish_reason) state.finishReason = choice.finish_reason;
     const delta = choice && choice.delta;
     if (!delta) return;
 
@@ -309,7 +312,7 @@ const readStreamingResponse = async (response, onDelta, onReasoning, idleTimeout
         throw apiError;
       }
       const choice = data && Array.isArray(data.choices) ? data.choices[0] : null;
-      if (choice && choice.message) return normalizeAssistantMessage(choice.message, data.usage);
+      if (choice && choice.message) return normalizeAssistantMessage(choice.message, data.usage, choice.finish_reason);
       throw new Error('The API returned an empty stream.');
     }
 
@@ -317,7 +320,8 @@ const readStreamingResponse = async (response, onDelta, onReasoning, idleTimeout
       content: state.content,
       reasoning: state.reasoning,
       toolCalls: normalizeToolCalls(state.toolCalls),
-      usage: state.usage
+      usage: state.usage,
+      finishReason: state.finishReason
     };
   } finally {
     clearIdleTimer();
@@ -338,6 +342,8 @@ export const isRetryableError = (error) => {
   if (!error) return false;
   // User explicitly aborted the request
   if (error.name === 'AbortError') return false;
+  // Deterministic outcomes: retrying spends tokens for the same result.
+  if (error.code === 'MAX_TOKENS' || error.code === 'EMPTY_RESPONSE') return false;
   if (Number.isInteger(error.status)) {
     // HTTP status: only transient conditions are retried.
     if (error.status >= 400) return RETRYABLE_STATUSES.has(error.status);
@@ -374,6 +380,8 @@ export const buildRequestBody = ({ config, messages, tools, stream }) => {
     body.tools = tools;
     body.tool_choice = 'auto';
   }
+  // OpenAI-compatible servers only report usage on streams when asked.
+  if (wantsStream) body.stream_options = { include_usage: true };
   return body;
 };
 
@@ -422,17 +430,27 @@ const attemptRequest = async ({ config, url, messages, tools, signal, onDelta, o
     }
     const choice = data && Array.isArray(data.choices) ? data.choices[0] : null;
     if (!choice || !choice.message) throw new Error('The API returned no assistant message.');
-    result = normalizeAssistantMessage(choice.message, data.usage);
+    result = normalizeAssistantMessage(choice.message, data.usage, choice.finish_reason);
   } else {
     const idleTimeoutMs = Math.max(0, Number(config.streamIdleTimeoutMs) || 30000);
     result = await readStreamingResponse(response, onDelta, onReasoning, idleTimeoutMs);
   }
 
-  // Treat empty assistant responses (no tool calls and no text content) as retryable errors
+  // Treat empty assistant responses as errors, but tell truncation apart from a
+  // genuinely empty reply: retrying a max_tokens cut just burns tokens again.
   const hasToolCalls = Array.isArray(result.toolCalls) && result.toolCalls.length > 0;
   const hasContent = typeof result.content === 'string' && result.content.trim().length > 0;
   if (!hasToolCalls && !hasContent) {
-    throw new Error('The model returned an empty response.');
+    const truncated = result.finishReason === 'length';
+    const error = new Error(
+      truncated
+        ? 'The reply was cut off by max_tokens before any text was produced. Raise "Max tokens" in the settings.'
+        : 'The model returned an empty response.'
+    );
+    error.code = truncated ? 'MAX_TOKENS' : 'EMPTY_RESPONSE';
+    error.status = 0;
+    error.finishReason = result.finishReason || null;
+    throw error;
   }
 
   return result;

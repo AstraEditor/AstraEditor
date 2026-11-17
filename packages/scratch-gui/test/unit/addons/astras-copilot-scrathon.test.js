@@ -189,7 +189,52 @@ test('a custom block definition and call share a proccode', () => {
   expect(definition.next[0].inputs.STEPS.opcode).toBe('argument_reporter_string_number');
 });
 
-test('type mismatch on a custom block argument is reported', () => {
+test('a string argument is rejected in a numeric parameter slot', () => {
+  const definition = ['@custom_block', 'def dash(${n:distance}):', '    move(${n:distance})', ''].join('\n');
+  const call = ['@when_flag_clicked', 'def main():', '    dash(${s:"far"})', ''].join('\n');
+
+  const error = compileError([definition, call].join('\n'));
+  expect(error).toBeInstanceOf(ScrathonError);
+  expect(error.type).toBe('TypeMismatchError');
+});
+
+test('a number argument is allowed in a text parameter slot', () => {
+  const scripts = compile(
+    [
+      '@custom_block',
+      'def label(${s:text}):',
+      '    say(${s:text})',
+      '',
+      '@when_flag_clicked',
+      'def main():',
+      '    label(${n:42})',
+      ''
+    ].join('\n')
+  );
+  expect(JSON.stringify(scripts)).toContain('procedures_call');
+  expect(JSON.stringify(scripts)).toContain('42');
+});
+
+test('a boolean argument is allowed in both numeric and text parameter slots', () => {
+  const scripts = compile(
+    [
+      '@custom_block',
+      'def go(${n:dist}, ${s:text}):',
+      '    move(${n:dist})',
+      '    say(${s:text})',
+      '',
+      '@when_flag_clicked',
+      'def main():',
+      '    go(${b:True}, ${b:False})',
+      ''
+    ].join('\n')
+  );
+  const json = JSON.stringify(scripts);
+  expect(json).toContain('procedures_call');
+  expect(json).toContain('operator_equals');
+});
+
+test('a colour argument is rejected in a numeric parameter slot', () => {
   const error = compileError(
     [
       '@custom_block',
@@ -198,7 +243,7 @@ test('type mismatch on a custom block argument is reported', () => {
       '',
       '@when_flag_clicked',
       'def main():',
-      '    dash(${s:"far"})',
+      '    dash(${c:"#ff0000"})',
       ''
     ].join('\n')
   );
@@ -1369,3 +1414,177 @@ test('block_catalog returns argument types, return types, and dropdown options',
   const tempo = tools.block_catalog({ query: 'music.getTempo' }).blocks.find((b) => b.name === 'music.getTempo');
   expect(tempo.returns).toBe('number');
 });
+
+describe('value slot leniency', () => {
+  /**
+   * Compile a green-flag script and return its first body statement.
+   * @param {string} line Scrathon statement line.
+   * @returns {object} Block descriptor.
+   */
+  const firstStatement = (line) => {
+    const scripts = compile(['@when_flag_clicked', 'def main():', line].join('\n'));
+    return scripts[0].blocks[0].next[0];
+  };
+
+  test('boolean reporters are legal in numeric slots', () => {
+    const statement = firstStatement('    move(${n:touching(${m:"_mouse_"})})');
+    expect(statement.opcode).toBe('motion_movesteps');
+    expect(statement.inputs.STEPS.opcode).toBe('sensing_touchingobject');
+  });
+
+  test('boolean reporters are legal in string slots', () => {
+    const statement = firstStatement('    say(${s:touching(${m:"_mouse_"})})');
+    expect(statement.opcode).toBe('looks_say');
+    expect(statement.inputs.MESSAGE.opcode).toBe('sensing_touchingobject');
+  });
+
+  test('numbers are legal in string slots', () => {
+    const statement = firstStatement('    say(${s:42})');
+    expect(statement.inputs.MESSAGE).toBe(42);
+  });
+
+  test('strings are rejected in numeric slots', () => {
+    const error = compileError(
+      ['@when_flag_clicked', 'def main():', '    move(${s:"far"})'].join('\n')
+    );
+    expect(error.type).toBe('TypeMismatchError');
+  });
+
+  test('booleans are still rejected in colour slots', () => {
+    const error = compileError(
+      ['@when_flag_clicked', 'def main():', '    touching_color(${b:True})'].join('\n')
+    );
+    expect(error.type).toBe('TypeMismatchError');
+  });
+});
+
+describe('custom block parameter round trip', () => {
+  const source = [
+    '@custom_block("check ${b:ready} at ${n:speed}")',
+    'def check(${b:ready}, ${n:speed}):',
+    '    if ${b:ready}:',
+    '        move(${n:speed})',
+    '    say(${s:speed})'
+  ].join('\n');
+
+  /**
+   * Decompile the custom block definition of the sample source.
+   * @returns {string} Scrathon code.
+   */
+  const decompileDefinition = () => {
+    const scripts = compile(source);
+    const target = makeTarget(scripts);
+    const rootId = Object.keys(target.blocks._blocks)[0];
+    return createDecompiler(null, target).script(rootId).code;
+  };
+
+  test('parameters decompile as parameter sigils, not variables', () => {
+    const code = decompileDefinition();
+    expect(code).toContain('${b:ready}');
+    expect(code).toContain('speed');
+    expect(code).not.toContain('${v:speed}');
+    expect(code).not.toContain('${v:ready}');
+  });
+
+  test('decompiled parameters compile back to argument reporters', () => {
+    const round = JSON.stringify(compile(decompileDefinition()));
+    expect(round).toContain('argument_reporter_boolean');
+    expect(round).toContain('argument_reporter_string_number');
+    expect(round).not.toContain('"data_variable"');
+  });
+});
+
+describe('input shadow types match scratch-blocks', () => {
+  test('repeat uses a whole-number shadow and wait a positive-number shadow', () => {
+    const source = [
+      '@when_flag_clicked',
+      'def main():',
+      '    repeat(${n:3}):',
+      '        wait(${n:1.5})',
+      ''
+    ].join('\n');
+    const { xml } = buildScriptsXml(compile(source), makeCtx());
+
+    expect(xml).toContain('type="control_repeat"');
+    expect(xml).toContain('type="math_whole_number"');
+    expect(xml).toContain('type="math_positive_number"');
+    expect(xml).not.toContain('<shadow type="math_number"><field name="NUM">3</field></shadow>');
+  });
+
+  test('a reporter in a numeric input still carries a matching shadow', () => {
+    const source = [
+      '@when_flag_clicked',
+      'def main():',
+      '    repeat(${n:touching(${m:"_mouse_"})}):',
+      '        move(${n:1})',
+      ''
+    ].join('\n');
+    const { xml } = buildScriptsXml(compile(source), makeCtx());
+
+    expect(xml).toContain('type="math_whole_number"');
+    expect(xml).toContain('type="sensing_touchingobject"');
+  });
+});
+
+describe('orphan shadows in the decompiler', () => {
+  /**
+   * Build a target whose only script is a detached numeric shadow.
+   * @param {string} opcode Shadow opcode.
+   * @returns {object} Fake target.
+   */
+  const shadowTarget = (opcode) => ({
+    id: 'target-1',
+    name: 'Sprite1',
+    blocks: {
+      _blocks: {
+        orphan: {
+          id: 'orphan',
+          opcode,
+          next: null,
+          parent: null,
+          topLevel: true,
+          shadow: true,
+          x: 0,
+          y: 0,
+          fields: { NUM: { name: 'NUM', id: 'NUM', value: '1' } },
+          inputs: {}
+        }
+      }
+    },
+    getName: () => 'Sprite1'
+  });
+
+  test('a stray shadow does not produce an unsupported-block comment', () => {
+    const { code } = createDecompiler(null, shadowTarget('math_positive_number')).script('orphan');
+    expect(code).not.toContain('# unsupported block');
+    expect(code.trim()).toBe('');
+  });
+});
+
+describe('custom block call-site leniency', () => {
+  const definition = [
+    '@custom_block("go ${n:dist} maybe ${b:flag}")',
+    'def go(${n:dist}, ${b:flag}):',
+    '    move(${n:dist})',
+    '    if ${b:flag}:',
+    '        bounce_on_edge()'
+  ].join('\n');
+
+  test('a boolean reporter can fill a numeric parameter slot', () => {
+    const scripts = compile(
+      [definition, '', '@when_flag_clicked', 'def main():', '    go(${b:touching(${m:"_mouse_"})}, ${b:True})'].join('\n')
+    );
+    const call = JSON.stringify(scripts);
+    expect(call).toContain('procedures_call');
+    expect(call).toContain('sensing_touchingobject');
+  });
+
+  test('a number cannot fill a boolean parameter slot', () => {
+    const error = compileError(
+      [definition, '', '@when_flag_clicked', 'def main():', '    go(${n:5}, ${n:1})'].join('\n')
+    );
+    expect(error.type).toBe('TypeMismatchError');
+  });
+});
+
+

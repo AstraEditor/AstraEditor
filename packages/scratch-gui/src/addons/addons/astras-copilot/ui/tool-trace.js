@@ -35,6 +35,42 @@ export const createTraceRenderer = ({
   rememberDisclosure
 }) => {
   /**
+   * Describe a non-code write in one line, for the approval card.
+   * @param {object} change Change descriptor from describePendingChange.
+   * @returns {string} Localized text.
+   */
+  const describeChange = (change) => {
+    switch (change && change.kind) {
+      case 'rename-target':
+        return msg('change-rename-target', { before: change.before, after: change.after });
+      case 'update-costume':
+        return change.renamed
+          ? msg('change-costume-rename', {
+              target: change.target,
+              before: change.before,
+              after: change.after
+            })
+          : msg('change-costume-switch', { target: change.target, costume: change.after });
+      case 'delete-costume':
+        return msg('change-delete-costume', {
+          target: change.target,
+          costume: change.costume,
+          remaining: change.remaining
+        });
+      case 'create-sprite':
+        return msg('change-create-sprite', {
+          from: change.from,
+          name: change.after || change.from,
+          costumes: change.costumes
+        });
+      case 'delete-sprite':
+        return msg('change-delete-sprite', { name: change.name, costumes: change.costumes });
+      default:
+        return '';
+    }
+  };
+
+  /**
    * Format a structured tool-result descriptor.
    * @param {object} summary Descriptor.
    * @returns {string} Localized text.
@@ -305,6 +341,13 @@ export const createTraceRenderer = ({
 
       if (entry.diff && entry.diff.hasChanges) {
         approval.appendChild(buildDiffCard(entry.diff));
+      }
+
+      if (entry.change) {
+        const changeRow = document.createElement('div');
+        changeRow.className = 'sa-agent-tool-change';
+        changeRow.textContent = describeChange(entry.change);
+        approval.appendChild(changeRow);
       }
 
       const controls = document.createElement('div');

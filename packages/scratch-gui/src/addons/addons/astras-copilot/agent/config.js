@@ -43,7 +43,7 @@ export const DEFAULT_CONFIG = {
   maxSteps: DEFAULT_MAX_STEPS,
   contextWindow: DEFAULT_CONTEXT_WINDOW,
   reasoningEffort: 'default',
-  streamIdleTimeoutMs: 30000
+  streamIdleTimeoutMs: 90000
 };
 
 /**

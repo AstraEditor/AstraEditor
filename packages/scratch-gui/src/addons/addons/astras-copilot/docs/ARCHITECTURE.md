@@ -170,6 +170,10 @@
 7. 新脚本插入后由 `packNewBlocks` 重新落位：右边界 = 已有顶层块的最大 `x + width`，新块从 `右边界 + 80px` 起、纵向按 `高度 + 60px` 依次排列；空工作区从 `(40, 40)` 开始。
 8. 任一步抛错都会中止并回滚事件组，整批只占一个 Ctrl+Z 步（造型/角色操作除外）。
 
+### 非积木写操作的审批预览
+
+造型与角色工具不产生脚本 diff，因此循环里额外算一个 `change` 描述（`describePendingChange`）：改名会给出 before → after，删除会给出剩余数量，创建角色会给出复制来源与造型数。该描述随 `tool-request` 事件进入 `entry.change`，审批卡渲染成一行提示（`.sa-agent-tool-change`）。任何查找失败都只是「没有预览」，不影响审批本身。
+
 ### 原位 patch 规则（`script-patcher.js`）
 
 - 根块类型 + mutation 签名相同 → 保留原块（id、坐标、注释不变），只改字段。

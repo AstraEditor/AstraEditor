@@ -671,6 +671,10 @@ export const createDecompiler = (vm, target) => {
         push(indent, renderExpression(block, depth));
       } else if (INFIX[opcode] || LOGICAL[opcode] || opcode === 'operator_not' || opcode === 'operator_mathop') {
         push(indent, renderExpression(block, depth));
+      } else if (block.shadow) {
+        // A shadow that lost its parent (an input was deleted or replaced) can
+        // surface as a standalone block. It is never user code, so stay silent
+        // instead of emitting an "unsupported block" comment.
       } else {
         push(indent, `# unsupported block: ${opcode}`);
       }

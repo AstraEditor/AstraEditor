@@ -56,21 +56,32 @@ const tagSyntax = (tag) => {
 };
 
 /**
- * Tags whose slot type is enforced at compile time. Numeric and string slots
- * stay permissive (Scratch casts freely between them) but menus, colours,
- * booleans and resource references are strictly typed.
+ * What each lenient slot accepts. The leniency is one-directional:
+ *
+ * - A number slot takes numbers and booleans (`move (touching mouse?)` is legal
+ *   and reports 1/0) but NOT text, so a string literal or a text reporter can
+ *   never silently become 0 at runtime.
+ * - A text slot takes text, numbers and booleans, because Scratch renders any
+ *   value as text.
  */
-const STRICT_TAGS = new Set(['b', 'c', 'm', 'v', 'l', 'msg']);
+const LENIENT_SLOT_VALUES = {
+  n: new Set(['n', 'b']),
+  s: new Set(['s', 'n', 'b'])
+};
 
 /**
- * Decide whether a tag mismatch is a compile error. Numeric and string slots
- * are interchangeable in Scratch, so a mismatch involving either is allowed
- * unless the other side is a strict tag.
+ * Decide whether a tag mismatch is a compile error. Number and text slots use
+ * the table above; every other slot must match exactly.
  * @param {string} expected Expected tag.
  * @param {string} given Given tag.
  * @returns {boolean} True if the mismatch should be rejected.
  */
-const slotIsStrict = (expected, given) => STRICT_TAGS.has(expected) || STRICT_TAGS.has(given);
+const slotIsStrict = (expected, given) => {
+  if (!expected) return false;
+  const allowed = LENIENT_SLOT_VALUES[expected];
+  if (allowed) return !allowed.has(given);
+  return expected !== given;
+};
 
 /**
  * Compile a parsed Scrathon file into block descriptors.
@@ -686,7 +697,10 @@ export const compileFile = (file, { vm } = {}) => {
     procedure.params.forEach((param, index) => {
       const argNode = argNodes[index];
       const id = procedure.argumentIds[index];
-      if (argNode.kind === 'sigil' && argNode.tag !== param.tag) {
+      // Same leniency as ordinary slots: numeric/string parameters also take a
+      // boolean (`go(touching mouse?)` is legal and passes 1/0), while boolean
+      // parameters still demand a boolean.
+      if (argNode.kind === 'sigil' && slotIsStrict(param.tag, argNode.tag)) {
         throw fail(
           'TypeMismatchError',
           `Argument ${index + 1} of "${node.name}" expects ${TAG_LABEL[param.tag]} (${tagSyntax(param.tag)}), ` +
@@ -694,9 +708,14 @@ export const compileFile = (file, { vm } = {}) => {
           node
         );
       }
-      if (param.tag === 'b') inputs[id] = compileBoolean(argNode.kind === 'sigil' ? argNode.expr : argNode, node);
-      else if (argNode.kind === 'sigil') inputs[id] = compileLiteral(argNode.tag, argNode.expr, node);
-      else inputs[id] = literalScalar(argNode, node);
+      const booleanValue = param.tag === 'b' || (argNode.kind === 'sigil' && argNode.tag === 'b');
+      if (booleanValue) {
+        inputs[id] = compileBoolean(argNode.kind === 'sigil' ? argNode.expr : argNode, node);
+      } else if (argNode.kind === 'sigil') {
+        inputs[id] = compileLiteral(argNode.tag, argNode.expr, node);
+      } else {
+        inputs[id] = literalScalar(argNode, node);
+      }
     });
     return {
       opcode: 'procedures_call',

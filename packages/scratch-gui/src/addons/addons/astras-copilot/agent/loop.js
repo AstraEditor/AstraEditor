@@ -1,11 +1,15 @@
 import { buildRequestBody, callChatCompletion } from './client.js';
 import { replaceInternalIds } from './dsl.js';
 import { buildSystemPrompt } from './prompt.js';
-import { createScratchTools, TOOL_DEFINITIONS, WRITE_TOOL_NAMES } from './tools.js';
+import { createScratchTools, describePendingChange, TOOL_DEFINITIONS, WRITE_TOOL_NAMES } from './tools.js';
 import { describeToolResult, previewToolResult } from './trace.js';
 import { computeToolDiff } from './scrathon/diff.js';
 
 export const MAX_CONTEXT_MESSAGES = 24;
+/** Rough characters per token for mixed English/Chinese text. */
+const CHARS_PER_TOKEN = 2;
+/** Share of the context window the conversation may use before trimming. */
+const CONTEXT_TRIM_RATIO = 0.6;
 const MAX_TOOL_RESULT_CHARS = 12000;
 /** The whole-project document is intentionally large; keep it readable. */
 const MAX_PROJECT_SOURCE_CHARS = 60000;
@@ -94,31 +98,82 @@ const throwIfAborted = (signal) => {
 };
 
 /**
+ * Keep the conversation inside the context budget without touching it on every
+ * turn.
+ *
+ * Trimming by message count used to slide the window on every send, which
+ * invalidated the provider's prefix cache from the first message onwards. Now
+ * the history is only cut when it no longer fits, and the cut always lands on a
+ * user message so the model never sees a dangling reply.
+ *
+ * @param {Array<object>} messages Chat messages.
+ * @param {object} [options] Options.
+ * @param {number} [options.contextWindow] Context window in tokens.
+ * @returns {Array<object>} Messages to send.
+ */
+export const trimConversation = (messages, { contextWindow = 128000 } = {}) => {
+  if (!Array.isArray(messages) || messages.length === 0) return [];
+  const budget = Math.max(8000, Math.floor(Number(contextWindow) * CONTEXT_TRIM_RATIO * CHARS_PER_TOKEN));
+  const size = (message) => (message && typeof message.content === 'string' ? message.content.length : 0);
+  let used = messages.reduce((sum, message) => sum + size(message), 0);
+  if (used <= budget) return messages.slice();
+
+  let start = 0;
+  while (start < messages.length - 1 && used > budget) {
+    used -= size(messages[start]);
+    start++;
+  }
+  while (start < messages.length - 1 && messages[start].role !== 'user') start++;
+  return messages.slice(start);
+};
+
+/**
  * Build the system + conversation messages sent to the model.
  * @param {object} options Options.
  * @param {Array<object>} options.messages Chat history.
  * @param {boolean} [options.writeEnabled] Whether edit tools are available.
+ * @param {object} [options.currentTarget] Sprite the user is editing.
+ * @param {number} [options.contextWindow] Context window in tokens.
  * @returns {Array<object>} API messages.
  */
-export const buildApiMessages = ({ messages, writeEnabled = false, currentTarget = null }) => [
-  {
-    role: 'system',
-    content: buildSystemPrompt({ writeEnabled, currentTarget })
-  },
-  ...messages
-    .filter(
-      (message) =>
-        message &&
-        (message.role === 'user' || message.role === 'assistant') &&
-        typeof message.content === 'string' &&
-        message.content.trim().length > 0
-    )
-    .slice(-MAX_CONTEXT_MESSAGES)
-    .map((message) => ({
-      role: message.role,
-      content: message.content
-    }))
-];
+export const buildApiMessages = ({ messages, writeEnabled = false, currentTarget = null, contextWindow }) => {
+  // The system prompt stays byte-identical across requests so the provider's
+  // prefix cache keeps hitting. Anything volatile (the sprite being edited) is
+  // attached to the newest user message instead.
+  const history = trimConversation(
+    messages
+      .filter(
+        (message) =>
+          message &&
+          (message.role === 'user' || message.role === 'assistant') &&
+          typeof message.content === 'string' &&
+          message.content.trim().length > 0
+      )
+      .map((message) => ({
+        role: message.role,
+        content: message.content
+      })),
+    { contextWindow }
+  );
+
+  const system = buildSystemPrompt({ writeEnabled });
+  if (!currentTarget || !currentTarget.name) {
+    return [{ role: 'system', content: system }, ...history];
+  }
+  // Volatile context goes on the newest user message, which is new anyway.
+  const hint = currentTarget.isStage
+    ? '[editor] The user is currently looking at the stage.'
+    : `[editor] The user is currently looking at sprite "${currentTarget.name}".`;
+  if (history.length === 0) {
+    return [{ role: 'system', content: system }, { role: 'user', content: hint }];
+  }
+  const last = history[history.length - 1];
+  return [
+    { role: 'system', content: system },
+    ...history.slice(0, -1),
+    { role: last.role, content: `${last.content}\n\n${hint}` }
+  ];
+};
 
 /**
  * Select the tool definitions exposed to the model.
@@ -142,7 +197,7 @@ export const getActiveTools = (writeEnabled = false) => {
 export const buildRequestPreview = ({ config, messages, writeEnabled = false, currentTarget = null }) =>
   buildRequestBody({
     config,
-    messages: buildApiMessages({ messages, writeEnabled, currentTarget }),
+    messages: buildApiMessages({ messages, writeEnabled, currentTarget, contextWindow: config.contextWindow }),
     tools: getActiveTools(writeEnabled)
   });
 
@@ -173,7 +228,7 @@ export const runAgent = async ({
 }) => {
   const tools = createScratchTools(vm);
   const activeTools = getActiveTools(writeEnabled);
-  const apiMessages = buildApiMessages({ messages, writeEnabled, currentTarget });
+  const apiMessages = buildApiMessages({ messages, writeEnabled, currentTarget, contextWindow: config.contextWindow });
 
   const stepLimit = resolveStepLimit(maxSteps);
   const trace = [];
@@ -216,8 +271,6 @@ export const runAgent = async ({
       content: response.content || null,
       tool_calls: response.toolCalls
     };
-    // Thinking-enabled providers may require their returned reasoning on tool continuations.
-    if (response.reasoning) assistantMessage.reasoning_content = response.reasoning;
     apiMessages.push(assistantMessage);
 
     for (const toolCall of response.toolCalls) {
@@ -250,6 +303,15 @@ export const runAgent = async ({
           // Diff calculation is best effort and must not break the agent loop.
         }
       }
+      // Costume/sprite edits have no text diff; describe the change instead.
+      if (canRun && WRITE_TOOL_NAMES.includes(toolName)) {
+        try {
+          const change = describePendingChange(vm, toolName, args);
+          if (change) entry.change = change;
+        } catch (error) {
+          // Preview is best effort.
+        }
+      }
       trace.push(entry);
       const traceIndex = trace.length - 1;
 
@@ -260,6 +322,7 @@ export const runAgent = async ({
           id: toolCall.id,
           args,
           diff: entry.diff,
+          change: entry.change,
           traceIndex
         });
 
@@ -267,7 +330,15 @@ export const runAgent = async ({
         try {
           approved =
             typeof requestApproval === 'function'
-              ? await requestApproval({ name: toolName, args, id: toolCall.id, traceIndex, diff: entry.diff, signal })
+              ? await requestApproval({
+                  name: toolName,
+                  args,
+                  id: toolCall.id,
+                  traceIndex,
+                  diff: entry.diff,
+                  change: entry.change,
+                  signal
+                })
               : false;
         } catch (error) {
           if (signal && signal.aborted) throw createAbortError();

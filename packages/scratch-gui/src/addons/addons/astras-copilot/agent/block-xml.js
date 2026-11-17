@@ -109,7 +109,8 @@ const INPUT_SHADOW = {
   TIMES: 'math_whole_number',
   STEPS: 'math_number',
   DEGREES: 'math_number',
-  DURATION: 'math_number',
+  // control_wait declares a positive-number shadow in scratch-blocks.
+  DURATION: 'math_positive_number',
   SECS: 'math_number',
   X: 'math_number',
   Y: 'math_number',
