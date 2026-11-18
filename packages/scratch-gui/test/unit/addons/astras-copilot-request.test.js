@@ -3,6 +3,7 @@
  */
 /* eslint-env jest */
 import { buildRequestBody } from '../../../src/addons/addons/astras-copilot/agent/client';
+import { MAX_TOKENS_PRESETS, normalizeMaxTokens } from '../../../src/addons/addons/astras-copilot/agent/config';
 import {
   buildApiMessages,
   buildRequestPreview,
@@ -148,5 +149,37 @@ describe('currentTarget travels with the newest message', () => {
   test('omits the hint when no target is known', () => {
     const messages = buildApiMessages({ messages: [{ role: 'user', content: 'hi' }] });
     expect(messages[messages.length - 1].content).toBe('hi');
+  });
+});
+
+describe('max tokens presets', () => {
+  test('zero means unlimited: the field is omitted', () => {
+    const body = buildRequestBody({
+      config: { ...baseConfig, maxTokens: 0 },
+      messages: [{ role: 'user', content: 'hi' }]
+    });
+    expect(body).not.toHaveProperty('max_tokens');
+  });
+
+  test('a preset value is sent as-is', () => {
+    const body = buildRequestBody({
+      config: { ...baseConfig, maxTokens: 8000 },
+      messages: [{ role: 'user', content: 'hi' }]
+    });
+    expect(body.max_tokens).toBe(8000);
+  });
+
+  test('normalizeMaxTokens treats non-positive values as unlimited', () => {
+    expect(normalizeMaxTokens('0')).toBe(0);
+    expect(normalizeMaxTokens('-5')).toBe(0);
+    expect(normalizeMaxTokens('8000')).toBe(8000);
+    expect(normalizeMaxTokens('')).toBe(3000);
+    expect(normalizeMaxTokens('abc')).toBe(3000);
+    expect(normalizeMaxTokens('999999')).toBe(200000);
+  });
+
+  test('the dropdown presets include an unlimited entry', () => {
+    expect(MAX_TOKENS_PRESETS[0]).toBe(0);
+    expect(MAX_TOKENS_PRESETS).toContain(8000);
   });
 });

@@ -3,7 +3,7 @@
  */
 /* eslint-env jest */
 import { callChatCompletion, isRetryableError } from '../../../src/addons/addons/astras-copilot/agent/client';
-import { buildApiMessages, trimConversation } from '../../../src/addons/addons/astras-copilot/agent/loop';
+import { buildApiMessages, buildTraceDigest, trimConversation } from '../../../src/addons/addons/astras-copilot/agent/loop';
 
 const baseConfig = {
   apiUrl: 'https://api.example.com/v1/chat/completions',
@@ -178,5 +178,39 @@ describe('history trimming', () => {
     const api = buildApiMessages({ messages, contextWindow: 20000 });
     expect(api[0].role).toBe('system');
     expect(api[1].role).toBe('user');
+  });
+});
+
+describe('cross-turn tool digest', () => {
+  test('lists the tools that ran, with selectors', () => {
+    const digest = buildTraceDigest([
+      { name: 'get_project_scrathon', args: {}, ok: true },
+      { name: 'apply_scrathon_edits', args: { target: 'Cat' }, ok: true },
+      { name: 'delete_scripts', args: { target: 'Dog' }, status: 'denied', ok: false }
+    ]);
+    expect(digest).toBe('[tools] get_project_scrathon; apply_scrathon_edits(Cat); delete_scripts(Dog) denied');
+  });
+
+  test('marks failures and collapses long runs', () => {
+    const many = Array.from({ length: 12 }, () => ({ name: 'list_scripts', args: {}, ok: true }));
+    many.push({ name: 'apply_scripts', args: {}, ok: false });
+    const digest = buildTraceDigest(many);
+    expect(digest).toContain('+5 more');
+  });
+
+  test('an empty trace has no digest', () => {
+    expect(buildTraceDigest([])).toBe('');
+    expect(buildTraceDigest(null)).toBe('');
+  });
+
+  test('the digest rides along with the assistant message', () => {
+    const api = buildApiMessages({
+      messages: [
+        { role: 'user', content: '看一下项目' },
+        { role: 'assistant', content: '看完了', digest: '[tools] get_project_scrathon' }
+      ]
+    });
+    expect(api[2].content).toBe('看完了\n\n[tools] get_project_scrathon');
+    expect(api[1].content).toBe('看一下项目');
   });
 });

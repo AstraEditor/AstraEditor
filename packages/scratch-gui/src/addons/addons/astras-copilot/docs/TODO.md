@@ -106,7 +106,8 @@
   - [x] 不再回传 `reasoning_content`（DeepSeek 不收，且白吃 token）。
   - [x] 历史不再按条数硬切 24 条，改为超预算才按「整轮 + user 边界」裁剪，保留前缀缓存。
   - [x] 当前角色提示从 system prompt 移到最新一条 user 消息，system 前缀保持字节一致。
-  - [ ] 跨轮工具调用摘要：历史里只有 user/assistant 文本，模型看不到上一轮用过什么工具，容易重复读项目（待设计）。
+  - [x] 跨轮工具调用摘要： 生成  一行，持久化在 assistant 消息的  字段，构建请求时追加；不超过 8 项，标注 denied/failed。
+  - [x] 缓存命中读数： 归一 DeepSeek / OpenAI 两种 usage 口径，圆盘弹层显示命中率。
   - [ ] MAX_TOKENS 错误文案本地化 + 设置页引导。
 - [ ] **3.2 逃逸通用调用语法 (`ext(...)`)**
   - [ ] 支持语法：`ext("ext_opcode", arg1=${t:v}, field2=${m:opt})`。

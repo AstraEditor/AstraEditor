@@ -3122,3 +3122,35 @@ button:hover .sa-agent-scrathon-icon {
   line-height: 1.5;
   overflow-wrap: anywhere;
 }
+
+/* Compress action inside the context dial popover. */
+.sa-agent-dial-compress {
+  width: 100%;
+  margin-top: 8px;
+  padding: 6px 8px;
+  border: 1px solid var(--ui-black-transparent);
+  border-radius: 6px;
+  color: var(--text-primary);
+  background: transparent;
+  font-size: 11px;
+  cursor: pointer;
+}
+
+.sa-agent-dial-compress:hover:not(:disabled) {
+  background: var(--ui-primary-transparent);
+}
+
+.sa-agent-dial-compress:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+/* Checkbox + label row used by the settings panel. */
+.sa-agent-settings-checkbox-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+  font-size: 12px;
+  cursor: pointer;
+}

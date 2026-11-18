@@ -127,6 +127,40 @@ export const trimConversation = (messages, { contextWindow = 128000 } = {}) => {
   return messages.slice(start);
 };
 
+/** How many tool calls a digest lists before collapsing into "+N more". */
+const MAX_DIGEST_ITEMS = 8;
+const DIGEST_LABEL_LIMIT = 40;
+
+/**
+ * Build a compact record of the tool calls made in one run.
+ *
+ * Cross-turn memory: the chat history only stores user/assistant text, so the
+ * model has no idea what it inspected or changed last turn and happily re-reads
+ * the whole project. Storing this line with the assistant message fixes that
+ * for a few dozen tokens, and because it is persisted verbatim it keeps the
+ * request prefix stable (unlike injecting it at build time).
+ *
+ * @param {Array<object>} trace Tool trace entries.
+ * @returns {string} Digest line, or an empty string.
+ */
+export const buildTraceDigest = (trace) => {
+  if (!Array.isArray(trace)) return '';
+  const items = [];
+  for (const entry of trace) {
+    if (!entry || !entry.name) continue;
+    const args = entry.args || {};
+    const selector = args.target || args.from;
+    const label = selector ? `${entry.name}(${String(selector).slice(0, DIGEST_LABEL_LIMIT)})` : entry.name;
+    if (entry.status === 'denied') items.push(`${label} denied`);
+    else if (entry.ok === false) items.push(`${label} failed`);
+    else items.push(label);
+  }
+  if (items.length === 0) return '';
+  const shown = items.slice(0, MAX_DIGEST_ITEMS);
+  const rest = items.length - shown.length;
+  return `[tools] ${shown.join('; ')}${rest > 0 ? `; +${rest} more` : ''}`;
+};
+
 /**
  * Build the system + conversation messages sent to the model.
  * @param {object} options Options.
@@ -151,7 +185,10 @@ export const buildApiMessages = ({ messages, writeEnabled = false, currentTarget
       )
       .map((message) => ({
         role: message.role,
-        content: message.content
+        content:
+          message.role === 'assistant' && message.digest
+            ? `${message.content}\n\n${message.digest}`
+            : message.content
       })),
     { contextWindow }
   );
@@ -230,6 +267,17 @@ export const runAgent = async ({
   const activeTools = getActiveTools(writeEnabled);
   const apiMessages = buildApiMessages({ messages, writeEnabled, currentTarget, contextWindow: config.contextWindow });
 
+  // Older turns may be dropped to fit the window. Report the count so the UI can
+  // say so: silent truncation made the agent look like it had forgotten.
+  const requestedHistory = messages.filter(
+    (message) =>
+      message &&
+      (message.role === 'user' || message.role === 'assistant') &&
+      typeof message.content === 'string' &&
+      message.content.trim().length > 0
+  ).length;
+  const trimmedHistory = Math.max(0, requestedHistory - (apiMessages.length - 1));
+
   const stepLimit = resolveStepLimit(maxSteps);
   const trace = [];
   const lastUserMessage = [...messages].reverse().find((message) => message && message.role === 'user');
@@ -262,7 +310,9 @@ export const runAgent = async ({
       return {
         content: wantsIds ? content : replaceInternalIds(vm, content),
         usage: response.usage,
-        trace
+        trace,
+        digest: buildTraceDigest(trace),
+        trimmed: trimmedHistory
       };
     }
 
@@ -465,7 +515,9 @@ export const runAgent = async ({
       return {
         content: finalContent,
         usage: finalResponse.usage,
-        trace
+        trace,
+        digest: buildTraceDigest(trace),
+        trimmed: trimmedHistory
       };
     }
   } catch (error) {

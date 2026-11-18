@@ -92,9 +92,11 @@ export const effortIndex = (level) => {
  * @param {Function} [options.getEffort] Current effort level resolver.
  * @param {Function} [options.onClose] Called when the popover closes while the
  *        focus was inside it, so the caller can restore the composer focus.
+ * @param {Function} [options.onCompress] Called when the user compresses the
+ *        conversation from inside the popover.
  * @returns {object} Dial controller.
  */
-export const createContextDial = ({ msg, formatTokens, onEffortChange, getEffort, onClose }) => {
+export const createContextDial = ({ msg, formatTokens, onEffortChange, getEffort, onClose, onCompress }) => {
   const format = typeof formatTokens === 'function' ? formatTokens : (value) => String(value);
   let effort = typeof getEffort === 'function' ? getEffort() : 'default';
   /** Last level reported to the caller, so a drag only notifies on changes. */
@@ -177,6 +179,12 @@ export const createContextDial = ({ msg, formatTokens, onEffortChange, getEffort
   const sourceNote = document.createElement('div');
   sourceNote.className = 'sa-agent-dial-source';
   popover.appendChild(sourceNote);
+
+  // Provider-reported prefix-cache hit rate, shown only when the API tells us.
+  const cacheNote = document.createElement('div');
+  cacheNote.className = 'sa-agent-dial-source sa-agent-dial-cache';
+  cacheNote.hidden = true;
+  popover.appendChild(cacheNote);
 
   const bar = document.createElement('div');
   bar.className = 'sa-agent-dial-bar';
@@ -267,6 +275,19 @@ export const createContextDial = ({ msg, formatTokens, onEffortChange, getEffort
   }
   effortBlock.appendChild(ticks);
   popover.appendChild(effortBlock);
+
+  // Compressing the conversation lives here: it is a context action, and the
+  // popover is where the user already looks when the bar gets long.
+  const compressAction = document.createElement('button');
+  compressAction.type = 'button';
+  compressAction.className = 'sa-agent-dial-compress';
+  compressAction.textContent = msg('context-compress');
+  compressAction.hidden = true;
+  compressAction.addEventListener('click', () => {
+    if (typeof onCompress === 'function') onCompress();
+  });
+  popover.appendChild(compressAction);
+
   root.appendChild(popover);
 
   /**
@@ -324,6 +345,26 @@ export const createContextDial = ({ msg, formatTokens, onEffortChange, getEffort
       node.style.width = `${(segment.ratio * 100).toFixed(3)}%`;
       node.style.display = segment.ratio > 0 ? '' : 'none';
       legendValues[segment.key].textContent = formatPercent(segment.ratio);
+    }
+
+    if (cacheNote) {
+      const cache = lastState && lastState.cache;
+      if (cache && Number.isFinite(cache.hit) && Number.isFinite(cache.total) && cache.total > 0) {
+        cacheNote.hidden = false;
+        cacheNote.textContent = msg('context-dial-cache', {
+          percent: Math.round((cache.hit / cache.total) * 100),
+          hit: formatTokens(cache.hit),
+          total: formatTokens(cache.total)
+        });
+      } else {
+        cacheNote.hidden = true;
+        cacheNote.textContent = '';
+      }
+    }
+
+    if (compressAction) {
+      compressAction.hidden = !(lastState && lastState.canCompress);
+      compressAction.disabled = Boolean(lastState && lastState.compressing);
     }
 
     syncTriggerLabel();

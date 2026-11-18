@@ -30,6 +30,28 @@ export const MAX_ALLOWED_STEPS = 200;
 export const DEFAULT_CONTEXT_WINDOW = 128000;
 export const MAX_ALLOWED_CONTEXT_WINDOW = 2000000;
 
+/**
+ * Output-token presets offered in the settings dropdown.
+ * `0` means "no limit": the field is left out of the request and the server
+ * picks its own default.
+ */
+export const MAX_TOKENS_PRESETS = [0, 1000, 2000, 4000, 8000, 16000, 32000, 64000];
+export const MAX_ALLOWED_MAX_TOKENS = 200000;
+
+/**
+ * Normalize a max-tokens value. Zero and negatives mean "unlimited".
+ * @param {*} value Raw value.
+ * @param {number} [fallback] Used when the input is empty or not a number.
+ * @returns {number} Normalized value, 0 for unlimited.
+ */
+export const normalizeMaxTokens = (value, fallback = 3000) => {
+  if (value === '' || value === null || value === undefined) return fallback;
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed)) return fallback;
+  if (parsed <= 0) return 0;
+  return Math.min(MAX_ALLOWED_MAX_TOKENS, Math.max(1, Math.round(parsed)));
+};
+
 export const DEFAULT_CONFIG = {
   apiUrl: 'https://api.openai.com/v1/chat/completions',
   apiKey: '',

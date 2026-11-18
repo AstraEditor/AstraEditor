@@ -16,6 +16,7 @@ const messages = {
   'context-dial-title': 'Context usage',
   'context-dial-close': 'Close',
   'context-dial-used': 'used {used} / {total}',
+  'context-dial-cache': 'Cache {percent}% ({hit} / {total})',
   'context-dial-system': 'System prompt',
   'context-dial-tools': 'Tool definitions',
   'context-dial-messages': 'Conversation',
@@ -308,5 +309,94 @@ describe('context dial component', () => {
     expect(popover.hidden).toBe(false);
     popover.dispatchEvent(new dom.window.KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
     expect(popover.hidden).toBe(true);
+  });
+});
+
+describe('prefix cache readout', () => {
+  let dial;
+
+  beforeEach(() => {
+    const dom = new JSDOM('<!DOCTYPE html><html><body></body></html>');
+    global.window = dom.window;
+    global.document = dom.window.document;
+    dial = createContextDial({
+      msg,
+      formatTokens: (value) => `${Math.round(Number(value) / 1000)}k`,
+      getEffort: () => 'low',
+      onEffortChange: () => {}
+    });
+    document.body.appendChild(dial.element);
+  });
+
+  afterEach(() => {
+    dial.element.remove();
+    delete global.window;
+    delete global.document;
+  });
+
+  test('shows the hit rate when the provider reports cache counters', () => {
+    dial.update({ tokens: 50, contextWindow: 100, system: 50, tools: 0, messages: 0, cache: { hit: 800, total: 1000 } });
+    const note = dial.element.querySelector('.sa-agent-dial-cache');
+    expect(note.hidden).toBe(false);
+    expect(note.textContent).toBe('Cache 80% (1k / 1k)');
+  });
+
+  test('hides the line when usage carries no cache counters', () => {
+    dial.update({ tokens: 50, contextWindow: 100, system: 50, tools: 0, messages: 0, cache: null });
+    expect(dial.element.querySelector('.sa-agent-dial-cache').hidden).toBe(true);
+  });
+});
+
+describe('compress action in the popover', () => {
+  let dial;
+  let onCompress;
+
+  beforeEach(() => {
+    const dom = new JSDOM('<!DOCTYPE html><html><body></body></html>');
+    global.window = dom.window;
+    global.document = dom.window.document;
+    onCompress = jest.fn();
+    dial = createContextDial({
+      msg,
+      formatTokens: (value) => `${Math.round(Number(value) / 1000)}k`,
+      getEffort: () => 'low',
+      onEffortChange: () => {},
+      onCompress
+    });
+    document.body.appendChild(dial.element);
+  });
+
+  afterEach(() => {
+    dial.element.remove();
+    delete global.window;
+    delete global.document;
+  });
+
+  test('is hidden until the conversation is long enough', () => {
+    const button = dial.element.querySelector('.sa-agent-dial-compress');
+    dial.update({ tokens: 10, contextWindow: 100, system: 10, tools: 0, messages: 0, canCompress: false });
+    expect(button.hidden).toBe(true);
+
+    dial.update({ tokens: 10, contextWindow: 100, system: 10, tools: 0, messages: 0, canCompress: true });
+    expect(button.hidden).toBe(false);
+    expect(button.disabled).toBe(false);
+  });
+
+  test('calls the compress handler and disables while running', () => {
+    const button = dial.element.querySelector('.sa-agent-dial-compress');
+    dial.update({ tokens: 10, contextWindow: 100, system: 10, tools: 0, messages: 0, canCompress: true });
+    button.click();
+    expect(onCompress).toHaveBeenCalledTimes(1);
+
+    dial.update({
+      tokens: 10,
+      contextWindow: 100,
+      system: 10,
+      tools: 0,
+      messages: 0,
+      canCompress: true,
+      compressing: true
+    });
+    expect(button.disabled).toBe(true);
   });
 });

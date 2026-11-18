@@ -370,9 +370,11 @@ export const buildRequestBody = ({ config, messages, tools, stream }) => {
     model: config.model,
     messages,
     temperature: Number.isFinite(Number(config.temperature)) ? Number(config.temperature) : 0.2,
-    max_tokens: Math.max(1, Math.min(32000, Number(config.maxTokens) || 3000)),
     stream: wantsStream
   };
+  // 0 means unlimited: leave the field out and let the server pick its default.
+  const maxTokens = Math.round(Number(config.maxTokens));
+  if (Number.isFinite(maxTokens) && maxTokens > 0) body.max_tokens = maxTokens;
   if (config.reasoningEffort && config.reasoningEffort !== 'default') {
     body.reasoning_effort = config.reasoningEffort;
   }

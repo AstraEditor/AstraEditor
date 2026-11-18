@@ -7,7 +7,6 @@ import iconBack from '!../../../lib/tw-recolor/build!./icon-back.svg';
 import iconPlus from '!../../../lib/tw-recolor/build!./icon-plus.svg';
 import iconRename from '!../../../lib/tw-recolor/build!./icon-rename.svg';
 import iconTrash from '!../../../lib/tw-recolor/build!./icon-trash.svg';
-import iconMore from '!../../../lib/tw-recolor/build!./icon-more.svg';
 import iconBuild from '!../../../lib/tw-recolor/build!./icon-build.svg';
 import iconPlan from '!../../../lib/tw-recolor/build!./icon-plan.svg';
 import iconUndo from '!../../../lib/tw-recolor/build!./icon-undo.svg';
@@ -37,6 +36,8 @@ import {
   loadConfig,
   MAX_ALLOWED_CONTEXT_WINDOW,
   MAX_ALLOWED_STEPS,
+  MAX_TOKENS_PRESETS,
+  normalizeMaxTokens,
   saveConfig,
   suggestContextWindow
 } from './agent/config.js';
@@ -269,7 +270,6 @@ export default async ({ addon, msg }) => {
   let isWideLayout = false;
   let conversationPaneOpen = false;
   let pendingDeleteId = null;
-  let sessionMenu = null;
   let statusRow = null;
   let statusElement = null;
   let inputElement = null;
@@ -312,7 +312,6 @@ export default async ({ addon, msg }) => {
   let currentTargetChip = null;
   let currentTargetNameElement = null;
   let targetsListenerAttached = false;
-  let compressButton = null;
   let compressController = null;
   let compressRequestId = 0;
   let compressing = false;
@@ -447,7 +446,6 @@ export default async ({ addon, msg }) => {
     if (!inputElement || !sendButton || !stopButton) return;
     sendButton.disabled = busy || compressing || inputElement.value.trim().length === 0;
     stopButton.style.display = busy ? 'inline-flex' : 'none';
-    if (compressButton) compressButton.disabled = busy || compressing;
     updateModeUI();
   };
 
@@ -511,6 +509,28 @@ export default async ({ addon, msg }) => {
   /**
    * Update the context usage indicator.
    */
+  /**
+   * Read prefix-cache counters from a usage payload.
+   * Providers disagree: DeepSeek reports prompt_cache_hit_tokens, OpenAI reports
+   * prompt_tokens_details.cached_tokens.
+   * @param {object} usage Usage payload.
+   * @returns {?object} { hit, total } or null.
+   */
+  const readCacheUsage = (usage) => {
+    if (!usage || typeof usage !== 'object') return null;
+    const number = (value) => (Number.isFinite(Number(value)) ? Number(value) : null);
+    const details = usage.prompt_tokens_details && typeof usage.prompt_tokens_details === 'object'
+      ? usage.prompt_tokens_details
+      : {};
+    const hit = number(usage.prompt_cache_hit_tokens) ?? number(details.cached_tokens);
+    if (hit === null) return null;
+    const prompt = number(usage.prompt_tokens);
+    const miss = number(usage.prompt_cache_miss_tokens);
+    const total = prompt !== null ? prompt : hit + (miss || 0);
+    if (!total) return null;
+    return { hit, total };
+  };
+
   const updateContextUsage = () => {
     const estimate = estimateContextUsage();
     const actualTokens =
@@ -524,12 +544,11 @@ export default async ({ addon, msg }) => {
         tools: estimate.tools,
         messages: estimate.messages,
         messageCount: estimate.messageCount,
-        actual: actualTokens !== null
+        actual: actualTokens !== null,
+        cache: readCacheUsage(lastUsage),
+        canCompress: estimate.messageCount >= 4 && !busy && !compressing,
+        compressing
       });
-    }
-    if (compressButton) {
-      compressButton.style.display = estimate.messageCount >= 4 ? '' : 'none';
-      compressButton.disabled = busy || compressing;
     }
   };
 
@@ -1484,7 +1503,6 @@ export default async ({ addon, msg }) => {
     const conversation = createConversation(branchedMessages);
     conversation.title = branchTitle;
     pendingDeleteId = null;
-    if (sessionMenu) sessionMenu.open = false;
     conversations.unshift(conversation);
     activeConversationId = conversation.id;
     conversations = trimConversations(conversations, activeConversationId);
@@ -1772,7 +1790,6 @@ export default async ({ addon, msg }) => {
 
     activeConversationId = id;
     pendingDeleteId = null;
-    if (sessionMenu) sessionMenu.open = false;
     chatMessages = next.messages;
     lastUsage = next.lastUsage || null;
     liveTrace = [];
@@ -1812,7 +1829,6 @@ export default async ({ addon, msg }) => {
 
     const conversation = createConversation([]);
     pendingDeleteId = null;
-    if (sessionMenu) sessionMenu.open = false;
     conversations.unshift(conversation);
     activeConversationId = conversation.id;
     conversations = trimConversations(conversations, activeConversationId);
@@ -1878,7 +1894,11 @@ export default async ({ addon, msg }) => {
       const result = await runAgent({
         vm,
         config,
-        messages: chatMessages.map((message) => ({ role: message.role, content: message.content })),
+        messages: chatMessages.map((message) => ({
+          role: message.role,
+          content: message.content,
+          digest: message.digest || ''
+        })),
         signal: controller.signal,
         requestApproval: requestToolApproval,
         writeEnabled,
@@ -1978,10 +1998,12 @@ export default async ({ addon, msg }) => {
         if (conversation) conversation.lastUsage = result.usage;
       }
       setStatus('');
-      commitTrace(trace, result.content, false, '', {
+      const trimNotice = Number(result.trimmed) > 0 ? msg('status-context-trimmed', { count: result.trimmed }) : '';
+      commitTrace(trace, result.content, false, trimNotice, {
         mode: requestMode,
         model: requestModel,
-        duration: Date.now() - startTime
+        duration: Date.now() - startTime,
+        digest: result.digest || ''
       });
       updateContextUsage();
     } catch (error) {
@@ -2051,7 +2073,7 @@ export default async ({ addon, msg }) => {
       model,
       stream: streamInput ? Boolean(streamInput.checked) : config.stream !== false,
       temperature: clampNumber(temperatureInput.value, 0, 2, config.temperature),
-      maxTokens: clampNumber(maxTokensInput.value, 1, 32000, config.maxTokens),
+      maxTokens: normalizeMaxTokens(maxTokensInput.value, config.maxTokens),
       reasoningEffort: config.reasoningEffort
     };
   };
@@ -2118,7 +2140,16 @@ export default async ({ addon, msg }) => {
     if (streamInput) streamInput.checked = config.stream !== false;
     if (autoApproveInput) autoApproveInput.checked = autoApproveTools;
     if (temperatureInput) temperatureInput.value = String(config.temperature);
-    if (maxTokensInput) maxTokensInput.value = String(config.maxTokens);
+    if (maxTokensInput) {
+      const tokenValue = String(config.maxTokens);
+      if (!Array.from(maxTokensInput.options).some((option) => option.value === tokenValue)) {
+        const option = document.createElement('option');
+        option.value = tokenValue;
+        option.textContent = tokenValue;
+        maxTokensInput.appendChild(option);
+      }
+      maxTokensInput.value = tokenValue;
+    }
     if (retriesInput) retriesInput.value = String(config.retries);
     if (maxStepsInput) maxStepsInput.value = String(config.maxSteps);
     if (contextWindowInput) contextWindowInput.value = String(config.contextWindow);
@@ -2140,7 +2171,6 @@ export default async ({ addon, msg }) => {
       focusFrame = 0;
     }
     populateSettings();
-    if (sessionMenu) sessionMenu.open = false;
     conversationPaneOpen = false;
     updateConversationPane();
     if (headerElement) headerElement.style.display = 'none';
@@ -2205,7 +2235,7 @@ export default async ({ addon, msg }) => {
       headers,
       stream: streamInput ? Boolean(streamInput.checked) : config.stream !== false,
       temperature: clampNumber(temperatureInput.value, 0, 2, config.temperature),
-      maxTokens: clampNumber(maxTokensInput.value, 1, 32000, config.maxTokens),
+      maxTokens: normalizeMaxTokens(maxTokensInput.value, config.maxTokens),
       retries: clampNumber(retriesInput.value, 0, 5, config.retries),
       maxSteps: clampNumber(maxStepsInput && maxStepsInput.value, 1, MAX_ALLOWED_STEPS, config.maxSteps),
       contextWindow,
@@ -2317,6 +2347,33 @@ export default async ({ addon, msg }) => {
       return input;
     };
 
+    /**
+     * Build a select from {value,label} pairs, adding the current value when it
+     * is not one of the presets.
+     * @param {Array<object>} options Options.
+     * @param {string} current Current value.
+     * @returns {HTMLSelectElement} Select element.
+     */
+    const selectInput = (options, current) => {
+      const select = document.createElement('select');
+      select.className = 'sa-agent-settings-input sa-agent-settings-select';
+      for (const option of options) {
+        const node = document.createElement('option');
+        node.value = String(option.value);
+        node.textContent = option.label;
+        select.appendChild(node);
+      }
+      const hasCurrent = Array.from(select.options).some((option) => option.value === String(current));
+      if (!hasCurrent && current !== '' && current !== null && current !== undefined) {
+        const node = document.createElement('option');
+        node.value = String(current);
+        node.textContent = String(current);
+        select.appendChild(node);
+      }
+      select.value = String(current);
+      return select;
+    };
+
     // --- Connection -------------------------------------------------------
     const connectionSection = addSection(msg('settings-section-connection'));
 
@@ -2349,7 +2406,13 @@ export default async ({ addon, msg }) => {
     const samplingGrid = addGrid(modelSection);
     temperatureInput = numberInput(0, 2, 0.1);
     addField(samplingGrid, msg('settings-temperature'), temperatureInput);
-    maxTokensInput = numberInput(1, 32000, 100);
+    maxTokensInput = selectInput(
+      MAX_TOKENS_PRESETS.map((value) => ({
+        value: String(value),
+        label: value === 0 ? msg('settings-max-tokens-unlimited') : String(value)
+      })),
+      String(config.maxTokens)
+    );
     addField(samplingGrid, msg('settings-max-tokens'), maxTokensInput);
 
     const effortHint = document.createElement('div');
@@ -2392,6 +2455,19 @@ export default async ({ addon, msg }) => {
       msg('settings-section-conversations'),
       msg('settings-all-conversations-hint')
     );
+    const autoApproveLabel = document.createElement('label');
+    autoApproveLabel.className = 'sa-agent-settings-checkbox-row';
+    autoApproveInput = document.createElement('input');
+    autoApproveInput.className = 'sa-agent-settings-checkbox';
+    autoApproveInput.type = 'checkbox';
+    autoApproveInput.checked = autoApproveTools;
+    autoApproveInput.addEventListener('change', () => setAutoApproveTools(autoApproveInput.checked));
+    const autoApproveText = document.createElement('span');
+    autoApproveText.textContent = msg('conversation-auto-approve');
+    autoApproveLabel.appendChild(autoApproveInput);
+    autoApproveLabel.appendChild(autoApproveText);
+    conversationSection.appendChild(autoApproveLabel);
+
     allConversationsElement = document.createElement('div');
     allConversationsElement.className = 'sa-agent-all-conversations';
     conversationSection.appendChild(allConversationsElement);
@@ -2837,57 +2913,8 @@ export default async ({ addon, msg }) => {
     statusRow.className = 'sa-agent-message sa-agent-message-assistant sa-agent-status-row';
     statusRow.appendChild(statusElement);
 
-    sessionMenu = document.createElement('details');
-    sessionMenu.className = 'sa-agent-session-menu';
-    const sessionSummary = document.createElement('summary');
-    sessionSummary.className = 'sa-agent-icon-button sa-agent-session-summary';
-    sessionSummary.appendChild(createIcon(iconMore, 'sa-agent-icon'));
-    sessionSummary.title = msg('conversation-options');
-    sessionSummary.setAttribute('aria-label', msg('conversation-options'));
-    sessionMenu.appendChild(sessionSummary);
-    const sessionPanel = document.createElement('div');
-    sessionPanel.className = 'sa-agent-session-panel';
-    const sessionTitle = document.createElement('div');
-    sessionTitle.className = 'sa-agent-settings-label';
-    sessionTitle.textContent = msg('conversation-options');
-    sessionPanel.appendChild(sessionTitle);
-
-    const contextBar = document.createElement('div');
-    contextBar.className = 'sa-agent-context-bar';
-    compressButton = document.createElement('button');
-    compressButton.type = 'button';
-    compressButton.className = 'sa-agent-button sa-agent-button-secondary sa-agent-compress-button';
-    compressButton.textContent = msg('context-compress');
-    compressButton.addEventListener('click', () => {
-      sessionMenu.open = false;
-      compressContext().catch(() => {});
-    });
-    contextBar.appendChild(compressButton);
-    sessionPanel.appendChild(contextBar);
-
-    const permissionLabel = document.createElement('label');
-    permissionLabel.className = 'sa-agent-session-permission';
-    const permissionText = document.createElement('span');
-    permissionText.textContent = msg('conversation-auto-approve');
-    autoApproveInput = document.createElement('input');
-    autoApproveInput.className = 'sa-agent-settings-checkbox';
-    autoApproveInput.type = 'checkbox';
-    autoApproveInput.checked = autoApproveTools;
-    autoApproveInput.addEventListener('change', () => setAutoApproveTools(autoApproveInput.checked));
-    permissionLabel.appendChild(permissionText);
-    permissionLabel.appendChild(autoApproveInput);
-    sessionPanel.appendChild(permissionLabel);
-
-    sessionMenu.appendChild(sessionPanel);
-    actions.insertBefore(sessionMenu, newConversationButton);
-    sessionMenu.addEventListener('keydown', (event) => {
-      if (event.key === 'Escape') {
-        event.preventDefault();
-        event.stopPropagation();
-        sessionMenu.open = false;
-        sessionSummary.focus();
-      }
-    });
+    // The old three-dot "conversation options" menu is gone: compressing now
+    // lives in the context dial popover, auto-approve in the settings panel.
 
     const composer = document.createElement('div');
     composer.className = 'sa-agent-composer';
@@ -2993,6 +3020,10 @@ export default async ({ addon, msg }) => {
       },
       onClose: () => {
         if (inputElement) inputElement.focus();
+      },
+      onCompress: () => {
+        contextDial.close();
+        compressContext().catch(() => {});
       }
     });
 
@@ -3314,7 +3345,6 @@ export default async ({ addon, msg }) => {
    */
   const handleDeactivate = () => {
     hideSettingsPanel();
-    if (sessionMenu) sessionMenu.open = false;
     if (positionPopup) positionPopup.style.display = 'none';
     if (positionPopupTimeout) {
       clearTimeout(positionPopupTimeout);
@@ -3376,7 +3406,6 @@ export default async ({ addon, msg }) => {
 
   /** Close the session menu when clicking outside it. */
   const handleDocumentPointerDown = (event) => {
-    if (sessionMenu && sessionMenu.open && !sessionMenu.contains(event.target)) sessionMenu.open = false;
     if (contextDial) contextDial.closeIfOutside(event.target);
   };
 

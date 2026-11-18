@@ -170,6 +170,14 @@
 7. 新脚本插入后由 `packNewBlocks` 重新落位：右边界 = 已有顶层块的最大 `x + width`，新块从 `右边界 + 80px` 起、纵向按 `高度 + 60px` 依次排列；空工作区从 `(40, 40)` 开始。
 8. 任一步抛错都会中止并回滚事件组，整批只占一个 Ctrl+Z 步（造型/角色操作除外）。
 
+### 跨轮工具记忆（digest）
+
+对话历史只保存 user/assistant 文本，模型看不到上一轮用过什么工具，会重复整份读取项目。现在每轮结束后 `buildTraceDigest(trace)` 生成一行 `[tools] get_project_scrathon; apply_scrathon_edits(Cat)`（最多 8 项，其余折叠成 `+N more`，denied/failed 会标注），作为 `digest` 字段**持久化在 assistant 消息上**，构建请求时追加到该条内容末尾。因为存的是同一份字符串，下轮重发时前缀不变，不会破坏缓存；UI 不渲染它。
+
+### 缓存命中读数
+
+`readCacheUsage()` 归一两家口径：DeepSeek 的 `prompt_cache_hit_tokens` / `prompt_cache_miss_tokens`，OpenAI 的 `prompt_tokens_details.cached_tokens`。拿得到时圆盘弹层多一行「前缀缓存命中 X%（hit / total）」，拿不到就不显示。
+
 ### 非积木写操作的审批预览
 
 造型与角色工具不产生脚本 diff，因此循环里额外算一个 `change` 描述（`describePendingChange`）：改名会给出 before → after，删除会给出剩余数量，创建角色会给出复制来源与造型数。该描述随 `tool-request` 事件进入 `entry.change`，审批卡渲染成一行提示（`.sa-agent-tool-change`）。任何查找失败都只是「没有预览」，不影响审批本身。
